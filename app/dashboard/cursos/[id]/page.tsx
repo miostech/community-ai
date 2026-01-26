@@ -286,13 +286,13 @@ export default function CourseDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-64 bg-gray-200 rounded-xl"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+        <div className="animate-pulse space-y-4 sm:space-y-6">
+          <div className="h-6 sm:h-8 bg-gray-200 rounded w-1/2 sm:w-1/3"></div>
+          <div className="h-48 sm:h-64 bg-gray-200 rounded-xl"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-48 bg-gray-200 rounded-xl"></div>
+              <div key={i} className="h-40 sm:h-48 bg-gray-200 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -302,10 +302,10 @@ export default function CourseDetailPage() {
 
   if (!course) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <Card className="text-center py-12">
-          <p className="text-gray-600 mb-4">Curso não encontrado</p>
-          <Button onClick={() => router.push('/dashboard/cursos')}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+        <Card className="text-center py-8 sm:py-12">
+          <p className="text-sm sm:text-base text-gray-600 mb-4">Curso não encontrado</p>
+          <Button onClick={() => router.push('/dashboard/cursos')} className="text-sm sm:text-base">
             Voltar para Cursos
           </Button>
         </Card>
@@ -314,32 +314,32 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <button
           onClick={() => router.push('/dashboard/cursos')}
-          className="text-gray-600 hover:text-gray-900 mb-4 inline-flex items-center"
+          className="text-sm sm:text-base text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 inline-flex items-center"
         >
           ← Voltar para Cursos
         </button>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">{course.title}</h1>
-        <p className="text-xl text-gray-600">{course.description}</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">{course.title}</h1>
+        <p className="text-base sm:text-lg md:text-xl text-gray-600">{course.description}</p>
       </div>
 
       {/* Hero Section */}
-      <Card className="mb-8 overflow-hidden">
+      <Card className="mb-6 sm:mb-8 overflow-hidden">
         <div className="relative">
           <CourseImage
             src={course.thumbnail}
             alt={course.title}
-            className="w-full h-64 md:h-96 rounded-xl"
+            className="w-full h-48 sm:h-64 md:h-96 rounded-xl"
           />
           {!course.isAvailable && (
             <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-              <div className="text-center text-white">
+              <div className="text-center text-white px-4">
                 <svg
-                  className="w-20 h-20 mx-auto mb-4"
+                  className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -351,25 +351,26 @@ export default function CourseDetailPage() {
                     d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                   />
                 </svg>
-                <h3 className="text-2xl font-bold mb-2">Curso Bloqueado</h3>
-                <p className="text-lg mb-6">Adquira este curso para ter acesso completo</p>
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">Curso Bloqueado</h3>
+                <p className="text-sm sm:text-base md:text-lg mb-4 sm:mb-6">Adquira este curso para ter acesso completo</p>
                 <Button
                   size="lg"
                   onClick={() => window.open(course.kiwifyUrl, '_blank')}
+                  className="text-sm sm:text-base"
                 >
                   Adquirir Curso
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
               <Button
                 onClick={() => {
                   if (course.kiwifyDashboardUrl) {
                     window.open(course.kiwifyDashboardUrl, '_blank');
                   }
                 }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-xs sm:text-sm md:text-base px-3 py-2 sm:px-6 sm:py-3"
               >
                 Acessar no Dashboard
               </Button>
@@ -380,16 +381,16 @@ export default function CourseDetailPage() {
 
       {/* Módulos */}
       <div className="mb-6">
-        <div className="flex items-center space-x-2 mb-6">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex items-center space-x-2 mb-4 sm:mb-6">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Módulos do Curso</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Módulos do Curso</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {course.modules.map((module) => (
             <Card
               key={module.id}
@@ -411,12 +412,12 @@ export default function CourseDetailPage() {
                 <CourseImage
                   src={module.thumbnail}
                   alt={module.title}
-                  className="w-full h-40"
+                  className="w-full h-32 sm:h-40"
                 />
                 {module.isLocked && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <svg
-                      className="w-12 h-12 text-white"
+                      className="w-10 h-10 sm:w-12 sm:h-12 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -430,104 +431,15 @@ export default function CourseDetailPage() {
                     </svg>
                   </div>
                 )}
-                <div className="absolute top-3 left-3">
-                  <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-900">
+                <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+                  <span className="bg-white/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-gray-900">
                     MÓDULO {module.number}
                   </span>
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900 mb-2">{module.title}</h3>
-                <p className="text-sm text-gray-600">{module.description}</p>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Módulos */}
-      <div className="mb-6">
-        <div className="flex items-center space-x-2 mb-6">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">Módulos do Curso</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {course.modules.map((module) => (
-            <Card
-              key={module.id}
-              className={`overflow-hidden transition-all duration-300 ${
-                module.isLocked
-                  ? 'opacity-75 cursor-not-allowed'
-                  : 'hover:shadow-xl cursor-pointer'
-              }`}
-              onClick={() => {
-                if (!module.isLocked && course.isAvailable) {
-                  // Redirecionar para o módulo na Kiwify
-                  window.open(`${course.kiwifyUrl}/module/${module.id}`, '_blank');
-                }
-              }}
-            >
-            <div className="relative">
-              <div className="w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden">
-                <img
-                  src={module.thumbnail}
-                  alt={module.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = `
-                        <div class="w-full h-full flex items-center justify-center">
-                          <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                          </svg>
-                        </div>
-                      `;
-                    }
-                  }}
-                />
-              </div>
-                {module.isLocked && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <svg
-                      className="w-12 h-12 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                  </div>
-                )}
-                <div className="absolute top-3 left-3">
-                  <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-gray-900">
-                    MÓDULO {module.number}
-                  </span>
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="font-bold text-gray-900 mb-2">{module.title}</h3>
-                <p className="text-sm text-gray-600">{module.description}</p>
+              <div className="p-3 sm:p-4">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1 sm:mb-2">{module.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600">{module.description}</p>
               </div>
             </Card>
           ))}

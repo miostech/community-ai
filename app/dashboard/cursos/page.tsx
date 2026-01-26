@@ -114,15 +114,15 @@ export default function CursosPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Cursos</h1>
-          <p className="text-gray-600">Monetize seu conhecimento</p>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Cursos</h1>
+          <p className="text-sm sm:text-base text-gray-600">Monetize seu conhecimento</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
-              <div className="h-48 bg-gray-200 rounded-xl mb-4"></div>
+              <div className="h-40 sm:h-48 bg-gray-200 rounded-xl mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
               <div className="h-4 bg-gray-200 rounded w-full"></div>
             </Card>
@@ -133,24 +133,24 @@ export default function CursosPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
       {/* Hero Section */}
-      <div className="mb-8 sm:mb-12 text-center">
+      <div className="mb-6 sm:mb-8 md:mb-12 text-center">
         <div className="inline-flex items-center space-x-2 mb-3 sm:mb-4">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
             <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Cursos</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Cursos</h1>
         </div>
-        <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-2">
           Monetize seu conhecimento. Aprenda como realizar suas primeiras vendas como expert para sua audiência.
         </p>
       </div>
 
       {/* Cursos Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-4">
         {courses.map((course) => (
           <Card
             key={course.id}
@@ -160,13 +160,13 @@ export default function CursosPage() {
               <CourseImage
                 src={course.thumbnail}
                 alt={course.title}
-                className="w-full h-48 rounded-t-xl"
+                className="w-full h-40 sm:h-48 rounded-t-xl"
               />
               {!course.isAvailable && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center">
+                  <div className="text-center px-2">
                     <svg
-                      className="w-16 h-16 text-white mx-auto mb-2"
+                      className="w-12 h-12 sm:w-16 sm:h-16 text-white mx-auto mb-2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -178,12 +178,12 @@ export default function CursosPage() {
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
                       />
                     </svg>
-                    <p className="text-white font-medium">Curso Bloqueado</p>
+                    <p className="text-white text-sm sm:text-base font-medium">Curso Bloqueado</p>
                   </div>
                 </div>
               )}
-              <div className="absolute top-3 right-3">
-                <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-900">
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                <span className="bg-white/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900">
                   {course.modules} módulos
                 </span>
               </div>
@@ -191,14 +191,14 @@ export default function CursosPage() {
 
             <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 sm:mb-2">{course.title}</h3>
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-1 sm:mb-2">{course.title}</h3>
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{course.description}</p>
               </div>
 
-              <div className="pt-4 border-t border-gray-200">
+              <div className="pt-3 sm:pt-4 border-t border-gray-200">
                 {course.isAvailable ? (
                   <Button
-                    className="w-full"
+                    className="w-full text-sm sm:text-base"
                     onClick={() => {
                       // Se tem acesso, pode ir para detalhes ou direto para dashboard
                       if (course.kiwifyDashboardUrl) {
@@ -213,7 +213,7 @@ export default function CursosPage() {
                 ) : (
                   <Button
                     variant="secondary"
-                    className="w-full"
+                    className="w-full text-sm sm:text-base"
                     onClick={() => window.open(course.kiwifyUrl, '_blank')}
                   >
                     Adquirir Curso
@@ -226,10 +226,10 @@ export default function CursosPage() {
       </div>
 
       {courses.length === 0 && !isLoading && (
-        <Card className="text-center py-12">
+        <Card className="text-center py-8 sm:py-12">
           <div className="text-gray-400 mb-4">
             <svg
-              className="w-16 h-16 mx-auto"
+              className="w-12 h-12 sm:w-16 sm:h-16 mx-auto"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -242,10 +242,10 @@ export default function CursosPage() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
             Nenhum curso disponível
           </h3>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Novos cursos em breve!
           </p>
         </Card>
