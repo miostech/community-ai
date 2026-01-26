@@ -36,6 +36,7 @@ export default function CriarPostPage() {
   });
   
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'video'>('images');
 
   const handleImagesSelect = (files: File[]) => {
     const newFiles = [...newPost.images, ...files].slice(0, 10); // Max 10 imagens
@@ -148,28 +149,19 @@ export default function CriarPostPage() {
           {/* Tabs */}
           <div className="flex gap-2 border-b border-gray-100">
             <button
-              onClick={() => {
-                if (newPost.videoUrl) {
-                  setNewPost({ ...newPost, videoUrl: '' });
-                }
-              }}
+              onClick={() => setActiveMediaTab('images')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                !newPost.videoUrl
+                activeMediaTab === 'images'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Imagens
+              Imagens {imagePreviews.length > 0 && `(${imagePreviews.length})`}
             </button>
             <button
-              onClick={() => {
-                if (imagePreviews.length > 0) {
-                  setImagePreviews([]);
-                  setNewPost({ ...newPost, images: [] });
-                }
-              }}
+              onClick={() => setActiveMediaTab('video')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                newPost.videoUrl
+                activeMediaTab === 'video'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
@@ -179,7 +171,7 @@ export default function CriarPostPage() {
           </div>
 
           {/* Multi Image Upload */}
-          {!newPost.videoUrl && (
+          {activeMediaTab === 'images' && (
             <MultiImageUpload
               onImagesSelect={handleImagesSelect}
               currentImages={imagePreviews}
@@ -189,14 +181,19 @@ export default function CriarPostPage() {
           )}
 
           {/* Video URL */}
-          {imagePreviews.length === 0 && (
-            <div>
+          {activeMediaTab === 'video' && (
+            <div className="space-y-3">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700">
+                  💡 Cole o link de um vídeo do TikTok, Instagram ou YouTube
+                </p>
+              </div>
               <input
                 type="url"
                 value={newPost.videoUrl}
                 onChange={(e) => setNewPost({ ...newPost, videoUrl: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Cole o link do TikTok ou Instagram..."
+                placeholder="https://www.tiktok.com/@user/video/..."
                 suppressHydrationWarning
               />
               {newPost.videoUrl && (
