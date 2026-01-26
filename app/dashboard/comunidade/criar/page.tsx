@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { ImageUpload } from '@/components/community/ImageUpload';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { useUser } from '@/contexts/UserContext';
+import { usePosts } from '@/contexts/PostsContext';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
 
@@ -19,6 +20,7 @@ const postTypeLabels: Record<PostType, string> = {
 export default function CriarPostPage() {
   const router = useRouter();
   const { user } = useUser();
+  const { addPost } = usePosts();
   
   const [newPost, setNewPost] = useState<{
     type: PostType;
@@ -48,23 +50,37 @@ export default function CriarPostPage() {
   };
 
   const handlePublish = () => {
-    // Lógica de publicação aqui
-    console.log('Publicando post:', newPost);
+    if (!newPost.content.trim() && !imagePreview && !newPost.videoUrl.trim()) {
+      alert('Adicione conteúdo, imagem ou link de vídeo');
+      return;
+    }
+
+    // Criar o novo post
+    const post = {
+      id: Date.now().toString(),
+      type: newPost.type,
+      author: user.name,
+      avatar: user.avatar || null,
+      content: newPost.content,
+      imageUrl: imagePreview || undefined,
+      videoUrl: newPost.videoUrl || undefined,
+      likes: 0,
+      comments: 0,
+      timeAgo: 'agora',
+      liked: false,
+    };
+
+    // Adicionar ao contexto
+    addPost(post);
     
     // Redirecionar de volta para comunidade
     router.push('/dashboard/comunidade');
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8 pt-2 sm:pt-4">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <button
-          onClick={() => router.push('/dashboard/comunidade')}
-          className="text-sm sm:text-base text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 inline-flex items-center"
-        >
-          ← Voltar para Comunidade
-        </button>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Criar Post</h1>
         <p className="text-sm sm:text-base text-gray-600">Compartilhe com a comunidade</p>
       </div>
@@ -100,6 +116,7 @@ export default function CriarPostPage() {
             className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
             rows={8}
             placeholder="O que você gostaria de compartilhar?"
+            suppressHydrationWarning
           />
           <p className="text-xs text-gray-500 mt-2">
             {newPost.content.length} caracteres
@@ -160,6 +177,7 @@ export default function CriarPostPage() {
                 onChange={(e) => setNewPost({ ...newPost, videoUrl: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Cole o link do TikTok ou Instagram..."
+                suppressHydrationWarning
               />
               {newPost.videoUrl && (
                 <div className="mt-3">

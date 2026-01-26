@@ -7,6 +7,7 @@ import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { useUser } from '@/contexts/UserContext';
+import { usePosts } from '@/contexts/PostsContext';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
 
@@ -34,52 +35,6 @@ const topUsers = [
   { id: '6', name: 'Lucas Alves', avatar: null, initials: 'LA', interactionCount: 42 },
 ].sort((a, b) => b.interactionCount - a.interactionCount); // Ordenar por interação (maior para menor)
 
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    type: 'idea',
-    author: 'Maria Silva',
-    avatar: null, // Sem foto, usa iniciais
-    content: 'Ideia de conteúdo: "3 erros que todo criador comete no primeiro mês" - funciona muito bem para engajamento!',
-    likes: 24,
-    comments: 5,
-    timeAgo: '2h',
-  },
-  {
-    id: '2',
-    type: 'script',
-    author: 'João Santos',
-    avatar: null,
-    content: 'Hook: "Você já parou para pensar como o conteúdo que você consome molda suas decisões?"\n\nDesenvolvimento: [texto do desenvolvimento]\n\nCTA: "Compartilhe nos comentários sua experiência"',
-    videoUrl: 'https://www.tiktok.com/@example/video/1234567890',
-    likes: 18,
-    comments: 3,
-    timeAgo: '4h',
-  },
-  {
-    id: '3',
-    type: 'result',
-    author: 'Ana Costa',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop',
-    content: 'Usei um roteiro gerado aqui e consegui 2.3k de alcance no último post! A estrutura de hook + storytelling fez toda diferença.',
-    imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800',
-    likes: 42,
-    comments: 12,
-    timeAgo: '6h',
-  },
-  {
-    id: '4',
-    type: 'question',
-    author: 'Pedro Lima',
-    avatar: null,
-    content: 'Alguém tem dicas de como adaptar conteúdo de Instagram para TikTok mantendo a essência?',
-    videoUrl: 'https://www.instagram.com/p/ABC123xyz/',
-    likes: 8,
-    comments: 15,
-    timeAgo: '8h',
-  },
-];
-
 const postTypeLabels = {
   idea: '💡 Ideia',
   script: '📝 Roteiro',
@@ -89,22 +44,18 @@ const postTypeLabels = {
 
 export default function ComunidadePage() {
   const { user } = useUser();
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  const { posts, updatePost } = usePosts();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
 
   const handleLike = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              liked: !post.liked,
-              likes: post.liked ? post.likes - 1 : post.likes + 1,
-            }
-          : post
-      )
-    );
+    const post = posts.find((p) => p.id === postId);
+    if (post) {
+      updatePost(postId, {
+        liked: !post.liked,
+        likes: post.liked ? post.likes - 1 : post.likes + 1,
+      });
+    }
   };
 
   // Duplo clique para curtir (estilo Instagram)
