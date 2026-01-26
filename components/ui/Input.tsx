@@ -22,6 +22,7 @@ export function Input({ label, error, className = '', ...props }: InputProps) {
           ${error ? 'border-red-500 focus:ring-red-500' : ''}
           ${className}
         `}
+        suppressHydrationWarning
         {...props}
       />
       {error && (

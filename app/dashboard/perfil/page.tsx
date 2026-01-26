@@ -173,6 +173,7 @@ export default function PerfilPage() {
                   onChange={(e) => setInstagramProfile(e.target.value.replace('@', ''))}
                   placeholder="seu_usuario"
                   className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  suppressHydrationWarning
                 />
               </div>
               {instagramProfile && (
@@ -195,6 +196,7 @@ export default function PerfilPage() {
                   onChange={(e) => setTiktokProfile(e.target.value.replace('@', ''))}
                   placeholder="seu_usuario"
                   className="flex-1 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  suppressHydrationWarning
                 />
               </div>
               {tiktokProfile && (
