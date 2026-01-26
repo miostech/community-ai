@@ -387,6 +387,7 @@ export default function ComunidadePage() {
       {showCreateModal && (
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+          style={{ touchAction: 'none' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeCreateModal();
@@ -394,15 +395,11 @@ export default function ComunidadePage() {
               setImagePreview(null);
             }
           }}
-          onTouchMove={(e) => {
-            // Prevenir scroll no backdrop
-            if (e.target === e.currentTarget) {
-              e.preventDefault();
-            }
-          }}
         >
           <div 
-            className="w-full max-h-[95vh] sm:max-h-[90vh] sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            className="w-full max-h-[95vh] sm:max-h-[90vh] sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col"
+            style={{ touchAction: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
@@ -426,15 +423,11 @@ export default function ComunidadePage() {
 
             {/* Content - Scrollable */}
             <div 
-              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-6" 
+              className="modal-content-scroll flex-1 overflow-y-scroll p-4 sm:p-6 space-y-4 sm:space-y-6" 
               style={{ 
                 WebkitOverflowScrolling: 'touch',
                 overscrollBehavior: 'contain',
-                touchAction: 'pan-y'
-              }}
-              onTouchStart={(e) => {
-                // Permitir scroll apenas nesta área
-                e.stopPropagation();
+                minHeight: '200px'
               }}
             >
               {/* Tipo de Post - Pills */}
