@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { ImageUpload } from '@/components/community/ImageUpload';
+import { MultiImageUpload } from '@/components/community/MultiImageUpload';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
+import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { useUser } from '@/contexts/UserContext';
 import { usePosts } from '@/contexts/PostsContext';
 
@@ -25,32 +26,44 @@ export default function CriarPostPage() {
   const [newPost, setNewPost] = useState<{
     type: PostType;
     content: string;
-    image: File | null;
+    images: File[];
     videoUrl: string;
   }>({
     type: 'idea',
     content: '',
-    image: null,
+    images: [],
     videoUrl: '',
   });
   
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-  const handleImageSelect = (file: File | null) => {
-    setNewPost({ ...newPost, image: file });
-    if (file) {
+  const handleImagesSelect = (files: File[]) => {
+    const newFiles = [...newPost.images, ...files].slice(0, 10); // Max 10 imagens
+    setNewPost({ ...newPost, images: newFiles });
+
+    // Criar previews
+    const newPreviews = [...imagePreviews];
+    files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        newPreviews.push(reader.result as string);
+        if (newPreviews.length === newFiles.length) {
+          setImagePreviews(newPreviews.slice(0, 10));
+        }
       };
       reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    const newImages = newPost.images.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setNewPost({ ...newPost, images: newImages });
+    setImagePreviews(newPreviews);
   };
 
   const handlePublish = () => {
-    if (!newPost.content.trim() && !imagePreview && !newPost.videoUrl.trim()) {
+    if (!newPost.content.trim() && imagePreviews.length === 0 && !newPost.videoUrl.trim()) {
       alert('Adicione conteúdo, imagem ou link de vídeo');
       return;
     }
@@ -62,7 +75,12 @@ export default function CriarPostPage() {
       author: user.name,
       avatar: user.avatar || null,
       content: newPost.content,
-      imageUrl: imagePreview || undefined,
+      // Se tiver múltiplas imagens, usa imageUrls; se tiver apenas uma, usa imageUrl
+      ...(imagePreviews.length > 1
+        ? { imageUrls: imagePreviews }
+        : imagePreviews.length === 1
+        ? { imageUrl: imagePreviews[0] }
+        : {}),
       videoUrl: newPost.videoUrl || undefined,
       likes: 0,
       comments: 0,
@@ -141,13 +159,13 @@ export default function CriarPostPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Imagem
+              Imagens
             </button>
             <button
               onClick={() => {
-                if (imagePreview) {
-                  setImagePreview(null);
-                  setNewPost({ ...newPost, image: null });
+                if (imagePreviews.length > 0) {
+                  setImagePreviews([]);
+                  setNewPost({ ...newPost, images: [] });
                 }
               }}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -160,11 +178,13 @@ export default function CriarPostPage() {
             </button>
           </div>
 
-          {/* Image Upload */}
+          {/* Multi Image Upload */}
           {!newPost.videoUrl && (
-            <ImageUpload
-              onImageSelect={handleImageSelect}
-              currentImage={imagePreview}
+            <MultiImageUpload
+              onImagesSelect={handleImagesSelect}
+              currentImages={imagePreviews}
+              onRemoveImage={handleRemoveImage}
+              maxImages={10}
             />
           )}
 

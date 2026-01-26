@@ -10,7 +10,8 @@ export interface Post {
   author: string;
   avatar: string | null;
   content: string;
-  imageUrl?: string | null;
+  imageUrl?: string | null; // Para compatibilidade (imagem única)
+  imageUrls?: string[]; // Para carrossel (múltiplas imagens)
   videoUrl?: string;
   likes: number;
   comments: number;

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
+import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { useUser } from '@/contexts/UserContext';
@@ -163,8 +164,30 @@ export default function ComunidadePage() {
                 {post.content}
               </div>
 
-              {/* Imagem - estilo Instagram com duplo clique */}
-              {post.imageUrl && (
+              {/* Carrossel de Imagens - múltiplas imagens */}
+              {post.imageUrls && post.imageUrls.length > 0 && (
+                <div 
+                  className="mb-3 -mx-3 sm:-mx-4"
+                  onDoubleClick={() => handleDoubleTap(post.id)}
+                >
+                  <ImageCarousel images={post.imageUrls} />
+                  {/* Animação de coração ao dar duplo clique */}
+                  {showHeartAnimation === post.id && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                      <svg 
+                        className="w-24 h-24 text-white drop-shadow-2xl animate-ping"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Imagem única - estilo Instagram com duplo clique */}
+              {!post.imageUrls && post.imageUrl && (
                 <div 
                   className="mb-3 -mx-3 sm:-mx-4 relative select-none"
                   onDoubleClick={() => handleDoubleTap(post.id)}
