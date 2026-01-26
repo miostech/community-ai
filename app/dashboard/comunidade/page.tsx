@@ -136,6 +136,27 @@ export default function ComunidadePage() {
     }, 1500);
   };
 
+  // Prevenir scroll da página de fundo quando modal está aberto
+  useEffect(() => {
+    if (showCreateModal) {
+      // Salvar posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Bloquear scroll do body
+      document.body.classList.add('modal-open');
+      document.body.style.top = `-${scrollY}px`;
+      
+      return () => {
+        // Restaurar scroll do body
+        document.body.classList.remove('modal-open');
+        document.body.style.top = '';
+        
+        // Restaurar posição do scroll
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [showCreateModal]);
+
   const handleImageSelect = (file: File | null) => {
     setNewPost({ ...newPost, image: file });
     if (file) {
@@ -373,8 +394,16 @@ export default function ComunidadePage() {
               setImagePreview(null);
             }
           }}
+          onTouchMove={(e) => {
+            // Prevenir scroll no backdrop
+            if (e.target === e.currentTarget) {
+              e.preventDefault();
+            }
+          }}
         >
-          <div className="w-full max-h-[95vh] sm:max-h-[90vh] sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          <div 
+            className="w-full max-h-[95vh] sm:max-h-[90vh] sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
               <div className="min-w-0 flex-1">
@@ -396,7 +425,18 @@ export default function ComunidadePage() {
             </div>
 
             {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div 
+              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 sm:space-y-6" 
+              style={{ 
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehavior: 'contain',
+                touchAction: 'pan-y'
+              }}
+              onTouchStart={(e) => {
+                // Permitir scroll apenas nesta área
+                e.stopPropagation();
+              }}
+            >
               {/* Tipo de Post - Pills */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Tipo de post</label>
