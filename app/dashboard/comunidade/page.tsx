@@ -224,8 +224,8 @@ export default function ComunidadePage() {
         </div>
       )}
 
-      {/* Stories - estilo Instagram */}
-      <div className="mb-0 bg-white border-b border-gray-200 pb-3 pt-3" style={{ touchAction: 'pan-x' }}>
+      {/* Stories - estilo Instagram - largura completa */}
+      <div className="mb-0 bg-white border-b border-gray-200 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
         <Stories users={topUsers} />
       </div>
 
