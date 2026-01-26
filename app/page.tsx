@@ -95,7 +95,7 @@ export default function Home() {
           </div>
 
           {/* Main Input */}
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto mt-8 sm:mt-12 px-4">
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto mt-8 sm:mt-12 px-4" suppressHydrationWarning>
             <div className="relative flex items-center bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-lg hover:border-gray-300 transition-all focus-within:border-blue-500 focus-within:shadow-xl">
               <input
                 type="text"
@@ -103,6 +103,7 @@ export default function Home() {
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder={placeholderText || 'Crie ideias de conteúdo para Instagram'}
                 className="flex-1 px-3 sm:px-6 py-3 sm:py-4 text-sm sm:text-base md:text-lg outline-none bg-transparent text-gray-900 placeholder-gray-400"
+                suppressHydrationWarning
               />
               <button
                 type="submit"

@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 
 export function FloatingChatButton() {
   const pathname = usePathname();
-  const isChatPage = pathname === '/dashboard/chat';
   const [showPulse, setShowPulse] = useState(true);
 
   // Animação de pulso para chamar atenção
@@ -18,7 +17,11 @@ export function FloatingChatButton() {
   }, []);
 
   // Não mostrar o botão na própria página de chat
-  if (isChatPage) return null;
+  const isChatPage = pathname === '/dashboard/chat';
+  
+  if (isChatPage) {
+    return null;
+  }
 
   return (
     <Link
