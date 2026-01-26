@@ -16,13 +16,16 @@ export default function ChatPage() {
 
   if (!hasStarted) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-20 sm:pb-32">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-16 md:pt-20 pb-20 sm:pb-32">
         <div className="text-center space-y-6 sm:space-y-8">
           {/* Headline */}
           <div className="space-y-3 sm:space-y-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 leading-tight px-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight px-2">
               O que vamos criar hoje?
             </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">
+              Converse com a IA treinada pela <span className="font-semibold">Nat</span> e o <span className="font-semibold">Luigi</span>
+            </p>
           </div>
 
           {/* Main Input */}
@@ -81,8 +84,8 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8">
-      <div className="w-full">
+    <div className="max-w-4xl mx-auto px-0 sm:px-4 md:px-6 py-0 sm:py-4 md:py-6 lg:py-8 h-[calc(100vh-4rem)] sm:h-auto">
+      <div className="w-full h-full sm:h-auto">
         <ChatInterface initialPrompt={initialPrompt} />
       </div>
     </div>

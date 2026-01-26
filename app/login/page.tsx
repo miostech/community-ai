@@ -16,7 +16,7 @@ export default function LoginPage() {
     setIsLoading(true);
     // Simular login - em produção, fazer chamada à API
     setTimeout(() => {
-      router.push('/dashboard');
+      router.push('/dashboard/comunidade');
     }, 500);
   };
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
     setIsLoading(true);
     // Simular login Google - em produção, integrar com provider
     setTimeout(() => {
-      router.push('/dashboard');
+      router.push('/dashboard/comunidade');
     }, 500);
   };
 
