@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function PerfilPage() {
-  const { user, updateUser, updateAvatar } = useUser();
+  const { user, updateUser, updateAvatar, logout } = useUser();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar);
@@ -134,6 +134,26 @@ export default function PerfilPage() {
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? 'Salvando...' : 'Salvar alterações'}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Botão de Sair */}
+      <Card className="mt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Sair da conta</h2>
+            <p className="text-sm text-gray-500 mt-1">Desconectar desta conta no dispositivo</p>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={logout}
+            className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sair
           </Button>
         </div>
       </Card>
