@@ -16,6 +16,7 @@ export function Input({ label, error, className = '', ...props }: InputProps) {
       <input
         className={`
           w-full px-4 py-3 rounded-lg border border-gray-300 
+          bg-white text-gray-900 placeholder-gray-400
           focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent
           transition-all duration-200
           ${error ? 'border-red-500 focus:ring-red-500' : ''}

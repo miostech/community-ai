@@ -423,7 +423,7 @@ export default function ComunidadePage() {
                 <textarea
                   value={newPost.content}
                   onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all text-sm sm:text-base"
                   rows={5}
                   placeholder="O que você gostaria de compartilhar?"
                 />
@@ -484,7 +484,7 @@ export default function ComunidadePage() {
                       type="url"
                       value={newPost.videoUrl}
                       onChange={(e) => setNewPost({ ...newPost, videoUrl: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="Cole o link do TikTok ou Instagram..."
                     />
                     {newPost.videoUrl && (
