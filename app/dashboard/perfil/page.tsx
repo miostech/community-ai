@@ -148,7 +148,6 @@ export default function PerfilPage() {
             countryCode={phoneCountryCode}
             onValueChange={setPhone}
             onCountryCodeChange={setPhoneCountryCode}
-            placeholder="(11) 99999-9999"
           />
         </div>
 

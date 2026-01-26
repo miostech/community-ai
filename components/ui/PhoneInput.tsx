@@ -8,20 +8,19 @@ interface PhoneInputProps {
   countryCode: string;
   onValueChange: (value: string) => void;
   onCountryCodeChange: (code: string) => void;
-  placeholder?: string;
 }
 
 const countryCodes = [
-  { code: '+55', country: 'BR', flag: '🇧🇷', name: 'Brasil' },
-  { code: '+1', country: 'US', flag: '🇺🇸', name: 'Estados Unidos' },
-  { code: '+44', country: 'GB', flag: '🇬🇧', name: 'Reino Unido' },
-  { code: '+34', country: 'ES', flag: '🇪🇸', name: 'Espanha' },
-  { code: '+351', country: 'PT', flag: '🇵🇹', name: 'Portugal' },
-  { code: '+54', country: 'AR', flag: '🇦🇷', name: 'Argentina' },
-  { code: '+52', country: 'MX', flag: '🇲🇽', name: 'México' },
-  { code: '+33', country: 'FR', flag: '🇫🇷', name: 'França' },
-  { code: '+49', country: 'DE', flag: '🇩🇪', name: 'Alemanha' },
-  { code: '+39', country: 'IT', flag: '🇮🇹', name: 'Itália' },
+  { code: '+55', country: 'BR', flag: '🇧🇷', name: 'Brasil', placeholder: '(11) 99999-9999' },
+  { code: '+1', country: 'US', flag: '🇺🇸', name: 'Estados Unidos', placeholder: '(555) 123-4567' },
+  { code: '+44', country: 'GB', flag: '🇬🇧', name: 'Reino Unido', placeholder: '7400 123456' },
+  { code: '+34', country: 'ES', flag: '🇪🇸', name: 'Espanha', placeholder: '612 34 56 78' },
+  { code: '+351', country: 'PT', flag: '🇵🇹', name: 'Portugal', placeholder: '912 345 678' },
+  { code: '+54', country: 'AR', flag: '🇦🇷', name: 'Argentina', placeholder: '11 2345-6789' },
+  { code: '+52', country: 'MX', flag: '🇲🇽', name: 'México', placeholder: '55 1234 5678' },
+  { code: '+33', country: 'FR', flag: '🇫🇷', name: 'França', placeholder: '6 12 34 56 78' },
+  { code: '+49', country: 'DE', flag: '🇩🇪', name: 'Alemanha', placeholder: '151 23456789' },
+  { code: '+39', country: 'IT', flag: '🇮🇹', name: 'Itália', placeholder: '312 345 6789' },
 ];
 
 export function PhoneInput({
@@ -30,11 +29,11 @@ export function PhoneInput({
   countryCode,
   onValueChange,
   onCountryCodeChange,
-  placeholder = '(11) 99999-9999',
 }: PhoneInputProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedCountry = countryCodes.find((c) => c.code === countryCode) || countryCodes[0];
+  const placeholder = selectedCountry.placeholder;
 
   return (
     <div>
