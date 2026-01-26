@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
+import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { useUser } from '@/contexts/UserContext';
