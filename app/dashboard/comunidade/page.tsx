@@ -139,20 +139,12 @@ export default function ComunidadePage() {
   // Prevenir scroll da página de fundo quando modal está aberto
   useEffect(() => {
     if (showCreateModal) {
-      // Salvar posição atual do scroll
-      const scrollY = window.scrollY;
-      
-      // Bloquear scroll do body
-      document.body.classList.add('modal-open');
-      document.body.style.top = `-${scrollY}px`;
+      // Apenas adicionar classe ao body
+      document.body.style.overflow = 'hidden';
       
       return () => {
-        // Restaurar scroll do body
-        document.body.classList.remove('modal-open');
-        document.body.style.top = '';
-        
-        // Restaurar posição do scroll
-        window.scrollTo(0, scrollY);
+        // Restaurar
+        document.body.style.overflow = '';
       };
     }
   }, [showCreateModal]);
@@ -387,7 +379,6 @@ export default function ComunidadePage() {
       {showCreateModal && (
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
-          style={{ touchAction: 'none' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeCreateModal();
@@ -398,7 +389,6 @@ export default function ComunidadePage() {
         >
           <div 
             className="w-full max-h-[95vh] sm:max-h-[90vh] sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col"
-            style={{ touchAction: 'auto' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -422,14 +412,7 @@ export default function ComunidadePage() {
             </div>
 
             {/* Content - Scrollable */}
-            <div 
-              className="modal-content-scroll flex-1 overflow-y-scroll p-4 sm:p-6 space-y-4 sm:space-y-6" 
-              style={{ 
-                WebkitOverflowScrolling: 'touch',
-                overscrollBehavior: 'contain',
-                minHeight: '200px'
-              }}
-            >
+            <div className="modal-content-scroll flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Tipo de Post - Pills */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Tipo de post</label>

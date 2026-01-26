@@ -154,17 +154,8 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Prevenir scroll quando modal está aberto */
-body.modal-open {
-  overflow: hidden !important;
-  position: fixed !important;
-  width: 100% !important;
-  height: 100% !important;
-  touch-action: none !important;
-}
-
-/* Permitir scroll dentro de modais */
-body.modal-open .modal-content-scroll {
-  touch-action: pan-y !important;
-  -webkit-overflow-scrolling: touch !important;
+/* Scroll suave dentro de modais */
+.modal-content-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
