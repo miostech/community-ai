@@ -19,14 +19,15 @@ export function Stories({ users }: StoriesProps) {
 
   return (
     <div 
-      className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide"
+      className="w-full overflow-x-scroll overflow-y-hidden scrollbar-hide"
       style={{
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
+        touchAction: 'pan-x',
       }}
     >
-      <div className="flex gap-4 px-4 py-3 min-w-max">
+      <div className="flex gap-4 px-4 py-3" style={{ width: 'max-content' }}>
         {users.map((user, index) => (
           <div 
             key={user.id} 
