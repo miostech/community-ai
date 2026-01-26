@@ -189,7 +189,7 @@ export default function CriarPostPage() {
           )}
 
           {/* Video URL */}
-          {!imagePreview && (
+          {imagePreviews.length === 0 && (
             <div>
               <input
                 type="url"
