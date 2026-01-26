@@ -18,7 +18,7 @@ export function Button({
   const variants = {
     primary: 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 focus:ring-blue-500 shadow-sm hover:shadow-md',
     secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500',
-    ghost: 'bg-transparent text-gray-700 hover:bg-gray-50 focus:ring-gray-500'
+    ghost: 'bg-transparent text-gray-900 hover:bg-gray-100 focus:ring-gray-500'
   };
   
   const sizes = {
