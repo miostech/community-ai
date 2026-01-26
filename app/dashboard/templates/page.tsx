@@ -52,13 +52,13 @@ const templates = [
 
 export default function TemplatesPage() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Templates</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Templates</h1>
         <p className="text-sm sm:text-base text-gray-600">Escolha um template e crie conteúdo em minutos</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-4">
         {templates.map((template) => (
           <Card
             key={template.id}

@@ -79,10 +79,10 @@ export default function TemplatePage() {
 
   if (!template) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
         <Card>
-          <div className="text-center py-12">
-            <p className="text-gray-600 mb-4">Template não encontrado</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-sm sm:text-base text-gray-600 mb-4">Template não encontrado</p>
             <Button onClick={() => router.push('/dashboard/templates')}>
               Voltar para Templates
             </Button>
@@ -121,52 +121,56 @@ export default function TemplatePage() {
 
   if (result) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{template.title}</h1>
-            <p className="text-gray-600 mt-1">{template.description}</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{template.title}</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">{template.description}</p>
           </div>
-          <Button variant="ghost" onClick={() => {
-            setResult(null);
-            setCurrentStep(0);
-            setAnswers({});
-          }}>
+          <Button 
+            variant="ghost" 
+            onClick={() => {
+              setResult(null);
+              setCurrentStep(0);
+              setAnswers({});
+            }}
+            className="w-full sm:w-auto"
+          >
             Criar Novo
           </Button>
         </div>
 
-        <Card className="space-y-6">
+        <Card className="space-y-4 sm:space-y-6">
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Hook</h3>
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-2">Hook</h3>
               <textarea
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black resize-none text-sm sm:text-base"
                 rows={2}
                 defaultValue={result.hook}
               />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Desenvolvimento</h3>
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-2">Desenvolvimento</h3>
               <textarea
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black resize-none text-sm sm:text-base"
                 rows={6}
                 defaultValue={result.development}
               />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">CTA</h3>
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 mb-2">CTA</h3>
               <textarea
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black resize-none text-sm sm:text-base"
                 rows={2}
                 defaultValue={result.cta}
               />
             </div>
           </div>
-          <div className="flex gap-3 pt-4 border-t">
-            <Button variant="secondary">Salvar Projeto</Button>
-            <Button variant="secondary">Gerar Variação</Button>
-            <Button className="ml-auto">Copiar</Button>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+            <Button variant="secondary" className="w-full sm:w-auto text-sm sm:text-base">Salvar Projeto</Button>
+            <Button variant="secondary" className="w-full sm:w-auto text-sm sm:text-base">Gerar Variação</Button>
+            <Button className="w-full sm:w-auto sm:ml-auto text-sm sm:text-base">Copiar</Button>
           </div>
         </Card>
       </div>
@@ -177,26 +181,26 @@ export default function TemplatePage() {
   const progress = ((currentStep + 1) / template.questions.length) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+      <div className="mb-6 sm:mb-8">
         <button
           onClick={() => router.push('/dashboard/templates')}
-          className="text-gray-600 hover:text-gray-900 mb-4 inline-flex items-center"
+          className="text-sm sm:text-base text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 inline-flex items-center"
         >
           ← Voltar para Templates
         </button>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{template.title}</h1>
-        <p className="text-gray-600">{template.description}</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">{template.title}</h1>
+        <p className="text-sm sm:text-base text-gray-600">{template.description}</p>
       </div>
 
       <Card>
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">
+              <span className="text-xs sm:text-sm text-gray-600">
                 Pergunta {currentStep + 1} de {template.questions.length}
               </span>
-              <span className="text-sm text-gray-600">{Math.round(progress)}%</span>
+              <span className="text-xs sm:text-sm text-gray-600">{Math.round(progress)}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
@@ -206,8 +210,8 @@ export default function TemplatePage() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <label className="block text-lg font-medium text-gray-900">
+          <div className="space-y-3 sm:space-y-4">
+            <label className="block text-base sm:text-lg font-medium text-gray-900">
               {currentQuestion.label}
             </label>
             
@@ -221,7 +225,7 @@ export default function TemplatePage() {
             
             {currentQuestion.type === 'textarea' && (
               <textarea
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black resize-none text-sm sm:text-base"
                 rows={4}
                 value={answers[currentQuestion.id] || ''}
                 onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
@@ -231,7 +235,7 @@ export default function TemplatePage() {
             
             {currentQuestion.type === 'select' && (
               <select
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-black text-sm sm:text-base"
                 value={answers[currentQuestion.id] || ''}
                 onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
               >
@@ -245,17 +249,19 @@ export default function TemplatePage() {
             )}
           </div>
 
-          <div className="flex justify-between pt-6 border-t border-gray-200">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-4 sm:pt-6 border-t border-gray-200">
             <Button
               variant="ghost"
               onClick={handleBack}
               disabled={currentStep === 0}
+              className="w-full sm:w-auto text-sm sm:text-base"
             >
               Voltar
             </Button>
             <Button
               onClick={handleNext}
               disabled={!answers[currentQuestion.id] || isGenerating}
+              className="w-full sm:w-auto text-sm sm:text-base"
             >
               {currentStep === template.questions.length - 1
                 ? isGenerating
