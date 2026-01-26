@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface StoryUser {
   id: string;
@@ -16,28 +16,70 @@ interface StoriesProps {
 
 export function Stories({ users }: StoriesProps) {
   const [pressedStory, setPressedStory] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeout = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setIsScrolling(true);
+      
+      // Clear timeout anterior
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+      
+      // Define que parou de scrollar após 150ms
+      scrollTimeout.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
+      }
+    };
+  }, []);
 
   return (
     <div 
+      ref={scrollRef}
       className="w-full overflow-x-scroll overflow-y-hidden scrollbar-hide"
       style={{
         WebkitOverflowScrolling: 'touch',
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
         touchAction: 'pan-x',
+        overscrollBehaviorX: 'contain',
+        cursor: isScrolling ? 'grabbing' : 'grab',
       }}
     >
-      <div className="flex gap-4 px-4 py-3" style={{ width: 'max-content' }}>
+      <div className="flex gap-4 px-4 py-3" style={{ width: 'max-content', minWidth: '100%' }}>
         {users.map((user, index) => (
           <div 
             key={user.id} 
-            className="flex flex-col items-center flex-shrink-0 cursor-pointer group animate-fade-in-up"
-            style={{ animationDelay: `${index * 0.05}s` }}
-            onTouchStart={() => setPressedStory(user.id)}
-            onTouchEnd={() => setPressedStory(null)}
-            onMouseDown={() => setPressedStory(user.id)}
+            className="flex flex-col items-center flex-shrink-0 cursor-pointer group animate-fade-in-up select-none"
+            style={{ 
+              animationDelay: `${index * 0.05}s`,
+              pointerEvents: isScrolling ? 'none' : 'auto',
+            }}
+            onMouseDown={() => !isScrolling && setPressedStory(user.id)}
             onMouseUp={() => setPressedStory(null)}
             onMouseLeave={() => setPressedStory(null)}
+            onClick={(e) => {
+              // Previne click se estiver scrollando
+              if (isScrolling) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
           >
             <div className="relative">
               {/* Ring gradient animado para stories */}
