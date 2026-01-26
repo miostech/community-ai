@@ -18,8 +18,15 @@ export function Stories({ users }: StoriesProps) {
   const [pressedStory, setPressedStory] = useState<string | null>(null);
 
   return (
-    <div className="w-full overflow-x-auto scrollbar-hide">
-      <div className="flex gap-4 px-4 py-3">
+    <div 
+      className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide"
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+      }}
+    >
+      <div className="flex gap-4 px-4 py-3 min-w-max">
         {users.map((user, index) => (
           <div 
             key={user.id} 

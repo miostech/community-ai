@@ -9,9 +9,6 @@ export function FloatingChatButton() {
   const isChatPage = pathname === '/dashboard/chat';
   const [showPulse, setShowPulse] = useState(true);
 
-  // Não mostrar o botão na própria página de chat
-  if (isChatPage) return null;
-
   // Animação de pulso para chamar atenção
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -19,6 +16,9 @@ export function FloatingChatButton() {
     }, 5000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Não mostrar o botão na própria página de chat
+  if (isChatPage) return null;
 
   return (
     <Link
