@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
@@ -8,6 +8,7 @@ import { ImageUpload } from '@/components/community/ImageUpload';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { useUser } from '@/contexts/UserContext';
+import { useCreatePost } from '@/contexts/CreatePostContext';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
 
@@ -90,8 +91,8 @@ const postTypeLabels = {
 
 export default function ComunidadePage() {
   const { user } = useUser();
+  const { showCreateModal, openCreateModal, closeCreateModal } = useCreatePost();
   const [posts, setPosts] = useState<Post[]>(mockPosts);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPost, setNewPost] = useState({
     type: 'idea' as PostType,
     content: '',
@@ -171,7 +172,7 @@ export default function ComunidadePage() {
     };
 
     setPosts([post, ...posts]);
-    setShowCreateModal(false);
+    closeCreateModal();
     setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
     setImagePreview(null);
   };
@@ -203,11 +204,11 @@ export default function ComunidadePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-            <Button 
-              onClick={() => setShowCreateModal(true)} 
-              className="text-sm px-3 sm:px-4 py-2 h-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
-              size="sm"
-            >
+          <Button 
+            onClick={openCreateModal} 
+            className="text-sm px-3 sm:px-4 py-2 h-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
+            size="sm"
+          >
               <svg className="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -367,7 +368,7 @@ export default function ComunidadePage() {
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setShowCreateModal(false);
+              closeCreateModal();
               setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
               setImagePreview(null);
             }
@@ -382,7 +383,7 @@ export default function ComunidadePage() {
               </div>
               <button
                 onClick={() => {
-                  setShowCreateModal(false);
+                  closeCreateModal();
                   setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
                   setImagePreview(null);
                 }}
@@ -500,7 +501,7 @@ export default function ComunidadePage() {
             <div className="flex items-center justify-between p-4 sm:p-6 border-t border-gray-100 bg-gray-50 gap-4">
               <button
                 onClick={() => {
-                  setShowCreateModal(false);
+                  closeCreateModal();
                   setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
                   setImagePreview(null);
                 }}

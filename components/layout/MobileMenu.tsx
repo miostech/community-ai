@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
+import { useCreatePost } from '@/contexts/CreatePostContext';
 
 interface NavItem {
   label: string;
@@ -120,7 +121,23 @@ const allNavItems: NavItem[] = [
 export function MobileMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useUser();
+  const { openCreateModal } = useCreatePost();
+
+  const handleCreateClick = () => {
+    // Se não estiver na página da comunidade, navega primeiro
+    if (pathname !== '/dashboard/comunidade') {
+      router.push('/dashboard/comunidade');
+      // Aguarda um pouco para a navegação completar antes de abrir o modal
+      setTimeout(() => {
+        openCreateModal();
+      }, 300);
+    } else {
+      // Já está na comunidade, abre o modal direto
+      openCreateModal();
+    }
+  };
 
   return (
     <>
@@ -130,6 +147,24 @@ export function MobileMenu() {
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             const isProfile = item.href === '/dashboard/perfil';
+            const isCreate = item.label === 'Criar';
+            
+            // Botão Criar é especial - usa onClick em vez de Link
+            if (isCreate) {
+              return (
+                <button
+                  key={item.href}
+                  onClick={handleCreateClick}
+                  className="flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all active:scale-95"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                </button>
+              );
+            }
             
             return (
               <Link
@@ -159,13 +194,6 @@ export function MobileMenu() {
                         </span>
                       </div>
                     )}
-                  </div>
-                ) : item.label === 'Criar' ? (
-                  // Botão destaque para criar
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                    </svg>
                   </div>
                 ) : (
                   // Ícones normais

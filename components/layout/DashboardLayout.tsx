@@ -5,12 +5,14 @@ import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { MobileMenu } from './MobileMenu';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { CreatePostProvider } from '@/contexts/CreatePostContext';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isComunidadePage = pathname === '/dashboard/comunidade';
 
   return (
+    <CreatePostProvider>
     <div className="flex min-h-screen bg-white relative overflow-hidden">
       {/* Background decorative elements - apenas em páginas que não sejam comunidade */}
       {!isComunidadePage && (
@@ -32,5 +34,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* Botão flutuante de chat - aparece em todas as páginas */}
       <FloatingChatButton />
     </div>
+    </CreatePostProvider>
   );
 }
