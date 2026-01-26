@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { VideoEmbed } from '@/components/community/VideoEmbed';
-import { ImageUpload } from '@/components/community/ImageUpload';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { useUser } from '@/contexts/UserContext';
-import { useCreatePost } from '@/contexts/CreatePostContext';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
 
@@ -91,15 +88,7 @@ const postTypeLabels = {
 
 export default function ComunidadePage() {
   const { user } = useUser();
-  const { showCreateModal, openCreateModal, closeCreateModal } = useCreatePost();
   const [posts, setPosts] = useState<Post[]>(mockPosts);
-  const [newPost, setNewPost] = useState({
-    type: 'idea' as PostType,
-    content: '',
-    image: null as File | null,
-    videoUrl: '',
-  });
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
 
@@ -136,60 +125,6 @@ export default function ComunidadePage() {
     }, 1500);
   };
 
-  // Prevenir scroll da página de fundo quando modal está aberto
-  useEffect(() => {
-    if (showCreateModal) {
-      // Apenas adicionar classe ao body
-      document.body.style.overflow = 'hidden';
-      
-      return () => {
-        // Restaurar
-        document.body.style.overflow = '';
-      };
-    }
-  }, [showCreateModal]);
-
-  const handleImageSelect = (file: File | null) => {
-    setNewPost({ ...newPost, image: file });
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
-  };
-
-  const handlePublish = () => {
-    if (!newPost.content.trim() && !newPost.image && !newPost.videoUrl.trim()) {
-      alert('Adicione conteúdo, imagem ou link de vídeo');
-      return;
-    }
-
-    // Criar URL da imagem (em produção, fazer upload para servidor)
-    const imageUrl = imagePreview;
-
-    const post: Post = {
-      id: Date.now().toString(),
-      type: newPost.type,
-      author: user.name,
-      avatar: user.avatar || user.name.charAt(0).toUpperCase(),
-      content: newPost.content,
-      imageUrl: imageUrl,
-      videoUrl: newPost.videoUrl || undefined,
-      likes: 0,
-      comments: 0,
-      timeAgo: 'agora',
-    };
-
-    setPosts([post, ...posts]);
-    closeCreateModal();
-    setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
-    setImagePreview(null);
-  };
-
   return (
     <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white min-h-screen">
       {/* Header fixo no mobile - estilo Instagram */}
@@ -217,16 +152,15 @@ export default function ComunidadePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-          <Button 
-            onClick={openCreateModal} 
-            className="text-sm px-3 sm:px-4 py-2 h-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
-            size="sm"
+          <Link 
+            href="/dashboard/comunidade/criar"
+            className="inline-flex items-center justify-center text-sm px-3 sm:px-4 py-2 h-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md rounded-lg font-medium transition-all"
           >
               <svg className="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               <span className="hidden sm:inline">Criar</span>
-            </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -375,167 +309,8 @@ export default function ComunidadePage() {
         ))}
       </div>
 
-
-      {showCreateModal && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              closeCreateModal();
-              setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
-              setImagePreview(null);
-            }
-          }}
-        >
-          <div 
-            className="w-full max-h-[95vh] sm:max-h-[90vh] sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 flex-shrink-0">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Criar Post</h2>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">Compartilhe com a comunidade</p>
-              </div>
-              <button
-                onClick={() => {
-                  closeCreateModal();
-                  setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
-                  setImagePreview(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Content - Scrollable */}
-            <div className="modal-content-scroll flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-              {/* Tipo de Post - Pills */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">Tipo de post</label>
-                <div className="flex flex-wrap gap-2">
-                  {(['idea', 'script', 'question', 'result'] as PostType[]).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setNewPost({ ...newPost, type })}
-                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all ${
-                        newPost.type === type
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {postTypeLabels[type]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Conteúdo */}
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-900 mb-1 sm:mb-2">Conteúdo</label>
-                <textarea
-                  value={newPost.content}
-                  onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all text-sm sm:text-base"
-                  rows={5}
-                  placeholder="O que você gostaria de compartilhar?"
-                />
-                <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2">
-                  {newPost.content.length} caracteres
-                </p>
-              </div>
-
-              {/* Mídia - Tabs */}
-              <div className="space-y-3 sm:space-y-4">
-                <label className="block text-xs sm:text-sm font-semibold text-gray-900">Adicionar mídia (opcional)</label>
-                
-                {/* Tabs */}
-                <div className="flex gap-2 border-b border-gray-100">
-                  <button
-                    onClick={() => {
-                      if (newPost.videoUrl) {
-                        setNewPost({ ...newPost, videoUrl: '' });
-                      }
-                    }}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-                      !newPost.videoUrl
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Imagem
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (imagePreview) {
-                        setImagePreview(null);
-                        setNewPost({ ...newPost, image: null });
-                      }
-                    }}
-                    className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-                      newPost.videoUrl
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Vídeo
-                  </button>
-                </div>
-
-                {/* Image Upload */}
-                {!newPost.videoUrl && (
-                  <ImageUpload
-                    onImageSelect={handleImageSelect}
-                    currentImage={imagePreview}
-                  />
-                )}
-
-                {/* Video URL */}
-                {!imagePreview && (
-                  <div>
-                    <input
-                      type="url"
-                      value={newPost.videoUrl}
-                      onChange={(e) => setNewPost({ ...newPost, videoUrl: e.target.value })}
-                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
-                      placeholder="Cole o link do TikTok ou Instagram..."
-                    />
-                    {newPost.videoUrl && (
-                      <div className="mt-3">
-                        <VideoEmbed url={newPost.videoUrl} />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer - Sempre visível */}
-            <div className="flex-shrink-0 flex items-center justify-between p-4 sm:p-6 border-t border-gray-100 bg-gray-50 gap-3 sm:gap-4 safe-area-bottom">
-              <button
-                onClick={() => {
-                  closeCreateModal();
-                  setNewPost({ type: 'idea', content: '', image: null, videoUrl: '' });
-                  setImagePreview(null);
-                }}
-                className="px-4 py-2.5 text-sm sm:text-base text-gray-700 hover:text-gray-900 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <Button 
-                onClick={handlePublish}
-                disabled={!newPost.content.trim() && !imagePreview && !newPost.videoUrl.trim()}
-                className="disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base px-6 sm:px-8"
-              >
-                Publicar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Botão flutuante de chat */}
+      <FloatingChatButton />
     </div>
   );
 }

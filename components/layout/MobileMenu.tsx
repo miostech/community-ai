@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
-import { useCreatePost } from '@/contexts/CreatePostContext';
 
 interface NavItem {
   label: string;
@@ -34,7 +33,7 @@ const bottomNavItems: NavItem[] = [
   },
   {
     label: 'Criar',
-    href: '/dashboard',
+    href: '/dashboard/comunidade/criar',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -63,23 +62,7 @@ const bottomNavItems: NavItem[] = [
 
 export function MobileMenu() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user } = useUser();
-  const { openCreateModal } = useCreatePost();
-
-  const handleCreateClick = () => {
-    // Se não estiver na página da comunidade, navega primeiro
-    if (pathname !== '/dashboard/comunidade') {
-      router.push('/dashboard/comunidade');
-      // Aguarda um pouco para a navegação completar antes de abrir o modal
-      setTimeout(() => {
-        openCreateModal();
-      }, 300);
-    } else {
-      // Já está na comunidade, abre o modal direto
-      openCreateModal();
-    }
-  };
 
   return (
     <>
@@ -91,12 +74,12 @@ export function MobileMenu() {
             const isProfile = item.href === '/dashboard/perfil';
             const isCreate = item.label === 'Criar';
             
-            // Botão Criar é especial - usa onClick em vez de Link
+            // Botão Criar é especial - tem ícone diferente
             if (isCreate) {
               return (
-                <button
+                <Link
                   key={item.href}
-                  onClick={handleCreateClick}
+                  href={item.href}
                   className="flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all active:scale-95"
                 >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
@@ -104,7 +87,7 @@ export function MobileMenu() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                     </svg>
                   </div>
-                </button>
+                </Link>
               );
             }
             
