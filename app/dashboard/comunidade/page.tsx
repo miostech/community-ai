@@ -28,11 +28,11 @@ interface Post {
 
 // Usuários mais ativos para stories (baseado em interações) - ordenados por interação
 const topUsers = [
-  { id: '1', name: 'Maria Silva', avatar: null, initials: 'MS', interactionCount: 89 },
-  { id: '2', name: 'Ana Costa', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop', initials: 'AC', interactionCount: 76 },
-  { id: '3', name: 'João Santos', avatar: null, initials: 'JS', interactionCount: 65 },
-  { id: '4', name: 'Pedro Lima', avatar: null, initials: 'PL', interactionCount: 54 },
-  { id: '5', name: 'Carla Mendes', avatar: null, initials: 'CM', interactionCount: 48 },
+  { id: '1', name: 'Maria Silva', avatar: null, initials: 'MS', interactionCount: 89, instagramProfile: 'mariasilva', tiktokProfile: 'mariasilva', primarySocialLink: 'instagram' as const },
+  { id: '2', name: 'Ana Costa', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop', initials: 'AC', interactionCount: 76, instagramProfile: 'anacosta', tiktokProfile: 'anacosta_oficial', primarySocialLink: 'tiktok' as const },
+  { id: '3', name: 'João Santos', avatar: null, initials: 'JS', interactionCount: 65, instagramProfile: 'joaosantos', primarySocialLink: 'instagram' as const },
+  { id: '4', name: 'Pedro Lima', avatar: null, initials: 'PL', interactionCount: 54, tiktokProfile: 'pedrolima', primarySocialLink: 'tiktok' as const },
+  { id: '5', name: 'Carla Mendes', avatar: null, initials: 'CM', interactionCount: 48, instagramProfile: 'carlamendes', primarySocialLink: 'instagram' as const },
   { id: '6', name: 'Lucas Alves', avatar: null, initials: 'LA', interactionCount: 42 },
 ].sort((a, b) => b.interactionCount - a.interactionCount); // Ordenar por interação (maior para menor)
 

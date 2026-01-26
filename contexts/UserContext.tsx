@@ -6,6 +6,11 @@ interface User {
   name: string;
   email: string;
   avatar: string | null;
+  phone: string;
+  phoneCountryCode: string;
+  instagramProfile: string;
+  tiktokProfile: string;
+  primarySocialLink: 'instagram' | 'tiktok' | null;
 }
 
 interface UserContextType {
@@ -22,6 +27,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     name: 'Usuário',
     email: 'usuario@email.com',
     avatar: null,
+    phone: '',
+    phoneCountryCode: '+55',
+    instagramProfile: '',
+    tiktokProfile: '',
+    primarySocialLink: null,
   });
 
   // Carregar do localStorage ao inicializar
@@ -55,6 +65,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       name: 'Usuário',
       email: 'usuario@email.com',
       avatar: null,
+      phone: '',
+      phoneCountryCode: '+55',
+      instagramProfile: '',
+      tiktokProfile: '',
+      primarySocialLink: null,
     });
     // Limpar localStorage
     localStorage.removeItem('user');
