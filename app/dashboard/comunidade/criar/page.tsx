@@ -219,7 +219,7 @@ export default function CriarPostPage() {
           </Button>
           <Button
             onClick={handlePublish}
-            disabled={!newPost.content.trim() && !imagePreview && !newPost.videoUrl.trim()}
+            disabled={!newPost.content.trim() && imagePreviews.length === 0 && !newPost.videoUrl.trim()}
             className="w-full sm:w-auto sm:ml-auto"
           >
             Publicar
