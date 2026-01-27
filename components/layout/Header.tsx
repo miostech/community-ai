@@ -23,9 +23,6 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <Link href="/precos" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
-              Preços
-            </Link>
             <Link 
               href={isHomePage ? "#criadores" : "/#criadores"} 
               className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
@@ -38,11 +35,8 @@ export function Header() {
             >
               Recursos
             </Link>
-            <Link 
-              href={isHomePage ? "#showcase" : "/#showcase"} 
-              className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
-            >
-              Showcase
+            <Link href="/precos" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">
+              Preços
             </Link>
           </nav>
 

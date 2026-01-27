@@ -157,7 +157,7 @@ export default function TrendsPage() {
       <div className="sticky top-0 z-40 bg-white border-b border-gray-100 backdrop-blur-lg bg-white/95">
         <div className="px-4 py-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Top Trends</h1>
-          <p className="text-sm text-gray-600 mt-1">Tópicos populares</p>
+          <p className="text-sm text-gray-600 mt-1">Assuntos em alta, que estão gerando muito engajamento e conversão pra você se inspirar e criar conteúdo.</p>
         </div>
       </div>
 

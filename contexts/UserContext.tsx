@@ -73,8 +73,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     });
     // Limpar localStorage
     localStorage.removeItem('user');
-    // Redirecionar para login
-    window.location.href = '/login';
+    // Redirecionar para landing page
+    window.location.href = '/';
   };
 
   return (

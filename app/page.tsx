@@ -272,7 +272,7 @@ export default function Home() {
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-4 px-2">Recursos</h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-            Tudo que você precisa para criar conteúdo que converte
+            Tudo que você precisa para criar conteúdo que converte e gera resultados.
           </p>
         </div>
 
@@ -280,16 +280,16 @@ export default function Home() {
           <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
               <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 sm:mb-2">Ideias Estruturadas</h3>
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-              Não apenas texto solto. Receba ideias organizadas com hook, desenvolvimento e CTA.
+              Receba ideias de como melhorar seu conteúdo, ganhar engajamento e conversão pra você se tornar um criador de conteúdo de sucesso.
             </p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
+          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
               <svg className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
@@ -299,7 +299,7 @@ export default function Home() {
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
               Templates e estruturas que você pode adaptar para qualquer rede social.
             </p>
-          </div>
+          </div> */}
 
           <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
@@ -309,7 +309,7 @@ export default function Home() {
             </div>
             <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 sm:mb-2">Chat com IA</h3>
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-              Converse com a IA para melhorar, adaptar e refinar seu conteúdo em tempo real.
+              Converse com a IA treinada pela Natália e pelo Luigi, ela será sua assistente de criação de conteúdo.
             </p>
           </div>
 
@@ -321,23 +321,23 @@ export default function Home() {
             </div>
             <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 sm:mb-2">Comunidade</h3>
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-              Compartilhe e descubra conteúdo criado por outros criadores.
+              Faça parte de uma comunidade de criadores de conteúdo que buscam melhorar, se inspirar e se apoiar mutuamente. Tire suas dúvidas, compartilhe suas ideias e seja inspirado por outros criadores.
             </p>
           </div>
 
           <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/>
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 sm:mb-2">Fluxo Guiado</h3>
+            <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 sm:mb-2">Temas em Alta</h3>
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-              Processo passo a passo para criar conteúdo estruturado, sem confusão.
+              Saiba quais são os assuntos que estão em alta no momento, que estão gerando muito engajamento e conversão pra você se inspirar.
             </p>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
+          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
               <svg className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -347,12 +347,12 @@ export default function Home() {
             <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
               Salve e organize todos os seus conteúdos em projetos para acessar depois.
             </p>
-          </div>
+          </div> */}
         </div>
       </section>
 
-      {/* Showcase Section */}
-      <section id="showcase" className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
+      {/* Showcase Section - Comentado temporariamente */}
+      {/* <section id="showcase" className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
         <div className="text-center mb-8 sm:mb-12 md:mb-16">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-4 px-2">Showcase</h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
@@ -362,7 +362,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
           {/* Exemplo 1 */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
+          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="mb-3 sm:mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs font-bold">
@@ -392,10 +392,10 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Exemplo 2 */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
+          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -425,10 +425,10 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Exemplo 3 */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
+          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -458,10 +458,10 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Exemplo 4 */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
+          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -492,16 +492,16 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        <div className="text-center mt-8 sm:mt-12 px-4">
+        {/* <div className="text-center mt-8 sm:mt-12 px-4">
           <Link href="/login">
             <Button size="lg" className="w-full sm:w-auto">
               Começar a Criar Agora
             </Button>
           </Link>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
