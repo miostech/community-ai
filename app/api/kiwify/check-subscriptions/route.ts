@@ -4,6 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 const KIWIFY_API_KEY = process.env.KIWIFY_API_KEY;
 const KIWIFY_API_URL = 'https://api.kiwify.com.br/v1';
 
+// Configuração de runtime para otimizar warm-up
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
