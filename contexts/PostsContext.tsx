@@ -30,6 +30,7 @@ export interface Post {
   comments: number;
   timeAgo: string;
   liked?: boolean;
+  saved?: boolean;
 }
 
 interface PostsContextType {
@@ -38,6 +39,7 @@ interface PostsContextType {
   addPost: (post: Post) => void;
   updatePost: (postId: string, updates: Partial<Post>) => void;
   deletePost: (postId: string) => void;
+  toggleSavePost: (postId: string) => void;
   addComment: (postId: string, content: string, author: string, avatar: string | null, parentId?: string) => void;
   getPostComments: (postId: string) => Comment[];
   getCommentReplies: (commentId: string) => Comment[];
@@ -189,6 +191,14 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
     setPosts((prev) => prev.filter((post) => post.id !== postId));
   };
 
+  const toggleSavePost = (postId: string) => {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, saved: !post.saved } : post
+      )
+    );
+  };
+
   const addComment = (postId: string, content: string, author: string, avatar: string | null, parentId?: string) => {
     const newComment: Comment = {
       id: `c${Date.now()}`,
@@ -252,6 +262,7 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
         addPost, 
         updatePost, 
         deletePost,
+        toggleSavePost,
         addComment,
         getPostComments,
         getCommentReplies,

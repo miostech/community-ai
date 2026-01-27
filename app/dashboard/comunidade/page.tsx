@@ -38,18 +38,19 @@ const topUsers = [
 ].sort((a, b) => b.interactionCount - a.interactionCount); // Ordenar por interação (maior para menor)
 
 const postTypeLabels = {
-  idea: '💡 Ideia',
-  script: '📝 Roteiro',
-  question: '❓ Dúvida',
-  result: '🎉 Resultado',
+  idea: 'Ideia',
+  script: 'Roteiro',
+  question: 'Dúvida',
+  result: 'Resultado',
 };
 
 export default function ComunidadePage() {
   const { user } = useUser();
-  const { posts, updatePost } = usePosts();
+  const { posts, updatePost, toggleSavePost } = usePosts();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   const handleLike = (postId: string) => {
     const post = posts.find((p) => p.id === postId);
@@ -80,6 +81,11 @@ export default function ComunidadePage() {
     }, 1500);
   };
 
+  // Filtrar posts - mostrar todos ou apenas salvos
+  const displayedPosts = showSavedOnly 
+    ? posts.filter(post => post.saved === true)
+    : posts;
+
   return (
     <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white min-h-screen">
       {/* Header fixo no mobile - estilo Instagram */}
@@ -107,15 +113,31 @@ export default function ComunidadePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-          <Link 
-            href="/dashboard/comunidade/criar"
-            className="inline-flex items-center justify-center text-sm px-3 sm:px-4 py-2 h-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md rounded-lg font-medium transition-all"
-          >
-              <svg className="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <button
+              onClick={() => setShowSavedOnly(!showSavedOnly)}
+              className={`inline-flex items-center justify-center text-sm px-3 sm:px-4 py-2 h-auto shadow-md rounded-lg font-medium transition-all ${
+                showSavedOnly
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg 
+                className="w-4 h-4 sm:mr-1.5" 
+                fill={showSavedOnly ? 'currentColor' : 'none'} 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={showSavedOnly ? 0 : 1.5}
+                  d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
+                />
               </svg>
-              <span className="hidden sm:inline">Criar</span>
-            </Link>
+              <span className="hidden sm:inline">
+                {showSavedOnly ? 'Todos' : 'Salvos'}
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -134,7 +156,26 @@ export default function ComunidadePage() {
 
       {/* Feed de posts - estilo Instagram */}
       <div className="space-y-0">
-        {posts.map((post) => (
+        {displayedPosts.length === 0 && showSavedOnly ? (
+          <div className="bg-white border-b border-gray-200 p-8 text-center">
+            <svg
+              className="w-16 h-16 mx-auto text-gray-400 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
+              />
+            </svg>
+            <p className="text-gray-600 font-medium mb-1">Nenhum post salvo ainda</p>
+            <p className="text-sm text-gray-500">Salve posts que você gostou para encontrá-los facilmente depois</p>
+          </div>
+        ) : (
+          displayedPosts.map((post) => (
           <div key={post.id} className="bg-white border-b border-gray-200 last:border-b-0">
             <div className="p-3 sm:p-4">
               {/* Header do post */}
@@ -268,17 +309,22 @@ export default function ComunidadePage() {
                   </svg>
                   <span className="text-sm sm:text-base font-semibold">{post.comments}</span>
                 </button>
-                <button className="flex items-center space-x-1.5 text-gray-900 active:scale-95 transition-all ml-auto">
+                <button 
+                  onClick={() => toggleSavePost(post.id)}
+                  className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${
+                    post.saved ? 'text-blue-600' : 'text-gray-900'
+                  }`}
+                >
                   <svg
                     className="w-6 h-6 sm:w-7 sm:h-7"
-                    fill="none"
+                    fill={post.saved ? 'currentColor' : 'none'}
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={1.5}
+                      strokeWidth={post.saved ? 0 : 1.5}
                       d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
                     />
                   </svg>
@@ -286,7 +332,8 @@ export default function ComunidadePage() {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Botão flutuante de chat - esconde quando modal de comentários está aberto */}

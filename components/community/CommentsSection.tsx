@@ -147,11 +147,30 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                           <button
                             onClick={() => handleLikeComment(comment.id)}
                             type="button"
-                            className={`text-xs font-semibold min-h-[44px] flex items-center transition-colors ${
+                            className={`flex items-center space-x-1 min-h-[44px] transition-colors ${
                               comment.liked ? 'text-red-600' : 'text-gray-500'
                             }`}
                           >
-                            {comment.likes > 0 ? `${comment.likes} curtidas` : 'Curtir'}
+                            <svg
+                              className="w-4 h-4"
+                              fill={comment.liked ? 'currentColor' : 'none'}
+                              stroke="currentColor"
+                              strokeWidth={comment.liked ? 0 : 1.5}
+                              viewBox="0 0 24 24"
+                            >
+                              {comment.liked ? (
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                              ) : (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                                />
+                              )}
+                            </svg>
+                            {comment.likes > 0 && (
+                              <span className="text-xs font-semibold">{comment.likes}</span>
+                            )}
                           </button>
                           <button
                             onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
@@ -223,11 +242,30 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                                     <button
                                       onClick={() => handleLikeComment(reply.id)}
                                       type="button"
-                                      className={`text-[10px] font-semibold min-h-[32px] flex items-center transition-colors ${
+                                      className={`flex items-center space-x-1 min-h-[32px] transition-colors ${
                                         reply.liked ? 'text-red-600' : 'text-gray-500'
                                       }`}
                                     >
-                                      {reply.likes > 0 ? `${reply.likes} curtidas` : 'Curtir'}
+                                      <svg
+                                        className="w-3.5 h-3.5"
+                                        fill={reply.liked ? 'currentColor' : 'none'}
+                                        stroke="currentColor"
+                                        strokeWidth={reply.liked ? 0 : 1.5}
+                                        viewBox="0 0 24 24"
+                                      >
+                                        {reply.liked ? (
+                                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                        ) : (
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                                          />
+                                        )}
+                                      </svg>
+                                      {reply.likes > 0 && (
+                                        <span className="text-[10px] font-semibold">{reply.likes}</span>
+                                      )}
                                     </button>
                                   </div>
                                 </div>
