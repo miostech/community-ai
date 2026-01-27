@@ -1,11 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { ChatInterface } from '@/components/chat/ChatInterface';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function ChatPage() {
+function ChatPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const conversationId = searchParams.get('conversation');
   const [hasStarted, setHasStarted] = useState(false);
   const [initialPrompt, setInitialPrompt] = useState('');
+
+  useEffect(() => {
+    if (conversationId) {
+      setHasStarted(true);
+    }
+  }, [conversationId]);
 
   const handleStart = (prompt: string) => {
     if (prompt.trim()) {
@@ -16,7 +26,30 @@ export default function ChatPage() {
 
   if (!hasStarted) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-16 md:pt-20 pb-20 sm:pb-32">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-8 md:pt-12 pb-20 sm:pb-32">
+        {/* Botão de Histórico no topo */}
+        <div className="flex justify-end mb-8 sm:mb-12">
+          <button
+            onClick={() => router.push('/dashboard/chat/historico')}
+            className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Ver histórico de conversas"
+          >
+            <svg 
+              className="w-6 h-6" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+              />
+            </svg>
+          </button>
+        </div>
+        
         <div className="text-center space-y-6 sm:space-y-8">
           {/* Headline */}
           <div className="space-y-3 sm:space-y-4">
@@ -86,8 +119,23 @@ export default function ChatPage() {
   return (
     <div className="max-w-4xl mx-auto px-0 sm:px-4 md:px-6 py-0 sm:py-4 md:py-6 lg:py-8 h-[calc(100vh-4rem)] sm:h-auto">
       <div className="w-full h-full sm:h-auto">
-        <ChatInterface initialPrompt={initialPrompt} />
+        <ChatInterface 
+          initialPrompt={initialPrompt} 
+          conversationId={conversationId || undefined}
+        />
       </div>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
   );
 }

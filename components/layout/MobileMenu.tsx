@@ -23,11 +23,11 @@ const bottomNavItems: NavItem[] = [
     ),
   },
   {
-    label: 'Templates',
-    href: '/dashboard/templates',
+    label: 'Trends',
+    href: '/dashboard/trends',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
       </svg>
     ),
   },
@@ -63,11 +63,32 @@ const bottomNavItems: NavItem[] = [
 export function MobileMenu() {
   const pathname = usePathname();
   const { user } = useUser();
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkModal = () => {
+      setIsModalOpen(document.body.classList.contains('comments-modal-open'));
+    };
+    
+    // Verificar inicialmente
+    checkModal();
+    
+    // Observar mudanças no body
+    const observer = new MutationObserver(checkModal);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
       {/* Bottom Navigation Bar - Estilo Instagram */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-inset-bottom">
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-inset-bottom transition-opacity ${
+        isModalOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}>
         <div className="flex items-center justify-around px-2 py-2 pb-safe">
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');

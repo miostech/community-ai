@@ -335,7 +335,7 @@ export default function CourseDetailPage() {
             alt={course.title}
             className="w-full h-48 sm:h-64 md:h-96 rounded-xl"
           />
-          {!course.isAvailable && (
+          {!course.isAvailable ? (
             <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
               <div className="text-center text-white px-4">
                 <svg

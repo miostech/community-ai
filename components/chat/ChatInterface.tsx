@@ -3,13 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useUser } from '@/contexts/UserContext';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
+import { useChatHistory, Message } from '@/contexts/ChatHistoryContext';
+import { useRouter } from 'next/navigation';
 
 interface ChatInterfaceProps {
   initialContent?: {
@@ -18,10 +13,19 @@ interface ChatInterfaceProps {
     cta: string;
   };
   initialPrompt?: string;
+  conversationId?: string;
 }
 
-export function ChatInterface({ initialContent, initialPrompt }: ChatInterfaceProps) {
+export function ChatInterface({ initialContent, initialPrompt, conversationId }: ChatInterfaceProps) {
   const { user } = useUser();
+  const router = useRouter();
+  const { 
+    saveConversation, 
+    updateConversation, 
+    currentConversationId, 
+    setCurrentConversationId,
+    loadConversation 
+  } = useChatHistory();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -81,6 +85,29 @@ export function ChatInterface({ initialContent, initialPrompt }: ChatInterfacePr
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Salvar automaticamente as mensagens
+  useEffect(() => {
+    if (messages.length > 0 && hasInitialized) {
+      if (currentConversationId) {
+        updateConversation(currentConversationId, messages);
+      } else {
+        saveConversation(messages);
+      }
+    }
+  }, [messages, hasInitialized]);
+
+  // Carregar conversa existente se houver conversationId
+  useEffect(() => {
+    if (conversationId && !hasInitialized) {
+      const conversation = loadConversation(conversationId);
+      if (conversation) {
+        setMessages(conversation.messages);
+        setCurrentConversationId(conversationId);
+        setHasInitialized(true);
+      }
+    }
+  }, [conversationId]);
+
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -125,9 +152,30 @@ export function ChatInterface({ initialContent, initialPrompt }: ChatInterfacePr
   ];
 
   return (
-    <div className="flex flex-col h-full sm:h-[calc(100vh-220px)] md:h-[600px] sm:max-h-[600px] bg-white sm:bg-white/80 sm:backdrop-blur-sm sm:rounded-xl sm:border sm:border-gray-100 sm:shadow-sm">
+    <div className="flex flex-col h-full sm:h-[calc(100vh-220px)] md:h-[600px] sm:max-h-[600px] bg-white sm:bg-white/80 sm:backdrop-blur-sm sm:rounded-xl sm:border sm:border-gray-100 sm:shadow-sm relative">
+      {/* Botão de Histórico no canto superior direito */}
+      <button
+        onClick={() => router.push('/dashboard/chat/historico')}
+        className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        title="Ver histórico de conversas"
+      >
+        <svg 
+          className="w-6 h-6" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+          />
+        </svg>
+      </button>
+      
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6 pt-14 sm:pt-12">
         {messages.map((message) => (
           <div
             key={message.id}

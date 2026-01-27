@@ -7,6 +7,7 @@ import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { CommentsSection } from '@/components/community/CommentsSection';
 import { useUser } from '@/contexts/UserContext';
 import { usePosts } from '@/contexts/PostsContext';
 
@@ -48,6 +49,7 @@ export default function ComunidadePage() {
   const { posts, updatePost } = usePosts();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
+  const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
 
   const handleLike = (postId: string) => {
     const post = posts.find((p) => p.id === postId);
@@ -247,7 +249,10 @@ export default function ComunidadePage() {
                   </svg>
                   <span className="text-sm sm:text-base font-semibold">{post.likes}</span>
                 </button>
-                <button className="flex items-center space-x-1.5 text-gray-900 active:scale-95 transition-all">
+                <button 
+                  onClick={() => setActiveCommentsPostId(post.id)}
+                  className="flex items-center space-x-1.5 text-gray-900 active:scale-95 transition-all"
+                >
                   <svg
                     className="w-6 h-6 sm:w-7 sm:h-7"
                     fill="none"
@@ -284,8 +289,17 @@ export default function ComunidadePage() {
         ))}
       </div>
 
-      {/* Botão flutuante de chat */}
-      <FloatingChatButton />
+      {/* Botão flutuante de chat - esconde quando modal de comentários está aberto */}
+      {!activeCommentsPostId && <FloatingChatButton />}
+
+      {/* Modal de comentários */}
+      {activeCommentsPostId && (
+        <CommentsSection
+          postId={activeCommentsPostId}
+          isOpen={!!activeCommentsPostId}
+          onClose={() => setActiveCommentsPostId(null)}
+        />
+      )}
     </div>
   );
 }

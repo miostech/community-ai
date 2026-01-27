@@ -7,6 +7,7 @@ import { MobileMenu } from './MobileMenu';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { CreatePostProvider } from '@/contexts/CreatePostContext';
 import { PostsProvider } from '@/contexts/PostsContext';
+import { ChatHistoryProvider } from '@/contexts/ChatHistoryContext';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <PostsProvider>
       <CreatePostProvider>
+        <ChatHistoryProvider>
         <div className="flex min-h-screen bg-white relative overflow-hidden">
       {/* Background decorative elements - apenas em páginas que não sejam comunidade */}
       {!isComunidadePage && (
@@ -33,9 +35,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
       
-          {/* Botão flutuante de chat - aparece em todas as páginas */}
-          <FloatingChatButton />
+          {/* Botão flutuante de chat - apenas em páginas que não sejam comunidade */}
+          {/* (na comunidade o botão é renderizado dentro da página com controle do modal) */}
+          {!isComunidadePage && <FloatingChatButton />}
         </div>
+        </ChatHistoryProvider>
       </CreatePostProvider>
     </PostsProvider>
   );
