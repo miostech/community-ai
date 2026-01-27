@@ -9,8 +9,6 @@ const nextConfig: NextConfig = {
   },
   // Compressão para reduzir tamanho dos assets
   compress: true,
-  // Otimizações de produção
-  swcMinify: true,
   // Configuração de imagens otimizada
   images: {
     formats: ['image/avif', 'image/webp'],
