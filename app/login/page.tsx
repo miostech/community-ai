@@ -29,12 +29,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
-      {/* Background decorative elements */}
+    <div className="min-h-screen bg-white dark:bg-black relative overflow-hidden flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-40 right-10 w-48 sm:w-72 h-48 sm:h-72 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-1/2 w-48 sm:w-72 h-48 sm:h-72 bg-pink-100 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 left-10 w-48 sm:w-72 h-48 sm:h-72 bg-blue-100 dark:bg-blue-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-48 sm:w-72 h-48 sm:h-72 bg-purple-100 dark:bg-purple-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-48 sm:w-72 h-48 sm:h-72 bg-pink-100 dark:bg-pink-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
@@ -43,16 +42,15 @@ export default function LoginPage() {
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg sm:text-xl">IA</span>
             </div>
-            <span className="font-semibold text-lg sm:text-xl text-gray-900">Conteúdo IA</span>
-            <span className="text-xs sm:text-sm text-gray-500 font-normal">2.0</span>
+            <span className="font-semibold text-lg sm:text-xl text-gray-900 dark:text-slate-100">Conteúdo IA</span>
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 font-normal">2.0</span>
           </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Entre na sua conta</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Continue criando conteúdo incrível</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">Entre na sua conta</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mt-1 sm:mt-2">Continue criando conteúdo incrível</p>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-lg">
-          {/* Mensagem de desenvolvimento */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-lg">
+          <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
             <p className="font-medium">Modo de desenvolvimento</p>
             <p className="text-xs mt-1">Use qualquer email e senha para testar. A autenticação será implementada em produção.</p>
           </div>
@@ -83,10 +81,10 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-300 dark:border-slate-600"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">ou</span>
+              <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400">ou</span>
             </div>
           </div>
 
@@ -117,9 +115,9 @@ export default function LoginPage() {
             <span>Continuar com Google</span>
           </Button>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600 dark:text-slate-400">
             Não tem uma conta?{' '}
-            <Link href="/login" className="text-black font-medium hover:underline">
+            <Link href="/login" className="text-gray-900 dark:text-slate-100 font-medium hover:underline">
               Criar conta
             </Link>
           </p>

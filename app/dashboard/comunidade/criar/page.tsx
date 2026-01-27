@@ -98,17 +98,14 @@ export default function CriarPostPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8 pt-2 sm:pt-4">
-      {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Criar Post</h1>
-        <p className="text-sm sm:text-base text-gray-600">Compartilhe com a comunidade</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Criar Post</h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">Compartilhe com a comunidade</p>
       </div>
 
-      {/* Formulário */}
       <div className="space-y-6">
-        {/* Tipo de Post */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-3">Tipo de post</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100 mb-3">Tipo de post</label>
           <div className="flex flex-wrap gap-2">
             {(['idea', 'script', 'question', 'result'] as PostType[]).map((type) => (
               <button
@@ -117,7 +114,7 @@ export default function CriarPostPage() {
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   newPost.type === type
                     ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-transparent dark:border-neutral-700'
                 }`}
               >
                 {postTypeLabels[type]}
@@ -126,34 +123,31 @@ export default function CriarPostPage() {
           </div>
         </div>
 
-        {/* Conteúdo */}
         <div>
-          <label className="block text-sm font-semibold text-gray-900 mb-2">Conteúdo</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100 mb-2">Conteúdo</label>
           <textarea
             value={newPost.content}
             onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
+            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none transition-all"
             rows={8}
             placeholder="O que você gostaria de compartilhar?"
             suppressHydrationWarning
           />
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 dark:text-neutral-400 mt-2">
             {newPost.content.length} caracteres
           </p>
         </div>
 
-        {/* Mídia */}
         <div className="space-y-4">
-          <label className="block text-sm font-semibold text-gray-900">Adicionar mídia (opcional)</label>
+          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100">Adicionar mídia (opcional)</label>
           
-          {/* Tabs */}
-          <div className="flex gap-2 border-b border-gray-100">
+          <div className="flex gap-2 border-b border-gray-100 dark:border-neutral-800">
             <button
               onClick={() => setActiveMediaTab('images')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 activeMediaTab === 'images'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200'
               }`}
             >
               Imagens {imagePreviews.length > 0 && `(${imagePreviews.length})`}
@@ -162,15 +156,14 @@ export default function CriarPostPage() {
               onClick={() => setActiveMediaTab('video')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 activeMediaTab === 'video'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200'
               }`}
             >
               Vídeo
             </button>
           </div>
 
-          {/* Multi Image Upload */}
           {activeMediaTab === 'images' && (
             <MultiImageUpload
               onImagesSelect={handleImagesSelect}
@@ -180,11 +173,10 @@ export default function CriarPostPage() {
             />
           )}
 
-          {/* Video URL */}
           {activeMediaTab === 'video' && (
             <div className="space-y-3">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-700">
+              <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-blue-700 dark:text-blue-300">
                   💡 Cole o link de um vídeo do TikTok, Instagram ou YouTube
                 </p>
               </div>
@@ -192,7 +184,7 @@ export default function CriarPostPage() {
                 type="url"
                 value={newPost.videoUrl}
                 onChange={(e) => setNewPost({ ...newPost, videoUrl: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                 placeholder="https://www.tiktok.com/@user/video/..."
                 suppressHydrationWarning
               />
@@ -205,8 +197,7 @@ export default function CriarPostPage() {
           )}
         </div>
 
-        {/* Botões */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200 dark:border-neutral-800">
           <Button
             variant="ghost"
             onClick={() => router.push('/dashboard/comunidade')}

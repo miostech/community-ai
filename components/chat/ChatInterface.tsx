@@ -152,11 +152,10 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
   ];
 
   return (
-    <div className="flex flex-col h-full sm:h-[calc(100vh-220px)] md:h-[600px] sm:max-h-[600px] bg-white sm:bg-white/80 sm:backdrop-blur-sm sm:rounded-xl sm:border sm:border-gray-100 sm:shadow-sm relative">
-      {/* Botão de Histórico no canto superior direito */}
+    <div className="flex flex-col h-full sm:h-[calc(100vh-220px)] md:h-[600px] sm:max-h-[600px] bg-white dark:bg-black sm:bg-white/80 dark:sm:bg-black/80 sm:backdrop-blur-sm sm:rounded-xl sm:border sm:border-gray-100 dark:sm:border-neutral-800 sm:shadow-sm relative">
       <button
         onClick={() => router.push('/dashboard/chat/historico')}
-        className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-10 h-10 flex items-center justify-center text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
         title="Ver histórico de conversas"
       >
         <svg 
@@ -184,7 +183,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
             }`}
           >
             {message.role === 'assistant' && (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200 dark:ring-blue-800">
                 <span className="text-white font-bold text-xs sm:text-sm">IA</span>
               </div>
             )}
@@ -192,7 +191,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
               className={`max-w-[85%] sm:max-w-[80%] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
                 message.role === 'user'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-sm'
-                  : 'bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-900 shadow-sm'
+                  : 'bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-slate-100 shadow-sm'
               }`}
             >
               <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed break-words">
@@ -205,7 +204,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
                   <img
                     src={user.avatar}
                     alt={user.name}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0"
                   />
                 ) : (
                   <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -220,10 +219,10 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
         ))}
         {isLoading && (
           <div className="flex gap-2 sm:gap-3 md:gap-4 justify-start">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200 animate-pulse">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200 dark:ring-blue-800 animate-pulse">
               <span className="text-white font-bold text-xs sm:text-sm">IA</span>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm">
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200 dark:border-slate-600 rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm">
               <div className="flex space-x-1">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-bounce"></div>
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -246,7 +245,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
                   setInput(prompt);
                   textareaRef.current?.focus();
                 }}
-                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full text-gray-700 transition-colors whitespace-nowrap"
+                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full text-gray-700 dark:text-slate-300 transition-colors whitespace-nowrap"
               >
                 {prompt}
               </button>
@@ -256,7 +255,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
       )}
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-3 sm:p-4">
+      <div className="border-t border-gray-200 dark:border-slate-700 p-3 sm:p-4">
         <form onSubmit={handleSend} className="flex items-end gap-2 sm:gap-3">
           <div className="flex-1 relative">
             <textarea
@@ -265,7 +264,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite sua mensagem..."
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 rounded-lg sm:rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none max-h-32 text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 rounded-lg sm:rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none max-h-32 text-sm sm:text-base"
               rows={1}
               style={{
                 height: 'auto',
@@ -280,7 +279,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="absolute right-1.5 sm:right-2 bottom-1.5 sm:bottom-2 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="absolute right-1.5 sm:right-2 bottom-1.5 sm:bottom-2 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all shadow-md hover:shadow-lg disabled:bg-gray-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed"
               style={
                 !input.trim() || isLoading
                   ? {}

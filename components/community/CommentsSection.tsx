@@ -80,7 +80,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
 
       {/* Modal */}
       <div 
-        className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl pointer-events-auto flex flex-col"
+        className="fixed bottom-0 left-0 right-0 bg-white dark:bg-black rounded-t-3xl shadow-2xl pointer-events-auto flex flex-col"
         style={{
           height: '75vh',
           maxHeight: '75vh',
@@ -89,16 +89,16 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
       >
         {/* Handle */}
         <div className="flex justify-center pt-2 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="w-10 h-1 bg-gray-300 dark:bg-slate-600 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0 h-14">
-          <h2 className="text-base font-semibold text-gray-900">Comentários</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 flex-shrink-0 h-14">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">Comentários</h2>
           <button 
             onClick={onClose}
             type="button"
-            className="w-11 h-11 flex items-center justify-center text-gray-500 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            className="w-11 h-11 flex items-center justify-center text-gray-500 dark:text-slate-400 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 active:bg-gray-200 dark:active:bg-slate-700 transition-colors"
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -117,12 +117,12 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
           }}
         >
           {comments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500">
-              <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" className="text-gray-300 mb-3">
+            <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500 dark:text-slate-400">
+              <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" className="text-gray-300 dark:text-slate-600 mb-3">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337L5 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
               </svg>
               <p className="font-medium text-sm mb-1">Nenhum comentário ainda</p>
-              <span className="text-xs text-gray-400">Seja o primeiro a comentar!</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500">Seja o primeiro a comentar!</span>
             </div>
           ) : (
             <>
@@ -138,17 +138,17 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                         {comment.author.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="bg-gray-50 rounded-2xl px-3.5 py-2.5">
-                          <p className="font-semibold text-sm text-gray-900 mb-0.5">{comment.author}</p>
-                          <p className="text-sm text-gray-700 leading-relaxed break-words">{comment.content}</p>
+                        <div className="bg-gray-50 dark:bg-slate-800 rounded-2xl px-3.5 py-2.5">
+                          <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 mb-0.5">{comment.author}</p>
+                          <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed break-words">{comment.content}</p>
                         </div>
                         <div className="flex items-center gap-4 mt-1.5 pl-3.5">
-                          <span className="text-xs text-gray-500">{comment.timeAgo}</span>
+                          <span className="text-xs text-gray-500 dark:text-slate-400">{comment.timeAgo}</span>
                           <button
                             onClick={() => handleLikeComment(comment.id)}
                             type="button"
                             className={`flex items-center space-x-1 min-h-[44px] transition-colors ${
-                              comment.liked ? 'text-red-600' : 'text-gray-500'
+                              comment.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-slate-400'
                             }`}
                           >
                             <svg
@@ -175,7 +175,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                           <button
                             onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
                             type="button"
-                            className="text-xs font-semibold text-gray-500 min-h-[44px] flex items-center"
+                            className="text-xs font-semibold text-gray-500 dark:text-slate-400 min-h-[44px] flex items-center"
                           >
                             Responder
                           </button>
@@ -186,7 +186,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                           <button
                             onClick={() => setShowReplies((prev) => ({ ...prev, [comment.id]: !prev[comment.id] }))}
                             type="button"
-                            className="text-xs text-gray-500 mt-2 pl-3.5 min-h-[32px] flex items-center"
+                            className="text-xs text-gray-500 dark:text-slate-400 mt-2 pl-3.5 min-h-[32px] flex items-center"
                           >
                             {isShowingReplies ? 'Ocultar' : 'Ver'} {replies.length} {replies.length === 1 ? 'resposta' : 'respostas'}
                           </button>
@@ -203,7 +203,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                               value={replyText[comment.id] || ''}
                               onChange={(e) => setReplyText((prev) => ({ ...prev, [comment.id]: e.target.value }))}
                               placeholder={`Responder ${comment.author}...`}
-                              className="flex-1 min-w-0 px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded-2xl outline-none focus:bg-white focus:border-blue-500 transition-colors"
+                              className="flex-1 min-w-0 px-3 py-2 text-sm bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-2xl outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
                               style={{ WebkitAppearance: 'none', fontSize: '16px' }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -217,7 +217,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                               onClick={() => handleReplySubmit(comment.id)}
                               type="button"
                               disabled={!replyText[comment.id]?.trim()}
-                              className="px-3 py-2 text-sm font-bold text-blue-600 disabled:text-gray-400 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
+                              className="px-3 py-2 text-sm font-bold text-blue-600 dark:text-blue-400 disabled:text-gray-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed flex-shrink-0 whitespace-nowrap"
                             >
                               Enviar
                             </button>
@@ -226,24 +226,24 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
                         
                         {/* Lista de respostas */}
                         {isShowingReplies && replies.length > 0 && (
-                          <div className="mt-3 ml-3.5 space-y-3 border-l-2 border-gray-200 pl-3">
+                          <div className="mt-3 ml-3.5 space-y-3 border-l-2 border-gray-200 dark:border-slate-600 pl-3">
                             {replies.map((reply) => (
                               <div key={reply.id} className="flex gap-2">
                                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
                                   {reply.author.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="bg-gray-50 rounded-2xl px-3 py-2">
-                                    <p className="font-semibold text-xs text-gray-900 mb-0.5">{reply.author}</p>
-                                    <p className="text-xs text-gray-700 leading-relaxed break-words">{reply.content}</p>
+                                  <div className="bg-gray-50 dark:bg-slate-800 rounded-2xl px-3 py-2">
+                                    <p className="font-semibold text-xs text-gray-900 dark:text-slate-100 mb-0.5">{reply.author}</p>
+                                    <p className="text-xs text-gray-700 dark:text-slate-300 leading-relaxed break-words">{reply.content}</p>
                                   </div>
                                   <div className="flex items-center gap-3 mt-1 pl-3">
-                                    <span className="text-[10px] text-gray-500">{reply.timeAgo}</span>
+                                    <span className="text-[10px] text-gray-500 dark:text-slate-400">{reply.timeAgo}</span>
                                     <button
                                       onClick={() => handleLikeComment(reply.id)}
                                       type="button"
                                       className={`flex items-center space-x-1 min-h-[32px] transition-colors ${
-                                        reply.liked ? 'text-red-600' : 'text-gray-500'
+                                        reply.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-slate-400'
                                       }`}
                                     >
                                       <svg
@@ -284,7 +284,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
         </div>
 
         {/* Barra de emojis - FIXO */}
-        <div className="flex-shrink-0 border-t border-gray-100 bg-gray-50 px-3 py-2 flex items-center gap-1.5 overflow-x-auto h-14">
+        <div className="flex-shrink-0 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/80 px-3 py-2 flex items-center gap-1.5 overflow-x-auto h-14">
           {['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂'].map((emoji, index) => (
             <button
               key={index}
@@ -302,7 +302,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
 
         {/* Campo de entrada - SEMPRE FIXO E VISÍVEL */}
         <div 
-          className="flex-shrink-0 bg-white border-t-2 border-gray-200 px-4 py-3 flex items-center"
+          className="flex-shrink-0 bg-white dark:bg-black border-t-2 border-gray-200 dark:border-neutral-800 px-4 py-3 flex items-center"
           style={{
             minHeight: '80px',
             height: '80px',
@@ -323,7 +323,7 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Adicione um comentário..."
-              className="flex-1 px-4 py-3 text-base bg-gray-100 border border-gray-300 rounded-3xl outline-none focus:bg-white focus:border-blue-500 transition-colors"
+              className="flex-1 px-4 py-3 text-base bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-3xl outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
               style={{
                 WebkitAppearance: 'none',
                 fontSize: '16px', // Previne zoom no iOS
@@ -332,9 +332,8 @@ export function CommentsSection({ postId, isOpen, onClose }: CommentsSectionProp
             <button
               type="submit"
               disabled={!commentText.trim()}
-              className="px-4 py-3 text-base font-bold flex-shrink-0 transition-colors min-h-[44px] flex items-center"
+              className="px-4 py-3 text-base font-bold flex-shrink-0 transition-colors min-h-[44px] flex items-center text-blue-600 dark:text-blue-400 disabled:text-gray-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed"
               style={{
-                color: commentText.trim() ? '#3b82f6' : '#9ca3af',
                 cursor: commentText.trim() ? 'pointer' : 'not-allowed',
               }}
             >

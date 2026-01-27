@@ -288,11 +288,11 @@ export default function CourseDetailPage() {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
         <div className="animate-pulse space-y-4 sm:space-y-6">
-          <div className="h-6 sm:h-8 bg-gray-200 rounded w-1/2 sm:w-1/3"></div>
-          <div className="h-48 sm:h-64 bg-gray-200 rounded-xl"></div>
+          <div className="h-6 sm:h-8 bg-gray-200 dark:bg-neutral-800 rounded w-1/2 sm:w-1/3"></div>
+          <div className="h-48 sm:h-64 bg-gray-200 dark:bg-neutral-800 rounded-xl"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-40 sm:h-48 bg-gray-200 rounded-xl"></div>
+              <div key={i} className="h-40 sm:h-48 bg-gray-200 dark:bg-neutral-800 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function CourseDetailPage() {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
         <Card className="text-center py-8 sm:py-12">
-          <p className="text-sm sm:text-base text-gray-600 mb-4">Curso não encontrado</p>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400 mb-4">Curso não encontrado</p>
           <Button onClick={() => router.push('/dashboard/cursos')} className="text-sm sm:text-base">
             Voltar para Cursos
           </Button>
@@ -315,16 +315,15 @@ export default function CourseDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
-      {/* Header */}
       <div className="mb-6 sm:mb-8">
         <button
           onClick={() => router.push('/dashboard/cursos')}
-          className="text-sm sm:text-base text-gray-600 hover:text-gray-900 mb-3 sm:mb-4 inline-flex items-center"
+          className="text-sm sm:text-base text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white mb-3 sm:mb-4 inline-flex items-center"
         >
           ← Voltar para Cursos
         </button>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">{course.title}</h1>
-        <p className="text-base sm:text-lg md:text-xl text-gray-600">{course.description}</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{course.title}</h1>
+        <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-neutral-400">{course.description}</p>
       </div>
 
       {/* Hero Section */}
@@ -379,7 +378,6 @@ export default function CourseDetailPage() {
         </div>
       </Card>
 
-      {/* Módulos */}
       <div className="mb-6">
         <div className="flex items-center space-x-2 mb-4 sm:mb-6">
           <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -387,7 +385,7 @@ export default function CourseDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Módulos do Curso</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Módulos do Curso</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -432,14 +430,14 @@ export default function CourseDetailPage() {
                   </div>
                 )}
                 <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-                  <span className="bg-white/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-gray-900">
+                  <span className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-gray-900 dark:text-neutral-100">
                     MÓDULO {module.number}
                   </span>
                 </div>
               </div>
               <div className="p-3 sm:p-4">
-                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1 sm:mb-2">{module.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-600">{module.description}</p>
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">{module.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-neutral-400">{module.description}</p>
               </div>
             </Card>
           ))}

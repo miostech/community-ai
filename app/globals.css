@@ -1,8 +1,46 @@
 @import "tailwindcss";
 
+/* Dark mode: classe .dark no html (controlada por ThemeContext) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light mode – WCAG AA: texto ≥4.5:1, grande ≥3:1 */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827;
+  --foreground-muted: #4b5563;
+  --foreground-subtle: #6b7280;
+  --card: rgba(255, 255, 255, 0.9);
+  --card-border: #f3f4f6;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --input-bg: transparent;
+  --input-border: #e5e7eb;
+  --placeholder: #9ca3af;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --blob-blue: rgba(191, 219, 254, 0.4);
+  --blob-purple: rgba(233, 213, 255, 0.4);
+  --blob-pink: rgba(252, 231, 243, 0.4);
+}
+
+/* Dark mode – fundo preto, contrastes acessíveis */
+.dark {
+  --background: #000000;
+  --foreground: #fafafa;
+  --foreground-muted: #a3a3a3;
+  --foreground-subtle: #737373;
+  --card: rgba(10, 10, 10, 0.95);
+  --card-border: #262626;
+  --border: #262626;
+  --border-strong: #404040;
+  --input-bg: rgba(0, 0, 0, 0.5);
+  --input-border: #262626;
+  --placeholder: #737373;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --blob-blue: rgba(59, 130, 246, 0.12);
+  --blob-purple: rgba(139, 92, 246, 0.12);
+  --blob-pink: rgba(236, 72, 153, 0.12);
 }
 
 @theme inline {
@@ -12,17 +50,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 * {
@@ -130,6 +162,11 @@ body {
   
   button, a {
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .dark button,
+  .dark a {
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0.08);
   }
 }
 

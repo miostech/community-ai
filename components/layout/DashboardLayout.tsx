@@ -12,18 +12,20 @@ import { ChatHistoryProvider } from '@/contexts/ChatHistoryContext';
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isComunidadePage = pathname === '/dashboard/comunidade';
+  const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
+  const hideBlobs = isComunidadePage || isCriarPostPage;
 
   return (
     <PostsProvider>
       <CreatePostProvider>
         <ChatHistoryProvider>
-        <div className="flex min-h-screen bg-white relative overflow-hidden">
+        <div className="flex min-h-screen bg-white dark:bg-black relative overflow-hidden">
       {/* Background decorative elements - apenas em páginas que não sejam comunidade */}
-      {!isComunidadePage && (
+      {!hideBlobs && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-100 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100 dark:bg-blue-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-100 dark:bg-purple-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-100 dark:bg-pink-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob animation-delay-4000"></div>
         </div>
       )}
 

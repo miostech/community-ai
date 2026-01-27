@@ -86,7 +86,7 @@ export function MobileMenu() {
   return (
     <>
       {/* Bottom Navigation Bar - Estilo Instagram */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-inset-bottom transition-opacity ${
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-neutral-800 z-50 safe-area-inset-bottom transition-opacity ${
         isModalOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}>
         <div className="flex items-center justify-around px-2 py-2 pb-safe">
@@ -95,7 +95,6 @@ export function MobileMenu() {
             const isProfile = item.href === '/dashboard/perfil';
             const isCreate = item.label === 'Criar';
             
-            // Botão Criar é especial - tem ícone diferente
             if (isCreate) {
               return (
                 <Link
@@ -121,11 +120,10 @@ export function MobileMenu() {
                 }`}
               >
                 {isProfile ? (
-                  // Avatar para perfil
                   <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center overflow-hidden ${
                     isActive 
-                      ? 'border-gray-900' 
-                      : 'border-gray-300'
+                      ? 'border-gray-900 dark:border-slate-100' 
+                      : 'border-gray-300 dark:border-slate-600'
                   }`}>
                     {user.avatar ? (
                       <img
@@ -142,14 +140,12 @@ export function MobileMenu() {
                     )}
                   </div>
                 ) : (
-                  // Ícones normais
-                  <div className={isActive ? 'text-gray-900' : 'text-gray-500'}>
+                  <div className={isActive ? 'text-gray-900 dark:text-slate-100' : 'text-gray-500 dark:text-slate-400'}>
                     {item.icon}
                   </div>
                 )}
-                {/* Indicador de aba ativa */}
                 {isActive && !isProfile && (
-                  <div className="w-1 h-1 bg-gray-900 rounded-full mt-1"></div>
+                  <div className="w-1 h-1 bg-gray-900 dark:bg-slate-100 rounded-full mt-1"></div>
                 )}
               </Link>
             );

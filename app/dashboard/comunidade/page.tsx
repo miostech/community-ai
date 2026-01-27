@@ -87,22 +87,20 @@ export default function ComunidadePage() {
     : posts;
 
   return (
-    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white min-h-screen">
-      {/* Header fixo no mobile - estilo Instagram */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 mb-0 shadow-sm backdrop-blur-lg bg-white/95">
+    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen">
+      <div className="sticky top-0 z-40 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 px-4 py-3 mb-0 shadow-sm backdrop-blur-lg bg-white/95 dark:bg-black/95">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">IA</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Comunidade</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">Comunidade</h1>
           </div>
           <div className="flex items-center space-x-2">
-            {/* Botão de refresh manual (mobile) */}
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="sm:hidden w-8 h-8 flex items-center justify-center text-gray-600 active:bg-gray-100 rounded-full transition-all"
+              className="sm:hidden w-8 h-8 flex items-center justify-center text-gray-600 dark:text-slate-400 active:bg-gray-100 dark:active:bg-slate-800 rounded-full transition-all"
             >
               <svg 
                 className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -118,7 +116,7 @@ export default function ComunidadePage() {
               className={`inline-flex items-center justify-center text-sm px-3 sm:px-4 py-2 h-auto shadow-md rounded-lg font-medium transition-all ${
                 showSavedOnly
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600'
               }`}
             >
               <svg 
@@ -149,17 +147,16 @@ export default function ComunidadePage() {
         </div>
       )}
 
-      {/* Stories - estilo Instagram - largura completa */}
-      <div className="mb-0 bg-white border-b border-gray-200 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
+      <div className="mb-0 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
         <Stories users={topUsers} />
       </div>
 
       {/* Feed de posts - estilo Instagram */}
       <div className="space-y-0">
         {displayedPosts.length === 0 && showSavedOnly ? (
-          <div className="bg-white border-b border-gray-200 p-8 text-center">
+          <div className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 p-8 text-center">
             <svg
-              className="w-16 h-16 mx-auto text-gray-400 mb-4"
+              className="w-16 h-16 mx-auto text-gray-400 dark:text-slate-500 mb-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -171,21 +168,20 @@ export default function ComunidadePage() {
                 d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
               />
             </svg>
-            <p className="text-gray-600 font-medium mb-1">Nenhum post salvo ainda</p>
-            <p className="text-sm text-gray-500">Salve posts que você gostou para encontrá-los facilmente depois</p>
+            <p className="text-gray-600 dark:text-slate-300 font-medium mb-1">Nenhum post salvo ainda</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400">Salve posts que você gostou para encontrá-los facilmente depois</p>
           </div>
         ) : (
           displayedPosts.map((post) => (
-          <div key={post.id} className="bg-white border-b border-gray-200 last:border-b-0">
+          <div key={post.id} className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 last:border-b-0">
             <div className="p-3 sm:p-4">
-              {/* Header do post */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                   {typeof post.avatar === 'string' && post.avatar.length > 2 ? (
                     <img
                       src={post.avatar}
                       alt={post.author}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0"
                     />
                   ) : (
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
@@ -193,17 +189,16 @@ export default function ComunidadePage() {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm text-gray-900 truncate">{post.author}</p>
-                    <p className="text-xs text-gray-500">{post.timeAgo}</p>
+                    <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 truncate">{post.author}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">{post.timeAgo}</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
+                <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
                   {postTypeLabels[post.type]}
                 </span>
               </div>
 
-              {/* Conteúdo */}
-              <div className="text-sm text-gray-900 whitespace-pre-line break-words mb-3 leading-relaxed">
+              <div className="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-line break-words mb-3 leading-relaxed">
                 {post.content}
               </div>
 
@@ -238,7 +233,7 @@ export default function ComunidadePage() {
                   <img
                     src={post.imageUrl}
                     alt="Post image"
-                    className="w-full aspect-square object-cover bg-gray-100"
+                    className="w-full aspect-square object-cover bg-gray-100 dark:bg-slate-800"
                     loading="lazy"
                   />
                   {/* Animação de coração ao dar duplo clique */}
@@ -268,7 +263,7 @@ export default function ComunidadePage() {
                 <button
                   onClick={() => handleLike(post.id)}
                   className={`flex items-center space-x-1.5 transition-all active:scale-95 ${
-                    post.liked ? 'text-red-600' : 'text-gray-900'
+                    post.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-slate-100'
                   }`}
                 >
                   <svg
@@ -292,7 +287,7 @@ export default function ComunidadePage() {
                 </button>
                 <button 
                   onClick={() => setActiveCommentsPostId(post.id)}
-                  className="flex items-center space-x-1.5 text-gray-900 active:scale-95 transition-all"
+                  className="flex items-center space-x-1.5 text-gray-900 dark:text-slate-100 active:scale-95 transition-all"
                 >
                   <svg
                     className="w-6 h-6 sm:w-7 sm:h-7"
@@ -312,7 +307,7 @@ export default function ComunidadePage() {
                 <button 
                   onClick={() => toggleSavePost(post.id)}
                   className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${
-                    post.saved ? 'text-blue-600' : 'text-gray-900'
+                    post.saved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-slate-100'
                   }`}
                 >
                   <svg

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "@/contexts/UserContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,6 +13,20 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const themeScript = `
+(function() {
+  try {
+    var k = 'theme';
+    var v = localStorage.getItem(k);
+    var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var useDark = v === 'dark' || (v !== 'light' && dark);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(useDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', useDark ? 'dark' : 'light');
+  } catch (e) {}
+})();
+`;
 
 export const metadata: Metadata = {
   title: "Conteúdo IA - Crie conteúdo com inteligência artificial",
@@ -24,13 +39,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <UserProvider>
-          {children}
-        </UserProvider>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ThemeProvider>
+          <UserProvider>
+            {children}
+          </UserProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

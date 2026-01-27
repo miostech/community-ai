@@ -116,15 +116,15 @@ export default function CursosPage() {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Cursos</h1>
-          <p className="text-sm sm:text-base text-gray-600">Monetize seu conhecimento</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Cursos</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">Monetize seu conhecimento</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
-              <div className="h-40 sm:h-48 bg-gray-200 rounded-xl mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div className="h-40 sm:h-48 bg-gray-200 dark:bg-neutral-800 rounded-xl mb-4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-neutral-800 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-neutral-800 rounded w-full"></div>
             </Card>
           ))}
         </div>
@@ -134,17 +134,11 @@ export default function CursosPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
-      {/* Hero Section */}
       <div className="mb-6 sm:mb-8 md:mb-12 text-center">
         <div className="inline-flex items-center space-x-2 mb-3 sm:mb-4">
-          {/* <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center"> */}
-            {/* <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg> */}
-          {/* </div> */}
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Cursos</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Cursos</h1>
         </div>
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-2">
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-neutral-400 max-w-2xl mx-auto px-2">
           Monetize seu conhecimento. Aprenda como realizar suas primeiras vendas como expert para sua audiência.
         </p>
       </div>
@@ -183,7 +177,7 @@ export default function CursosPage() {
                 </div>
               )}
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                <span className="bg-white/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900">
+                <span className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900 dark:text-neutral-100">
                   {course.modules} módulos
                 </span>
               </div>
@@ -191,11 +185,11 @@ export default function CursosPage() {
 
             <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div>
-                <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-1 sm:mb-2">{course.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{course.description}</p>
+                <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">{course.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-neutral-400 leading-relaxed">{course.description}</p>
               </div>
 
-              <div className="pt-3 sm:pt-4 border-t border-gray-200">
+              <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-neutral-700">
                 {course.isAvailable ? (
                   <Button
                     className="w-full text-sm sm:text-base"
@@ -227,7 +221,7 @@ export default function CursosPage() {
 
       {courses.length === 0 && !isLoading && (
         <Card className="text-center py-8 sm:py-12">
-          <div className="text-gray-400 mb-4">
+          <div className="text-gray-400 dark:text-neutral-500 mb-4">
             <svg
               className="w-12 h-12 sm:w-16 sm:h-16 mx-auto"
               fill="none"
@@ -242,10 +236,10 @@ export default function CursosPage() {
               />
             </svg>
           </div>
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Nenhum curso disponível
           </h3>
-          <p className="text-sm sm:text-base text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">
             Novos cursos em breve!
           </p>
         </Card>

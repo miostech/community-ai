@@ -152,38 +152,29 @@ export default function TrendsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white min-h-screen">
-      {/* Header Fixo */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-100 backdrop-blur-lg bg-white/95">
+    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen">
+      <div className="sticky top-0 z-40 bg-white dark:bg-black border-b border-gray-100 dark:border-neutral-800 backdrop-blur-lg bg-white/95 dark:bg-black/95">
         <div className="px-4 py-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Top Trends</h1>
-          <p className="text-sm text-gray-600 mt-1">Assuntos em alta, que estão gerando muito engajamento e conversão pra você se inspirar e criar conteúdo.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">Top Trends</h1>
+          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Assuntos em alta, que estão gerando muito engajamento e conversão pra você se inspirar e criar conteúdo.</p>
         </div>
       </div>
 
-      {/* Lista de Trends - Estilo Clean */}
       <div className="px-4 py-4">
         {mockTrends.map((trend, index) => {
-          // TODO: Implementar funcionalidade de expandir
-          // const isExpanded = expandedTrend === trend.id;
-          
           return (
             <div key={trend.id} className="mb-4">
               <div className="flex items-start gap-3 py-3">
-                {/* TODO: Adicionar onClick para expandir depois */}
-                {/* Ranking Number */}
                 <div className="flex-shrink-0 w-8 flex items-center justify-start">
-                  <span className="text-lg font-bold text-gray-400">{index + 1}</span>
+                  <span className="text-lg font-bold text-gray-400 dark:text-slate-500">{index + 1}</span>
                 </div>
 
-                {/* Conteúdo */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 line-clamp-2">
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-slate-100 mb-1 line-clamp-2">
                     {trend.topic}
                   </h3>
                   
-                  {/* Métricas */}
-                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400">
                     <div className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
@@ -193,7 +184,7 @@ export default function TrendsPage() {
                     </div>
                     
                     {/* Indicador de Crescimento */}
-                    <div className="flex items-center gap-1 text-green-600">
+                    <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                       </svg>
@@ -202,7 +193,7 @@ export default function TrendsPage() {
                 </div>
 
                 {/* Thumbnail */}
-                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100">
+                <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-slate-800">
                   <img
                     src={trend.thumbnail}
                     alt={trend.topic}
@@ -250,7 +241,7 @@ export default function TrendsPage() {
 
               {/* Divider */}
               {index < mockTrends.length - 1 && (
-                <div className="border-t border-gray-100 mt-4"></div>
+                <div className="border-t border-gray-100 dark:border-slate-800 mt-4"></div>
               )}
             </div>
           );
