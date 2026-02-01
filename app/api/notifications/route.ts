@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Notification from '@/models/Notification';
 import Account from '@/models/Account';
+import Comment from '@/models/Comment';
 import { markNotificationsAsRead, countUnreadNotifications } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
@@ -24,6 +25,7 @@ export interface NotificationItem {
   post_id?: string;
   comment_id?: string;
   content_preview?: string;
+  likes_count?: number;
 }
 
 function getDisplayName(first?: string, last?: string): string {
@@ -80,6 +82,20 @@ export async function GET() {
     // Contar não lidas
     const unreadCount = await countUnreadNotifications(accountId);
 
+    // Buscar likes_count dos comentários para notificações de like em comentário
+    const commentIds = notifications
+      .filter((n) => n.type === 'like' && n.comment_id)
+      .map((n) => n.comment_id);
+
+    const commentsWithLikes = await Comment.find({
+      _id: { $in: commentIds }
+    }).select('_id likes_count').lean();
+
+    const commentLikesMap = new Map<string, number>();
+    commentsWithLikes.forEach((c: any) => {
+      commentLikesMap.set(c._id.toString(), c.likes_count || 0);
+    });
+
     // Formatar para o frontend
     const formattedNotifications: NotificationItem[] = notifications.map((n) => {
       const actor = n.actor_id as unknown as {
@@ -88,6 +104,12 @@ export async function GET() {
         last_name?: string;
         avatar_url?: string;
       } | null;
+
+      // Buscar likes_count do comentário se for uma notificação de like em comentário
+      let likesCount: number | undefined;
+      if (n.type === 'like' && n.comment_id) {
+        likesCount = commentLikesMap.get(n.comment_id.toString());
+      }
 
       return {
         id: n._id.toString(),
@@ -102,6 +124,7 @@ export async function GET() {
         post_id: n.post_id?.toString(),
         comment_id: n.comment_id?.toString(),
         content_preview: n.content_preview || undefined,
+        likes_count: likesCount,
       };
     });
 

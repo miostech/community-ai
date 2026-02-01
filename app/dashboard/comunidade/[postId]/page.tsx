@@ -31,7 +31,7 @@ import {
     Delete as DeleteIcon,
     Favorite as FavoriteIcon,
     FavoriteBorder as FavoriteBorderIcon,
-    ChatBubbleOutline as CommentIcon,
+    TextsmsOutlined as CommentIcon,
     BookmarkBorder as BookmarkIcon,
     Bookmark as BookmarkFilledIcon,
     OpenInNew as OpenInNewIcon,

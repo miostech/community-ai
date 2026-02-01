@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from '@/contexts/AccountContext';
+import { usePosts } from '@/contexts/PostsContext';
 import {
   Box,
   Typography,
@@ -61,6 +62,7 @@ const categoryLabels: Record<PostCategory, string> = {
 export default function CriarPostPageMui() {
   const router = useRouter();
   const { account } = useAccount();
+  const { addPostToFeed } = usePosts();
   const theme = useTheme();
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -283,6 +285,30 @@ export default function CriarPostPageMui() {
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Erro ao publicar post');
+      }
+
+      const data = await response.json();
+
+      // Adicionar o novo post ao feed
+      if (data.post) {
+        addPostToFeed({
+          id: data.post.id || data.post._id,
+          author: {
+            id: account?.id || '',
+            name: `${account?.first_name || ''} ${account?.last_name || ''}`.trim() || 'Eu',
+            avatar_url: account?.avatar_url || undefined,
+          },
+          content: newPost.content,
+          images: imageUrls,
+          video_url: finalVideoUrl || undefined,
+          link_instagram_post: newPost.link_instagram_post || undefined,
+          category: newPost.category,
+          likes_count: 0,
+          comments_count: 0,
+          created_at: new Date().toISOString(),
+          liked: false,
+          saved: false,
+        });
       }
 
       router.push('/dashboard/comunidade');
@@ -526,13 +552,6 @@ export default function CriarPostPageMui() {
             <Stack spacing={2}>
               {!uploadedVideo ? (
                 <>
-                  <input
-                    ref={videoInputRef}
-                    type="file"
-                    accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"
-                    onChange={handleVideoSelect}
-                    style={{ display: 'none' }}
-                  />
                   <Box
                     onClick={() => videoInputRef.current?.click()}
                     sx={{
@@ -577,6 +596,13 @@ export default function CriarPostPageMui() {
                       </Typography>
                     </Box>
                   </Box>
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"
+                    onChange={handleVideoSelect}
+                    style={{ display: 'none', height: 0 }}
+                  />
                 </>
               ) : (
                 <Box>

@@ -9,7 +9,7 @@ import {
     Stack,
     Badge,
 } from '@mui/material';
-import { ThumbUp as ThumbUpIcon } from '@mui/icons-material';
+import { LocalFireDepartment as ThumbUpIcon } from '@mui/icons-material';
 
 interface StoryUser {
     id: string;
@@ -164,10 +164,10 @@ export function StoriesMui({ users }: StoriesProps) {
                             </Typography>
 
                             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
-                                <ThumbUpIcon sx={{ fontSize: 10, color: 'text.secondary' }} />
+                                <ThumbUpIcon sx={{ fontSize: 12, color: 'purple' }} />
                                 <Typography
                                     variant="caption"
-                                    sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 500 }}
+                                    sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}
                                 >
                                     {user.interactionCount}
                                 </Typography>

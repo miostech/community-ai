@@ -22,7 +22,7 @@ import {
 import {
     Favorite as FavoriteIcon,
     FavoriteBorder as FavoriteBorderIcon,
-    ChatBubbleOutline as CommentIcon,
+    TextsmsOutlined as CommentIcon,
     BookmarkBorder as BookmarkBorderIcon,
     Bookmark as BookmarkIcon,
     MoreVert as MoreVertIcon,

@@ -16,12 +16,14 @@ import {
 } from '@mui/material';
 import {
     Close as CloseIcon,
-    ChatBubbleOutline as ChatIcon,
+    TextsmsOutlined as ChatIcon,
     Delete as DeleteIcon,
     Reply as ReplyIcon,
     ExpandMore as ExpandMoreIcon,
     ExpandLess as ExpandLessIcon,
     Send as SendIcon,
+    FavoriteBorder as FavoriteBorderIcon,
+    Favorite as FavoriteIcon,
 } from '@mui/icons-material';
 import { useAccount } from '@/contexts/AccountContext';
 
@@ -37,6 +39,7 @@ interface Reply {
     content: string;
     created_at: string;
     likes_count?: number;
+    liked?: boolean;
 }
 
 interface Comment {
@@ -235,6 +238,106 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         inputRef.current?.focus();
     };
 
+    // Like em comentário
+    const handleLikeComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+        try {
+            // Atualização otimista
+            if (isReply && parentId) {
+                setComments(prev =>
+                    prev.map(comment => {
+                        if (comment._id === parentId) {
+                            return {
+                                ...comment,
+                                replies: comment.replies?.map(reply => {
+                                    if (reply._id === commentId) {
+                                        const newLiked = !reply.liked;
+                                        return {
+                                            ...reply,
+                                            liked: newLiked,
+                                            likes_count: newLiked
+                                                ? (reply.likes_count || 0) + 1
+                                                : Math.max(0, (reply.likes_count || 0) - 1),
+                                        };
+                                    }
+                                    return reply;
+                                }),
+                            };
+                        }
+                        return comment;
+                    })
+                );
+            } else {
+                setComments(prev =>
+                    prev.map(comment => {
+                        if (comment._id === commentId) {
+                            const newLiked = !comment.liked;
+                            return {
+                                ...comment,
+                                liked: newLiked,
+                                likes_count: newLiked
+                                    ? (comment.likes_count || 0) + 1
+                                    : Math.max(0, (comment.likes_count || 0) - 1),
+                            };
+                        }
+                        return comment;
+                    })
+                );
+            }
+
+            // Chamar API
+            const response = await fetch(`/api/comments/${commentId}/like`, {
+                method: 'POST',
+            });
+
+            if (!response.ok) {
+                // Reverter em caso de erro
+                if (isReply && parentId) {
+                    setComments(prev =>
+                        prev.map(comment => {
+                            if (comment._id === parentId) {
+                                return {
+                                    ...comment,
+                                    replies: comment.replies?.map(reply => {
+                                        if (reply._id === commentId) {
+                                            const newLiked = !reply.liked;
+                                            return {
+                                                ...reply,
+                                                liked: newLiked,
+                                                likes_count: newLiked
+                                                    ? (reply.likes_count || 0) + 1
+                                                    : Math.max(0, (reply.likes_count || 0) - 1),
+                                            };
+                                        }
+                                        return reply;
+                                    }),
+                                };
+                            }
+                            return comment;
+                        })
+                    );
+                } else {
+                    setComments(prev =>
+                        prev.map(comment => {
+                            if (comment._id === commentId) {
+                                const newLiked = !comment.liked;
+                                return {
+                                    ...comment,
+                                    liked: newLiked,
+                                    likes_count: newLiked
+                                        ? (comment.likes_count || 0) + 1
+                                        : Math.max(0, (comment.likes_count || 0) - 1),
+                                };
+                            }
+                            return comment;
+                        })
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao dar like no comentário:', error);
+        }
+    };
+
     const userName = account?.first_name || 'U';
     const userInitial = userName.charAt(0).toUpperCase();
 
@@ -357,10 +460,35 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             </Typography>
                                         </Box>
 
-                                        <Stack direction="row" spacing={2} sx={{ mt: 0.75, pl: 1.5 }}>
+                                        <Stack direction="row" spacing={2} sx={{ mt: 0.75, pl: 1.5 }} alignItems="center">
                                             <Typography variant="caption" color="text.secondary">
                                                 {formatTimeAgo(comment.created_at)}
                                             </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleLikeComment(comment._id)}
+                                                sx={{
+                                                    p: 0.25,
+                                                    color: comment.liked ? 'error.main' : 'text.secondary',
+                                                    '&:hover': { color: 'error.main' },
+                                                }}
+                                            >
+                                                {comment.liked ? (
+                                                    <FavoriteIcon sx={{ fontSize: '0.875rem' }} />
+                                                ) : (
+                                                    <FavoriteBorderIcon sx={{ fontSize: '0.875rem' }} />
+                                                )}
+                                            </IconButton>
+                                            {(comment.likes_count || 0) > 0 && (
+                                                <Typography
+                                                    variant="caption"
+                                                    color={comment.liked ? 'error.main' : 'text.secondary'}
+                                                    fontWeight={600}
+                                                    sx={{ ml: -1.5 }}
+                                                >
+                                                    {comment.likes_count}
+                                                </Typography>
+                                            )}
                                             <Button
                                                 size="small"
                                                 onClick={() => handleReply(comment._id, comment.author.name)}
@@ -456,10 +584,35 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         {reply.content}
                                                                     </Typography>
                                                                 </Box>
-                                                                <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }}>
+                                                                <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center">
                                                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
                                                                         {formatTimeAgo(reply.created_at)}
                                                                     </Typography>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => handleLikeComment(reply._id, true, comment._id)}
+                                                                        sx={{
+                                                                            p: 0.25,
+                                                                            color: reply.liked ? 'error.main' : 'text.secondary',
+                                                                            '&:hover': { color: 'error.main' },
+                                                                        }}
+                                                                    >
+                                                                        {reply.liked ? (
+                                                                            <FavoriteIcon sx={{ fontSize: '0.75rem' }} />
+                                                                        ) : (
+                                                                            <FavoriteBorderIcon sx={{ fontSize: '0.75rem' }} />
+                                                                        )}
+                                                                    </IconButton>
+                                                                    {(reply.likes_count || 0) > 0 && (
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            color={reply.liked ? 'error.main' : 'text.secondary'}
+                                                                            fontWeight={600}
+                                                                            sx={{ ml: -1, fontSize: '0.6875rem' }}
+                                                                        >
+                                                                            {reply.likes_count}
+                                                                        </Typography>
+                                                                    )}
                                                                     {isMyComment(reply.author.id) && (
                                                                         <Button
                                                                             size="small"
@@ -528,6 +681,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     display: 'flex',
                     gap: 0.5,
                     overflowX: 'auto',
+                    backgroundColor: 'background.paper',
                 }}
             >
                 {quickEmojis.map((emoji, index) => (

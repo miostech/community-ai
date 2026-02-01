@@ -15,6 +15,7 @@ interface Reply {
   content: string;
   created_at: string;
   likes_count?: number;
+  liked?: boolean;
 }
 
 interface Comment {
@@ -247,6 +248,106 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
     inputRef.current?.focus();
   };
 
+  // Like em comentário
+  const handleLikeComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+    try {
+      // Atualização otimista
+      if (isReply && parentId) {
+        setComments(prev =>
+          prev.map(comment => {
+            if (comment._id === parentId) {
+              return {
+                ...comment,
+                replies: comment.replies?.map(reply => {
+                  if (reply._id === commentId) {
+                    const newLiked = !reply.liked;
+                    return {
+                      ...reply,
+                      liked: newLiked,
+                      likes_count: newLiked
+                        ? (reply.likes_count || 0) + 1
+                        : Math.max(0, (reply.likes_count || 0) - 1),
+                    };
+                  }
+                  return reply;
+                }),
+              };
+            }
+            return comment;
+          })
+        );
+      } else {
+        setComments(prev =>
+          prev.map(comment => {
+            if (comment._id === commentId) {
+              const newLiked = !comment.liked;
+              return {
+                ...comment,
+                liked: newLiked,
+                likes_count: newLiked
+                  ? (comment.likes_count || 0) + 1
+                  : Math.max(0, (comment.likes_count || 0) - 1),
+              };
+            }
+            return comment;
+          })
+        );
+      }
+
+      // Chamar API
+      const response = await fetch(`/api/comments/${commentId}/like`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        // Reverter em caso de erro
+        if (isReply && parentId) {
+          setComments(prev =>
+            prev.map(comment => {
+              if (comment._id === parentId) {
+                return {
+                  ...comment,
+                  replies: comment.replies?.map(reply => {
+                    if (reply._id === commentId) {
+                      const newLiked = !reply.liked;
+                      return {
+                        ...reply,
+                        liked: newLiked,
+                        likes_count: newLiked
+                          ? (reply.likes_count || 0) + 1
+                          : Math.max(0, (reply.likes_count || 0) - 1),
+                      };
+                    }
+                    return reply;
+                  }),
+                };
+              }
+              return comment;
+            })
+          );
+        } else {
+          setComments(prev =>
+            prev.map(comment => {
+              if (comment._id === commentId) {
+                const newLiked = !comment.liked;
+                return {
+                  ...comment,
+                  liked: newLiked,
+                  likes_count: newLiked
+                    ? (comment.likes_count || 0) + 1
+                    : Math.max(0, (comment.likes_count || 0) - 1),
+                };
+              }
+              return comment;
+            })
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao dar like no comentário:', error);
+    }
+  };
+
   if (!isOpen) return null;
 
   const userName = account?.first_name || 'U';
@@ -342,6 +443,29 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
                         </span>
                         <button
                           type="button"
+                          onClick={() => handleLikeComment(comment._id)}
+                          className={`text-xs font-semibold transition-colors flex items-center gap-1 ${comment.liked
+                              ? 'text-red-500 dark:text-red-400'
+                              : 'text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400'
+                            }`}
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill={comment.liked ? 'currentColor' : 'none'}
+                            stroke="currentColor"
+                            strokeWidth={comment.liked ? 0 : 2}
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                            />
+                          </svg>
+                          {(comment.likes_count || 0) > 0 && comment.likes_count}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleReply(comment._id, comment.author.name)}
                           className="text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
                         >
@@ -401,6 +525,29 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
                                   <span className="text-[11px] text-gray-500 dark:text-slate-400">
                                     {formatTimeAgo(reply.created_at)}
                                   </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleLikeComment(reply._id, true, comment._id)}
+                                    className={`text-[11px] font-semibold transition-colors flex items-center gap-1 ${reply.liked
+                                        ? 'text-red-500 dark:text-red-400'
+                                        : 'text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400'
+                                      }`}
+                                  >
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill={reply.liked ? 'currentColor' : 'none'}
+                                      stroke="currentColor"
+                                      strokeWidth={reply.liked ? 0 : 2}
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                                      />
+                                    </svg>
+                                    {(reply.likes_count || 0) > 0 && reply.likes_count}
+                                  </button>
                                   {isMyComment(reply.author.id) && (
                                     <button
                                       type="button"

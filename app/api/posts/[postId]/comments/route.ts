@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Comment from '@/models/Comment';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
+import Like from '@/models/Like';
 import { createNotification } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
@@ -33,6 +34,17 @@ export async function GET(
         const post = await Post.findById(postObjectId);
         if (!post) {
             return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
+        }
+
+        // Buscar conta do usuário logado para verificar likes
+        let currentAccountId: mongoose.Types.ObjectId | null = null;
+        const session = await auth();
+        if (session?.user?.id) {
+            const authUserId = (session.user as any).auth_user_id || session.user.id;
+            const account = await Account.findOne({ auth_user_id: authUserId }).lean();
+            if (account) {
+                currentAccountId = account._id as mongoose.Types.ObjectId;
+            }
         }
 
         // Debug: buscar todos os comentários desse post sem filtros
@@ -86,6 +98,21 @@ export async function GET(
             repliesByParent[parentId].push(reply);
         });
 
+        // Buscar likes do usuário atual nos comentários e replies
+        let userLikedComments: Set<string> = new Set();
+        if (currentAccountId) {
+            const allCommentIds = [
+                ...comments.map((c: any) => c._id),
+                ...replies.map((r: any) => r._id)
+            ];
+            const userLikes = await Like.find({
+                user_id: currentAccountId,
+                target_type: 'comment',
+                target_id: { $in: allCommentIds },
+            }).lean();
+            userLikedComments = new Set(userLikes.map((l: any) => l.target_id.toString()));
+        }
+
         // Formatar comentários com replies
         const formattedComments = comments.map((comment: any) => {
             const author = comment.author_id;
@@ -100,6 +127,7 @@ export async function GET(
                 },
                 content: comment.content,
                 likes_count: comment.likes_count || 0,
+                liked: userLikedComments.has(comment._id.toString()),
                 replies_count: comment.replies_count || 0,
                 created_at: comment.created_at,
                 replies: commentReplies.map((reply: any) => {
@@ -113,6 +141,7 @@ export async function GET(
                         },
                         content: reply.content,
                         likes_count: reply.likes_count || 0,
+                        liked: userLikedComments.has(reply._id.toString()),
                         created_at: reply.created_at,
                     };
                 }),

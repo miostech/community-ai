@@ -204,22 +204,26 @@ export default function ComunidadePageMui() {
                   variant={showSavedOnly ? 'contained' : 'outlined'}
                   size="small"
                   onClick={() => setShowSavedOnly(!showSavedOnly)}
-                  startIcon={showSavedOnly ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                  startIcon={showSavedOnly ? <BookmarkIcon sx={{ color: 'white' }} /> : <BookmarkBorderIcon sx={{ color: 'text.primary' }} />}
                   sx={{
                     borderRadius: 2,
                     textTransform: 'none',
                     fontWeight: 500,
-                    minWidth: 'auto',
+                    minWidth: {
+                      xs: 32,
+                      sm: 100,
+                    },
                     px: { xs: 2, sm: 2 },
                     '& .MuiButton-startIcon': {
                       mr: { xs: 0, sm: 1 },
                     },
                     ...(showSavedOnly && {
                       background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                    })
+                    }),
+                    borderColor: showSavedOnly ? 'transparent' : 'text.secondary',
                   }}
                 >
-                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  <Box sx={{ display: { xs: 'none', sm: 'block' }, color: showSavedOnly ? 'white' : 'text.primary' }}>
                     {showSavedOnly ? 'Todos' : 'Salvos'}
                   </Box>
                 </Button>

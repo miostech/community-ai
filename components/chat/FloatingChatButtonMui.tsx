@@ -11,7 +11,7 @@ import {
     Typography,
     Zoom,
 } from '@mui/material';
-import { Chat as ChatIcon } from '@mui/icons-material';
+import { TextsmsOutlined as ChatIcon } from '@mui/icons-material';
 
 export function FloatingChatButtonMui() {
     const pathname = usePathname();
@@ -58,48 +58,48 @@ export function FloatingChatButtonMui() {
                         <Badge
                             overlap="circular"
                             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            badgeContent={
-                                <Box
-                                    sx={{
-                                        width: 16,
-                                        height: 16,
-                                        borderRadius: '50%',
-                                        bgcolor: 'success.main',
-                                        border: '2px solid',
-                                        borderColor: 'background.paper',
-                                        animation: 'pulse 2s infinite',
-                                        '@keyframes pulse': {
-                                            '0%, 100%': { opacity: 1 },
-                                            '50%': { opacity: 0.5 },
-                                        },
-                                    }}
-                                />
-                            }
+                        // badgeContent={
+                        //     <Box
+                        //         sx={{
+                        //             width: 16,
+                        //             height: 16,
+                        //             borderRadius: '50%',
+                        //             bgcolor: 'success.main',
+                        //             border: '2px solid',
+                        //             borderColor: 'background.paper',
+                        //             animation: 'pulse 2s infinite',
+                        //             '@keyframes pulse': {
+                        //                 '0%, 100%': { opacity: 1 },
+                        //                 '50%': { opacity: 0.5 },
+                        //             },
+                        //         }}
+                        //     />
+                        // }
                         >
                             <Badge
                                 overlap="circular"
                                 anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                                badgeContent={
-                                    <Box
-                                        sx={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #f472b6 0%, #fb923c 100%)',
-                                            border: '2px solid',
-                                            borderColor: 'background.paper',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '8px',
-                                            fontWeight: 'bold',
-                                            color: 'white',
-                                            boxShadow: 1,
-                                        }}
-                                    >
-                                        N&L
-                                    </Box>
-                                }
+                            // badgeContent={
+                            //     <Box
+                            //         sx={{
+                            //             width: 24,
+                            //             height: 24,
+                            //             borderRadius: '50%',
+                            //             background: 'linear-gradient(135deg, #f472b6 0%, #fb923c 100%)',
+                            //             border: '2px solid',
+                            //             borderColor: 'background.paper',
+                            //             display: 'flex',
+                            //             alignItems: 'center',
+                            //             justifyContent: 'center',
+                            //             fontSize: '8px',
+                            //             fontWeight: 'bold',
+                            //             color: 'white',
+                            //             boxShadow: 1,
+                            //         }}
+                            //     >
+                            //         N&L
+                            //     </Box>
+                            // }
                             >
                                 <Fab
                                     sx={{

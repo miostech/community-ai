@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
 import Like from '@/models/Like';
+import SavedPost from '@/models/SavedPost';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -61,7 +62,13 @@ export async function GET(
                     target_id: post._id,
                 });
                 formattedPost.liked = !!userLike;
-                formattedPost.saved = post.saved_by?.some((id: any) => id.toString() === account._id.toString()) || false;
+
+                // Verificar se salvou usando o model SavedPost
+                const userSaved = await SavedPost.findOne({
+                    account_id: account._id,
+                    post_id: post._id,
+                });
+                formattedPost.saved = !!userSaved;
             }
         }
 

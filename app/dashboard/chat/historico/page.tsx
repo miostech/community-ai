@@ -22,7 +22,7 @@ import {
   Search as SearchIcon,
   Delete as DeleteIcon,
   ChatBubble as ChatBubbleIcon,
-  ChatBubbleOutline as ChatBubbleOutlineIcon,
+  TextsmsOutlined as ChatBubbleOutlineIcon,
 } from '@mui/icons-material';
 
 export default function HistoricoPage() {

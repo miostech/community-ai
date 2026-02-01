@@ -8,6 +8,12 @@ export interface StoryUser {
     avatar: string | null;
     initials: string;
     interactionCount: number;
+    stats?: {
+        likesGiven: number;
+        likesReceived: number;
+        postsCount: number;
+        commentsCount: number;
+    };
     instagramProfile?: string;
     tiktokProfile?: string;
     youtubeProfile?: string;

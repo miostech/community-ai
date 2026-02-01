@@ -40,10 +40,10 @@ import {
   ArrowBack as ArrowBackIcon,
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
-  ChatBubbleOutline as CommentIcon,
+  TextsmsOutlined as CommentIcon,
   Bookmark as BookmarkIcon,
   BookmarkBorder as BookmarkBorderIcon,
-  Info as InfoIcon,
+  InfoOutline as InfoIcon,
   Instagram as InstagramIcon,
   YouTube as YouTubeIcon,
   MusicNote as TikTokIcon,
@@ -51,7 +51,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 
-type PostType = 'idea' | 'script' | 'question' | 'result';
+type PostType = 'idea' | 'script' | 'question' | 'result' | 'general';
 
 /** Perfil exibido: pode ser usuário conhecido (stories) ou qualquer autor do feed */
 type ProfileDisplay = CommunityUser | {
@@ -62,6 +62,7 @@ type ProfileDisplay = CommunityUser | {
   instagramProfile?: string;
   tiktokProfile?: string;
   youtubeProfile?: string;
+  created_at?: string | null;
 };
 
 const postTypeLabels: Record<PostType, string> = {
@@ -69,6 +70,7 @@ const postTypeLabels: Record<PostType, string> = {
   script: 'Roteiro',
   question: 'Dúvida',
   result: 'Resultado',
+  general: 'Geral',
 };
 
 const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
@@ -76,6 +78,7 @@ const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'su
   script: 'secondary',
   question: 'warning',
   result: 'success',
+  general: 'default',
 };
 
 /** Mapeia categoria da API para tipo do perfil */
@@ -84,7 +87,7 @@ const categoryToType: Record<string, PostType> = {
   resultado: 'result',
   duvida: 'question',
   roteiro: 'script',
-  geral: 'idea',
+  geral: 'general',
 };
 
 /** Tipo unificado para posts exibidos no perfil */
@@ -174,6 +177,30 @@ export default function PerfilComunidadePage() {
     posts: ProfilePostFromApi[];
   } | null>(null);
   const [otherProfileLoading, setOtherProfileLoading] = useState(false);
+
+  // InteractionCount e created_at do próprio perfil (buscados da API)
+  const [ownInteractionCount, setOwnInteractionCount] = useState<number>(0);
+  const [ownCreatedAt, setOwnCreatedAt] = useState<string | null>(null);
+
+  // Buscar interactionCount e created_at do próprio perfil
+  useEffect(() => {
+    if (!isOwnProfile || !account?.id) {
+      setOwnInteractionCount(0);
+      setOwnCreatedAt(null);
+      return;
+    }
+    fetch(`/api/accounts/public/${encodeURIComponent(account.id)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profile?.interactionCount != null) {
+          setOwnInteractionCount(data.profile.interactionCount);
+        }
+        if (data?.profile?.created_at) {
+          setOwnCreatedAt(data.profile.created_at);
+        }
+      })
+      .catch(() => { });
+  }, [isOwnProfile, account?.id]);
 
   useEffect(() => {
     if (!isOwnProfile || !account?.id) {
@@ -271,10 +298,11 @@ export default function PerfilComunidadePage() {
           name,
           avatar: profile?.avatar_url ?? null,
           initials: getInitialsFromName(name),
-          interactionCount: 0,
+          interactionCount: profile?.interactionCount ?? 0,
           instagramProfile: profile?.link_instagram?.trim() || undefined,
           tiktokProfile: profile?.link_tiktok?.trim() || undefined,
           youtubeProfile: profile?.link_youtube?.trim() || undefined,
+          created_at: profile?.created_at ?? null,
         };
         const mappedPosts = posts.map(mapApiPostToProfilePost);
         setOtherProfileData({ profileUser, posts: mappedPosts });
@@ -303,14 +331,15 @@ export default function PerfilComunidadePage() {
         name,
         avatar: avatar ?? null,
         initials: getInitialsFromName(name),
-        interactionCount: 'interactionCount' in resolvedFromList ? resolvedFromList.interactionCount : 0,
+        interactionCount: ownInteractionCount,
         instagramProfile,
         tiktokProfile,
         youtubeProfile,
+        created_at: ownCreatedAt,
       };
     }
     return resolvedFromList;
-  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube]);
+  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownCreatedAt]);
 
   const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
   // Posts para exibir no perfil (todos do tipo ProfilePostFromApi para consistência)
@@ -597,7 +626,9 @@ export default function PerfilComunidadePage() {
               {profileUser.name}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Membro da comunidade
+              Membro da comunidade desde {'created_at' in profileUser && profileUser.created_at
+                ? new Date(profileUser.created_at).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
+                : 'data desconhecida'}
             </Typography>
 
             {/* Stats */}

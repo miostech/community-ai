@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
 import Like from '@/models/Like';
+import SavedPost from '@/models/SavedPost';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -157,16 +158,26 @@ export async function GET(request: NextRequest) {
             Post.countDocuments(query),
         ]);
 
-        // Buscar likes do usuário atual para esses posts
+        // Buscar likes e salvos do usuário atual para esses posts
         let userLikes: Set<string> = new Set();
+        let userSaved: Set<string> = new Set();
         if (currentAccount) {
             const postIds = posts.map((p: any) => p._id);
-            const likes = await Like.find({
-                user_id: currentAccount._id,
-                target_type: 'post',
-                target_id: { $in: postIds },
-            }).lean();
+
+            const [likes, savedPosts] = await Promise.all([
+                Like.find({
+                    user_id: currentAccount._id,
+                    target_type: 'post',
+                    target_id: { $in: postIds },
+                }).lean(),
+                SavedPost.find({
+                    account_id: currentAccount._id,
+                    post_id: { $in: postIds },
+                }).lean(),
+            ]);
+
             userLikes = new Set(likes.map((l: any) => l.target_id.toString()));
+            userSaved = new Set(savedPosts.map((s: any) => s.post_id.toString()));
         }
 
         // Formatar posts para resposta
@@ -193,6 +204,7 @@ export async function GET(request: NextRequest) {
             likes_count: post.likes_count,
             comments_count: post.comments_count,
             liked: userLikes.has(post._id.toString()),
+            saved: userSaved.has(post._id.toString()),
             visibility: post.visibility,
             created_at: post.created_at,
             published_at: post.published_at,

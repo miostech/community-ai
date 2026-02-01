@@ -37,6 +37,7 @@ export interface NotificationItem {
     post_id?: string;
     comment_id?: string;
     content_preview?: string;
+    likes_count?: number; // Quantidade de likes no comentário/post
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -51,9 +52,18 @@ function formatTimeAgo(dateString: string): string {
     return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 }
 
-function getNotificationLabel(type: NotificationType): string {
+function getNotificationLabel(notification: NotificationItem): string {
+    const { type, comment_id, likes_count } = notification;
+
     switch (type) {
         case 'like':
+            if (comment_id) {
+                // Like em comentário
+                if (likes_count && likes_count > 1) {
+                    return `e mais ${likes_count - 1} curtiram seu comentário`;
+                }
+                return 'curtiu seu comentário';
+            }
             return 'curtiu seu post';
         case 'comment':
             return 'comentou no seu post';
@@ -223,7 +233,7 @@ export function NotificationsButtonMui() {
                                         <Typography component="span" fontWeight={600}>
                                             {n.actor.name}
                                         </Typography>{' '}
-                                        {getNotificationLabel(n.type)}
+                                        {getNotificationLabel(n)}
                                     </Typography>
                                 }
                                 secondary={
