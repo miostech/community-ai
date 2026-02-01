@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAccount } from '@/contexts/AccountContext';
 import { signOut } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
@@ -23,6 +24,7 @@ interface FormData {
 }
 
 export default function PerfilPage() {
+  const router = useRouter();
   const { account, isLoading, updateAccount, refreshAccount, setAccountFromResponse, hasPhone } = useAccount();
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncingInstagramAvatar, setIsSyncingInstagramAvatar] = useState(false);
@@ -189,6 +191,7 @@ export default function PerfilPage() {
 
       if (success) {
         alert('Perfil atualizado com sucesso!');
+        router.push('/dashboard/comunidade');
       } else {
         throw new Error('Erro ao salvar perfil');
       }

@@ -526,7 +526,7 @@ export default function CriarPostPage() {
         {/* Link da rede social (opcional) */}
         <div>
           <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100 mb-2">
-            Link da rede social <span className="font-normal text-gray-400 dark:text-neutral-500">(opcional)</span>
+            Link da publicação na rede social <span className="font-normal text-gray-400 dark:text-neutral-500">(opcional)</span>
           </label>
           <input
             type="url"
