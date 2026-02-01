@@ -15,6 +15,7 @@ export interface Account {
     link_youtube: string;
     primary_social_link: 'instagram' | 'tiktok' | 'youtube' | null;
     avatar_url: string | null;
+    used_instagram_avatar: boolean;
     background_url: string | null;
     plan: 'free' | 'pro' | 'enterprise';
     code_invite: string | null;
@@ -26,6 +27,8 @@ interface AccountContextType {
     error: string | null;
     refreshAccount: () => Promise<void>;
     updateAccount: (updates: Partial<Account>) => Promise<boolean>;
+    /** Atualiza a conta com a resposta de uma API (ex.: sync Instagram avatar) para refletir na UI na hora */
+    setAccountFromResponse: (account: Account | null) => void;
     hasPhone: boolean;
     fullName: string;
 }
@@ -117,6 +120,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const setAccountFromResponse = useCallback((accountData: Account | null) => {
+        setAccount(accountData);
+    }, []);
+
     const hasPhone = Boolean(account?.phone && account.phone.trim() !== '');
     const fullName = account ? `${account.first_name} ${account.last_name}`.trim() : '';
 
@@ -128,6 +135,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
                 error,
                 refreshAccount,
                 updateAccount,
+                setAccountFromResponse,
                 hasPhone,
                 fullName,
             }}

@@ -12,6 +12,8 @@ interface InstagramProfileResponse {
     followers?: number;
     following?: number;
     posts?: number;
+    avatar?: string;
+    avatar_hd?: string;
   };
 }
 
@@ -31,8 +33,8 @@ interface YouTubeChannelResponse {
   channel?: { subscribers?: number; videos?: number };
 }
 
-async function fetchInstagramFollowers(username: string): Promise<number | null> {
-  if (!SEARCHAPI_API_KEY || !username?.trim()) return null;
+async function fetchInstagramProfile(username: string): Promise<{ followers: number | null; avatar: string | null }> {
+  if (!SEARCHAPI_API_KEY || !username?.trim()) return { followers: null, avatar: null };
   const params = new URLSearchParams({
     engine: 'instagram_profile',
     username: username.replace(/^@/, '').trim(),
@@ -41,10 +43,17 @@ async function fetchInstagramFollowers(username: string): Promise<number | null>
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
     next: { revalidate: 86400 }, // 24h cache
   });
-  if (!res.ok) return null;
+  if (!res.ok) return { followers: null, avatar: null };
   const data = (await res.json()) as InstagramProfileResponse;
-  const followers = data?.profile?.followers;
-  return typeof followers === 'number' ? followers : null;
+  const profile = data?.profile;
+  const followers = typeof profile?.followers === 'number' ? profile.followers : null;
+  const avatar =
+    typeof profile?.avatar_hd === 'string' && profile.avatar_hd
+      ? profile.avatar_hd
+      : typeof profile?.avatar === 'string' && profile.avatar
+        ? profile.avatar
+        : null;
+  return { followers, avatar };
 }
 
 async function fetchTikTokFollowers(username: string): Promise<number | null> {
@@ -77,7 +86,12 @@ async function fetchYouTubeSubscribers(channelId: string): Promise<number | null
   });
   if (!res.ok) return null;
   const data = (await res.json()) as YouTubeChannelResponse;
-  const subscribers = data?.about?.subscribers ?? data?.channel?.subscribers;
+  const subscribers =
+    typeof data?.about?.subscribers === 'number'
+      ? data.about.subscribers
+      : typeof data?.channel?.subscribers === 'number'
+        ? data.channel.subscribers
+        : null;
   return typeof subscribers === 'number' ? subscribers : null;
 }
 
@@ -102,18 +116,19 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [instagramFollowers, tiktokFollowers, youtubeSubscribers] = await Promise.all([
-      instagram ? fetchInstagramFollowers(instagram) : Promise.resolve(null),
+    const [instagramData, tiktokFollowers, youtubeSubscribers] = await Promise.all([
+      instagram ? fetchInstagramProfile(instagram) : Promise.resolve({ followers: null, avatar: null }),
       tiktok ? fetchTikTokFollowers(tiktok) : Promise.resolve(null),
       youtube ? fetchYouTubeSubscribers(youtube) : Promise.resolve(null),
     ]);
 
+    const instagramFollowers = instagramData.followers;
     const totalFollowers =
       (instagramFollowers ?? 0) + (tiktokFollowers ?? 0) + (youtubeSubscribers ?? 0);
 
     return NextResponse.json({
       instagram: instagram !== null
-        ? { username: instagram, followers: instagramFollowers }
+        ? { username: instagram, followers: instagramFollowers, avatar: instagramData.avatar }
         : null,
       tiktok: tiktok !== null
         ? { username: tiktok, followers: tiktokFollowers }

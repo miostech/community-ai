@@ -23,8 +23,9 @@ interface FormData {
 }
 
 export default function PerfilPage() {
-  const { account, isLoading, updateAccount, refreshAccount, hasPhone } = useAccount();
+  const { account, isLoading, updateAccount, refreshAccount, setAccountFromResponse, hasPhone } = useAccount();
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingInstagramAvatar, setIsSyncingInstagramAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,6 +136,30 @@ export default function PerfilPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  /** Busca a foto do Instagram 1 vez e salva como avatar (economiza crédito da API). */
+  const handleSyncInstagramAvatar = async () => {
+    if (!formData.link_instagram?.trim()) return;
+    setIsSyncingInstagramAvatar(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/accounts/sync-instagram-avatar', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao buscar foto do Instagram');
+      }
+      if (data.account) {
+        updateField('avatar_url', data.account.avatar_url ?? null);
+        setAccountFromResponse(data.account);
+      }
+      await refreshAccount();
+      alert('Foto do Instagram definida como sua foto de perfil!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao buscar foto do Instagram');
+    } finally {
+      setIsSyncingInstagramAvatar(false);
     }
   };
 
@@ -259,15 +284,25 @@ export default function PerfilPage() {
               )}
             </div>
             <div className="flex-1 space-y-3 w-full text-center sm:text-left">
-              <div>
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant="secondary"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingAvatar}
+                  disabled={isUploadingAvatar || isSyncingInstagramAvatar}
                   className="w-full sm:w-auto"
                 >
                   {isUploadingAvatar ? 'Enviando...' : formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
                 </Button>
+                {formData.link_instagram?.trim() && !account?.used_instagram_avatar && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleSyncInstagramAvatar}
+                    disabled={isUploadingAvatar || isSyncingInstagramAvatar}
+                    className="w-full sm:w-auto"
+                  >
+                    {isSyncingInstagramAvatar ? 'Buscando...' : 'Usar foto do Instagram'}
+                  </Button>
+                )}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -277,7 +312,8 @@ export default function PerfilPage() {
                 />
               </div>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400">
-                Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG, WebP ou GIF. Máximo 500MB.
+                Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG. Máximo 500MB.
+                {formData.link_instagram?.trim() && !account?.used_instagram_avatar && ' Ou use a foto do seu perfil do Instagram (uma vez).'}
               </p>
             </div>
           </div>

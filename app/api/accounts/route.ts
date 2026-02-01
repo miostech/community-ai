@@ -92,29 +92,31 @@ export async function GET() {
         const authUserId = (session.user as any).auth_user_id || session.user.id;
         console.log('🔍 Buscando conta com auth_user_id:', authUserId);
 
-        const account = await Account.findOne({ auth_user_id: authUserId });
+        const account = await Account.findOne({ auth_user_id: authUserId }).lean();
 
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
+        const acc = account as { _id: unknown; used_instagram_avatar?: boolean; [k: string]: unknown };
         return NextResponse.json({
             success: true,
             account: {
-                id: account._id.toString(),
-                first_name: account.first_name,
-                last_name: account.last_name,
-                email: account.email || session.user.email,
-                phone: account.phone,
-                phone_country_code: account.phone_country_code || '+55',
-                link_instagram: account.link_instagram,
-                link_tiktok: account.link_tiktok,
-                link_youtube: account.link_youtube,
-                primary_social_link: account.primary_social_link,
-                avatar_url: account.avatar_url || session.user.image,
-                background_url: account.background_url,
-                plan: account.plan,
-                code_invite: account.code_invite,
+                id: acc._id?.toString?.() ?? String(acc._id),
+                first_name: acc.first_name,
+                last_name: acc.last_name,
+                email: acc.email || session.user.email,
+                phone: acc.phone,
+                phone_country_code: acc.phone_country_code || '+55',
+                link_instagram: acc.link_instagram,
+                link_tiktok: acc.link_tiktok,
+                link_youtube: acc.link_youtube,
+                primary_social_link: acc.primary_social_link,
+                avatar_url: acc.avatar_url || session.user.image,
+                used_instagram_avatar: acc.used_instagram_avatar === true,
+                background_url: acc.background_url,
+                plan: acc.plan,
+                code_invite: acc.code_invite,
             },
         });
     } catch (error) {
@@ -176,24 +178,28 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
+        // Garantir que a resposta inclua os valores que acabamos de salvar (evita perda se o modelo estiver em cache sem o campo)
+        const accountData = account.toObject ? account.toObject() : { ...account };
+        const responseAccount = {
+            id: (accountData as any).id ?? (account as any)._id?.toString?.(),
+            first_name: account.first_name,
+            last_name: account.last_name,
+            email: account.email,
+            phone: account.phone,
+            phone_country_code: account.phone_country_code,
+            link_instagram: updateData.link_instagram !== undefined ? updateData.link_instagram : (accountData as any).link_instagram ?? account.link_instagram,
+            link_tiktok: updateData.link_tiktok !== undefined ? updateData.link_tiktok : (accountData as any).link_tiktok ?? account.link_tiktok,
+            link_youtube: updateData.link_youtube !== undefined ? updateData.link_youtube : (accountData as any).link_youtube ?? account.link_youtube,
+            primary_social_link: account.primary_social_link,
+            avatar_url: account.avatar_url,
+            background_url: account.background_url,
+            plan: account.plan,
+        };
+
         return NextResponse.json({
             success: true,
             message: 'Perfil atualizado com sucesso',
-            account: {
-                id: account._id.toString(),
-                first_name: account.first_name,
-                last_name: account.last_name,
-                email: account.email,
-                phone: account.phone,
-                phone_country_code: account.phone_country_code,
-                link_instagram: account.link_instagram,
-                link_tiktok: account.link_tiktok,
-                link_youtube: account.link_youtube,
-                primary_social_link: account.primary_social_link,
-                avatar_url: account.avatar_url,
-                background_url: account.background_url,
-                plan: account.plan,
-            },
+            account: responseAccount,
         });
     } catch (error) {
         console.error('Erro ao atualizar conta:', error);

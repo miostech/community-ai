@@ -14,6 +14,7 @@ const AccountSchema = new Schema(
         link_youtube: { type: String, trim: true },
         primary_social_link: { type: String, enum: ['instagram', 'tiktok', 'youtube', null], default: null },
         avatar_url: { type: String, trim: true },
+        used_instagram_avatar: { type: Boolean, default: false },
         background_url: { type: String, trim: true },
         code_invite: { type: String, unique: true, sparse: true, trim: true },
         code_invite_ref: { type: String, trim: true },

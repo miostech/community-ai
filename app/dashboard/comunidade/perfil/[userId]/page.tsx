@@ -185,6 +185,9 @@ export default function PerfilComunidadePage() {
   /** Borda colorida (destaque) só para quem está nos stories */
   const isFromStories = 'id' in profileUser;
 
+  /** Avatar: só a foto salva na conta (upload manual ou "Usar foto do Instagram" em Meu perfil) */
+  const displayAvatar = profileUser.avatar ?? null;
+
   return (
     <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen">
       {/* Header fixo - estilo Instagram */}
@@ -214,9 +217,9 @@ export default function PerfilComunidadePage() {
               <div className="rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-1">
                 <div className="rounded-full bg-white dark:bg-black p-1">
                   <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
-                    {profileUser.avatar ? (
+                    {displayAvatar ? (
                       <img
-                        src={profileUser.avatar}
+                        src={displayAvatar}
                         alt={profileUser.name}
                         className="w-full h-full object-cover"
                       />
@@ -230,9 +233,9 @@ export default function PerfilComunidadePage() {
               </div>
             ) : (
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-slate-600">
-                {profileUser.avatar ? (
+                {displayAvatar ? (
                   <img
-                    src={profileUser.avatar}
+                    src={displayAvatar}
                     alt={profileUser.name}
                     className="w-full h-full object-cover"
                   />
