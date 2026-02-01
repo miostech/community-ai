@@ -7,17 +7,18 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { CommentsSection } from '@/components/community/CommentsSection';
+import { NotificationsButton } from '@/components/community/NotificationsButton';
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
 const categoryLabels: Record<PostCategory, string> = {
-  ideia: '💡 Ideia',
-  resultado: '🏆 Resultado',
-  duvida: '❓ Dúvida',
-  roteiro: '📝 Roteiro',
-  geral: '💬 Geral',
+  ideia: 'Ideia',
+  resultado: 'Resultado',
+  duvida: 'Dúvida',
+  roteiro: 'Roteiro',
+  geral: 'Geral',
 };
 
 function formatTimeAgo(dateString: string): string {
@@ -131,6 +132,7 @@ export default function ComunidadePage() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">Comunidade</h1>
           </div>
           <div className="flex items-center space-x-2">
+            <NotificationsButton />
             <button
               onClick={refreshPosts}
               disabled={isRefreshing}

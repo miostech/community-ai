@@ -38,11 +38,11 @@ interface Post {
 }
 
 const categoryLabels: Record<PostCategory, string> = {
-    ideia: '💡 Ideia',
-    resultado: '🏆 Resultado',
-    duvida: '❓ Dúvida',
-    roteiro: '📝 Roteiro',
-    geral: '💬 Geral',
+    ideia: 'Ideia',
+    resultado: 'Resultado',
+    duvida: 'Dúvida',
+    roteiro: 'Roteiro',
+    geral: 'Geral',
 };
 
 function formatTimeAgo(dateString: string): string {
