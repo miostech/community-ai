@@ -263,8 +263,8 @@ export function PostCardMui({
                         alt="Post image"
                         sx={{
                             width: '100%',
-                            height: { xs: '70vh', sm: 'auto' },
-                            maxHeight: { sm: 500 },
+                            aspectRatio: '4/5',
+                            maxHeight: 600,
                             objectFit: 'cover',
                             bgcolor: 'action.hover',
                         }}
@@ -308,8 +308,8 @@ export function PostCardMui({
                         onClick={(e) => e.stopPropagation()}
                         sx={{
                             width: '100%',
-                            height: { xs: '70vh', sm: 'auto' },
-                            maxHeight: 500,
+                            aspectRatio: '4/5',
+                            maxHeight: 600,
                             objectFit: 'contain',
                             bgcolor: 'black',
                         }}

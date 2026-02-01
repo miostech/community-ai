@@ -105,7 +105,7 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
       {/* Imagem principal */}
       <div
         ref={containerRef}
-        className="relative w-full h-[70vh] sm:h-auto sm:aspect-video bg-gray-100 dark:bg-slate-800 overflow-hidden select-none"
+        className="relative w-full aspect-[4/5] max-h-[600px] bg-gray-100 dark:bg-slate-800 overflow-hidden select-none"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
