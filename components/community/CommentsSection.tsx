@@ -195,6 +195,52 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
     });
   };
 
+  // Deletar comentário
+  const handleDeleteComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+    if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
+
+    try {
+      const response = await fetch(`/api/posts/${postId}/comments?commentId=${commentId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        if (isReply && parentId) {
+          // Remover reply do comentário pai
+          setComments(prev =>
+            prev.map(comment => {
+              if (comment._id === parentId) {
+                return {
+                  ...comment,
+                  replies_count: Math.max(0, (comment.replies_count || 0) - 1),
+                  replies: comment.replies?.filter(r => r._id !== commentId) || [],
+                };
+              }
+              return comment;
+            })
+          );
+        } else {
+          // Remover comentário principal
+          setComments(prev => prev.filter(c => c._id !== commentId));
+        }
+        // Notificar que o contador mudou
+        onCommentAdded?.();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Erro ao deletar comentário');
+      }
+    } catch (error) {
+      console.error('Erro ao deletar comentário:', error);
+      alert('Erro ao deletar comentário');
+    }
+  };
+
+  // Verificar se o usuário é o autor do comentário
+  const isMyComment = (authorId: string) => {
+    console.log('🔍 Comparando IDs:', { accountId: account?.id, authorId, match: account?.id === authorId });
+    return account?.id === authorId;
+  };
+
   // Adicionar emoji ao comentário
   const addEmoji = (emoji: string) => {
     setCommentText(prev => prev + emoji);
@@ -301,6 +347,15 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
                         >
                           Responder
                         </button>
+                        {isMyComment(comment.author.id) && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(comment._id)}
+                            className="text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                          >
+                            Excluir
+                          </button>
+                        )}
                       </div>
 
                       {/* Ver respostas */}
@@ -346,6 +401,15 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
                                   <span className="text-[11px] text-gray-500 dark:text-slate-400">
                                     {formatTimeAgo(reply.created_at)}
                                   </span>
+                                  {isMyComment(reply.author.id) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteComment(reply._id, true, comment._id)}
+                                      className="text-[11px] font-semibold text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                    >
+                                      Excluir
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>

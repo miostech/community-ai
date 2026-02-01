@@ -222,3 +222,69 @@ export async function POST(
         );
     }
 }
+
+// DELETE - Deletar um comentário
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ postId: string }> }
+) {
+    try {
+        const session = await auth();
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+        }
+
+        const { postId } = await params;
+        const { searchParams } = new URL(request.url);
+        const commentId = searchParams.get('commentId');
+
+        if (!commentId) {
+            return NextResponse.json({ error: 'ID do comentário é obrigatório' }, { status: 400 });
+        }
+
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
+
+        await connectMongo();
+
+        // Buscar account do usuário
+        const account = await Account.findOne({ auth_user_id: authUserId });
+        if (!account) {
+            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        // Buscar o comentário
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return NextResponse.json({ error: 'Comentário não encontrado' }, { status: 404 });
+        }
+
+        // Verificar se o usuário é o autor do comentário
+        if (comment.author_id.toString() !== account._id.toString()) {
+            return NextResponse.json({ error: 'Sem permissão para deletar este comentário' }, { status: 403 });
+        }
+
+        // Marcar como deletado (soft delete)
+        comment.is_deleted = true;
+        await comment.save();
+
+        // Decrementar contador de comentários no post
+        await Post.findByIdAndUpdate(postId, { $inc: { comments_count: -1 } });
+
+        // Se for uma resposta, decrementar contador de replies no comentário pai
+        if (comment.parent_id) {
+            await Comment.findByIdAndUpdate(comment.parent_id, { $inc: { replies_count: -1 } });
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Comentário deletado com sucesso',
+        });
+    } catch (error) {
+        console.error('Erro ao deletar comentário:', error);
+        return NextResponse.json(
+            { error: 'Erro interno do servidor' },
+            { status: 500 }
+        );
+    }
+}
