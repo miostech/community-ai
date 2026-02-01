@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { MultiImageUpload } from '@/components/community/MultiImageUpload';
@@ -16,6 +16,15 @@ interface UploadedImage {
   error?: string;
 }
 
+interface UploadedVideo {
+  url: string;
+  isUploading: boolean;
+  preview: string;
+  progress: number;
+  error?: string;
+  fileName?: string;
+}
+
 const categoryLabels: Record<PostCategory, string> = {
   ideia: '💡 Ideia',
   resultado: '🏆 Resultado',
@@ -27,6 +36,7 @@ const categoryLabels: Record<PostCategory, string> = {
 export default function CriarPostPage() {
   const router = useRouter();
   const { account } = useAccount();
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +60,10 @@ export default function CriarPostPage() {
   // Imagens com status de upload individual
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'video' | 'links'>('images');
+  const [videoInputMode, setVideoInputMode] = useState<'upload' | 'link'>('upload');
+  
+  // Vídeo com status de upload
+  const [uploadedVideo, setUploadedVideo] = useState<UploadedVideo | null>(null);
 
   // Upload imediato ao selecionar imagens
   const handleImagesSelect = async (files: File[]) => {
@@ -140,18 +154,111 @@ export default function CriarPostPage() {
     }
   };
 
+  // Upload de vídeo
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamanho (500MB max)
+    if (file.size > 500 * 1024 * 1024) {
+      setError('Vídeo muito grande. Máximo 500MB.');
+      return;
+    }
+
+    // Validar tipo
+    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Formato não suportado. Use MP4, MOV, WEBM ou AVI.');
+      return;
+    }
+
+    setError(null);
+
+    // Criar preview do vídeo
+    const preview = URL.createObjectURL(file);
+
+    setUploadedVideo({
+      url: '',
+      isUploading: true,
+      preview,
+      progress: 0,
+      fileName: file.name,
+    });
+
+    try {
+      const formData = new FormData();
+      formData.append('type', 'video');
+      formData.append('files', file);
+
+      const response = await fetch('/api/posts/media', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro no upload do vídeo');
+      }
+
+      const data = await response.json();
+      const uploadedUrl = data.urls[0];
+
+      setUploadedVideo(prev => prev ? {
+        ...prev,
+        url: uploadedUrl,
+        isUploading: false,
+        progress: 100,
+      } : null);
+    } catch (err) {
+      console.error('Erro no upload do vídeo:', err);
+      setUploadedVideo(prev => prev ? {
+        ...prev,
+        isUploading: false,
+        error: err instanceof Error ? err.message : 'Falha no upload',
+      } : null);
+    }
+  };
+
+  const handleRemoveVideo = async () => {
+    if (!uploadedVideo) return;
+
+    const videoUrl = uploadedVideo.url;
+    
+    // Revogar URL do preview
+    if (uploadedVideo.preview) {
+      URL.revokeObjectURL(uploadedVideo.preview);
+    }
+
+    setUploadedVideo(null);
+
+    // Se já foi feito upload, deletar do Azure
+    if (videoUrl) {
+      try {
+        await fetch('/api/posts/media', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: videoUrl }),
+        });
+      } catch (err) {
+        console.error('Erro ao deletar vídeo do Azure:', err);
+      }
+    }
+  };
+
   const handlePublish = async () => {
     const validImages = uploadedImages.filter(img => img.url && !img.isUploading && !img.error);
+    const videoUrl = uploadedVideo?.url || newPost.videoUrl;
 
-    if (!newPost.content.trim() && validImages.length === 0 && !newPost.videoUrl.trim()) {
-      setError('Adicione conteúdo, imagem ou link de vídeo');
+    if (!newPost.content.trim() && validImages.length === 0 && !videoUrl) {
+      setError('Adicione conteúdo, imagem ou vídeo');
       return;
     }
 
     // Verificar se ainda há uploads em andamento
-    const uploading = uploadedImages.some(img => img.isUploading);
-    if (uploading) {
-      setError('Aguarde o upload das imagens terminar');
+    const imageUploading = uploadedImages.some(img => img.isUploading);
+    const videoUploading = uploadedVideo?.isUploading;
+    if (imageUploading || videoUploading) {
+      setError('Aguarde os uploads terminarem');
       return;
     }
 
