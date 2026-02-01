@@ -3,7 +3,7 @@ import mongoose, { InferSchemaType, Model, Schema } from 'mongoose';
 const AccountSchema = new Schema(
     {
         first_name: { type: String, required: true, trim: true },
-        last_name: { type: String, required: true, trim: true },
+        last_name: { type: String, trim: true, default: '' },
         email: { type: String, trim: true },
         phone: { type: String, trim: true },
         phone_country_code: { type: String, trim: true, default: '+55' },
