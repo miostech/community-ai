@@ -1,56 +1,143 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { CommentsSection } from '@/components/community/CommentsSection';
-import { useUser } from '@/contexts/UserContext';
-import { usePosts } from '@/contexts/PostsContext';
 import { communityUsers, nameToSlug } from '@/lib/community-users';
 
-type PostType = 'idea' | 'script' | 'question' | 'result';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
+
+interface PostAuthor {
+  id: string;
+  name: string;
+  avatar_url?: string;
+}
 
 interface Post {
   id: string;
-  type: PostType;
-  author: string;
-  avatar: string | null; // URL da imagem ou null para usar iniciais
+  author: PostAuthor;
   content: string;
-  imageUrl?: string | null;
-  videoUrl?: string | null;
-  likes: number;
-  comments: number;
-  timeAgo: string;
+  images: string[];
+  video_url?: string;
+  link_instagram_post?: string;
+  category: PostCategory;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+  // Estado local (não vem do banco)
   liked?: boolean;
+  saved?: boolean;
 }
 
-const postTypeLabels = {
-  idea: 'Ideia',
-  script: 'Roteiro',
-  question: 'Dúvida',
-  result: 'Resultado',
+const categoryLabels: Record<PostCategory, string> = {
+  ideia: '💡 Ideia',
+  resultado: '🏆 Resultado',
+  duvida: '❓ Dúvida',
+  roteiro: '📝 Roteiro',
+  geral: '💬 Geral',
 };
 
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'agora';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}min`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+}
+
 export default function ComunidadePage() {
-  const { user } = useUser();
-  const { posts, updatePost, toggleSavePost } = usePosts();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const handleLike = (postId: string) => {
-    const post = posts.find((p) => p.id === postId);
-    if (post) {
-      updatePost(postId, {
-        liked: !post.liked,
-        likes: post.liked ? post.likes - 1 : post.likes + 1,
-      });
+  // Ref para o elemento sentinela do Intersection Observer
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Buscar posts da API
+  const fetchPosts = useCallback(async (pageNum: number = 1, refresh: boolean = false) => {
+    try {
+      if (refresh) {
+        setIsRefreshing(true);
+      } else if (pageNum > 1) {
+        setIsLoadingMore(true);
+      }
+
+      const response = await fetch(`/api/posts?page=${pageNum}&limit=10`);
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar posts');
+      }
+
+      const data = await response.json();
+
+      if (refresh || pageNum === 1) {
+        setPosts(data.posts);
+      } else {
+        setPosts(prev => [...prev, ...data.posts]);
+      }
+
+      setHasMore(data.pagination.hasMore);
+      setPage(pageNum);
+      setError(null);
+    } catch (err) {
+      console.error('Erro ao buscar posts:', err);
+      setError('Não foi possível carregar os posts');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setIsLoadingMore(false);
     }
+  }, []);
+
+  // Carregar posts ao montar
+  useEffect(() => {
+    fetchPosts(1, true);
+  }, [fetchPosts]);
+
+  const handleLike = async (postId: string) => {
+    // Otimista: atualizar UI imediatamente
+    setPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return {
+          ...post,
+          liked: !post.liked,
+          likes_count: post.liked ? post.likes_count - 1 : post.likes_count + 1,
+        };
+      }
+      return post;
+    }));
+
+    // TODO: Chamar API de like quando implementada
+    // try {
+    //   await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
+    // } catch (err) {
+    //   // Reverter em caso de erro
+    // }
+  };
+
+  const handleSavePost = (postId: string) => {
+    setPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return { ...post, saved: !post.saved };
+      }
+      return post;
+    }));
+    // TODO: Persistir no banco quando implementar
   };
 
   // Duplo clique para curtir (estilo Instagram)
@@ -63,21 +150,31 @@ export default function ComunidadePage() {
     }
   };
 
-  // Pull to refresh (mobile) e ao entrar na página
+  // Pull to refresh
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Aqui pode ser adicionada a chamada à API quando existir
-    await new Promise((r) => setTimeout(r, 800));
-    setIsRefreshing(false);
+    await fetchPosts(1, true);
   };
 
-  // Atualização ao entrar na página da comunidade
+  // Intersection Observer para lazy loading
   useEffect(() => {
-    handleRefresh();
-  }, []);
+    if (!loadMoreRef.current || !hasMore || isLoadingMore || showSavedOnly) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+          fetchPosts(page + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, isLoading, page, fetchPosts, showSavedOnly]);
 
   // Filtrar posts - mostrar todos ou apenas salvos
-  const displayedPosts = showSavedOnly 
+  const displayedPosts = showSavedOnly
     ? posts.filter(post => post.saved === true)
     : posts;
 
@@ -97,10 +194,10 @@ export default function ComunidadePage() {
               disabled={isRefreshing}
               className="sm:hidden w-8 h-8 flex items-center justify-center text-gray-600 dark:text-slate-400 active:bg-gray-100 dark:active:bg-slate-800 rounded-full transition-all"
             >
-              <svg 
+              <svg
                 className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -108,16 +205,15 @@ export default function ComunidadePage() {
             </button>
             <button
               onClick={() => setShowSavedOnly(!showSavedOnly)}
-              className={`inline-flex items-center justify-center text-sm px-3 sm:px-4 py-2 h-auto shadow-md rounded-lg font-medium transition-all ${
-                showSavedOnly
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white'
-                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600'
-              }`}
+              className={`inline-flex items-center justify-center text-sm px-3 sm:px-4 py-2 h-auto shadow-md rounded-lg font-medium transition-all ${showSavedOnly
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white'
+                : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600'
+                }`}
             >
-              <svg 
-                className="w-4 h-4 sm:mr-1.5" 
-                fill={showSavedOnly ? 'currentColor' : 'none'} 
-                stroke="currentColor" 
+              <svg
+                className="w-4 h-4 sm:mr-1.5"
+                fill={showSavedOnly ? 'currentColor' : 'none'}
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -146,6 +242,26 @@ export default function ComunidadePage() {
         <Stories users={communityUsers} />
       </div>
 
+      {/* Loading inicial */}
+      {isLoading && posts.length === 0 && (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Erro */}
+      {error && !isLoading && posts.length === 0 && (
+        <div className="p-8 text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={() => fetchPosts(1, true)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+
       {/* Feed de posts - estilo Instagram */}
       <div className="space-y-0">
         {displayedPosts.length === 0 && showSavedOnly ? (
@@ -166,166 +282,193 @@ export default function ComunidadePage() {
             <p className="text-gray-600 dark:text-slate-300 font-medium mb-1">Nenhum post salvo ainda</p>
             <p className="text-sm text-gray-500 dark:text-slate-400">Salve posts que você gostou para encontrá-los facilmente depois</p>
           </div>
+        ) : displayedPosts.length === 0 && !isLoading ? (
+          <div className="bg-white dark:bg-black p-8 text-center">
+            <p className="text-gray-600 dark:text-slate-300 font-medium mb-2">Nenhum post ainda</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">Seja o primeiro a compartilhar com a comunidade!</p>
+            <Link
+              href="/dashboard/comunidade/criar"
+              className="inline-block px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+            >
+              Criar post
+            </Link>
+          </div>
         ) : (
           displayedPosts.map((post) => (
-          <div key={post.id} className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 last:border-b-0">
-            <div className="p-3 sm:p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Link
-                  href={`/dashboard/comunidade/perfil/${nameToSlug(post.author)}`}
-                  className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0 group"
-                >
-                  {typeof post.avatar === 'string' && post.avatar.length > 2 ? (
-                    <img
-                      src={post.avatar}
-                      alt={post.author}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0 group-hover:opacity-90 transition-opacity"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 group-hover:opacity-90 transition-opacity">
-                      {typeof post.avatar === 'string' ? post.avatar : post.author.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 truncate group-hover:underline">{post.author}</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">{post.timeAgo}</p>
-                  </div>
-                </Link>
-                <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
-                  {postTypeLabels[post.type]}
-                </span>
-              </div>
-
-              <div className="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-line break-words mb-3 leading-relaxed">
-                {post.content}
-              </div>
-
-              {/* Carrossel de Imagens - múltiplas imagens */}
-              {post.imageUrls && post.imageUrls.length > 0 && (
-                <div 
-                  className="mb-3 -mx-3 sm:-mx-4"
-                  onDoubleClick={() => handleDoubleTap(post.id)}
-                >
-                  <ImageCarousel images={post.imageUrls} />
-                  {/* Animação de coração ao dar duplo clique */}
-                  {showHeartAnimation === post.id && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                      <svg 
-                        className="w-24 h-24 text-white drop-shadow-2xl animate-ping"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Imagem única - estilo Instagram com duplo clique */}
-              {!post.imageUrls && post.imageUrl && (
-                <div 
-                  className="mb-3 -mx-3 sm:-mx-4 relative select-none"
-                  onDoubleClick={() => handleDoubleTap(post.id)}
-                >
-                  <img
-                    src={post.imageUrl}
-                    alt="Post image"
-                    className="w-full aspect-square object-cover bg-gray-100 dark:bg-slate-800"
-                    loading="lazy"
-                  />
-                  {/* Animação de coração ao dar duplo clique */}
-                  {showHeartAnimation === post.id && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <svg 
-                        className="w-24 h-24 text-white drop-shadow-2xl animate-ping"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Vídeo embed */}
-              {post.videoUrl && (
-                <div className="mb-3">
-                  <VideoEmbed url={post.videoUrl} />
-                </div>
-              )}
-
-              {/* Ações - estilo Instagram */}
-              <div className="flex items-center space-x-4 sm:space-x-6 pt-3">
-                <button
-                  onClick={() => handleLike(post.id)}
-                  className={`flex items-center space-x-1.5 transition-all active:scale-95 ${
-                    post.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-slate-100'
-                  }`}
-                >
-                  <svg
-                    className="w-6 h-6 sm:w-7 sm:h-7"
-                    fill={post.liked ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth={post.liked ? 0 : 1.5}
-                    viewBox="0 0 24 24"
+            <div key={post.id} className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 last:border-b-0">
+              <div className="p-3 sm:p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Link
+                    href={`/dashboard/comunidade/perfil/${post.author.id}`}
+                    className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0 group"
                   >
-                    {post.liked ? (
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    {post.author.avatar_url ? (
+                      <img
+                        src={post.author.avatar_url}
+                        alt={post.author.name}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0 group-hover:opacity-90 transition-opacity"
+                      />
                     ) : (
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 group-hover:opacity-90 transition-opacity">
+                        {post.author.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 truncate group-hover:underline">{post.author.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">{formatTimeAgo(post.created_at)}</p>
+                    </div>
+                  </Link>
+                  <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
+                    {categoryLabels[post.category] || '💬 Geral'}
+                  </span>
+                </div>
+
+                {post.content && (
+                  <div className="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-line break-words mb-3 leading-relaxed">
+                    {post.content}
+                  </div>
+                )}
+
+                {/* Carrossel de Imagens - múltiplas imagens */}
+                {post.images && post.images.length > 0 && (
+                  <div
+                    className="mb-3 -mx-3 sm:-mx-4 relative"
+                    onDoubleClick={() => handleDoubleTap(post.id)}
+                  >
+                    {post.images.length > 1 ? (
+                      <ImageCarousel images={post.images} />
+                    ) : (
+                      <img
+                        src={post.images[0]}
+                        alt="Post image"
+                        className="w-full aspect-square object-cover bg-gray-100 dark:bg-slate-800"
+                        loading="lazy"
+                      />
+                    )}
+                    {/* Animação de coração ao dar duplo clique */}
+                    {showHeartAnimation === post.id && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <svg
+                          className="w-24 h-24 text-white drop-shadow-2xl animate-ping"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Vídeo */}
+                {post.video_url && (
+                  <div className="mb-3 -mx-3 sm:-mx-4">
+                    <video
+                      src={post.video_url}
+                      controls
+                      className="w-full max-h-[500px] bg-black"
+                    />
+                  </div>
+                )}
+
+                {/* Link da rede social */}
+                {post.link_instagram_post && (
+                  <a
+                    href={post.link_instagram_post}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline mb-3"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    Ver post original
+                  </a>
+                )}
+
+                {/* Ações - estilo Instagram */}
+                <div className="flex items-center space-x-4 sm:space-x-6 pt-3">
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center space-x-1.5 transition-all active:scale-95 ${post.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-slate-100'
+                      }`}
+                  >
+                    <svg
+                      className="w-6 h-6 sm:w-7 sm:h-7"
+                      fill={post.liked ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      strokeWidth={post.liked ? 0 : 1.5}
+                      viewBox="0 0 24 24"
+                    >
+                      {post.liked ? (
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      ) : (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                        />
+                      )}
+                    </svg>
+                    <span className="text-sm sm:text-base font-semibold">{post.likes_count}</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveCommentsPostId(post.id)}
+                    className="flex items-center space-x-1.5 text-gray-900 dark:text-slate-100 active:scale-95 transition-all"
+                  >
+                    <svg
+                      className="w-6 h-6 sm:w-7 sm:h-7"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                        strokeWidth={1.5}
+                        d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337L5 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
                       />
-                    )}
-                  </svg>
-                  <span className="text-sm sm:text-base font-semibold">{post.likes}</span>
-                </button>
-                <button 
-                  onClick={() => setActiveCommentsPostId(post.id)}
-                  className="flex items-center space-x-1.5 text-gray-900 dark:text-slate-100 active:scale-95 transition-all"
-                >
-                  <svg
-                    className="w-6 h-6 sm:w-7 sm:h-7"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    </svg>
+                    <span className="text-sm sm:text-base font-semibold">{post.comments_count}</span>
+                  </button>
+                  <button
+                    onClick={() => handleSavePost(post.id)}
+                    className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${post.saved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-slate-100'
+                      }`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337L5 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
-                    />
-                  </svg>
-                  <span className="text-sm sm:text-base font-semibold">{post.comments}</span>
-                </button>
-                <button 
-                  onClick={() => toggleSavePost(post.id)}
-                  className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${
-                    post.saved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-slate-100'
-                  }`}
-                >
-                  <svg
-                    className="w-6 h-6 sm:w-7 sm:h-7"
-                    fill={post.saved ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={post.saved ? 0 : 1.5}
-                      d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      className="w-6 h-6 sm:w-7 sm:h-7"
+                      fill={post.saved ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={post.saved ? 0 : 1.5}
+                        d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
           ))
+        )}
+
+        {/* Sentinela para lazy loading */}
+        {hasMore && posts.length > 0 && !showSavedOnly && (
+          <div ref={loadMoreRef} className="p-4 text-center">
+            {isLoadingMore && (
+              <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-sm">Carregando mais posts...</span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
