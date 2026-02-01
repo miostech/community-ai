@@ -15,7 +15,7 @@ import {
     CircularProgress,
     Divider,
 } from '@mui/material';
-import { Notifications as NotificationsIcon } from '@mui/icons-material';
+import { NotificationsOutlined as NotificationsIcon } from '@mui/icons-material';
 
 export type NotificationType = 'like' | 'comment' | 'reply';
 

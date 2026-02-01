@@ -210,10 +210,13 @@ export default function ComunidadePageMui() {
                     textTransform: 'none',
                     fontWeight: 500,
                     minWidth: 'auto',
-                    px: { xs: 1, sm: 2 },
+                    px: { xs: 2, sm: 2 },
+                    '& .MuiButton-startIcon': {
+                      mr: { xs: 0, sm: 1 },
+                    },
                     ...(showSavedOnly && {
                       background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                    }),
+                    })
                   }}
                 >
                   <Box sx={{ display: { xs: 'none', sm: 'block' } }}>

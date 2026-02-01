@@ -871,8 +871,7 @@ export default function PerfilComunidadePage() {
                   <Chip
                     label={postTypeLabels[post.type]}
                     size="small"
-                    color={postTypeColors[post.type]}
-                    sx={{ fontSize: 10, height: 22 }}
+                    sx={{ height: 24, fontSize: '0.625rem', fontWeight: 500 }}
                   />
                 </Stack>
 

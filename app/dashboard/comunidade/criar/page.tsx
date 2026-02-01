@@ -507,7 +507,7 @@ export default function CriarPostPageMui() {
                 <MultiImageUpload
                   onImagesSelect={handleImagesSelect}
                   currentImages={[]}
-                  onRemoveImage={() => {}}
+                  onRemoveImage={() => { }}
                   maxImages={10 - uploadedImages.length}
                 />
               )}
@@ -526,9 +526,6 @@ export default function CriarPostPageMui() {
             <Stack spacing={2}>
               {!uploadedVideo ? (
                 <>
-                  <Alert severity="info" icon={<MovieIcon />}>
-                    Faça upload de um vídeo do seu dispositivo (MP4, MOV, WEBM - máx. 500MB)
-                  </Alert>
                   <input
                     ref={videoInputRef}
                     type="file"
@@ -536,19 +533,50 @@ export default function CriarPostPageMui() {
                     onChange={handleVideoSelect}
                     style={{ display: 'none' }}
                   />
-                  <Button
-                    variant="outlined"
+                  <Box
                     onClick={() => videoInputRef.current?.click()}
-                    startIcon={<UploadIcon />}
                     sx={{
-                      py: 4,
-                      borderStyle: 'dashed',
+                      width: '100%',
+                      aspectRatio: '16/9',
                       borderRadius: 3,
-                      borderWidth: 2,
+                      border: '2px dashed',
+                      borderColor: 'divider',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 1.5,
+                      cursor: 'pointer',
+                      bgcolor: theme.palette.mode === 'dark' ? 'neutral.800' : 'grey.50',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        bgcolor: theme.palette.mode === 'dark' ? 'neutral.700' : alpha(theme.palette.primary.main, 0.05),
+                      },
                     }}
                   >
-                    Clique para selecionar um vídeo
-                  </Button>
+                    <Box
+                      sx={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: '50%',
+                        bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.primary.main, 0.1),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <VideoIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+                    </Box>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        Adicionar vídeo
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        MP4, MOV, WEBM • Máx. 500MB
+                      </Typography>
+                    </Box>
+                  </Box>
                 </>
               ) : (
                 <Box>

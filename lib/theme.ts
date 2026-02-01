@@ -123,7 +123,7 @@ export const darkTheme = createTheme({
         },
         background: {
             default: '#000000',
-            paper: '#1e293b', // slate-800
+            paper: '#000000',
         },
         text: {
             primary: '#f1f5f9', // slate-100
@@ -148,7 +148,7 @@ export const darkTheme = createTheme({
                 root: {
                     borderBottom: '1px solid #334155',
                     backdropFilter: 'blur(20px)',
-                    backgroundColor: 'rgba(18, 18, 18, 0.95)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.95)',
                     height: 67,
                 },
             },
