@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { useSession } from 'next-auth/react';
+import { useAccount } from '@/contexts/AccountContext';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
@@ -15,11 +16,26 @@ interface PostAuthor {
     avatar_url?: string;
 }
 
+interface Reply {
+    _id: string;
+    author: PostAuthor;
+    content: string;
+    created_at: string;
+    likes_count?: number;
+}
+
 interface Comment {
     _id: string;
     author: PostAuthor;
     content: string;
     created_at: string;
+    replies_count?: number;
+    replies?: Reply[];
+}
+
+interface ReplyingTo {
+    commentId: string;
+    authorName: string;
 }
 
 interface Post {
@@ -72,6 +88,7 @@ export default function PostDetailPage() {
     const params = useParams();
     const router = useRouter();
     const { data: session } = useSession();
+    const { account } = useAccount();
     const postId = params.postId as string;
 
     const [post, setPost] = useState<Post | null>(null);
@@ -82,6 +99,10 @@ export default function PostDetailPage() {
     const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+    const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
+    const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [isDeletingPost, setIsDeletingPost] = useState(false);
 
     // Buscar post
     const fetchPost = useCallback(async () => {
@@ -195,13 +216,38 @@ export default function PostDetailPage() {
             const response = await fetch(`/api/posts/${postId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: newComment.trim() }),
+                body: JSON.stringify({
+                    content: newComment.trim(),
+                    parent_id: replyingTo?.commentId || undefined,
+                }),
             });
 
             if (!response.ok) throw new Error('Erro ao enviar comentário');
 
             const data = await response.json();
-            setComments(prev => [data.comment, ...prev]);
+
+            if (replyingTo) {
+                // Adicionar reply ao comentário pai
+                setComments(prev =>
+                    prev.map(comment => {
+                        if (comment._id === replyingTo.commentId) {
+                            return {
+                                ...comment,
+                                replies_count: (comment.replies_count || 0) + 1,
+                                replies: [...(comment.replies || []), data.comment],
+                            };
+                        }
+                        return comment;
+                    })
+                );
+                // Expandir replies do comentário pai
+                setExpandedReplies(prev => new Set(prev).add(replyingTo.commentId));
+                setReplyingTo(null);
+            } else {
+                // Adicionar novo comentário no topo
+                setComments(prev => [{ ...data.comment, replies: [] }, ...prev]);
+            }
+
             setNewComment('');
 
             // Atualizar contador
@@ -210,6 +256,109 @@ export default function PostDetailPage() {
             console.error('Erro ao enviar comentário:', err);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    // Iniciar resposta a um comentário
+    const handleReply = (commentId: string, authorName: string) => {
+        setReplyingTo({ commentId, authorName });
+        setNewComment('');
+    };
+
+    // Cancelar resposta
+    const cancelReply = () => {
+        setReplyingTo(null);
+        setNewComment('');
+    };
+
+    // Toggle exibição de replies
+    const toggleReplies = (commentId: string) => {
+        setExpandedReplies(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(commentId)) {
+                newSet.delete(commentId);
+            } else {
+                newSet.add(commentId);
+            }
+            return newSet;
+        });
+    };
+
+    // Deletar comentário
+    const handleDeleteComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+        if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
+
+        try {
+            const response = await fetch(`/api/posts/${postId}/comments?commentId=${commentId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                if (isReply && parentId) {
+                    // Remover reply do comentário pai
+                    setComments(prev =>
+                        prev.map(comment => {
+                            if (comment._id === parentId) {
+                                return {
+                                    ...comment,
+                                    replies_count: Math.max(0, (comment.replies_count || 0) - 1),
+                                    replies: comment.replies?.filter(r => r._id !== commentId) || [],
+                                };
+                            }
+                            return comment;
+                        })
+                    );
+                } else {
+                    // Remover comentário principal
+                    setComments(prev => prev.filter(c => c._id !== commentId));
+                }
+                // Atualizar contador no post
+                setPost(prev => prev ? { ...prev, comments_count: Math.max(0, prev.comments_count - 1) } : null);
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao deletar comentário');
+            }
+        } catch (error) {
+            console.error('Erro ao deletar comentário:', error);
+            alert('Erro ao deletar comentário');
+        }
+    };
+
+    // Verificar se o usuário é o autor do comentário
+    const isMyComment = (authorId: string) => {
+        return account?.id === authorId;
+    };
+
+    // Verificar se o post pertence ao usuário atual
+    const isMyPost = () => {
+        return account?.id === post?.author.id;
+    };
+
+    // Excluir post
+    const handleDeletePost = async () => {
+        if (!confirm('Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        setIsDeletingPost(true);
+        setMenuOpen(false);
+
+        try {
+            const response = await fetch(`/api/posts/${postId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Erro ao excluir post');
+            }
+
+            // Redirecionar para a comunidade após excluir
+            router.push('/dashboard/comunidade');
+        } catch (error) {
+            console.error('Erro ao excluir post:', error);
+            alert('Erro ao excluir post. Tente novamente.');
+            setIsDeletingPost(false);
         }
     };
 
@@ -249,7 +398,57 @@ export default function PostDetailPage() {
                         </svg>
                     </button>
                     <h1 className="font-semibold text-gray-900 dark:text-white">Post</h1>
-                    <div className="w-10"></div>
+                    {/* Menu de 3 pontos - só aparece para os próprios posts */}
+                    {isMyPost() ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                className="p-2 -mr-2 text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="5" r="2" />
+                                    <circle cx="12" cy="12" r="2" />
+                                    <circle cx="12" cy="19" r="2" />
+                                </svg>
+                            </button>
+                            {/* Dropdown menu */}
+                            {menuOpen && (
+                                <>
+                                    {/* Overlay para fechar o menu */}
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setMenuOpen(false)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 z-50 min-w-[140px] overflow-hidden">
+                                        <button
+                                            onClick={handleDeletePost}
+                                            disabled={isDeletingPost}
+                                            className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                                        >
+                                            {isDeletingPost ? (
+                                                <>
+                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    <span>Excluindo...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    <span>Excluir post</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="w-10"></div>
+                    )}
                 </div>
             </div>
 
@@ -425,6 +624,23 @@ export default function PostDetailPage() {
                     {/* Form de comentário */}
                     {session?.user && (
                         <form onSubmit={handleSubmitComment} className="p-4 border-b border-gray-100 dark:border-neutral-800">
+                            {/* Indicador de resposta */}
+                            {replyingTo && (
+                                <div className="flex items-center justify-between mb-3 px-3 py-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                                    <span className="text-sm text-gray-600 dark:text-slate-400">
+                                        Respondendo a <span className="font-semibold text-gray-900 dark:text-white">{replyingTo.authorName}</span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={cancelReply}
+                                        className="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-1"
+                                    >
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            )}
                             <div className="flex items-start space-x-3">
                                 {session.user.image ? (
                                     <img
@@ -441,7 +657,7 @@ export default function PostDetailPage() {
                                     <textarea
                                         value={newComment}
                                         onChange={(e) => setNewComment(e.target.value)}
-                                        placeholder="Adicione um comentário..."
+                                        placeholder={replyingTo ? `Responder a ${replyingTo.authorName}...` : 'Adicione um comentário...'}
                                         className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-gray-900 dark:text-white placeholder-gray-500"
                                         rows={2}
                                     />
@@ -474,6 +690,7 @@ export default function PostDetailPage() {
                         ) : (
                             comments.map((comment) => (
                                 <div key={comment._id} className="p-4">
+                                    {/* Comentário principal */}
                                     <div className="flex items-start space-x-3">
                                         {comment.author.avatar_url ? (
                                             <img
@@ -498,6 +715,82 @@ export default function PostDetailPage() {
                                             <p className="text-sm text-gray-700 dark:text-slate-300 mt-1 whitespace-pre-line break-words">
                                                 {comment.content}
                                             </p>
+                                            {/* Ações do comentário */}
+                                            <div className="flex items-center gap-4 mt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleReply(comment._id, comment.author.name)}
+                                                    className="text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                                                >
+                                                    Responder
+                                                </button>
+                                                {isMyComment(comment.author.id) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteComment(comment._id)}
+                                                        className="text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                    >
+                                                        Excluir
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Ver respostas */}
+                                            {(comment.replies_count || 0) > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleReplies(comment._id)}
+                                                    className="flex items-center gap-2 mt-2 text-xs font-semibold text-blue-500 dark:text-blue-400"
+                                                >
+                                                    <div className="w-6 h-[1px] bg-gray-300 dark:bg-slate-600" />
+                                                    {expandedReplies.has(comment._id)
+                                                        ? 'Ocultar respostas'
+                                                        : `Ver ${comment.replies_count} resposta${(comment.replies_count || 0) > 1 ? 's' : ''}`}
+                                                </button>
+                                            )}
+
+                                            {/* Lista de replies */}
+                                            {expandedReplies.has(comment._id) && comment.replies && comment.replies.length > 0 && (
+                                                <div className="mt-3 space-y-3 pl-2 border-l-2 border-gray-100 dark:border-slate-700">
+                                                    {comment.replies.map((reply) => (
+                                                        <div key={reply._id} className="flex items-start space-x-2.5 pl-2">
+                                                            {reply.author.avatar_url ? (
+                                                                <img
+                                                                    src={reply.author.avatar_url}
+                                                                    alt={reply.author.name}
+                                                                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white text-[10px] font-medium flex-shrink-0">
+                                                                    {reply.author.name.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className="font-semibold text-xs text-gray-900 dark:text-white">
+                                                                        {reply.author.name}
+                                                                    </span>
+                                                                    <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                                                                        {formatTimeAgo(reply.created_at)}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-xs text-gray-700 dark:text-slate-300 mt-0.5 whitespace-pre-line break-words">
+                                                                    {reply.content}
+                                                                </p>
+                                                                {isMyComment(reply.author.id) && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDeleteComment(reply._id, true, comment._id)}
+                                                                        className="text-[11px] font-semibold text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors mt-1"
+                                                                    >
+                                                                        Excluir
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

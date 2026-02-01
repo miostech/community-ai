@@ -19,7 +19,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const { hasPhone, isLoading } = useAccount();
   const showPhoneModal = !isLoading && !hasPhone && pathname !== '/dashboard/perfil';
 
-  const isComunidadePage = pathname === '/dashboard/comunidade';
+  const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');
   const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
   const hideBlobs = isComunidadePage || isCriarPostPage;
 
@@ -41,8 +41,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
                 <Sidebar />
                 <MobileMenu />
-                <main className={`flex-1 md:ml-64 relative z-10 ${isComunidadePage ? 'pt-0' : 'pt-16 md:pt-0'}`}>
-                  <div className={isComunidadePage ? '' : 'p-0 md:p-8'}>
+                <main className={`flex-1 md:ml-64 relative z-10 overflow-x-hidden ${isComunidadePage ? 'pt-0' : 'pt-16 md:pt-0'}`}>
+                  <div className={isComunidadePage ? 'overflow-x-hidden' : 'p-0 md:p-8'}>
                     {children}
                   </div>
                 </main>
