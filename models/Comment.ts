@@ -132,11 +132,10 @@ CommentSchema.index({ post_id: 1, parent_id: 1, created_at: 1 }); // Respostas d
 CommentSchema.index({ author_id: 1, created_at: -1 }); // Comentários de um usuário
 
 // Middleware para marcar como editado
-CommentSchema.pre('save', function (next) {
+CommentSchema.pre('save', function () {
     if (this.isModified('content') && !this.isNew) {
         this.is_edited = true;
     }
-    next();
 });
 
 export default mongoose.models.Comment || mongoose.model<IComment>('Comment', CommentSchema);

@@ -236,7 +236,7 @@ export default function PostDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black">
+        <div className="min-h-screen bg-gray-50 dark:bg-black overflow-x-hidden">
             {/* Header */}
             <div className="sticky top-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800">
                 <div className="flex items-center justify-between px-4 py-3">
@@ -285,7 +285,7 @@ export default function PostDetailPage() {
 
                     {/* Conteúdo */}
                     {post.content && (
-                        <div className="px-4 pb-3 text-gray-900 dark:text-slate-100 whitespace-pre-line break-words leading-relaxed">
+                        <div className="px-4 pb-3 text-gray-900 dark:text-slate-100 whitespace-pre-line break-words leading-relaxed overflow-hidden [word-break:break-word]">
                             {post.content}
                         </div>
                     )}

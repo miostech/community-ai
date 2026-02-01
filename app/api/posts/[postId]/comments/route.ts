@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Comment from '@/models/Comment';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
+import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,17 +23,32 @@ export async function GET(
 
         await connectMongo();
 
+        // Converter postId para ObjectId
+        const postObjectId = new mongoose.Types.ObjectId(postId);
+
+        console.log('🔍 Buscando comentários para post_id:', postId);
+
         // Verificar se o post existe
-        const post = await Post.findById(postId);
+        const post = await Post.findById(postObjectId);
         if (!post) {
             return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
         }
 
+        // Debug: buscar todos os comentários desse post sem filtros
+        const allCommentsForPost = await Comment.find({ post_id: postObjectId }).lean();
+        console.log('📝 Total de comentários no banco para este post:', allCommentsForPost.length);
+        if (allCommentsForPost.length > 0) {
+            console.log('📝 Exemplo de comentário:', JSON.stringify(allCommentsForPost[0], null, 2));
+        }
+
         // Buscar comentários (apenas comentários de primeiro nível, não respostas)
         const comments = await Comment.find({
-            post_id: postId,
+            post_id: postObjectId,
             is_deleted: { $ne: true },
-            parent_id: { $exists: false } // Apenas comentários de primeiro nível
+            $or: [
+                { parent_id: { $exists: false } },
+                { parent_id: null }
+            ]
         })
             .sort({ created_at: -1 })
             .skip(skip)
@@ -41,9 +57,12 @@ export async function GET(
             .lean();
 
         const total = await Comment.countDocuments({
-            post_id: postId,
+            post_id: postObjectId,
             is_deleted: { $ne: true },
-            parent_id: { $exists: false }
+            $or: [
+                { parent_id: { $exists: false } },
+                { parent_id: null }
+            ]
         });
 
         // Formatar comentários

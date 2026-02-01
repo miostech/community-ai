@@ -8,7 +8,7 @@ import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { CommentsSection } from '@/components/community/CommentsSection';
 import { usePosts, Post } from '@/contexts/PostsContext';
-import { communityUsers } from '@/lib/community-users';
+import { useStories } from '@/contexts/StoriesContext';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
@@ -50,11 +50,15 @@ export default function ComunidadePage() {
     refreshPosts,
     toggleLike,
     toggleSave,
+    updatePost,
   } = usePosts();
 
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+
+  // Usar o contexto de stories
+  const { users: storyUsers } = useStories();
 
   // Ref para o elemento sentinela do Intersection Observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -176,9 +180,11 @@ export default function ComunidadePage() {
         </div>
       )}
 
-      <div className="mb-0 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen sm:static sm:left-auto sm:right-auto sm:ml-0 sm:mr-0 sm:w-full">
-        <Stories users={communityUsers} />
-      </div>
+      {storyUsers.length > 0 && (
+        <div className="mb-0 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen sm:static sm:left-auto sm:right-auto sm:ml-0 sm:mr-0 sm:w-full">
+          <Stories users={storyUsers} />
+        </div>
+      )}
 
       {/* Loading inicial */}
       {isLoading && posts.length === 0 && (
@@ -445,6 +451,11 @@ export default function ComunidadePage() {
           postId={activeCommentsPostId}
           isOpen={!!activeCommentsPostId}
           onClose={() => setActiveCommentsPostId(null)}
+          onCommentAdded={() => {
+            updatePost(activeCommentsPostId, {
+              comments_count: (posts.find(p => p.id === activeCommentsPostId)?.comments_count || 0) + 1
+            });
+          }}
         />
       )}
     </div>
