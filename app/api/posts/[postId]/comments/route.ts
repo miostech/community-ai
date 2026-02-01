@@ -65,9 +65,31 @@ export async function GET(
             ]
         });
 
-        // Formatar comentários
+        // Buscar replies para cada comentário
+        const commentIds = comments.map((c: any) => c._id);
+        const replies = await Comment.find({
+            parent_id: { $in: commentIds },
+            is_deleted: { $ne: true },
+        })
+            .sort({ created_at: 1 })
+            .populate('author_id', 'first_name last_name avatar_url')
+            .lean();
+
+        // Agrupar replies por parent_id
+        const repliesByParent: Record<string, any[]> = {};
+        replies.forEach((reply: any) => {
+            const parentId = reply.parent_id.toString();
+            if (!repliesByParent[parentId]) {
+                repliesByParent[parentId] = [];
+            }
+            repliesByParent[parentId].push(reply);
+        });
+
+        // Formatar comentários com replies
         const formattedComments = comments.map((comment: any) => {
             const author = comment.author_id;
+            const commentReplies = repliesByParent[comment._id.toString()] || [];
+
             return {
                 _id: comment._id.toString(),
                 author: {
@@ -79,6 +101,20 @@ export async function GET(
                 likes_count: comment.likes_count || 0,
                 replies_count: comment.replies_count || 0,
                 created_at: comment.created_at,
+                replies: commentReplies.map((reply: any) => {
+                    const replyAuthor = reply.author_id;
+                    return {
+                        _id: reply._id.toString(),
+                        author: {
+                            id: replyAuthor?._id?.toString() || '',
+                            name: replyAuthor ? `${replyAuthor.first_name || ''} ${replyAuthor.last_name || ''}`.trim() : 'Usuário',
+                            avatar_url: replyAuthor?.avatar_url || null,
+                        },
+                        content: reply.content,
+                        likes_count: reply.likes_count || 0,
+                        created_at: reply.created_at,
+                    };
+                }),
             };
         });
 

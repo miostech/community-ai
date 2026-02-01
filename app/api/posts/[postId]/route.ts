@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
+import Like from '@/models/Like';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,13 @@ export async function GET(
             const account = await Account.findOne({ auth_user_id: authUserId });
 
             if (account) {
-                formattedPost.liked = post.liked_by?.some((id: any) => id.toString() === account._id.toString()) || false;
+                // Verificar like usando o model Like
+                const userLike = await Like.findOne({
+                    user_id: account._id,
+                    target_type: 'post',
+                    target_id: post._id,
+                });
+                formattedPost.liked = !!userLike;
                 formattedPost.saved = post.saved_by?.some((id: any) => id.toString() === account._id.toString()) || false;
             }
         }

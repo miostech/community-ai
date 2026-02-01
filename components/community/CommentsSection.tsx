@@ -9,6 +9,14 @@ interface CommentAuthor {
   avatar_url?: string;
 }
 
+interface Reply {
+  _id: string;
+  author: CommentAuthor;
+  content: string;
+  created_at: string;
+  likes_count?: number;
+}
+
 interface Comment {
   _id: string;
   author: CommentAuthor;
@@ -16,6 +24,8 @@ interface Comment {
   created_at: string;
   likes_count?: number;
   liked?: boolean;
+  replies_count?: number;
+  replies?: Reply[];
 }
 
 interface CommentsSectionProps {
@@ -23,6 +33,11 @@ interface CommentsSectionProps {
   isOpen: boolean;
   onClose: () => void;
   onCommentAdded?: () => void;
+}
+
+interface ReplyingTo {
+  commentId: string;
+  authorName: string;
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -43,6 +58,8 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
   const [isLoading, setIsLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const hasFetched = useRef(false);
@@ -100,29 +117,82 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
       const response = await fetch(`/api/posts/${postId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: commentText.trim() }),
+        body: JSON.stringify({
+          content: commentText.trim(),
+          parent_id: replyingTo?.commentId || undefined,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setComments(prev => [data.comment, ...prev]);
+
+        if (replyingTo) {
+          // Adicionar reply ao comentário pai
+          setComments(prev =>
+            prev.map(comment => {
+              if (comment._id === replyingTo.commentId) {
+                return {
+                  ...comment,
+                  replies_count: (comment.replies_count || 0) + 1,
+                  replies: [...(comment.replies || []), data.comment],
+                };
+              }
+              return comment;
+            })
+          );
+          // Expandir replies do comentário pai
+          setExpandedReplies(prev => new Set(prev).add(replyingTo.commentId));
+          setReplyingTo(null);
+        } else {
+          // Adicionar novo comentário no topo
+          setComments(prev => [{ ...data.comment, replies: [] }, ...prev]);
+        }
+
         setCommentText('');
 
         // Notificar que um comentário foi adicionado
         onCommentAdded?.();
 
-        // Scroll para o topo para ver o novo comentário
-        setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = 0;
-          }
-        }, 100);
+        // Scroll para o topo para ver o novo comentário (se não for reply)
+        if (!replyingTo) {
+          setTimeout(() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollTop = 0;
+            }
+          }, 100);
+        }
       }
     } catch (error) {
       console.error('Erro ao enviar comentário:', error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Iniciar resposta a um comentário
+  const handleReply = (commentId: string, authorName: string) => {
+    setReplyingTo({ commentId, authorName });
+    setCommentText('');
+    inputRef.current?.focus();
+  };
+
+  // Cancelar resposta
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setCommentText('');
+  };
+
+  // Toggle exibição de replies
+  const toggleReplies = (commentId: string) => {
+    setExpandedReplies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+      } else {
+        newSet.add(commentId);
+      }
+      return newSet;
+    });
   };
 
   // Adicionar emoji ao comentário
@@ -198,6 +268,7 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
             <>
               {comments.map((comment) => (
                 <div key={comment._id} className="mb-4">
+                  {/* Comentário principal */}
                   <div className="flex gap-3">
                     {comment.author.avatar_url ? (
                       <img
@@ -223,7 +294,64 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
                         <span className="text-xs text-gray-500 dark:text-slate-400">
                           {formatTimeAgo(comment.created_at)}
                         </span>
+                        <button
+                          type="button"
+                          onClick={() => handleReply(comment._id, comment.author.name)}
+                          className="text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                        >
+                          Responder
+                        </button>
                       </div>
+
+                      {/* Ver respostas */}
+                      {(comment.replies_count || 0) > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleReplies(comment._id)}
+                          className="flex items-center gap-2 mt-2 pl-3.5 text-xs font-semibold text-blue-500 dark:text-blue-400"
+                        >
+                          <div className="w-6 h-[1px] bg-gray-300 dark:bg-slate-600" />
+                          {expandedReplies.has(comment._id)
+                            ? 'Ocultar respostas'
+                            : `Ver ${comment.replies_count} resposta${(comment.replies_count || 0) > 1 ? 's' : ''}`}
+                        </button>
+                      )}
+
+                      {/* Lista de replies */}
+                      {expandedReplies.has(comment._id) && comment.replies && comment.replies.length > 0 && (
+                        <div className="mt-3 space-y-3 pl-2">
+                          {comment.replies.map((reply) => (
+                            <div key={reply._id} className="flex gap-2.5">
+                              {reply.author.avatar_url ? (
+                                <img
+                                  src={reply.author.avatar_url}
+                                  alt={reply.author.name}
+                                  className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                                  {reply.author.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="bg-gray-100 dark:bg-slate-700 rounded-xl px-3 py-2">
+                                  <p className="font-semibold text-xs text-gray-900 dark:text-slate-100 mb-0.5">
+                                    {reply.author.name}
+                                  </p>
+                                  <p className="text-xs text-gray-700 dark:text-slate-300 leading-relaxed break-words">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3 mt-1 pl-3">
+                                  <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                                    {formatTimeAgo(reply.created_at)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -232,6 +360,24 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
             </>
           )}
         </div>
+
+        {/* Indicador de resposta */}
+        {replyingTo && (
+          <div className="flex-shrink-0 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 px-4 py-2 flex items-center justify-between">
+            <span className="text-sm text-gray-600 dark:text-slate-400">
+              Respondendo a <span className="font-semibold text-gray-900 dark:text-slate-200">{replyingTo.authorName}</span>
+            </span>
+            <button
+              type="button"
+              onClick={cancelReply}
+              className="text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 p-1"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* Barra de emojis */}
         <div className="flex-shrink-0 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/80 px-3 py-2 flex items-center gap-1.5 overflow-x-auto h-14">
@@ -249,10 +395,9 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
 
         {/* Campo de entrada */}
         <div
-          className="flex-shrink-0 bg-white dark:bg-black border-t-2 border-gray-200 dark:border-neutral-800 px-4 py-3 flex items-center"
+          className="flex-shrink-0 bg-white dark:bg-black border-t-2 border-gray-200 dark:border-neutral-800 px-4 py-3 flex flex-col"
           style={{
-            minHeight: '80px',
-            height: '80px',
+            minHeight: replyingTo ? '70px' : '80px',
             zIndex: 10001,
             boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
           }}
@@ -269,7 +414,7 @@ export function CommentsSection({ postId, isOpen, onClose, onCommentAdded }: Com
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Adicione um comentário..."
+              placeholder={replyingTo ? `Responder a ${replyingTo.authorName}...` : 'Adicione um comentário...'}
               className="flex-1 px-4 py-3 text-base bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-3xl outline-none focus:bg-white dark:focus:bg-slate-700 focus:border-blue-500 dark:focus:border-blue-400 transition-colors text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
               style={{
                 WebkitAppearance: 'none',

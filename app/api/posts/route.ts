@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
+import Like from '@/models/Like';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -117,6 +118,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
 
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
+
         const { searchParams } = new URL(request.url);
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '20');
@@ -124,6 +127,9 @@ export async function GET(request: NextRequest) {
         const authorId = searchParams.get('author_id'); // posts de um usuário
 
         await connectMongo();
+
+        // Buscar account do usuário atual para verificar likes
+        const currentAccount = await Account.findOne({ auth_user_id: authUserId });
 
         // Construir query
         const query: Record<string, unknown> = {
@@ -151,6 +157,18 @@ export async function GET(request: NextRequest) {
             Post.countDocuments(query),
         ]);
 
+        // Buscar likes do usuário atual para esses posts
+        let userLikes: Set<string> = new Set();
+        if (currentAccount) {
+            const postIds = posts.map((p: any) => p._id);
+            const likes = await Like.find({
+                user_id: currentAccount._id,
+                target_type: 'post',
+                target_id: { $in: postIds },
+            }).lean();
+            userLikes = new Set(likes.map((l: any) => l.target_id.toString()));
+        }
+
         // Formatar posts para resposta
         const formattedPosts = posts.map((post: any) => ({
             id: post._id.toString(),
@@ -174,6 +192,7 @@ export async function GET(request: NextRequest) {
             is_pinned: post.is_pinned,
             likes_count: post.likes_count,
             comments_count: post.comments_count,
+            liked: userLikes.has(post._id.toString()),
             visibility: post.visibility,
             created_at: post.created_at,
             published_at: post.published_at,
