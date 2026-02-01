@@ -48,6 +48,7 @@ import {
   YouTube as YouTubeIcon,
   MusicNote as TikTokIcon,
   PhotoLibrary as PhotoLibraryIcon,
+  OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
@@ -96,6 +97,7 @@ type ProfilePostFromApi = {
   imageUrl?: string | null;
   imageUrls?: string[];
   videoUrl?: string;
+  linkInstagramPost?: string;
   likes: number;
   comments: number;
   timeAgo: string;
@@ -190,6 +192,7 @@ export default function PerfilComunidadePage() {
           content: string;
           images?: string[];
           video_url?: string;
+          link_instagram_post?: string;
           category: string;
           likes_count: number;
           comments_count: number;
@@ -203,6 +206,7 @@ export default function PerfilComunidadePage() {
           imageUrl: p.images?.[0] ?? null,
           imageUrls: p.images?.length ? p.images : undefined,
           videoUrl: p.video_url ?? undefined,
+          linkInstagramPost: p.link_instagram_post ?? undefined,
           likes: p.likes_count ?? 0,
           comments: p.comments_count ?? 0,
           timeAgo: formatTimeAgo(p.created_at),
@@ -232,6 +236,7 @@ export default function PerfilComunidadePage() {
       content: string;
       images?: string[];
       video_url?: string;
+      link_instagram_post?: string;
       category: string;
       likes_count: number;
       comments_count: number;
@@ -245,6 +250,7 @@ export default function PerfilComunidadePage() {
       imageUrl: p.images?.[0] ?? null,
       imageUrls: p.images?.length ? p.images : undefined,
       videoUrl: p.video_url ?? undefined,
+      linkInstagramPost: p.link_instagram_post ?? undefined,
       likes: p.likes_count ?? 0,
       comments: p.comments_count ?? 0,
       timeAgo: formatTimeAgo(p.created_at),
@@ -501,22 +507,12 @@ export default function PerfilComunidadePage() {
       }}
     >
       {/* Header fixo */}
-      <AppBar
-        position="sticky"
-        color="inherit"
-        elevation={0}
-        sx={{
-          borderBottom: 1,
-          borderColor: 'divider',
-          backdropFilter: 'blur(8px)',
-          bgcolor: 'rgba(var(--mui-palette-background-defaultChannel) / 0.95)',
-        }}
-      >
-        <Toolbar sx={{ minHeight: 56, gap: 1.5 }}>
+      <AppBar sx={{ width: { xs: '100%', md: 'calc(100% - 256px)' } }}>
+        <Toolbar>
           <IconButton
             onClick={() => router.back()}
             size="small"
-            sx={{ color: 'text.primary' }}
+            sx={{ color: 'text.primary', mr: 1 }}
           >
             <ArrowBackIcon />
           </IconButton>
@@ -534,6 +530,9 @@ export default function PerfilComunidadePage() {
           </Typography>
         </Toolbar>
       </AppBar>
+
+      {/* Spacer para o header fixo */}
+      <Box sx={{ height: 67 }} />
 
       {/* Perfil section */}
       <Box sx={{ px: 2, py: 3, borderBottom: 1, borderColor: 'divider' }}>
@@ -948,7 +947,8 @@ export default function PerfilComunidadePage() {
                       alt="Post"
                       sx={{
                         width: '100%',
-                        aspectRatio: '1',
+                        aspectRatio: '4/5',
+                        maxHeight: 600,
                         objectFit: 'cover',
                         bgcolor: 'action.hover',
                       }}
@@ -984,8 +984,49 @@ export default function PerfilComunidadePage() {
 
                 {/* Video */}
                 {post.videoUrl && (
+                  <Box sx={{ mb: 1.5, mx: { xs: -1.5, sm: -2 } }}>
+                    <Box
+                      component="video"
+                      src={post.videoUrl}
+                      controls
+                      sx={{
+                        width: '100%',
+                        aspectRatio: '4/5',
+                        maxHeight: 600,
+                        objectFit: 'contain',
+                        bgcolor: 'black',
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {/* Link social */}
+                {post.linkInstagramPost && (
                   <Box sx={{ mb: 1.5 }}>
-                    <VideoEmbed url={post.videoUrl} />
+                    <Typography
+                      component="a"
+                      href={post.linkInstagramPost}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="caption"
+                      color="primary"
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' },
+                      }}
+                    >
+                      <OpenInNewIcon sx={{ fontSize: 14 }} />
+                      {post.linkInstagramPost.includes('instagram.com')
+                        ? 'Ver post no Instagram'
+                        : post.linkInstagramPost.includes('tiktok.com')
+                          ? 'Ver post no TikTok'
+                          : post.linkInstagramPost.includes('x.com') || post.linkInstagramPost.includes('twitter.com')
+                            ? 'Ver post no X'
+                            : 'Ver post original'}
+                    </Typography>
                   </Box>
                 )}
 

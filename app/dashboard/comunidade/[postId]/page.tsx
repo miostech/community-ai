@@ -211,8 +211,8 @@ export default function PostDetailPageMui() {
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
             {/* Header */}
-            <AppBar position="sticky" color="inherit" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Toolbar>
+            <AppBar sx={{ width: { xs: '100%', md: 'calc(100% - 256px)' } }}>
+                <Toolbar sx={{ height: 67, minHeight: 67 }}>
                     <IconButton edge="start" onClick={() => router.back()} sx={{ mr: 2 }}>
                         <ArrowBackIcon />
                     </IconButton>
@@ -233,7 +233,7 @@ export default function PostDetailPageMui() {
                 </Toolbar>
             </AppBar>
 
-            <Box sx={{ maxWidth: 700, mx: 'auto' }}>
+            <Box sx={{ maxWidth: 700, mx: 'auto', pt: '67px' }}>
                 {/* Post */}
                 <Paper elevation={0} sx={{ borderRadius: 0, borderBottom: 1, borderColor: 'divider' }}>
                     {/* Author */}

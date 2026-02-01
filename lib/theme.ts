@@ -46,6 +46,7 @@ export const lightTheme = createTheme({
             defaultProps: {
                 color: 'default',
                 elevation: 0,
+                position: 'fixed',
             },
             styleOverrides: {
                 root: {
@@ -53,6 +54,14 @@ export const lightTheme = createTheme({
                     backdropFilter: 'blur(20px)',
                     backgroundColor: 'rgba(255, 255, 255, 0.95)',
                     height: 67,
+                },
+            },
+        },
+        MuiToolbar: {
+            styleOverrides: {
+                root: {
+                    height: 67,
+                    minHeight: 67,
                 },
             },
         },
@@ -133,6 +142,7 @@ export const darkTheme = createTheme({
             defaultProps: {
                 color: 'default',
                 elevation: 0,
+                position: 'fixed',
             },
             styleOverrides: {
                 root: {
@@ -140,6 +150,14 @@ export const darkTheme = createTheme({
                     backdropFilter: 'blur(20px)',
                     backgroundColor: 'rgba(18, 18, 18, 0.95)',
                     height: 67,
+                },
+            },
+        },
+        MuiToolbar: {
+            styleOverrides: {
+                root: {
+                    height: 67,
+                    minHeight: 67,
                 },
             },
         },
