@@ -1,5 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+// Código de Meus Projetos comentado - não está em uso no momento
+/*
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
@@ -9,7 +14,6 @@ export default function ProjetosPage() {
   const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    // Carregar projetos do localStorage
     try {
       const savedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
       setProjects(savedProjects);
@@ -31,26 +35,12 @@ export default function ProjetosPage() {
       {projects.length === 0 ? (
         <Card className="text-center py-12">
           <div className="text-gray-400 mb-4">
-            <svg
-              className="w-16 h-16 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Nenhum projeto ainda
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Comece criando seu primeiro conteúdo
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum projeto ainda</h3>
+          <p className="text-gray-600 mb-6">Comece criando seu primeiro conteúdo</p>
           <Button>Criar Conteúdo</Button>
         </Card>
       ) : (
@@ -59,9 +49,7 @@ export default function ProjetosPage() {
             <Card key={project.id} className="hover:shadow-lg transition-shadow">
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1">
-                    {project.title}
-                  </h3>
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-900 mb-1">{project.title}</h3>
                   <p className="text-xs sm:text-sm text-gray-600">{project.platform}</p>
                 </div>
                 <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-500">
@@ -70,22 +58,9 @@ export default function ProjetosPage() {
                 </div>
                 <div className="flex gap-2 pt-3 sm:pt-4 border-t border-gray-200">
                   <Link href={`/dashboard/projetos/${project.id}`} className="flex-1">
-                    <Button variant="ghost" size="sm" className="w-full text-xs sm:text-sm">
-                      Abrir
-                    </Button>
+                    <Button variant="ghost" size="sm" className="w-full text-xs sm:text-sm">Abrir</Button>
                   </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      const updatedProjects = projects.filter(p => p.id !== project.id);
-                      localStorage.setItem('projects', JSON.stringify(updatedProjects));
-                      setProjects(updatedProjects);
-                    }}
-                    className="text-xs sm:text-sm"
-                  >
-                    ⋮
-                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => {...}} className="text-xs sm:text-sm">⋮</Button>
                 </div>
               </div>
             </Card>
@@ -94,4 +69,16 @@ export default function ProjetosPage() {
       )}
     </div>
   );
+}
+*/
+
+export default function ProjetosPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redireciona para Histórico de conversas (substituiu Meus Projetos)
+    router.replace('/dashboard/chat/historico');
+  }, [router]);
+
+  return null;
 }
