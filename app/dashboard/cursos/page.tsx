@@ -136,10 +136,10 @@ export default function CursosPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
       <div className="mb-6 sm:mb-8 md:mb-12 text-center">
         <div className="inline-flex items-center space-x-2 mb-3 sm:mb-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Cursos</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Nossos Cursos</h1>
         </div>
         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-neutral-400 max-w-2xl mx-auto px-2">
-          Monetize seu conhecimento. Aprenda como realizar suas primeiras vendas como expert para sua audiência.
+          Aprenda a criar conteúdo que vende e a construir sua marca de forma orgânica.
         </p>
       </div>
 
@@ -150,31 +150,14 @@ export default function CursosPage() {
             key={course.id}
             className="overflow-hidden hover:shadow-xl transition-all duration-300 group"
           >
-            <div className="relative">
+            <div className="relative overflow-hidden">
               <CourseImage
                 src={course.thumbnail}
                 alt={course.title}
                 className="w-full h-40 sm:h-48 rounded-t-xl"
               />
               {!course.isAvailable && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center px-2">
-                    <svg
-                      className="w-12 h-12 sm:w-16 sm:h-16 text-white mx-auto mb-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                    <p className="text-white text-sm sm:text-base font-medium">Curso Bloqueado</p>
-                  </div>
-                </div>
+                <div className="absolute inset-0 bg-white/30 dark:bg-white/15 rounded-t-xl" />
               )}
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                 <span className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900 dark:text-neutral-100">

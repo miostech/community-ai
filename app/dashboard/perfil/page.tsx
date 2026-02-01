@@ -513,7 +513,7 @@ export default function PerfilPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex-1">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Ver meu perfil público</h2>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 mt-1">Veja como sua página aparece para quem clica no seu nome ou foto na comunidade</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 mt-1">Veja como seu perfil aparece na comunidade</p>
           </div>
           <Link
             href={`/dashboard/comunidade/perfil/${nameToSlug(displayName)}`}
