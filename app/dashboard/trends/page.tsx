@@ -73,18 +73,18 @@ const translateCategory = (cat: string) =>
   categoryPt[cat] ??
   (cat
     ? cat
-        .replace(/_/g, ' ')
-        .split(' ')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ')
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ')
     : cat);
 
 const capitalize = (s: string) =>
   s.length
     ? s
-        .split(' ')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ')
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ')
     : s;
 
 const formatVolume = (num: number | undefined): string => {
@@ -445,9 +445,9 @@ export default function TrendsPage() {
                               ? 'Alta'
                               : trend.value
                             : formatVolume(
-                                trend.searchVolume ??
-                                  (trend.type === 'top' ? trend.extractedValue : undefined)
-                              )}
+                              trend.searchVolume ??
+                              (trend.type === 'top' ? trend.extractedValue : undefined)
+                            )}
                           {trend.type === 'rising' &&
                             trend.searchVolume != null &&
                             trend.searchVolume > 0 && (

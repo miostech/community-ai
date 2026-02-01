@@ -82,7 +82,7 @@ export default function CursosPage() {
     setIsLoading(true);
     try {
       const availableCourseIds = await fetchKiwifySubscriptions(user.email);
-      
+
       const updatedCourses = coursesList.map(course => ({
         ...course,
         isAvailable: availableCourseIds.includes(course.kiwifyId),
@@ -104,11 +104,11 @@ export default function CursosPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Erro ao verificar assinaturas');
       }
-      
+
       const data = await response.json();
       return data.courseIds || [];
     } catch (error) {

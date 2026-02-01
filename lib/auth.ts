@@ -18,11 +18,11 @@ function splitName(name?: string | null): { first: string; last: string } {
 
 // Gera o client secret para Apple OAuth (JWT assinado)
 function generateAppleClientSecret(): string {
-    const teamId = process.env.APPLE_TEAM_ID!;
-    const clientId = process.env.APPLE_CLIENT_ID!;
-    const keyId = process.env.APPLE_KEY_ID!;
+    const teamId = process.env.APPLE_TEAM_ID?.trim() || '';
+    const clientId = process.env.APPLE_CLIENT_ID?.trim() || '';
+    const keyId = process.env.APPLE_KEY_ID?.trim() || '';
     // Converte \n literal para quebras de linha reais (caso esteja em uma linha só)
-    const privateKey = process.env.APPLE_PRIVATE_KEY!.replace(/\\n/g, '\n');
+    const privateKey = (process.env.APPLE_PRIVATE_KEY || '').trim().replace(/\\n/g, '\n');
 
     console.log('🍎 Apple OAuth Config:', {
         teamId,
@@ -49,7 +49,7 @@ function generateAppleClientSecret(): string {
                 header: { alg: 'ES256', kid: keyId },
             }
         );
-        
+
         console.log('🍎 Apple JWT gerado com sucesso, tamanho:', token.length);
         return token;
     } catch (error) {
@@ -102,7 +102,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     session: { strategy: 'jwt' },
-    pages: { 
+    pages: {
         signIn: '/login',
         error: '/login', // Redireciona erros para login
     },
@@ -171,13 +171,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
         async redirect({ url, baseUrl }) {
             console.log('🔄 Redirect callback:', { url, baseUrl });
-            
+
             // Se a URL começa com /, é uma URL relativa - redireciona para ela
             if (url.startsWith('/')) {
                 console.log('📍 URL relativa, redirecionando para:', `${baseUrl}${url}`);
                 return `${baseUrl}${url}`;
             }
-            
+
             // Tenta extrair callbackUrl se existir
             try {
                 const urlObj = new URL(url);
@@ -194,19 +194,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             } catch {
                 // URL inválida, ignora
             }
-            
+
             // Se a URL é EXATAMENTE o baseUrl (sem path), redireciona para dashboard
             if (url === baseUrl || url === `${baseUrl}/`) {
                 console.log('📍 URL é baseUrl puro, redirecionando para dashboard/comunidade');
                 return `${baseUrl}/dashboard/comunidade`;
             }
-            
+
             // Se a URL é do mesmo domínio, permite o redirect
             if (url.startsWith(baseUrl)) {
                 console.log('📍 Mesmo domínio, redirecionando para:', url);
                 return url;
             }
-            
+
             // Fallback: redireciona para o dashboard/comunidade
             console.log('📍 Fallback, redirecionando para:', `${baseUrl}/dashboard/comunidade`);
             return `${baseUrl}/dashboard/comunidade`;
