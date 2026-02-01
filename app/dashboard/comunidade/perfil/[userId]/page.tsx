@@ -39,6 +39,31 @@ const postTypeLabels: Record<PostType, string> = {
   result: 'Resultado',
 };
 
+/** Mapeia categoria da API para tipo do perfil */
+const categoryToType: Record<string, PostType> = {
+  ideia: 'idea',
+  resultado: 'result',
+  duvida: 'question',
+  roteiro: 'script',
+  geral: 'idea',
+};
+
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diffInSeconds < 60) return 'agora';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}min`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+}
+
+/** Identificador é um ID de conta (MongoDB ObjectId, 24 hex) */
+function isAccountId(identifier: string): boolean {
+  return /^[a-f0-9]{24}$/i.test(identifier);
+}
+
 function resolveProfileUser(identifier: string, posts: { author: string; avatar: string | null }[]): ProfileDisplay | null {
   if (!identifier?.trim()) return null;
   // Id numérico: usuário dos stories
@@ -72,10 +97,152 @@ export default function PerfilComunidadePage() {
   const { posts, updatePost, toggleSavePost } = usePosts();
   const isOwnProfile = Boolean(
     identifier &&
-    (fullName ? nameToSlug(fullName) === identifier : user?.name && nameToSlug(user.name) === identifier)
+    (
+      (fullName ? nameToSlug(fullName) === identifier : user?.name && nameToSlug(user.name) === identifier) ||
+      (account?.id && identifier === account.id)
+    )
   );
   const resolvedFromList = useMemo(() => resolveProfileUser(identifier, posts), [identifier, posts]);
+
+  // Posts do próprio perfil: buscar da API (postagens reais da comunidade)
+  type ProfilePostFromApi = {
+    id: string;
+    type: PostType;
+    author: string;
+    avatar: string | null;
+    content: string;
+    imageUrl?: string | null;
+    imageUrls?: string[];
+    videoUrl?: string;
+    likes: number;
+    comments: number;
+    timeAgo: string;
+    liked?: boolean;
+    saved?: boolean;
+  };
+  const [profilePostsFromApi, setProfilePostsFromApi] = useState<ProfilePostFromApi[]>([]);
+  const [profilePostsLoading, setProfilePostsLoading] = useState(false);
+
+  // Perfil de outro usuário acessado por ID (nome, avatar, redes e posts da API)
+  const [otherProfileData, setOtherProfileData] = useState<{
+    profileUser: ProfileDisplay;
+    posts: ProfilePostFromApi[];
+  } | null>(null);
+  const [otherProfileLoading, setOtherProfileLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOwnProfile || !account?.id) {
+      setProfilePostsFromApi([]);
+      return;
+    }
+    let cancelled = false;
+    setProfilePostsLoading(true);
+    fetch(`/api/posts?author_id=${encodeURIComponent(account.id)}&limit=50`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.posts) return;
+        const mapped: ProfilePostFromApi[] = data.posts.map((p: {
+          id: string;
+          author: { name?: string; avatar_url?: string | null };
+          content: string;
+          images?: string[];
+          video_url?: string;
+          category: string;
+          likes_count: number;
+          comments_count: number;
+          created_at: string;
+        }) => ({
+          id: p.id,
+          type: categoryToType[p.category] ?? 'idea',
+          author: p.author?.name ?? 'Eu',
+          avatar: p.author?.avatar_url ?? null,
+          content: p.content,
+          imageUrl: p.images?.[0] ?? null,
+          imageUrls: p.images?.length ? p.images : undefined,
+          videoUrl: p.video_url ?? undefined,
+          likes: p.likes_count ?? 0,
+          comments: p.comments_count ?? 0,
+          timeAgo: formatTimeAgo(p.created_at),
+          liked: false,
+          saved: false,
+        }));
+        setProfilePostsFromApi(mapped);
+      })
+      .catch(() => { if (!cancelled) setProfilePostsFromApi([]); })
+      .finally(() => { if (!cancelled) setProfilePostsLoading(false); });
+    return () => { cancelled = true; };
+  }, [isOwnProfile, account?.id]);
+
+  // Carregar perfil e posts de outro usuário quando o identifier é o ID da conta
+  useEffect(() => {
+    if (!identifier || !isAccountId(identifier) || isOwnProfile) {
+      setOtherProfileData(null);
+      return;
+    }
+    let cancelled = false;
+    setOtherProfileLoading(true);
+    setOtherProfileData(null);
+
+    const mapApiPostToProfilePost = (p: {
+      id: string;
+      author: { name?: string; avatar_url?: string | null };
+      content: string;
+      images?: string[];
+      video_url?: string;
+      category: string;
+      likes_count: number;
+      comments_count: number;
+      created_at: string;
+    }): ProfilePostFromApi => ({
+      id: p.id,
+      type: categoryToType[p.category] ?? 'idea',
+      author: p.author?.name ?? 'Membro',
+      avatar: p.author?.avatar_url ?? null,
+      content: p.content,
+      imageUrl: p.images?.[0] ?? null,
+      imageUrls: p.images?.length ? p.images : undefined,
+      videoUrl: p.video_url ?? undefined,
+      likes: p.likes_count ?? 0,
+      comments: p.comments_count ?? 0,
+      timeAgo: formatTimeAgo(p.created_at),
+      liked: false,
+      saved: false,
+    });
+
+    Promise.all([
+      fetch(`/api/accounts/public/${encodeURIComponent(identifier)}`).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/posts?author_id=${encodeURIComponent(identifier)}&limit=50`).then((r) => (r.ok ? r.json() : null)),
+    ])
+      .then(([profileRes, postsRes]) => {
+        if (cancelled) return;
+        const profile = profileRes?.profile;
+        const posts = postsRes?.posts ?? [];
+        const name = profile?.name?.trim() || 'Membro da comunidade';
+        const profileUser: ProfileDisplay = {
+          name,
+          avatar: profile?.avatar_url ?? null,
+          initials: getInitialsFromName(name),
+          interactionCount: 0,
+          instagramProfile: profile?.link_instagram?.trim() || undefined,
+          tiktokProfile: profile?.link_tiktok?.trim() || undefined,
+          youtubeProfile: profile?.link_youtube?.trim() || undefined,
+        };
+        const mappedPosts = posts.map(mapApiPostToProfilePost);
+        setOtherProfileData({ profileUser, posts: mappedPosts });
+      })
+      .catch(() => { if (!cancelled) setOtherProfileData(null); })
+      .finally(() => { if (!cancelled) setOtherProfileLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [identifier, isOwnProfile]);
+
+  const isOtherUserById = isAccountId(identifier) && !isOwnProfile;
   const profileUser = useMemo((): ProfileDisplay | null => {
+    if (isOtherUserById) {
+      if (otherProfileData) return otherProfileData.profileUser;
+      if (otherProfileLoading) return resolvedFromList;
+      return resolvedFromList;
+    }
     if (!resolvedFromList) return null;
     if (isOwnProfile) {
       const name = fullName || user?.name || resolvedFromList.name;
@@ -94,9 +261,14 @@ export default function PerfilComunidadePage() {
       };
     }
     return resolvedFromList;
-  }, [resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube]);
+  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube]);
+
   const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
-  const userPosts = authorNameForPosts ? posts.filter((p) => p.author === authorNameForPosts) : [];
+  const userPosts = isOwnProfile
+    ? profilePostsFromApi
+    : isOtherUserById && otherProfileData
+      ? otherProfileData.posts
+      : (authorNameForPosts ? posts.filter((p) => p.author === authorNameForPosts) : []);
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [seguidoresTooltipOpen, setSeguidoresTooltipOpen] = useState(false);
@@ -140,6 +312,33 @@ export default function PerfilComunidadePage() {
   const formatCount = (n: number) =>
     n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}k` : n.toLocaleString('pt-BR');
   const handleLike = (postId: string) => {
+    if (isOwnProfile) {
+      const post = profilePostsFromApi.find((p) => p.id === postId);
+      if (post) {
+        setProfilePostsFromApi((prev) =>
+          prev.map((p) =>
+            p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
+          )
+        );
+        return;
+      }
+    }
+    if (isOtherUserById && otherProfileData) {
+      const post = otherProfileData.posts.find((p) => p.id === postId);
+      if (post) {
+        setOtherProfileData((prev) =>
+          prev
+            ? {
+                ...prev,
+                posts: prev.posts.map((p) =>
+                  p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
+                ),
+              }
+            : prev
+        );
+        return;
+      }
+    }
     const post = posts.find((p) => p.id === postId);
     if (post) {
       updatePost(postId, {
@@ -150,13 +349,41 @@ export default function PerfilComunidadePage() {
   };
 
   const handleDoubleTap = (postId: string) => {
-    const post = posts.find((p) => p.id === postId);
+    const list = isOwnProfile ? profilePostsFromApi : (isOtherUserById && otherProfileData ? otherProfileData.posts : posts);
+    const post = list.find((p) => p.id === postId);
     if (post && !post.liked) {
       handleLike(postId);
       setShowHeartAnimation(postId);
       setTimeout(() => setShowHeartAnimation(null), 1000);
     }
   };
+
+  const handleToggleSave = (postId: string) => {
+    if (isOwnProfile) {
+      setProfilePostsFromApi((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, saved: !p.saved } : p))
+      );
+      return;
+    }
+    if (isOtherUserById && otherProfileData) {
+      setOtherProfileData((prev) =>
+        prev
+          ? { ...prev, posts: prev.posts.map((p) => (p.id === postId ? { ...p, saved: !p.saved } : p)) }
+          : prev
+      );
+      return;
+    }
+    toggleSavePost(postId);
+  };
+
+  if (isOtherUserById && otherProfileLoading) {
+    return (
+      <div className="max-w-2xl mx-auto w-full min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-8">
+        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-gray-600 dark:text-slate-400">Carregando perfil...</p>
+      </div>
+    );
+  }
 
   if (!profileUser) {
     return (
@@ -377,7 +604,12 @@ export default function PerfilComunidadePage() {
         </h3>
       </div>
 
-      {userPosts.length === 0 ? (
+      {profilePostsLoading && isOwnProfile ? (
+        <div className="p-8 text-center border-b border-gray-200 dark:border-neutral-800">
+          <div className="w-10 h-10 mx-auto border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-600 dark:text-slate-300 font-medium">Carregando publicações...</p>
+        </div>
+      ) : userPosts.length === 0 ? (
         <div className="p-8 text-center border-b border-gray-200 dark:border-neutral-800">
           <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center mb-4">
             <svg className="w-8 h-8 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -488,7 +720,7 @@ export default function PerfilComunidadePage() {
                     <span className="text-sm sm:text-base font-semibold">{post.comments}</span>
                   </button>
                   <button
-                    onClick={() => toggleSavePost(post.id)}
+                    onClick={() => handleToggleSave(post.id)}
                     className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${post.saved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-slate-100'}`}
                   >
                     <svg className="w-6 h-6 sm:w-7 sm:h-7" fill={post.saved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
