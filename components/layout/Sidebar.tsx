@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { useUser } from '@/contexts/UserContext';
+import { useAccount } from '@/contexts/AccountContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface NavItem {
@@ -81,7 +81,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { account, fullName } = useAccount();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -144,20 +144,20 @@ export function Sidebar() {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            {user.avatar ? (
+            {account?.avatar_url ? (
               <img
-                src={user.avatar}
-                alt={user.name}
+                src={account.avatar_url}
+                alt={fullName}
                 className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600"
               />
             ) : (
               <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                {user.name.charAt(0).toUpperCase()}
+                {fullName.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{user.name}</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{fullName}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{account?.email || ''}</p>
             </div>
             <svg
               className={`w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}

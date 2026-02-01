@@ -149,7 +149,7 @@ export default function PerfilPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
-      {!hasPhone && (
+      {!formData.phone.trim() && (
         <div className="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200">
           <p className="text-sm font-medium">
             O telefone é obrigatório para usar a comunidade. Preencha o campo abaixo e salve para continuar.
@@ -381,9 +381,9 @@ export default function PerfilPage() {
           >
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSave} 
-            disabled={isSaving || !hasPhone}
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !formData.phone.trim()}
             className="w-full sm:w-auto"
           >
             {isSaving ? 'Salvando...' : 'Salvar alterações'}
