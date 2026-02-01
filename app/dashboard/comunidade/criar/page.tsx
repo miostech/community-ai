@@ -51,11 +51,11 @@ interface UploadedVideo {
 }
 
 const categoryLabels: Record<PostCategory, string> = {
-  ideia: '💡 Ideia',
-  resultado: '🏆 Resultado',
-  duvida: '❓ Dúvida',
-  roteiro: '📝 Roteiro',
-  geral: '💬 Geral',
+  ideia: 'Ideia',
+  resultado: 'Resultado',
+  duvida: 'Dúvida',
+  roteiro: 'Roteiro',
+  geral: 'Geral',
 };
 
 export default function CriarPostPageMui() {

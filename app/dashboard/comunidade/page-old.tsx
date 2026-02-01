@@ -305,7 +305,7 @@ export default function ComunidadePage() {
                   </Link>
                   <div className="flex items-center space-x-2">
                     <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
-                      {categoryLabels[post.category] || '💬 Geral'}
+                      {categoryLabels[post.category] || 'Geral'}
                     </span>
                     {/* Menu de 3 pontos - só aparece para os próprios posts */}
                     {isMyPost(post) && (

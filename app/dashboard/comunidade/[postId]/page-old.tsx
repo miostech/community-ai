@@ -478,7 +478,7 @@ export default function PostDetailPage() {
                             </div>
                         </Link>
                         <span className="text-xs font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                            {categoryLabels[post.category] || '💬 Geral'}
+                            {categoryLabels[post.category] || 'Geral'}
                         </span>
                     </div>
 

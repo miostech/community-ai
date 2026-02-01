@@ -61,11 +61,11 @@ interface Post {
 }
 
 const categoryLabels: Record<PostCategory, string> = {
-    ideia: '💡 Ideia',
-    resultado: '🏆 Resultado',
-    duvida: '❓ Dúvida',
-    roteiro: '📝 Roteiro',
-    geral: '💬 Geral',
+    ideia: 'Ideia',
+    resultado: 'Resultado',
+    duvida: 'Dúvida',
+    roteiro: 'Roteiro',
+    geral: 'Geral',
 };
 
 function formatTimeAgo(dateString: string): string {
@@ -249,7 +249,7 @@ export default function PostDetailPageMui() {
                                 </Box>
                             </Stack>
                         </Link>
-                        <Chip label={categoryLabels[post.category] || '💬 Geral'} size="small" variant="outlined" />
+                        <Chip label={categoryLabels[post.category] || 'Geral'} size="small" variant="outlined" />
                     </Box>
 
                     {/* Content */}
