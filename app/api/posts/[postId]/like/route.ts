@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Like from '@/models/Like';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
+import { createNotification, removeNotification } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
@@ -57,6 +58,14 @@ export async function POST(
             await Post.findByIdAndUpdate(postObjectId, { $inc: { likes_count: -1 } });
             liked = false;
             likesCount = Math.max(0, (post.likes_count || 1) - 1);
+
+            // Remover notificação
+            await removeNotification({
+                recipientId: post.author_id,
+                actorId: account._id,
+                type: 'like',
+                postId: postObjectId,
+            });
         } else {
             // Adicionar like
             const newLike = new Like({
@@ -68,6 +77,15 @@ export async function POST(
             await Post.findByIdAndUpdate(postObjectId, { $inc: { likes_count: 1 } });
             liked = true;
             likesCount = (post.likes_count || 0) + 1;
+
+            // Criar notificação para o autor do post
+            await createNotification({
+                recipientId: post.author_id,
+                actorId: account._id,
+                type: 'like',
+                postId: postObjectId,
+                contentPreview: post.content?.slice(0, 100),
+            });
         }
 
         return NextResponse.json({

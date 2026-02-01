@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Comment from '@/models/Comment';
 import Post from '@/models/Post';
 import Account from '@/models/Account';
+import { createNotification } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
@@ -191,6 +192,31 @@ export async function POST(
         // Se for resposta, incrementar contador de replies no comentário pai
         if (parent_id) {
             await Comment.findByIdAndUpdate(parent_id, { $inc: { replies_count: 1 } });
+
+            // Notificar o autor do comentário original (reply)
+            const parentComment = await Comment.findById(parent_id);
+            if (parentComment && parentComment.author_id.toString() !== account._id.toString()) {
+                await createNotification({
+                    recipientId: parentComment.author_id,
+                    actorId: account._id,
+                    type: 'reply',
+                    postId: postId,
+                    commentId: comment._id,
+                    contentPreview: content.trim().slice(0, 100),
+                });
+            }
+        } else {
+            // Notificar o autor do post (comentário direto)
+            if (post.author_id.toString() !== account._id.toString()) {
+                await createNotification({
+                    recipientId: post.author_id,
+                    actorId: account._id,
+                    type: 'comment',
+                    postId: postId,
+                    commentId: comment._id,
+                    contentPreview: content.trim().slice(0, 100),
+                });
+            }
         }
 
         // Popular author para retornar

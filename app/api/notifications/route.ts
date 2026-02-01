@@ -1,35 +1,37 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
-import Post from '@/models/Post';
-import Comment from '@/models/Comment';
-import Like from '@/models/Like';
+import Notification from '@/models/Notification';
+import Account from '@/models/Account';
+import { markNotificationsAsRead, countUnreadNotifications } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export type NotificationType = 'like' | 'comment' | 'reply';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention';
 
 export interface NotificationItem {
   id: string;
   type: NotificationType;
   created_at: string;
+  is_read: boolean;
   actor: {
     id: string;
     name: string;
     avatar_url: string | null;
   };
-  post_id: string;
-  post_preview?: string;
-  comment_preview?: string;
+  post_id?: string;
+  comment_id?: string;
+  content_preview?: string;
 }
 
 function getDisplayName(first?: string, last?: string): string {
   const fullName = [first || '', last || ''].join(' ').trim();
-  return fullName || 'Alguem';
+  return fullName || 'Alguém';
 }
 
+// GET - Buscar notificações do usuário
 export async function GET() {
   try {
     console.log('📬 Buscando notificações...');
@@ -39,134 +41,73 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    console.log('✅ Sessão encontrada, user.id:', session.user.id);
-    await connectMongo();
-    console.log('✅ MongoDB conectado');
+    // Usar auth_user_id se disponível, senão usar id (igual à API de accounts)
+    const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+    console.log('✅ Session auth_user_id:', authUserId);
 
-    // Buscar a conta pelo auth_user_id (que é o session.user.id)
-    const Account = (await import('@/models/Account')).default;
-    const account = await Account.findOne({ auth_user_id: session.user.id }).lean();
+    await connectMongo();
+
+    // Buscar a conta do usuário
+    const account = await Account.findOne({ auth_user_id: authUserId }).lean();
 
     if (!account) {
       console.log('❌ Account não encontrada para auth_user_id:', session.user.id);
       return NextResponse.json({ notifications: [], unread_count: 0 });
     }
 
-    const accountId = account._id;
-    const lastReadAt = account.last_notifications_read_at || new Date(0); // Se nunca leu, pega todas
-    console.log('📅 Última leitura:', lastReadAt);
+    const accountId = account._id as mongoose.Types.ObjectId;
+    console.log('✅ Account encontrada, _id:', accountId.toString());
 
-    const myPosts = await Post.find({ author_id: accountId }).select('_id content').lean();
-    const myPostIds = myPosts.map((p) => p._id);
-    const postPreviewById: Record<string, string> = {};
-    myPosts.forEach((p) => {
-      postPreviewById[p._id.toString()] = (p.content || '').slice(0, 80);
+    // Buscar notificações do Model
+    const notifications = await Notification.find({ recipient_id: accountId })
+      .sort({ created_at: -1 })
+      .limit(50)
+      .populate('actor_id', 'first_name last_name avatar_url')
+      .lean();
+
+    console.log('📋 Notificações encontradas no banco:', notifications.length);
+    if (notifications.length > 0) {
+      console.log('📋 Primeira notificação:', JSON.stringify(notifications[0], null, 2));
+    }
+
+    // Debug: buscar todas as notificações sem filtro
+    const allNotifications = await Notification.find({}).limit(5).lean();
+    console.log('🔍 Total de notificações no banco (sample):', allNotifications.length);
+    if (allNotifications.length > 0) {
+      console.log('🔍 Recipients das notificações:', allNotifications.map(n => n.recipient_id?.toString()));
+    }
+
+    // Contar não lidas
+    const unreadCount = await countUnreadNotifications(accountId);
+
+    // Formatar para o frontend
+    const formattedNotifications: NotificationItem[] = notifications.map((n) => {
+      const actor = n.actor_id as unknown as {
+        _id: mongoose.Types.ObjectId;
+        first_name?: string;
+        last_name?: string;
+        avatar_url?: string;
+      } | null;
+
+      return {
+        id: n._id.toString(),
+        type: n.type,
+        created_at: n.created_at.toISOString(),
+        is_read: n.is_read,
+        actor: {
+          id: actor?._id?.toString() || '',
+          name: actor ? getDisplayName(actor.first_name, actor.last_name) : 'Alguém',
+          avatar_url: actor?.avatar_url || null,
+        },
+        post_id: n.post_id?.toString(),
+        comment_id: n.comment_id?.toString(),
+        content_preview: n.content_preview || undefined,
+      };
     });
 
-    if (myPostIds.length === 0) {
-      return NextResponse.json({ notifications: [], unread_count: 0 });
-    }
-
-    const myComments = await Comment.find({ author_id: accountId }).select('_id').lean();
-    const myCommentIds = myComments.map((c) => c._id);
-
-    const notifications: NotificationItem[] = [];
-
-    const likes = await Like.find({
-      target_type: 'post',
-      target_id: { $in: myPostIds },
-      user_id: { $ne: accountId },
-    })
-      .sort({ created_at: -1 })
-      .limit(50)
-      .populate('user_id', 'first_name last_name avatar_url')
-      .lean();
-
-    for (const like of likes) {
-      const user = like.user_id as { _id: mongoose.Types.ObjectId; first_name?: string; last_name?: string; avatar_url?: string } | null;
-      const userName = user ? getDisplayName(user.first_name, user.last_name) : 'Alguem';
-      notifications.push({
-        id: `like-${like._id}`,
-        type: 'like',
-        created_at: (like as { created_at: Date }).created_at?.toISOString() || new Date().toISOString(),
-        actor: {
-          id: user?._id?.toString() || '',
-          name: userName,
-          avatar_url: user?.avatar_url || null,
-        },
-        post_id: (like.target_id as mongoose.Types.ObjectId).toString(),
-        post_preview: postPreviewById[(like.target_id as mongoose.Types.ObjectId).toString()],
-      });
-    }
-
-    const commentsOnMyPosts = await Comment.find({
-      post_id: { $in: myPostIds },
-      author_id: { $ne: accountId },
-      $or: [{ parent_id: { $exists: false } }, { parent_id: null }],
-      is_deleted: { $ne: true },
-    })
-      .sort({ created_at: -1 })
-      .limit(50)
-      .populate('author_id', 'first_name last_name avatar_url')
-      .lean();
-
-    for (const comment of commentsOnMyPosts) {
-      const author = comment.author_id as { _id: mongoose.Types.ObjectId; first_name?: string; last_name?: string; avatar_url?: string } | null;
-      const authorName = author ? getDisplayName(author.first_name, author.last_name) : 'Alguem';
-      notifications.push({
-        id: `comment-${comment._id}`,
-        type: 'comment',
-        created_at: (comment as { created_at: Date }).created_at?.toISOString() || new Date().toISOString(),
-        actor: {
-          id: author?._id?.toString() || '',
-          name: authorName,
-          avatar_url: author?.avatar_url || null,
-        },
-        post_id: (comment.post_id as mongoose.Types.ObjectId).toString(),
-        post_preview: postPreviewById[(comment.post_id as mongoose.Types.ObjectId).toString()],
-        comment_preview: (comment.content || '').slice(0, 100),
-      });
-    }
-
-    if (myCommentIds.length > 0) {
-      const repliesToMe = await Comment.find({
-        parent_id: { $in: myCommentIds },
-        author_id: { $ne: accountId },
-        is_deleted: { $ne: true },
-      })
-        .sort({ created_at: -1 })
-        .limit(50)
-        .populate('author_id', 'first_name last_name avatar_url')
-        .lean();
-
-      for (const reply of repliesToMe) {
-        const author = reply.author_id as { _id: mongoose.Types.ObjectId; first_name?: string; last_name?: string; avatar_url?: string } | null;
-        const authorName = author ? getDisplayName(author.first_name, author.last_name) : 'Alguem';
-        notifications.push({
-          id: `reply-${reply._id}`,
-          type: 'reply',
-          created_at: (reply as { created_at: Date }).created_at?.toISOString() || new Date().toISOString(),
-          actor: {
-            id: author?._id?.toString() || '',
-            name: authorName,
-            avatar_url: author?.avatar_url || null,
-          },
-          post_id: (reply.post_id as mongoose.Types.ObjectId).toString(),
-          post_preview: postPreviewById[(reply.post_id as mongoose.Types.ObjectId).toString()],
-          comment_preview: (reply.content || '').slice(0, 100),
-        });
-      }
-    }
-
-    notifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    const limited = notifications.slice(0, 30);
-
-    // Contar apenas as não lidas (criadas depois do last_notifications_read_at)
-    const unreadCount = limited.filter(n => new Date(n.created_at) > lastReadAt).length;
-
-    console.log(`✅ Retornando ${limited.length} notificações (${unreadCount} não lidas)`);
+    console.log(`✅ ${formattedNotifications.length} notificações (${unreadCount} não lidas)`);
     return NextResponse.json({
-      notifications: limited,
+      notifications: formattedNotifications,
       unread_count: unreadCount,
     });
   } catch (error) {
@@ -179,7 +120,7 @@ export async function GET() {
 }
 
 // POST - Marcar notificações como lidas
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -188,16 +129,33 @@ export async function POST() {
 
     await connectMongo();
 
-    const Account = (await import('@/models/Account')).default;
-    await Account.findOneAndUpdate(
-      { auth_user_id: session.user.id },
-      { $set: { last_notifications_read_at: new Date() } }
-    );
+    // Usar auth_user_id (Google ID) que é como o Account é indexado
+    const authUserId = (session.user as any).auth_user_id || session.user.id;
+    const account = await Account.findOne({ auth_user_id: authUserId }).lean();
+    if (!account) {
+      return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+    }
 
-    console.log('✅ Notificações marcadas como lidas');
-    return NextResponse.json({ success: true });
+    const accountId = account._id as mongoose.Types.ObjectId;
+
+    // Verificar se foram passados IDs específicos no body
+    let notificationIds: string[] | undefined;
+    try {
+      const body = await request.json();
+      notificationIds = body.notification_ids;
+    } catch {
+      // Body vazio = marcar todas como lidas
+    }
+
+    const markedCount = await markNotificationsAsRead(accountId, notificationIds);
+
+    console.log(`✅ ${markedCount} notificações marcadas como lidas`);
+    return NextResponse.json({
+      success: true,
+      marked_count: markedCount
+    });
   } catch (error) {
-    console.error('❌ Erro ao marcar notificações como lidas:', error);
+    console.error('❌ Erro ao marcar notificações:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

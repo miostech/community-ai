@@ -2,12 +2,18 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const { status } = useSession();
     const router = useRouter();
     const hasUpdatedAccess = useRef(false);
+    const [mounted, setMounted] = useState(false);
+
+    // Evitar hydration mismatch
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (status === 'unauthenticated') {
@@ -23,15 +29,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         }
     }, [status]);
 
-    if (status === 'loading') {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-                <div className="flex flex-col items-center space-y-4">
-                    <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-gray-600 dark:text-slate-400">Carregando...</p>
-                </div>
-            </div>
-        );
+    // Renderiza null no servidor e durante a montagem para evitar hydration mismatch
+    if (!mounted || status === 'loading') {
+        return null;
     }
 
     if (status === 'unauthenticated') {

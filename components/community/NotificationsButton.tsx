@@ -3,20 +3,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
-export type NotificationType = 'like' | 'comment' | 'reply';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention';
 
 export interface NotificationItem {
   id: string;
   type: NotificationType;
   created_at: string;
+  is_read: boolean;
   actor: {
     id: string;
     name: string;
     avatar_url: string | null;
   };
-  post_id: string;
-  post_preview?: string;
-  comment_preview?: string;
+  post_id?: string;
+  comment_id?: string;
+  content_preview?: string;
 }
 
 function formatTimeAgo(dateString: string): string {

@@ -15,22 +15,28 @@ import {
     CircularProgress,
     Divider,
 } from '@mui/material';
-import { NotificationsOutlined as NotificationsIcon } from '@mui/icons-material';
+import {
+    NotificationsOutlined as NotificationsIcon,
+    Favorite as LikeIcon,
+    ChatBubble as CommentIcon,
+    Reply as ReplyIcon,
+} from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention';
 
 export interface NotificationItem {
     id: string;
     type: NotificationType;
     created_at: string;
+    is_read: boolean;
     actor: {
         id: string;
         name: string;
         avatar_url: string | null;
     };
-    post_id: string;
-    post_preview?: string;
-    comment_preview?: string;
+    post_id?: string;
+    comment_id?: string;
+    content_preview?: string;
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -53,8 +59,25 @@ function getNotificationLabel(type: NotificationType): string {
             return 'comentou no seu post';
         case 'reply':
             return 'respondeu seu comentário';
+        case 'follow':
+            return 'começou a seguir você';
+        case 'mention':
+            return 'mencionou você';
         default:
             return 'interagiu';
+    }
+}
+
+function getNotificationIcon(type: NotificationType) {
+    switch (type) {
+        case 'like':
+            return <LikeIcon sx={{ fontSize: 14, color: 'error.main' }} />;
+        case 'comment':
+            return <CommentIcon sx={{ fontSize: 14, color: 'primary.main' }} />;
+        case 'reply':
+            return <ReplyIcon sx={{ fontSize: 14, color: 'success.main' }} />;
+        default:
+            return null;
     }
 }
 
@@ -84,8 +107,14 @@ export function NotificationsButtonMui() {
 
     const markAsRead = async () => {
         try {
-            await fetch('/api/notifications', { method: 'POST' });
+            await fetch('/api/notifications', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),
+            });
             setUnreadCount(0);
+            // Atualizar estado local para mostrar como lidas
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
         } catch (error) {
             console.error('Erro ao marcar notificações como lidas:', error);
         }
@@ -159,25 +188,38 @@ export function NotificationsButtonMui() {
                         <MenuItem
                             key={n.id}
                             component={Link}
-                            href={`/dashboard/comunidade/${n.post_id}`}
+                            href={n.post_id ? `/dashboard/comunidade/${n.post_id}` : '#'}
                             onClick={handleClose}
-                            sx={{ py: 1.5, alignItems: 'flex-start' }}
+                            sx={{
+                                py: 1.5,
+                                alignItems: 'flex-start',
+                                bgcolor: n.is_read ? 'transparent' : 'action.hover',
+                                '&:hover': {
+                                    bgcolor: n.is_read ? 'action.hover' : 'action.selected',
+                                }
+                            }}
                         >
                             <ListItemAvatar>
-                                <Avatar
-                                    src={n.actor.avatar_url || undefined}
-                                    sx={{
-                                        width: 40,
-                                        height: 40,
-                                        background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                    }}
+                                <Badge
+                                    overlap="circular"
+                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                    badgeContent={getNotificationIcon(n.type)}
                                 >
-                                    {n.actor.name.charAt(0).toUpperCase()}
-                                </Avatar>
+                                    <Avatar
+                                        src={n.actor.avatar_url || undefined}
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                                        }}
+                                    >
+                                        {n.actor.name.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                </Badge>
                             </ListItemAvatar>
                             <ListItemText
                                 primary={
-                                    <Typography variant="body2">
+                                    <Typography variant="body2" fontWeight={n.is_read ? 400 : 600}>
                                         <Typography component="span" fontWeight={600}>
                                             {n.actor.name}
                                         </Typography>{' '}
@@ -186,7 +228,7 @@ export function NotificationsButtonMui() {
                                 }
                                 secondary={
                                     <Box component="span">
-                                        {n.comment_preview && (
+                                        {n.content_preview && (
                                             <Typography
                                                 variant="caption"
                                                 color="text.secondary"
@@ -198,7 +240,7 @@ export function NotificationsButtonMui() {
                                                     maxWidth: 200,
                                                 }}
                                             >
-                                                &quot;{n.comment_preview}&quot;
+                                                &quot;{n.content_preview}&quot;
                                             </Typography>
                                         )}
                                         <Typography variant="caption" color="text.disabled">
