@@ -43,7 +43,7 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -76,7 +76,7 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
       setIsDragging(false);
       return;
     }
-    
+
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
@@ -101,11 +101,11 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
   };
 
   return (
-    <div className={`relative group ${className}`}>
+    <div className={`relative group overflow-hidden ${className}`}>
       {/* Imagem principal */}
-      <div 
+      <div
         ref={containerRef}
-        className="relative w-full aspect-square sm:aspect-video bg-gray-100 rounded-xl overflow-hidden select-none"
+        className="relative w-full h-[70vh] sm:h-auto sm:aspect-video bg-gray-100 dark:bg-slate-800 overflow-hidden select-none"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -113,7 +113,7 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
-        style={{ 
+        style={{
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'pan-y pinch-zoom',
           WebkitUserSelect: 'none',
@@ -123,9 +123,8 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
         <img
           src={images[currentIndex]}
           alt={`Imagem ${currentIndex + 1}`}
-          className={`w-full h-full object-cover transition-transform duration-200 ${
-            isDragging ? 'scale-95' : 'scale-100'
-          }`}
+          className={`w-full h-full object-cover transition-transform duration-200 ${isDragging ? 'scale-95' : 'scale-100'
+            }`}
           draggable={false}
         />
 
@@ -199,11 +198,10 @@ export function ImageCarousel({ images, className = '' }: ImageCarouselProps) {
             <button
               key={index}
               onClick={() => goToIndex(index)}
-              className={`transition-all ${
-                index === currentIndex
-                  ? 'w-6 h-1.5 bg-blue-600 rounded-full'
-                  : 'w-1.5 h-1.5 bg-gray-300 rounded-full hover:bg-gray-400'
-              }`}
+              className={`transition-all ${index === currentIndex
+                ? 'w-6 h-1.5 bg-blue-600 rounded-full'
+                : 'w-1.5 h-1.5 bg-gray-300 rounded-full hover:bg-gray-400'
+                }`}
               aria-label={`Ir para imagem ${index + 1}`}
             />
           ))}
