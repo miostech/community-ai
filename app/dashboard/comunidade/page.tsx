@@ -10,6 +10,7 @@ import { CommentsSection } from '@/components/community/CommentsSection';
 import { NotificationsButton } from '@/components/community/NotificationsButton';
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
+import { useAccount } from '@/contexts/AccountContext';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
@@ -52,11 +53,16 @@ export default function ComunidadePage() {
     toggleLike,
     toggleSave,
     updatePost,
+    removePost,
   } = usePosts();
+
+  const { account } = useAccount();
 
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [menuOpenPostId, setMenuOpenPostId] = useState<string | null>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   // Usar o contexto de stories
   const { users: storyUsers } = useStories();
@@ -96,6 +102,39 @@ export default function ComunidadePage() {
       setShowHeartAnimation(postId);
       setTimeout(() => setShowHeartAnimation(null), 1000);
     }
+  };
+
+  // Excluir post
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    setDeletingPostId(postId);
+    setMenuOpenPostId(null);
+
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao excluir post');
+      }
+
+      removePost(postId);
+    } catch (error) {
+      console.error('Erro ao excluir post:', error);
+      alert('Erro ao excluir post. Tente novamente.');
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
+
+  // Verificar se o post pertence ao usuário atual
+  const isMyPost = (post: Post) => {
+    return account?.id === post.author.id;
   };
 
   // Intersection Observer para lazy loading
@@ -264,9 +303,60 @@ export default function ComunidadePage() {
                       <p className="text-xs text-gray-500 dark:text-slate-400">{formatTimeAgo(post.created_at)}</p>
                     </div>
                   </Link>
-                  <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
-                    {categoryLabels[post.category] || '💬 Geral'}
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
+                      {categoryLabels[post.category] || '💬 Geral'}
+                    </span>
+                    {/* Menu de 3 pontos - só aparece para os próprios posts */}
+                    {isMyPost(post) && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setMenuOpenPostId(menuOpenPostId === post.id ? null : post.id)}
+                          className="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-all"
+                        >
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="5" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="12" cy="19" r="2" />
+                          </svg>
+                        </button>
+                        {/* Dropdown menu */}
+                        {menuOpenPostId === post.id && (
+                          <>
+                            {/* Overlay para fechar o menu */}
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setMenuOpenPostId(null)}
+                            />
+                            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 z-50 min-w-[140px] overflow-hidden">
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                disabled={deletingPostId === post.id}
+                                className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                              >
+                                {deletingPostId === post.id ? (
+                                  <>
+                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    <span>Excluindo...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    <span>Excluir post</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {post.content && (
