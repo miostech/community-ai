@@ -155,7 +155,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
     <div className="flex flex-col h-full sm:h-[calc(100vh-220px)] md:h-[600px] sm:max-h-[600px] bg-white dark:bg-black sm:bg-white/80 dark:sm:bg-black/80 sm:backdrop-blur-sm sm:rounded-xl sm:border sm:border-gray-100 dark:sm:border-neutral-800 sm:shadow-sm relative">
       <button
         onClick={() => router.push('/dashboard/chat/historico')}
-        className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-10 h-10 flex items-center justify-center text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+        className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-10 h-10 md:hidden flex items-center justify-center text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
         title="Ver histórico de conversas"
       >
         <svg 

@@ -343,10 +343,16 @@ export default function ComunidadePage() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline mb-3"
                   >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
-                    Ver post original
+                    {post.link_instagram_post.includes('instagram.com')
+                      ? 'Ver post no Instagram'
+                      : post.link_instagram_post.includes('tiktok.com')
+                        ? 'Ver post no TikTok'
+                        : (post.link_instagram_post.includes('x.com') || post.link_instagram_post.includes('twitter.com'))
+                          ? 'Ver post no X'
+                          : 'Ver post original'}
                   </a>
                 )}
 

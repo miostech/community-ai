@@ -27,7 +27,7 @@ function ChatPageContent() {
   if (!hasStarted) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-8 md:pt-12 pb-20 sm:pb-32">
-        <div className="flex justify-end mb-8 sm:mb-12">
+        <div className="flex justify-end mb-8 sm:mb-12 md:hidden">
           <button
             onClick={() => router.push('/dashboard/chat/historico')}
             className="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
