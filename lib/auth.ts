@@ -2,9 +2,12 @@ import jwt from 'jsonwebtoken';
 import NextAuth from 'next-auth';
 import Apple from 'next-auth/providers/apple';
 import Google from 'next-auth/providers/google';
+import Credentials from 'next-auth/providers/credentials';
 
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
+
+const TEST_AUTH_USER_ID = '117397423200835053639';
 
 function splitName(name?: string | null): { first: string; last: string } {
     if (!name) return { first: '', last: '' };
@@ -65,6 +68,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             clientId: process.env.APPLE_CLIENT_ID!,
             clientSecret: generateAppleClientSecret(),
         }),
+        Credentials({
+            id: 'test',
+            name: 'Login de teste',
+            credentials: {
+                auth_user_id: { label: 'Auth User ID', type: 'text' },
+            },
+            async authorize(credentials) {
+                const authUserId = credentials?.auth_user_id as string | undefined;
+                if (authUserId !== TEST_AUTH_USER_ID) return null;
+
+                try {
+                    await connectMongo();
+                    const account = await Account.findOne({ auth_user_id: authUserId });
+                    if (!account) return null;
+
+                    await Account.updateOne(
+                        { auth_user_id: authUserId },
+                        { $set: { last_access_at: new Date() } }
+                    );
+                    return {
+                        id: account._id.toString(),
+                        auth_user_id: account.auth_user_id,
+                        name: [account.first_name, account.last_name].filter(Boolean).join(' ') || 'Usuário',
+                        email: null,
+                        image: account.avatar_url || null,
+                    };
+                } catch (err) {
+                    console.error('❌ Erro no login de teste:', err);
+                    return null;
+                }
+            },
+        }),
     ],
     session: { strategy: 'jwt' },
     pages: { 
@@ -75,6 +110,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     useSecureCookies: process.env.NODE_ENV === 'production',
     callbacks: {
         async signIn({ user, account, profile }) {
+            if (account?.provider === 'credentials') return true;
             if (!account?.providerAccountId) return false;
 
             const authUserId = account.providerAccountId;
@@ -113,7 +149,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return true;
         },
         async jwt({ token, account, user }) {
-            if (account) {
+            if (account?.provider === 'credentials' && user?.auth_user_id) {
+                token.auth_user_id = user.auth_user_id;
+                token.sub = user.id;
+            } else if (account) {
                 token.auth_user_id = account.providerAccountId;
             }
             if (user?.id) {

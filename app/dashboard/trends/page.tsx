@@ -25,7 +25,7 @@ export default function TrendsPage() {
   const [data, setData] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'top' | 'rising'>('top');
+  const [filter, setFilter] = useState<'top' | 'rising'>('rising');
 
   useEffect(() => {
     let cancelled = false;
@@ -134,9 +134,9 @@ export default function TrendsPage() {
           <div className="px-4 pb-3 flex gap-2">
             <button
               type="button"
-              onClick={() => setFilter('top')}
+              onClick={() => setFilter('rising')}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === 'top'
+                filter === 'rising'
                   ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
                   : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
               }`}
@@ -145,14 +145,14 @@ export default function TrendsPage() {
             </button>
             <button
               type="button"
-              onClick={() => setFilter('rising')}
+              onClick={() => setFilter('top')}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === 'rising'
+                filter === 'top'
                   ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
                   : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
               }`}
             >
-              Subindo
+              Populares
             </button>
           </div>
         )}
@@ -254,11 +254,11 @@ export default function TrendsPage() {
                               d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                             />
                           </svg>
-                          {trend.value === 'Breakout' ? 'Alta' : `+${trend.value}`}
+                          {trend.value === 'Breakout' ? 'Alta' : `${trend.value}`}
                           {trend.searchVolume != null && trend.searchVolume > 0 && (
                             <span className="opacity-90">
                               {' · '}
-                              {formatVolume(trend.searchVolume)}
+                              {"+" + formatVolume(trend.searchVolume)}
                             </span>
                           )}
                         </>
@@ -297,7 +297,7 @@ export default function TrendsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-shrink-0 p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
-                  title="Ver no Google Trends"
+                  title="Pesquisar no Google"
                 >
                   <svg
                     className="w-5 h-5"
