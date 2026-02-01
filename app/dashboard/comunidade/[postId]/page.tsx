@@ -101,6 +101,8 @@ export default function PostDetailPage() {
     const [showHeartAnimation, setShowHeartAnimation] = useState(false);
     const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
     const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [isDeletingPost, setIsDeletingPost] = useState(false);
 
     // Buscar post
     const fetchPost = useCallback(async () => {
@@ -327,6 +329,39 @@ export default function PostDetailPage() {
         return account?.id === authorId;
     };
 
+    // Verificar se o post pertence ao usuário atual
+    const isMyPost = () => {
+        return account?.id === post?.author.id;
+    };
+
+    // Excluir post
+    const handleDeletePost = async () => {
+        if (!confirm('Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        setIsDeletingPost(true);
+        setMenuOpen(false);
+
+        try {
+            const response = await fetch(`/api/posts/${postId}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Erro ao excluir post');
+            }
+
+            // Redirecionar para a comunidade após excluir
+            router.push('/dashboard/comunidade');
+        } catch (error) {
+            console.error('Erro ao excluir post:', error);
+            alert('Erro ao excluir post. Tente novamente.');
+            setIsDeletingPost(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center">
@@ -363,7 +398,57 @@ export default function PostDetailPage() {
                         </svg>
                     </button>
                     <h1 className="font-semibold text-gray-900 dark:text-white">Post</h1>
-                    <div className="w-10"></div>
+                    {/* Menu de 3 pontos - só aparece para os próprios posts */}
+                    {isMyPost() ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                className="p-2 -mr-2 text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="5" r="2" />
+                                    <circle cx="12" cy="12" r="2" />
+                                    <circle cx="12" cy="19" r="2" />
+                                </svg>
+                            </button>
+                            {/* Dropdown menu */}
+                            {menuOpen && (
+                                <>
+                                    {/* Overlay para fechar o menu */}
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setMenuOpen(false)}
+                                    />
+                                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 z-50 min-w-[140px] overflow-hidden">
+                                        <button
+                                            onClick={handleDeletePost}
+                                            disabled={isDeletingPost}
+                                            className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                                        >
+                                            {isDeletingPost ? (
+                                                <>
+                                                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                    <span>Excluindo...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                    <span>Excluir post</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="w-10"></div>
+                    )}
                 </div>
             </div>
 
