@@ -67,9 +67,27 @@ export function NotificationsButton() {
     }
   };
 
+  const markAsRead = async () => {
+    try {
+      await fetch('/api/notifications', { method: 'POST' });
+      setUnreadCount(0); // Zerar badge imediatamente
+    } catch (error) {
+      console.error('Erro ao marcar notificações como lidas:', error);
+    }
+  };
+
+  // Buscar notificações na montagem do componente (para mostrar o badge)
+  useEffect(() => {
+    fetchNotifications();
+    // Atualizar a cada 30 segundos
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (open) {
       fetchNotifications();
+      markAsRead(); // Marcar como lido quando abrir
     }
   }, [open]);
 

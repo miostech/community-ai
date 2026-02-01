@@ -44,6 +44,12 @@ export async function GET() {
     await connectMongo();
     console.log('✅ MongoDB conectado');
 
+    // Buscar quando foi a última vez que viu notificações
+    const Account = (await import('@/models/Account')).default;
+    const account = await Account.findById(accountId).select('last_notifications_read_at').lean();
+    const lastReadAt = account?.last_notifications_read_at || new Date(0); // Se nunca leu, pega todas
+    console.log('📅 Última leitura:', lastReadAt);
+
     const myPosts = await Post.find({ author_id: accountId }).select('_id content').lean();
     const myPostIds = myPosts.map((p) => p._id);
     const postPreviewById: Record<string, string> = {};
@@ -149,13 +155,43 @@ export async function GET() {
     notifications.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const limited = notifications.slice(0, 30);
 
-    console.log(`✅ Retornando ${limited.length} notificações`);
+    // Contar apenas as não lidas (criadas depois do last_notifications_read_at)
+    const unreadCount = limited.filter(n => new Date(n.created_at) > lastReadAt).length;
+
+    console.log(`✅ Retornando ${limited.length} notificações (${unreadCount} não lidas)`);
     return NextResponse.json({
       notifications: limited,
-      unread_count: limited.length,
+      unread_count: unreadCount,
     });
   } catch (error) {
     console.error('❌ Erro ao buscar notificações:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Marcar notificações como lidas
+export async function POST() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    const accountId = new mongoose.Types.ObjectId(session.user.id as string);
+    await connectMongo();
+
+    const Account = (await import('@/models/Account')).default;
+    await Account.findByIdAndUpdate(accountId, {
+      $set: { last_notifications_read_at: new Date() },
+    });
+
+    console.log('✅ Notificações marcadas como lidas');
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('❌ Erro ao marcar notificações como lidas:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

@@ -25,6 +25,7 @@ const AccountSchema = new Schema(
         total_tokens_used_current_week: { type: Number, default: 0 },
         utm_ref: { type: String, trim: true },
         last_access_at: { type: Date, default: Date.now },
+        last_notifications_read_at: { type: Date, default: null },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
