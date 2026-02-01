@@ -52,7 +52,7 @@ async function fetchTrendingNow(
   });
 
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 3600 },
+    next: { revalidate: 86400 }, // 24h = 1 vez por dia
   });
 
   if (!res.ok) {
@@ -80,7 +80,7 @@ function normalizeTrends(data: TrendingNowResponse | null): TrendItem[] {
       position: t.position,
       value: valueStr,
       extractedValue: pct || (typeof volume === 'number' ? volume : 0),
-      link: `https://trends.google.com/trends/explore?date=now%201-d&geo=BR&q=${encodeURIComponent(t.query)}`,
+      link: `https://www.google.com/search?q=${encodeURIComponent(t.query)}`,
       type,
       topicType: t.categories?.[0],
       searchVolume: volume,
