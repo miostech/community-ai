@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useUser } from '@/contexts/UserContext';
+import { AccountProvider, useAccount } from '@/contexts/AccountContext';
 import { Sidebar } from './Sidebar';
 import { MobileMenu } from './MobileMenu';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
@@ -13,18 +13,17 @@ import { PostsProvider } from '@/contexts/PostsContext';
 import { ChatHistoryProvider } from '@/contexts/ChatHistoryContext';
 import { Button } from '@/components/ui/Button';
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useUser();
-  const hasPhone = Boolean(user.phone?.trim());
-  const showPhoneModal = !hasPhone && pathname !== '/dashboard/perfil';
+  const { hasPhone, isLoading } = useAccount();
+  const showPhoneModal = !isLoading && !hasPhone && pathname !== '/dashboard/perfil';
 
   const isComunidadePage = pathname === '/dashboard/comunidade';
   const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
   const hideBlobs = isComunidadePage || isCriarPostPage;
 
   return (
-    <ProtectedRoute>
+    <>
       <PostsProvider>
         <CreatePostProvider>
           <ChatHistoryProvider>
@@ -78,6 +77,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </ChatHistoryProvider>
         </CreatePostProvider>
       </PostsProvider>
+    </>
+  );
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <AccountProvider>
+        <DashboardContent>{children}</DashboardContent>
+      </AccountProvider>
     </ProtectedRoute>
   );
 }
