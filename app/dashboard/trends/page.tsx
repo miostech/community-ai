@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface TrendItem {
   id: string;
@@ -26,6 +26,9 @@ export default function TrendsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'top' | 'rising'>('rising');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,16 +65,19 @@ export default function TrendsPage() {
     };
   }, []);
 
-  const trends = data?.trends ?? [];
-  const filtered = trends.filter((t) => t.type === filter);
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setCategoryOpen(false);
+      }
+    }
+    if (categoryOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [categoryOpen]);
 
-  const capitalize = (s: string) =>
-    s.length
-      ? s
-          .split(' ')
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-          .join(' ')
-      : s;
+  const trends = data?.trends ?? [];
 
   const categoryPt: Record<string, string> = {
     all: 'Geral',
@@ -97,7 +103,31 @@ export default function TrendsPage() {
   };
 
   const translateCategory = (cat: string) =>
-    categoryPt[cat] ?? capitalize(cat.replace(/_/g, ' '));
+    categoryPt[cat] ?? (cat ? cat.replace(/_/g, ' ').split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : cat);
+
+  const categoriesInData = React.useMemo(() => {
+    const set = new Set<string>();
+    trends.forEach((t) => {
+      if (t.topicType) set.add(t.topicType);
+    });
+    return Array.from(set).sort((a, b) =>
+      (categoryPt[a] ?? a).localeCompare(categoryPt[b] ?? b)
+    );
+  }, [trends]);
+
+  const filteredByType = trends.filter((t) => t.type === filter);
+  const filtered =
+    categoryFilter === 'all'
+      ? filteredByType
+      : filteredByType.filter((t) => t.topicType === categoryFilter);
+
+  const capitalize = (s: string) =>
+    s.length
+      ? s
+          .split(' ')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ')
+      : s;
 
   const formatVolume = (num: number | undefined): string => {
     if (num == null || Number.isNaN(num)) return '—';
@@ -131,29 +161,80 @@ export default function TrendsPage() {
         </div>
 
         {!loading && !error && trends.length > 0 && (
-          <div className="px-4 pb-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setFilter('rising')}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === 'rising'
-                  ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
-                  : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              Em alta
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter('top')}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                filter === 'top'
-                  ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
-                  : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              Populares
-            </button>
+          <div className="px-4 pb-3 flex items-center justify-between gap-3">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFilter('rising')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  filter === 'rising'
+                    ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
+                    : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Em alta
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('top')}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  filter === 'top'
+                    ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
+                    : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                Populares
+              </button>
+            </div>
+            <div ref={categoryRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setCategoryOpen((o) => !o)}
+                className="flex items-center gap-1 rounded-md py-1 pr-5 pl-1 text-xs text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-400 cursor-pointer focus:outline-none focus:ring-0"
+                aria-expanded={categoryOpen}
+                aria-haspopup="listbox"
+                aria-label="Filtrar por categoria"
+              >
+                {categoryFilter === 'all' ? 'Categoria' : translateCategory(categoryFilter)}
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {categoryOpen && (
+                <div
+                  className="absolute right-0 top-full z-50 mt-1 min-w-[180px] max-h-[70vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg py-1"
+                  role="listbox"
+                >
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={categoryFilter === 'all'}
+                    onClick={() => {
+                      setCategoryFilter('all');
+                      setCategoryOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 ${categoryFilter === 'all' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-slate-300'}`}
+                  >
+                    Todas
+                  </button>
+                  {categoriesInData.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      role="option"
+                      aria-selected={categoryFilter === key}
+                      onClick={() => {
+                        setCategoryFilter(key);
+                        setCategoryOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 ${categoryFilter === key ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-slate-300'}`}
+                    >
+                      {translateCategory(key)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

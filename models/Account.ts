@@ -11,6 +11,7 @@ const AccountSchema = new Schema(
         provider_oauth: { type: String, enum: ['google', 'apple', 'facebook'], trim: true },
         link_instagram: { type: String, trim: true },
         link_tiktok: { type: String, trim: true },
+        link_youtube: { type: String, trim: true },
         primary_social_link: { type: String, enum: ['instagram', 'tiktok', null], default: null },
         avatar_url: { type: String, trim: true },
         background_url: { type: String, trim: true },

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -13,6 +13,7 @@ import {
   type CommunityUser,
 } from '@/lib/community-users';
 import { useUser } from '@/contexts/UserContext';
+import { useAccount } from '@/contexts/AccountContext';
 import { usePosts } from '@/contexts/PostsContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
@@ -28,6 +29,7 @@ type ProfileDisplay = CommunityUser | {
   interactionCount: number;
   instagramProfile?: string;
   tiktokProfile?: string;
+  youtubeProfile?: string;
 };
 
 const postTypeLabels: Record<PostType, string> = {
@@ -57,6 +59,7 @@ function resolveProfileUser(identifier: string, posts: { author: string; avatar:
     interactionCount: 0,
     instagramProfile: undefined,
     tiktokProfile: undefined,
+    youtubeProfile: undefined,
   };
 }
 
@@ -65,27 +68,77 @@ export default function PerfilComunidadePage() {
   const router = useRouter();
   const identifier = (params?.userId as string) ?? '';
   const { user } = useUser();
+  const { account, fullName } = useAccount();
   const { posts, updatePost, toggleSavePost } = usePosts();
-  const isOwnProfile = Boolean(identifier && user?.name && nameToSlug(user.name) === identifier);
+  const isOwnProfile = Boolean(
+    identifier &&
+    (fullName ? nameToSlug(fullName) === identifier : user?.name && nameToSlug(user.name) === identifier)
+  );
   const resolvedFromList = useMemo(() => resolveProfileUser(identifier, posts), [identifier, posts]);
   const profileUser = useMemo((): ProfileDisplay | null => {
     if (!resolvedFromList) return null;
-    if (isOwnProfile && user?.name) {
+    if (isOwnProfile) {
+      const name = fullName || user?.name || resolvedFromList.name;
+      const avatar = account?.avatar_url ?? user?.avatar ?? resolvedFromList.avatar;
+      const instagramProfile = (account?.link_instagram ?? user?.instagramProfile)?.trim() || undefined;
+      const tiktokProfile = (account?.link_tiktok ?? user?.tiktokProfile)?.trim() || undefined;
+      const youtubeProfile = (account?.link_youtube ?? (resolvedFromList && 'youtubeProfile' in resolvedFromList ? resolvedFromList.youtubeProfile : undefined))?.trim() || undefined;
       return {
-        name: user.name,
-        avatar: user.avatar ?? resolvedFromList.avatar,
-        initials: getInitialsFromName(user.name),
+        name,
+        avatar: avatar ?? null,
+        initials: getInitialsFromName(name),
         interactionCount: 'interactionCount' in resolvedFromList ? resolvedFromList.interactionCount : 0,
-        instagramProfile: user.instagramProfile?.trim() || undefined,
-        tiktokProfile: user.tiktokProfile?.trim() || undefined,
+        instagramProfile,
+        tiktokProfile,
+        youtubeProfile,
       };
     }
     return resolvedFromList;
-  }, [resolvedFromList, isOwnProfile, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile]);
-  const authorNameForPosts = profileUser ? (isOwnProfile ? user?.name ?? profileUser.name : profileUser.name) : '';
+  }, [resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube]);
+  const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
   const userPosts = authorNameForPosts ? posts.filter((p) => p.author === authorNameForPosts) : [];
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
+  const [seguidoresTooltipOpen, setSeguidoresTooltipOpen] = useState(false);
+  type SocialStatsData = {
+    totalFollowers: number;
+    instagram?: { username: string; followers: number | null } | null;
+    tiktok?: { username: string; followers: number | null } | null;
+    youtube?: { channelId: string; subscribers: number | null } | null;
+  };
+  const [socialStats, setSocialStats] = useState<SocialStatsData | null>(null);
+
+  useEffect(() => {
+    const instagram = profileUser && 'instagramProfile' in profileUser ? profileUser.instagramProfile?.trim() : undefined;
+    const tiktok = profileUser && 'tiktokProfile' in profileUser ? profileUser.tiktokProfile?.trim() : undefined;
+    const youtube = profileUser && 'youtubeProfile' in profileUser ? profileUser.youtubeProfile?.trim() : undefined;
+    if (!instagram && !tiktok && !youtube) {
+      setSocialStats(null);
+      return;
+    }
+    const params = new URLSearchParams();
+    if (instagram) params.set('instagram', instagram);
+    if (tiktok) params.set('tiktok', tiktok);
+    if (youtube) params.set('youtube', youtube);
+    fetch(`/api/social-stats?${params.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && typeof data.totalFollowers === 'number') {
+          setSocialStats({
+            totalFollowers: data.totalFollowers,
+            instagram: data.instagram ?? null,
+            tiktok: data.tiktok ?? null,
+            youtube: data.youtube ?? null,
+          });
+        } else {
+          setSocialStats(null);
+        }
+      })
+      .catch(() => setSocialStats(null));
+  }, [profileUser?.name, profileUser && 'instagramProfile' in profileUser ? profileUser.instagramProfile : undefined, profileUser && 'tiktokProfile' in profileUser ? profileUser.tiktokProfile : undefined, profileUser && 'youtubeProfile' in profileUser ? profileUser.youtubeProfile : undefined]);
+
+  const formatCount = (n: number) =>
+    n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}k` : n.toLocaleString('pt-BR');
   const handleLike = (postId: string) => {
     const post = posts.find((p) => p.id === postId);
     if (post) {
@@ -124,6 +177,9 @@ export default function PerfilComunidadePage() {
     : null;
   const tiktokUrl = 'tiktokProfile' in profileUser && profileUser.tiktokProfile
     ? getSocialUrl(profileUser as CommunityUser, 'tiktok')
+    : null;
+  const youtubeUrl = 'youtubeProfile' in profileUser && profileUser.youtubeProfile
+    ? `https://www.youtube.com/@${profileUser.youtubeProfile.replace(/^@/, '')}`
     : null;
 
   /** Borda colorida (destaque) só para quem está nos stories */
@@ -197,7 +253,7 @@ export default function PerfilComunidadePage() {
               Membro da comunidade
             </p>
 
-            {/* Stats estilo Instagram: publicações e interações */}
+            {/* Stats estilo Instagram: publicações, interações e seguidores (redes) */}
             <div className="flex justify-center sm:justify-start gap-6 mb-4 flex-wrap">
               <div>
                 <span className="block font-semibold text-gray-900 dark:text-slate-100">
@@ -211,11 +267,55 @@ export default function PerfilComunidadePage() {
                 </span>
                 <span className="text-sm text-gray-500 dark:text-slate-400">interações</span>
               </div>
+              {socialStats !== null && (
+                <div
+                  className="relative inline-flex flex-col items-center sm:items-start group"
+                  onMouseEnter={() => setSeguidoresTooltipOpen(true)}
+                  onMouseLeave={() => setSeguidoresTooltipOpen(false)}
+                >
+                  <div className="flex items-center gap-1">
+                    <span className="block font-semibold text-gray-900 dark:text-slate-100">
+                      {formatCount(socialStats.totalFollowers)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSeguidoresTooltipOpen((v) => !v)}
+                      className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400 cursor-help transition-colors flex-shrink-0 touch-manipulation"
+                      aria-label="Detalhes dos seguidores"
+                      aria-expanded={seguidoresTooltipOpen}
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">seguidores</span>
+                  {/* Tooltip: soma das redes + detalhe por rede + atualização 24h */}
+                  <div
+                    role="tooltip"
+                    className={`absolute left-0 bottom-full mb-1 sm:left-0 sm:bottom-full sm:mb-1 w-56 px-3 py-2.5 rounded-lg bg-gray-900 dark:bg-slate-800 text-white text-xs shadow-xl transition-all duration-150 z-50 ${seguidoresTooltipOpen ? 'opacity-100 visible' : 'opacity-0 invisible sm:group-hover:opacity-100 sm:group-hover:visible'}`}
+                  >
+                    <p className="font-medium text-slate-200 dark:text-slate-200 mb-2">Soma das redes cadastradas</p>
+                    <ul className="space-y-1 text-slate-300 dark:text-slate-300">
+                      {socialStats.instagram != null && (
+                        <li>Instagram: {socialStats.instagram.followers != null ? formatCount(socialStats.instagram.followers) + ' seguidores' : '—'}</li>
+                      )}
+                      {socialStats.tiktok != null && (
+                        <li>TikTok: {socialStats.tiktok.followers != null ? formatCount(socialStats.tiktok.followers) + ' seguidores' : '—'}</li>
+                      )}
+                      {socialStats.youtube != null && (
+                        <li>YouTube: {socialStats.youtube.subscribers != null ? formatCount(socialStats.youtube.subscribers) + ' inscritos' : '—'}</li>
+                      )}
+                    </ul>
+                    <p className="mt-2 pt-2 border-t border-slate-600 text-slate-400 dark:text-slate-400">Dados atualizados a cada 24h</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Links para redes sociais (só aparecem se o perfil tiver redes cadastradas) */}
             <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-              {(instagramUrl || tiktokUrl) ? (
+              {(instagramUrl || tiktokUrl || youtubeUrl) ? (
                 <>
               {instagramUrl && (
                 <a
@@ -241,6 +341,19 @@ export default function PerfilComunidadePage() {
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                   </svg>
                   TikTok
+                </a>
+              )}
+              {youtubeUrl && (
+                <a
+                  href={youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  YouTube
                 </a>
               )}
                 </>

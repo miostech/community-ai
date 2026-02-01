@@ -17,6 +17,7 @@ interface FormData {
   phone_country_code: string;
   link_instagram: string;
   link_tiktok: string;
+  link_youtube: string;
   primary_social_link: 'instagram' | 'tiktok' | null;
   avatar_url: string | null;
 }
@@ -36,6 +37,7 @@ export default function PerfilPage() {
     phone_country_code: '+55',
     link_instagram: '',
     link_tiktok: '',
+    link_youtube: '',
     primary_social_link: null,
     avatar_url: null,
   });
@@ -52,6 +54,7 @@ export default function PerfilPage() {
         phone_country_code: account.phone_country_code || '+55',
         link_instagram: account.link_instagram || '',
         link_tiktok: account.link_tiktok || '',
+        link_youtube: account.link_youtube || '',
         primary_social_link: account.primary_social_link || null,
         avatar_url: account.avatar_url || null,
       });
@@ -91,6 +94,7 @@ export default function PerfilPage() {
         phone_country_code: account.phone_country_code || '+55',
         link_instagram: account.link_instagram || '',
         link_tiktok: account.link_tiktok || '',
+        link_youtube: account.link_youtube || '',
         primary_social_link: account.primary_social_link || null,
         avatar_url: account.avatar_url || null,
       });
@@ -263,7 +267,7 @@ export default function PerfilPage() {
         <div className="border-t border-gray-200 dark:border-neutral-700 pt-6 sm:pt-8">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">Redes Sociais</h2>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 mb-4 sm:mb-6">
-            Preencha os que quiser. Os dois links aparecerão no seu perfil quando alguém visualizar.
+            Preencha os que quiser. Os links aparecerão no seu perfil quando alguém visualizar.
           </p>
 
           <div className="space-y-4 sm:space-y-6">
@@ -300,6 +304,24 @@ export default function PerfilPage() {
               </div>
               {formData.link_tiktok && (
                 <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: tiktok.com/@{formData.link_tiktok}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">YouTube</label>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 dark:text-neutral-400 text-sm">@</span>
+                <input
+                  type="text"
+                  value={formData.link_youtube}
+                  onChange={(e) => updateField('link_youtube', e.target.value.replace('@', ''))}
+                  placeholder="nome_do_canal"
+                  className="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
+                  suppressHydrationWarning
+                />
+              </div>
+              {formData.link_youtube && (
+                <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: youtube.com/@{formData.link_youtube}</p>
               )}
             </div>
 

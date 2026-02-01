@@ -10,6 +10,7 @@ export interface CommunityUser {
   interactionCount: number;
   instagramProfile?: string;
   tiktokProfile?: string;
+  youtubeProfile?: string;
   primarySocialLink?: 'instagram' | 'tiktok' | null;
 }
 

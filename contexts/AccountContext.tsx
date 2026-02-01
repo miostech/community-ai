@@ -12,6 +12,7 @@ export interface Account {
     phone_country_code: string;
     link_instagram: string;
     link_tiktok: string;
+    link_youtube: string;
     primary_social_link: 'instagram' | 'tiktok' | null;
     avatar_url: string | null;
     background_url: string | null;
