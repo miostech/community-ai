@@ -95,6 +95,29 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
       timeAgo: '2d',
       liked: false,
     },
+    {
+      id: '5',
+      type: 'result',
+      author: 'Maria Silva',
+      avatar: null,
+      content: 'Alcancei 50k seguidores usando as dicas da comunidade! O conteúdo de valor faz toda diferença. 🙌',
+      likes: 120,
+      comments: 18,
+      timeAgo: '3d',
+      liked: false,
+    },
+    {
+      id: '6',
+      type: 'idea',
+      author: 'Ana Costa',
+      avatar: null,
+      content: 'Ideia de série para TikTok: "Um dia na vida de quem cria conteúdo". Quem mais faria?',
+      imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
+      likes: 67,
+      comments: 12,
+      timeAgo: '1d',
+      liked: false,
+    },
   ]);
 
   const [comments, setComments] = useState<Comment[]>([

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
@@ -10,6 +10,7 @@ import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { CommentsSection } from '@/components/community/CommentsSection';
 import { useUser } from '@/contexts/UserContext';
 import { usePosts } from '@/contexts/PostsContext';
+import { communityUsers, nameToSlug } from '@/lib/community-users';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
 
@@ -26,16 +27,6 @@ interface Post {
   timeAgo: string;
   liked?: boolean;
 }
-
-// Usuários mais ativos para stories (baseado em interações) - ordenados por interação
-const topUsers = [
-  { id: '1', name: 'Maria Silva', avatar: null, initials: 'MS', interactionCount: 89, instagramProfile: 'mariasilva', tiktokProfile: 'mariasilva', primarySocialLink: 'instagram' as const },
-  { id: '2', name: 'Ana Costa', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop', initials: 'AC', interactionCount: 76, instagramProfile: 'anacosta', tiktokProfile: 'anacosta_oficial', primarySocialLink: 'tiktok' as const },
-  { id: '3', name: 'João Santos', avatar: null, initials: 'JS', interactionCount: 65, instagramProfile: 'joaosantos', primarySocialLink: 'instagram' as const },
-  { id: '4', name: 'Pedro Lima', avatar: null, initials: 'PL', interactionCount: 54, tiktokProfile: 'pedrolima', primarySocialLink: 'tiktok' as const },
-  { id: '5', name: 'Carla Mendes', avatar: null, initials: 'CM', interactionCount: 48, instagramProfile: 'carlamendes', primarySocialLink: 'instagram' as const },
-  { id: '6', name: 'Lucas Alves', avatar: null, initials: 'LA', interactionCount: 42 },
-].sort((a, b) => b.interactionCount - a.interactionCount); // Ordenar por interação (maior para menor)
 
 const postTypeLabels = {
   idea: 'Ideia',
@@ -72,14 +63,18 @@ export default function ComunidadePage() {
     }
   };
 
-  // Pull to refresh (mobile)
+  // Pull to refresh (mobile) e ao entrar na página
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simular carregamento de novos posts
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 1500);
+    // Aqui pode ser adicionada a chamada à API quando existir
+    await new Promise((r) => setTimeout(r, 800));
+    setIsRefreshing(false);
   };
+
+  // Atualização ao entrar na página da comunidade
+  useEffect(() => {
+    handleRefresh();
+  }, []);
 
   // Filtrar posts - mostrar todos ou apenas salvos
   const displayedPosts = showSavedOnly 
@@ -148,7 +143,7 @@ export default function ComunidadePage() {
       )}
 
       <div className="mb-0 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
-        <Stories users={topUsers} />
+        <Stories users={communityUsers} />
       </div>
 
       {/* Feed de posts - estilo Instagram */}
@@ -176,23 +171,26 @@ export default function ComunidadePage() {
           <div key={post.id} className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 last:border-b-0">
             <div className="p-3 sm:p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                <Link
+                  href={`/dashboard/comunidade/perfil/${nameToSlug(post.author)}`}
+                  className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0 group"
+                >
                   {typeof post.avatar === 'string' && post.avatar.length > 2 ? (
                     <img
                       src={post.avatar}
                       alt={post.author}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0 group-hover:opacity-90 transition-opacity"
                     />
                   ) : (
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0 group-hover:opacity-90 transition-opacity">
                       {typeof post.avatar === 'string' ? post.avatar : post.author.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 truncate">{post.author}</p>
+                    <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 truncate group-hover:underline">{post.author}</p>
                     <p className="text-xs text-gray-500 dark:text-slate-400">{post.timeAgo}</p>
                   </div>
-                </div>
+                </Link>
                 <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
                   {postTypeLabels[post.type]}
                 </span>

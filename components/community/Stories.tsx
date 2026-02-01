@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface StoryUser {
   id: string;
@@ -18,27 +19,11 @@ interface StoriesProps {
 }
 
 export function Stories({ users }: StoriesProps) {
+  const router = useRouter();
   const [pressedStory, setPressedStory] = useState<string | null>(null);
 
-  const getSocialLink = (user: StoryUser): string | null => {
-    if (!user.primarySocialLink) return null;
-    
-    if (user.primarySocialLink === 'instagram' && user.instagramProfile) {
-      return `https://instagram.com/${user.instagramProfile}`;
-    }
-    
-    if (user.primarySocialLink === 'tiktok' && user.tiktokProfile) {
-      return `https://tiktok.com/@${user.tiktokProfile}`;
-    }
-    
-    return null;
-  };
-
   const handleStoryClick = (user: StoryUser) => {
-    const socialLink = getSocialLink(user);
-    if (socialLink) {
-      window.open(socialLink, '_blank');
-    }
+    router.push(`/dashboard/comunidade/perfil/${user.id}`);
   };
 
   return (
@@ -58,24 +43,17 @@ export function Stories({ users }: StoriesProps) {
           minWidth: 'min-content',
         }}
       >
-        {users.map((user, index) => {
-          const socialLink = getSocialLink(user);
-          const hasLink = !!socialLink;
-          
-          return (
+        {users.map((user, index) => (
           <button 
             key={user.id} 
             onClick={() => handleStoryClick(user)}
-            className={`flex flex-col items-center flex-shrink-0 animate-fade-in-up ${
-              hasLink ? 'cursor-pointer active:scale-95 transition-transform' : 'cursor-default'
-            }`}
+            className="flex flex-col items-center flex-shrink-0 animate-fade-in-up cursor-pointer active:scale-95 transition-transform"
             style={{ 
               animationDelay: `${index * 0.05}s`,
               minWidth: '80px',
             }}
             onMouseEnter={() => setPressedStory(user.id)}
             onMouseLeave={() => setPressedStory(null)}
-            disabled={!hasLink}
           >
             <div className="relative">
               {/* Ring gradient animado para stories */}
@@ -121,8 +99,7 @@ export function Stories({ users }: StoriesProps) {
               <span className="text-[10px] text-gray-500 dark:text-slate-400 font-medium">{user.interactionCount}</span>
             </div>
           </button>
-          );
-        })}
+        ))}
       </div>
     </div>
   );
