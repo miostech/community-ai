@@ -1,32 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 
 export default function LoginPage() {
+  const { status } = useSession();
   const router = useRouter();
-  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    // Simular login - em produção, fazer chamada à API
-    setTimeout(() => {
+  // Redireciona para o dashboard se já estiver logado
+  useEffect(() => {
+    if (status === 'authenticated') {
       router.push('/dashboard/comunidade');
-    }, 500);
+    }
+  }, [status, router]);
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signIn('google', {
+        callbackUrl: '/dashboard/comunidade',
+        redirect: true,
+      });
+    } catch (err) {
+      console.error('Falha ao iniciar login Google', err);
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
+  const handleAppleLogin = async () => {
     setIsLoading(true);
-    // Simular login Google - em produção, integrar com provider
-    setTimeout(() => {
-      router.push('/dashboard/comunidade');
-    }, 500);
+    try {
+      await signIn('apple', {
+        callbackUrl: '/dashboard/comunidade',
+        redirect: true,
+      });
+    } catch (err) {
+      console.error('Falha ao iniciar login Apple', err);
+      setIsLoading(false);
+    }
   };
+
+  // Mostra loading enquanto verifica a sessão
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black relative overflow-hidden flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
@@ -49,50 +74,13 @@ export default function LoginPage() {
           <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mt-1 sm:mt-2">Continue criando conteúdo incrível</p>
         </div>
 
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-lg">
-          <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
-            <p className="font-medium">Modo de desenvolvimento</p>
-            <p className="text-xs mt-1">Use qualquer email e senha para testar. A autenticação será implementada em produção.</p>
-          </div>
-          
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <Input
-              type="email"
-              label="Email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              type="password"
-              label="Senha"
-              placeholder="••••••••"
-              required
-            />
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </Button>
-          </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300 dark:border-slate-600"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400">ou</span>
-            </div>
-          </div>
-
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-6 sm:p-8 space-y-4 shadow-lg">
           <Button
             variant="secondary"
             className="w-full flex items-center justify-center space-x-2"
             onClick={handleGoogleLogin}
             disabled={isLoading}
+            type="button"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -115,10 +103,27 @@ export default function LoginPage() {
             <span>Continuar com Google</span>
           </Button>
 
-          <p className="text-center text-sm text-gray-600 dark:text-slate-400">
-            Não tem uma conta?{' '}
-            <Link href="/login" className="text-gray-900 dark:text-slate-100 font-medium hover:underline">
-              Criar conta
+          <Button
+            variant="secondary"
+            className="w-full flex items-center justify-center space-x-2 bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100"
+            onClick={handleAppleLogin}
+            disabled={isLoading}
+            type="button"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+            </svg>
+            <span>Continuar com Apple</span>
+          </Button>
+
+          <p className="text-center text-xs text-gray-500 dark:text-slate-500 mt-4">
+            Ao continuar, você concorda com nossos{' '}
+            <Link href="/termos" className="underline hover:text-gray-700 dark:hover:text-slate-300">
+              Termos de Uso
+            </Link>{' '}
+            e{' '}
+            <Link href="/privacidade" className="underline hover:text-gray-700 dark:hover:text-slate-300">
+              Política de Privacidade
             </Link>
           </p>
         </div>

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
 
@@ -15,12 +17,21 @@ const suggestedPrompts = [
 ];
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [inputValue, setInputValue] = useState('');
   const [placeholderText, setPlaceholderText] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const fullPlaceholder = 'Crie ideias de conteúdo para Instagram';
-  
+
+  // Redireciona usuários autenticados para o dashboard
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/dashboard/comunidade');
+    }
+  }, [status, router]);
+
   useEffect(() => {
     let currentIndex = 0;
     const typingInterval = setInterval(() => {
@@ -31,7 +42,7 @@ export default function Home() {
         clearInterval(typingInterval);
       }
     }, 50); // Velocidade da digitação
-    
+
     return () => clearInterval(typingInterval);
   }, [fullPlaceholder]);
 
@@ -42,7 +53,7 @@ export default function Home() {
       const firstHalfWidth = Array.from(container.children)
         .slice(0, firstHalf)
         .reduce((sum, child) => sum + (child as HTMLElement).offsetWidth + 8, 0); // 8px é o gap
-      
+
       container.style.setProperty('--scroll-width', `${firstHalfWidth}px`);
     }
   }, []);
@@ -120,7 +131,7 @@ export default function Home() {
           <div className="mt-4 sm:mt-6 px-4">
             <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mb-2 sm:mb-3">Sem ideias? Tente uma destas opções:</p>
             <div className="relative overflow-hidden w-full max-w-3xl mx-auto">
-              <div 
+              <div
                 ref={scrollContainerRef}
                 className="flex items-center gap-2 animate-scroll"
               >
@@ -169,7 +180,7 @@ export default function Home() {
           {/* Natália Trombelli */}
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-6 sm:p-8 text-center hover:shadow-lg transition-all">
             <div className="mb-4 sm:mb-6">
-              <div 
+              <div
                 className="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto mb-3 sm:mb-4 border-2 border-gray-200 dark:border-slate-600 bg-cover bg-center"
                 style={{
                   backgroundImage: 'url(/images/cursos/natalia-trombelli.png)',
@@ -186,30 +197,30 @@ export default function Home() {
               </div>
             </div>
             <p className="text-sm sm:text-base text-gray-700 dark:text-slate-300 leading-relaxed mb-4 sm:mb-6">
-              Criadora de conteúdo especializada em estratégias de engajamento e crescimento orgânico. 
+              Criadora de conteúdo especializada em estratégias de engajamento e crescimento orgânico.
               Compartilha conhecimento prático sobre criação de conteúdo que converte.
             </p>
             <div className="flex items-center justify-center space-x-4">
-              <a 
-                href="https://instagram.com/natrombellii" 
-                target="_blank" 
+              <a
+                href="https://instagram.com/natrombellii"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 title="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                 </svg>
               </a>
-              <a 
-                href="https://tiktok.com/@natrombellii" 
-                target="_blank" 
+              <a
+                href="https://tiktok.com/@natrombellii"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 title="TikTok"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a4.85 4.85 0 0 0 3.77 4.22v-3.29a4.85 4.85 0 0 1-1-.4z"/>
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a4.85 4.85 0 0 0 3.77 4.22v-3.29a4.85 4.85 0 0 1-1-.4z" />
                 </svg>
               </a>
             </div>
@@ -218,7 +229,7 @@ export default function Home() {
           {/* Luigi Andersen */}
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-6 sm:p-8 text-center hover:shadow-lg transition-all">
             <div className="mb-4 sm:mb-6">
-              <div 
+              <div
                 className="w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto mb-3 sm:mb-4 border-2 border-gray-200 dark:border-slate-600 bg-cover bg-center"
                 style={{
                   backgroundImage: 'url(/images/cursos/luigi-andersen.png)',
@@ -235,30 +246,30 @@ export default function Home() {
               </div>
             </div>
             <p className="text-sm sm:text-base text-gray-700 dark:text-slate-300 leading-relaxed mb-4 sm:mb-6">
-              Especialista em criação de conteúdo estratégico e monetização. 
+              Especialista em criação de conteúdo estratégico e monetização.
               Ajuda criadores a transformarem sua paixão em negócio através de conteúdo de valor.
             </p>
             <div className="flex items-center justify-center space-x-4">
-              <a 
-                href="https://instagram.com/luigi.andersen" 
-                target="_blank" 
+              <a
+                href="https://instagram.com/luigi.andersen"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 title="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
                 </svg>
               </a>
-              <a 
-                href="https://tiktok.com/@luigi.andersen" 
-                target="_blank" 
+              <a
+                href="https://tiktok.com/@luigi.andersen"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 title="TikTok"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a4.85 4.85 0 0 0 3.77 4.22v-3.29a4.85 4.85 0 0 1-1-.4z"/>
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a4.85 4.85 0 0 0 3.77 4.22v-3.29a4.85 4.85 0 0 1-1-.4z" />
                 </svg>
               </a>
             </div>
@@ -327,7 +338,7 @@ export default function Home() {
           <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-100 dark:bg-yellow-500/20 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
               <svg className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/>
+                <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-slate-100 text-base sm:text-lg mb-1 sm:mb-2">Temas em Alta</h3>
@@ -361,7 +372,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
           {/* Exemplo 1 */}
-          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
+      {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-4 sm:p-6 hover:shadow-lg transition-all">
             <div className="mb-3 sm:mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-[10px] sm:text-xs font-bold">
@@ -393,8 +404,8 @@ export default function Home() {
             </div>
           </div> */}
 
-          {/* Exemplo 2 */}
-          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
+      {/* Exemplo 2 */}
+      {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -426,8 +437,8 @@ export default function Home() {
             </div>
           </div> */}
 
-          {/* Exemplo 3 */}
-          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
+      {/* Exemplo 3 */}
+      {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -459,8 +470,8 @@ export default function Home() {
             </div>
           </div> */}
 
-          {/* Exemplo 4 */}
-          {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
+      {/* Exemplo 4 */}
+      {/* <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all">
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -493,7 +504,7 @@ export default function Home() {
           </div>
         </div> */}
 
-        {/* <div className="text-center mt-8 sm:mt-12 px-4">
+      {/* <div className="text-center mt-8 sm:mt-12 px-4">
           <Link href="/login">
             <Button size="lg" className="w-full sm:w-auto">
               Começar a Criar Agora
