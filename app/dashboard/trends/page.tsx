@@ -2,6 +2,31 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
+// MUI imports
+import {
+  Box,
+  Typography,
+  Button,
+  Chip,
+  CircularProgress,
+  Alert,
+  AlertTitle,
+  Stack,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
+  Paper,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material';
+import {
+  TrendingUp as TrendingUpIcon,
+  OpenInNew as OpenInNewIcon,
+  FilterList as FilterListIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+} from '@mui/icons-material';
+
 interface TrendItem {
   id: string;
   query: string;
@@ -21,14 +46,67 @@ interface TrendsResponse {
   trends: TrendItem[];
 }
 
+const categoryPt: Record<string, string> = {
+  all: 'Geral',
+  other: 'Outros',
+  entertainment: 'Entretenimento',
+  sports: 'Esportes',
+  technology: 'Tecnologia',
+  business_and_finance: 'Negócios e finanças',
+  politics: 'Política',
+  health: 'Saúde',
+  science: 'Ciência',
+  games: 'Games',
+  shopping: 'Compras',
+  travel_and_transportation: 'Viagens e transporte',
+  beauty_and_fashion: 'Beleza e moda',
+  food_and_drink: 'Comida e bebida',
+  autos_and_vehicles: 'Carros e veículos',
+  hobbies_and_leisure: 'Hobbies e lazer',
+  jobs_and_education: 'Empregos e educação',
+  law_and_government: 'Lei e governo',
+  pets_and_animals: 'Animais',
+  climate: 'Clima',
+};
+
+const translateCategory = (cat: string) =>
+  categoryPt[cat] ??
+  (cat
+    ? cat
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ')
+    : cat);
+
+const capitalize = (s: string) =>
+  s.length
+    ? s
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ')
+    : s;
+
+const formatVolume = (num: number | undefined): string => {
+  if (num == null || Number.isNaN(num)) return '—';
+  if (num >= 1_000_000) {
+    const mi = num / 1_000_000;
+    return `${mi % 1 === 0 ? mi : mi.toFixed(1).replace('.', ',')} mi`;
+  }
+  if (num >= 1_000) {
+    const mil = num / 1_000;
+    return `${mil % 1 === 0 ? mil : mil.toFixed(1).replace('.', ',')} mil`;
+  }
+  return num.toString();
+};
+
 export default function TrendsPage() {
   const [data, setData] = useState<TrendsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'top' | 'rising'>('rising');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const categoryRef = useRef<HTMLDivElement>(null);
+  const [categoryAnchorEl, setCategoryAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,7 +127,7 @@ export default function TrendsPage() {
         }
 
         setData(json);
-      } catch (e) {
+      } catch {
         if (!cancelled) {
           setError('Falha ao conectar. Tente novamente.');
           setData(null);
@@ -65,45 +143,7 @@ export default function TrendsPage() {
     };
   }, []);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
-        setCategoryOpen(false);
-      }
-    }
-    if (categoryOpen) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [categoryOpen]);
-
   const trends = data?.trends ?? [];
-
-  const categoryPt: Record<string, string> = {
-    all: 'Geral',
-    other: 'Outros',
-    entertainment: 'Entretenimento',
-    sports: 'Esportes',
-    technology: 'Tecnologia',
-    business_and_finance: 'Negócios e finanças',
-    politics: 'Política',
-    health: 'Saúde',
-    science: 'Ciência',
-    games: 'Games',
-    shopping: 'Compras',
-    travel_and_transportation: 'Viagens e transporte',
-    beauty_and_fashion: 'Beleza e moda',
-    food_and_drink: 'Comida e bebida',
-    autos_and_vehicles: 'Carros e veículos',
-    hobbies_and_leisure: 'Hobbies e lazer',
-    jobs_and_education: 'Empregos e educação',
-    law_and_government: 'Lei e governo',
-    pets_and_animals: 'Animais',
-    climate: 'Clima',
-  };
-
-  const translateCategory = (cat: string) =>
-    categoryPt[cat] ?? (cat ? cat.replace(/_/g, ' ').split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : cat);
 
   const categoriesInData = React.useMemo(() => {
     const set = new Set<string>();
@@ -121,287 +161,342 @@ export default function TrendsPage() {
       ? filteredByType
       : filteredByType.filter((t) => t.topicType === categoryFilter);
 
-  const capitalize = (s: string) =>
-    s.length
-      ? s
-          .split(' ')
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-          .join(' ')
-      : s;
+  const handleFilterChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newFilter: 'top' | 'rising' | null
+  ) => {
+    if (newFilter !== null) {
+      setFilter(newFilter);
+    }
+  };
 
-  const formatVolume = (num: number | undefined): string => {
-    if (num == null || Number.isNaN(num)) return '—';
-    if (num >= 1_000_000) {
-      const mi = num / 1_000_000;
-      return `${mi % 1 === 0 ? mi : mi.toFixed(1).replace('.', ',')} mi`;
-    }
-    if (num >= 1_000) {
-      const mil = num / 1_000;
-      return `${mil % 1 === 0 ? mil : mil.toFixed(1).replace('.', ',')} mil`;
-    }
-    return num.toString();
+  const handleCategoryClick = (event: React.MouseEvent<HTMLElement>) => {
+    setCategoryAnchorEl(event.currentTarget);
+  };
+
+  const handleCategoryClose = () => {
+    setCategoryAnchorEl(null);
+  };
+
+  const handleCategorySelect = (category: string) => {
+    setCategoryFilter(category);
+    handleCategoryClose();
   };
 
   return (
-    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen">
-      <div className="sticky top-0 z-40 bg-white dark:bg-black border-b border-gray-100 dark:border-neutral-800 backdrop-blur-lg bg-white/95 dark:bg-black/95">
-        <div className="px-4 py-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">
+    <Box
+      sx={{
+        maxWidth: 672,
+        mx: 'auto',
+        pb: { xs: 12, sm: 4 },
+        bgcolor: 'background.paper',
+        minHeight: '100vh',
+      }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <Box sx={{ px: 2, py: 2 }}>
+          <Typography
+            variant="h5"
+            fontWeight={700}
+            sx={{ fontSize: { xs: '1.5rem', sm: '1.875rem' } }}
+          >
             Top Trends
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Pesquisas em alta no Google no Brasil. Use para se inspirar e criar conteúdo em alta.
-          </p>
+          </Typography>
           {data?.regionLabel && (
-            <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
-              Região: {data.regionLabel} ·{' '}
-              Últimas 24 horas
-            </p>
+            <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
+              Região: {data.regionLabel} · Últimas 24 horas
+            </Typography>
           )}
-        </div>
+        </Box>
 
+        {/* Filters */}
         {!loading && !error && trends.length > 0 && (
-          <div className="px-4 pb-3 flex items-center justify-between gap-3">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setFilter('rising')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filter === 'rising'
-                    ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
-                    : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Em alta
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter('top')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filter === 'top'
-                    ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
-                    : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                Populares
-              </button>
-            </div>
-            <div ref={categoryRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setCategoryOpen((o) => !o)}
-                className="flex items-center gap-1 rounded-md py-1 pr-5 pl-1 text-xs text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-400 cursor-pointer focus:outline-none focus:ring-0"
-                aria-expanded={categoryOpen}
-                aria-haspopup="listbox"
-                aria-label="Filtrar por categoria"
-              >
-                {categoryFilter === 'all' ? 'Categoria' : translateCategory(categoryFilter)}
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {categoryOpen && (
-                <div
-                  className="absolute right-0 top-full z-50 mt-1 min-w-[180px] max-h-[70vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg py-1"
-                  role="listbox"
-                >
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={categoryFilter === 'all'}
-                    onClick={() => {
-                      setCategoryFilter('all');
-                      setCategoryOpen(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 ${categoryFilter === 'all' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-slate-300'}`}
-                  >
-                    Todas
-                  </button>
-                  {categoriesInData.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      role="option"
-                      aria-selected={categoryFilter === key}
-                      onClick={() => {
-                        setCategoryFilter(key);
-                        setCategoryOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800 ${categoryFilter === key ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-slate-300'}`}
-                    >
-                      {translateCategory(key)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-4">
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-slate-400">
-            <svg
-              className="animate-spin h-8 w-8 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+          <Box
+            sx={{
+              px: 2,
+              pb: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <ToggleButtonGroup
+              value={filter}
+              exclusive
+              onChange={handleFilterChange}
+              size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  borderRadius: 5,
+                  px: 2,
+                  py: 0.75,
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                  border: 'none',
+                  '&.Mui-selected': {
+                    bgcolor: 'text.primary',
+                    color: 'background.paper',
+                    '&:hover': {
+                      bgcolor: 'text.primary',
+                    },
+                  },
+                  '&:not(.Mui-selected)': {
+                    bgcolor: 'action.hover',
+                    '&:hover': {
+                      bgcolor: 'action.selected',
+                    },
+                  },
+                },
+              }}
             >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <p>Carregando trends do Brasil...</p>
-          </div>
+              <ToggleButton value="rising">Em alta</ToggleButton>
+              <ToggleButton value="top">Populares</ToggleButton>
+            </ToggleButtonGroup>
+
+            <Button
+              size="small"
+              onClick={handleCategoryClick}
+              endIcon={<KeyboardArrowDownIcon />}
+              sx={{
+                textTransform: 'none',
+                color: 'text.secondary',
+                fontSize: '0.75rem',
+              }}
+            >
+              {categoryFilter === 'all' ? 'Categoria' : translateCategory(categoryFilter)}
+            </Button>
+            <Menu
+              anchorEl={categoryAnchorEl}
+              open={Boolean(categoryAnchorEl)}
+              onClose={handleCategoryClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              PaperProps={{
+                sx: {
+                  maxHeight: '70vh',
+                  minWidth: 180,
+                },
+              }}
+            >
+              <MenuItem
+                selected={categoryFilter === 'all'}
+                onClick={() => handleCategorySelect('all')}
+              >
+                Todas
+              </MenuItem>
+              <Divider />
+              {categoriesInData.map((key) => (
+                <MenuItem
+                  key={key}
+                  selected={categoryFilter === key}
+                  onClick={() => handleCategorySelect(key)}
+                >
+                  {translateCategory(key)}
+                </MenuItem>
+              ))}
+            </Menu>
+          </Box>
+        )}
+      </Box>
+
+      {/* Content */}
+      <Box sx={{ px: 2, py: 2 }}>
+        {/* Loading */}
+        {loading && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              py: 6,
+            }}
+          >
+            <CircularProgress size={32} sx={{ mb: 2 }} />
+            <Typography color="text.secondary">Carregando trends do Brasil...</Typography>
+          </Box>
         )}
 
+        {/* Error */}
         {error && (
-          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4 text-amber-800 dark:text-amber-200">
-            <p className="font-medium">Não foi possível carregar os trends</p>
-            <p className="text-sm mt-1">{error}</p>
-            <p className="text-xs mt-2 text-amber-700 dark:text-amber-300">
-              Configure <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">SEARCHAPI_API_KEY</code> em <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">.env.local</code> usando uma chave do{' '}
-              <a
+          <Alert
+            severity="warning"
+            sx={{
+              borderRadius: 3,
+              '& .MuiAlert-message': { width: '100%' },
+            }}
+          >
+            <AlertTitle>Não foi possível carregar os trends</AlertTitle>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              {error}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Configure <code>SEARCHAPI_API_KEY</code> em <code>.env.local</code> usando uma chave do{' '}
+              <Typography
+                component="a"
                 href="https://www.searchapi.io/docs/google-trends"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline"
+                variant="caption"
+                sx={{ textDecoration: 'underline' }}
               >
                 SearchAPI (Google Trends)
-              </a>
+              </Typography>
               .
-            </p>
-          </div>
+            </Typography>
+          </Alert>
         )}
 
+        {/* Empty state */}
         {!loading && !error && filtered.length === 0 && (
-          <div className="py-12 text-center text-gray-500 dark:text-slate-400">
-            Nenhum trend encontrado para o filtro selecionado.
-          </div>
+          <Box sx={{ py: 6, textAlign: 'center' }}>
+            <Typography color="text.secondary">
+              Nenhum trend encontrado para o filtro selecionado.
+            </Typography>
+          </Box>
         )}
 
-        {!loading && !error && filtered.length > 0 &&
-          filtered.map((trend, index) => (
-            <div key={trend.id} className="mb-4">
-              <div className="flex items-center gap-3 py-3">
-                <div className="flex-shrink-0 w-8 flex items-center justify-center">
-                  <span className="text-lg font-bold text-gray-400 dark:text-slate-500">
-                    {index + 1}
-                  </span>
-                </div>
+        {/* Trends list */}
+        {!loading && !error && filtered.length > 0 && (
+          <Stack spacing={0}>
+            {filtered.map((trend, index) => (
+              <Box key={trend.id}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1.5}
+                  sx={{ py: 1.5 }}
+                >
+                  {/* Position number */}
+                  <Box
+                    sx={{
+                      width: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      color="text.disabled"
+                    >
+                      {index + 1}
+                    </Typography>
+                  </Box>
 
-                <div className="flex-1 min-w-0">
-                  <a
+                  {/* Content */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography
+                      component="a"
+                      href={trend.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="subtitle1"
+                      fontWeight={700}
+                      sx={{
+                        display: 'block',
+                        mb: 0.25,
+                        textDecoration: 'none',
+                        color: 'text.primary',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        '&:hover': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    >
+                      {capitalize(trend.query)}
+                    </Typography>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.5}
+                        sx={{
+                          color:
+                            trend.type === 'rising' ? 'success.main' : 'text.secondary',
+                          fontWeight: 500,
+                        }}
+                      >
+                        <TrendingUpIcon sx={{ fontSize: 16 }} />
+                        <Typography variant="body2" fontWeight={500}>
+                          {trend.type === 'rising'
+                            ? trend.value === 'Breakout'
+                              ? 'Alta'
+                              : trend.value
+                            : formatVolume(
+                                trend.searchVolume ??
+                                  (trend.type === 'top' ? trend.extractedValue : undefined)
+                              )}
+                          {trend.type === 'rising' &&
+                            trend.searchVolume != null &&
+                            trend.searchVolume > 0 && (
+                              <Typography
+                                component="span"
+                                variant="body2"
+                                sx={{ opacity: 0.9 }}
+                              >
+                                {' · +'}
+                                {formatVolume(trend.searchVolume)}
+                              </Typography>
+                            )}
+                        </Typography>
+                      </Stack>
+                      {trend.topicType && (
+                        <Typography variant="body2" color="text.disabled">
+                          {translateCategory(trend.topicType)}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+
+                  {/* Link button */}
+                  <IconButton
+                    component="a"
                     href={trend.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block group"
+                    size="small"
+                    title="Pesquisar no Google"
+                    sx={{
+                      bgcolor: 'action.hover',
+                      flexShrink: 0,
+                      '&:hover': {
+                        bgcolor: 'action.selected',
+                      },
+                    }}
                   >
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-slate-100 mb-0.5 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {capitalize(trend.query)}
-                    </h3>
-                  </a>
-                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400">
-                    <span
-                      className={`inline-flex items-center gap-1 font-medium ${
-                        trend.type === 'rising'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-600 dark:text-slate-400'
-                      }`}
-                    >
-                      {trend.type === 'rising' ? (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2.5}
-                              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                            />
-                          </svg>
-                          {trend.value === 'Breakout' ? 'Alta' : `${trend.value}`}
-                          {trend.searchVolume != null && trend.searchVolume > 0 && (
-                            <span className="opacity-90">
-                              {' · '}
-                              {"+" + formatVolume(trend.searchVolume)}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                            />
-                          </svg>
-                          {formatVolume(
-                            trend.searchVolume ??
-                              (trend.type === 'top' ? trend.extractedValue : undefined)
-                          )}
-                        </>
-                      )}
-                    </span>
-                    {trend.topicType && (
-                      <span className="text-gray-500 dark:text-slate-500">
-                        {translateCategory(trend.topicType)}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
 
-                <a
-                  href={trend.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-shrink-0 p-2 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
-                  title="Pesquisar no Google"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                    />
-                  </svg>
-                </a>
-              </div>
-
-              {index < filtered.length - 1 && (
-                <div className="border-t border-gray-100 dark:border-slate-800 mt-1" />
-              )}
-            </div>
-          ))}
-      </div>
-    </div>
+                {index < filtered.length - 1 && <Divider />}
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Box>
+    </Box>
   );
 }

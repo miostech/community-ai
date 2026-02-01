@@ -1,10 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { CourseImage } from '@/components/ui/CourseImage';
 import { useUser } from '@/contexts/UserContext';
+
+// MUI imports
+import {
+  Box,
+  Typography,
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  CardActions,
+  Chip,
+  Skeleton,
+  Grid,
+  Stack,
+} from '@mui/material';
+import {
+  PlayArrow as PlayArrowIcon,
+  ShoppingCart as ShoppingCartIcon,
+  MenuBook as MenuBookIcon,
+} from '@mui/icons-material';
 
 interface Course {
   id: string;
@@ -14,7 +31,7 @@ interface Course {
   modules: number;
   kiwifyId: string;
   kiwifyUrl: string;
-  kiwifyDashboardUrl?: string; // URL do dashboard quando tem acesso
+  kiwifyDashboardUrl?: string;
   isAvailable: boolean;
 }
 
@@ -24,7 +41,6 @@ export default function CursosPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simular carregamento de cursos
     const mockCourses: Course[] = [
       {
         id: '1',
@@ -34,7 +50,7 @@ export default function CursosPage() {
         modules: 6,
         kiwifyId: 'YIUXqzV',
         kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?src=bionat',
-        isAvailable: false, // Será verificado via API
+        isAvailable: false,
       },
       {
         id: '2',
@@ -59,18 +75,12 @@ export default function CursosPage() {
       },
     ];
 
-    // Verificar assinaturas via API da Kiwify
     checkKiwifySubscriptions(mockCourses);
   }, [user.email]);
 
   const checkKiwifySubscriptions = async (coursesList: Course[]) => {
     setIsLoading(true);
     try {
-      // TODO: Substituir por chamada real à API da Kiwify
-      // Exemplo: const response = await fetch(`/api/kiwify/check-subscriptions?email=${user.email}`);
-      
-      // Simulação: verificar assinaturas
-      // Em produção, isso viria da API da Kiwify
       const availableCourseIds = await fetchKiwifySubscriptions(user.email);
       
       const updatedCourses = coursesList.map(course => ({
@@ -87,7 +97,6 @@ export default function CursosPage() {
     }
   };
 
-  // Função para buscar assinaturas da Kiwify
   const fetchKiwifySubscriptions = async (email: string): Promise<string[]> => {
     try {
       const response = await fetch('/api/kiwify/check-subscriptions', {
@@ -101,12 +110,11 @@ export default function CursosPage() {
       }
       
       const data = await response.json();
-      return data.courseIds || []; // Array de IDs dos cursos disponíveis
+      return data.courseIds || [];
     } catch (error) {
       console.error('Erro ao buscar assinaturas:', error);
-      // Para usuário de teste, retornar acesso ao HPA
       if (email === 'usuario@email.com' || email.includes('teste')) {
-        return ['96dk0GP']; // ID do HPA
+        return ['96dk0GP'];
       }
       return [];
     }
@@ -114,119 +122,220 @@ export default function CursosPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Cursos</h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">Monetize seu conhecimento</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
+        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
+            Cursos
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Monetize seu conhecimento
+          </Typography>
+        </Box>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-40 sm:h-48 bg-gray-200 dark:bg-neutral-800 rounded-xl mb-4"></div>
-              <div className="h-4 bg-gray-200 dark:bg-neutral-800 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-gray-200 dark:bg-neutral-800 rounded w-full"></div>
-            </Card>
+            <Grid item xs={12} sm={6} lg={4} key={i}>
+              <Card sx={{ borderRadius: 3 }}>
+                <Skeleton variant="rectangular" height={192} />
+                <CardContent>
+                  <Skeleton variant="text" width="75%" height={28} sx={{ mb: 1 }} />
+                  <Skeleton variant="text" width="100%" />
+                  <Skeleton variant="text" width="80%" />
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
-      </div>
+        </Grid>
+      </Box>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
-      <div className="mb-6 sm:mb-8 md:mb-12 text-center">
-        <div className="inline-flex items-center space-x-2 mb-3 sm:mb-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Nossos Cursos</h1>
-        </div>
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-neutral-400 max-w-2xl mx-auto px-2">
+    <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
+      {/* Header */}
+      <Box sx={{ mb: { xs: 3, sm: 4, md: 6 }, textAlign: 'center' }}>
+        <Typography
+          variant="h4"
+          fontWeight={700}
+          sx={{
+            mb: { xs: 1.5, sm: 2 },
+            fontSize: { xs: '1.5rem', sm: '1.875rem', md: '2.25rem' },
+          }}
+        >
+          Nossos Cursos
+        </Typography>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{
+            maxWidth: 600,
+            mx: 'auto',
+            fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
+          }}
+        >
           Aprenda a criar conteúdo que vende e a construir sua marca de forma orgânica.
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      {/* Cursos Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-4">
+      {/* Courses Grid */}
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {courses.map((course) => (
-          <Card
-            key={course.id}
-            className="overflow-hidden hover:shadow-xl transition-all duration-300 group"
-          >
-            <div className="relative overflow-hidden">
-              <CourseImage
-                src={course.thumbnail}
-                alt={course.title}
-                className="w-full h-40 sm:h-48 rounded-t-xl"
-              />
-              {!course.isAvailable && (
-                <div className="absolute inset-0 bg-white/30 dark:bg-white/15 rounded-t-xl" />
-              )}
-              <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                <span className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900 dark:text-neutral-100">
-                  {course.modules} módulos
-                </span>
-              </div>
-            </div>
+          <Grid item xs={12} sm={6} lg={4} key={course.id}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 3,
+                overflow: 'hidden',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 6,
+                },
+              }}
+            >
+              {/* Image */}
+              <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+                <CardMedia
+                  component="img"
+                  image={course.thumbnail}
+                  alt={course.title}
+                  sx={{
+                    height: { xs: 160, sm: 192 },
+                    objectFit: 'cover',
+                    filter: !course.isAvailable ? 'grayscale(20%)' : 'none',
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/cursos/placeholder.jpg';
+                  }}
+                />
+                {!course.isAvailable && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                    }}
+                  />
+                )}
+                <Chip
+                  label={`${course.modules} módulos`}
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    top: { xs: 8, sm: 12 },
+                    right: { xs: 8, sm: 12 },
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    backdropFilter: 'blur(8px)',
+                    fontSize: { xs: '0.625rem', sm: '0.75rem' },
+                    fontWeight: 500,
+                  }}
+                />
+              </Box>
 
-            <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-              <div>
-                <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">{course.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-neutral-400 leading-relaxed">{course.description}</p>
-              </div>
+              {/* Content */}
+              <CardContent sx={{ flex: 1, p: { xs: 2, sm: 3 } }}>
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  sx={{
+                    mb: 1,
+                    fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+                  }}
+                >
+                  {course.title}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    lineHeight: 1.6,
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  }}
+                >
+                  {course.description}
+                </Typography>
+              </CardContent>
 
-              <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-neutral-700">
+              {/* Actions */}
+              <CardActions
+                sx={{
+                  p: { xs: 2, sm: 3 },
+                  pt: 0,
+                  borderTop: 1,
+                  borderColor: 'divider',
+                  mt: 'auto',
+                }}
+              >
                 {course.isAvailable ? (
                   <Button
-                    className="w-full text-sm sm:text-base"
+                    fullWidth
+                    variant="contained"
+                    startIcon={<PlayArrowIcon />}
                     onClick={() => {
-                      // Se tem acesso, pode ir para detalhes ou direto para dashboard
                       if (course.kiwifyDashboardUrl) {
                         window.open(course.kiwifyDashboardUrl, '_blank');
                       } else {
                         window.location.href = `/dashboard/cursos/${course.id}`;
                       }
                     }}
+                    sx={{
+                      borderRadius: 2,
+                      py: { xs: 1, sm: 1.25 },
+                      textTransform: 'none',
+                      fontWeight: 600,
+                    }}
                   >
                     Acessar Curso
                   </Button>
                 ) : (
                   <Button
-                    variant="secondary"
-                    className="w-full text-sm sm:text-base"
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<ShoppingCartIcon />}
                     onClick={() => window.open(course.kiwifyUrl, '_blank')}
+                    sx={{
+                      borderRadius: 2,
+                      py: { xs: 1, sm: 1.25 },
+                      textTransform: 'none',
+                      fontWeight: 600,
+                    }}
                   >
                     Adquirir Curso
                   </Button>
                 )}
-              </div>
-            </div>
-          </Card>
+              </CardActions>
+            </Card>
+          </Grid>
         ))}
-      </div>
+      </Grid>
 
+      {/* Empty state */}
       {courses.length === 0 && !isLoading && (
-        <Card className="text-center py-8 sm:py-12">
-          <div className="text-gray-400 dark:text-neutral-500 mb-4">
-            <svg
-              className="w-12 h-12 sm:w-16 sm:h-16 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          </div>
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <Card sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, borderRadius: 3 }}>
+          <Box
+            sx={{
+              width: { xs: 48, sm: 64 },
+              height: { xs: 48, sm: 64 },
+              mx: 'auto',
+              mb: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              bgcolor: 'action.hover',
+            }}
+          >
+            <MenuBookIcon sx={{ fontSize: { xs: 24, sm: 32 }, color: 'text.disabled' }} />
+          </Box>
+          <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
             Nenhum curso disponível
-          </h3>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Novos cursos em breve!
-          </p>
+          </Typography>
         </Card>
       )}
-    </div>
+    </Box>
   );
 }

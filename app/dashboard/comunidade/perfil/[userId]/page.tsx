@@ -14,10 +14,41 @@ import {
 } from '@/lib/community-users';
 import { useUser } from '@/contexts/UserContext';
 import { useAccount } from '@/contexts/AccountContext';
-import { usePosts } from '@/contexts/PostsContext';
+import { usePosts, type Post } from '@/contexts/PostsContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
+
+// MUI imports
+import {
+  Box,
+  Typography,
+  Avatar,
+  IconButton,
+  Button,
+  Paper,
+  Chip,
+  CircularProgress,
+  Tooltip,
+  Skeleton,
+  Stack,
+  Divider,
+  AppBar,
+  Toolbar,
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon,
+  ChatBubbleOutline as CommentIcon,
+  Bookmark as BookmarkIcon,
+  BookmarkBorder as BookmarkBorderIcon,
+  Info as InfoIcon,
+  Instagram as InstagramIcon,
+  YouTube as YouTubeIcon,
+  MusicNote as TikTokIcon,
+  PhotoLibrary as PhotoLibraryIcon,
+} from '@mui/icons-material';
 
 type PostType = 'idea' | 'script' | 'question' | 'result';
 
@@ -39,6 +70,13 @@ const postTypeLabels: Record<PostType, string> = {
   result: 'Resultado',
 };
 
+const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
+  idea: 'info',
+  script: 'secondary',
+  question: 'warning',
+  result: 'success',
+};
+
 /** Mapeia categoria da API para tipo do perfil */
 const categoryToType: Record<string, PostType> = {
   ideia: 'idea',
@@ -46,6 +84,23 @@ const categoryToType: Record<string, PostType> = {
   duvida: 'question',
   roteiro: 'script',
   geral: 'idea',
+};
+
+/** Tipo unificado para posts exibidos no perfil */
+type ProfilePostFromApi = {
+  id: string;
+  type: PostType;
+  author: string;
+  avatar: string | null;
+  content: string;
+  imageUrl?: string | null;
+  imageUrls?: string[];
+  videoUrl?: string;
+  likes: number;
+  comments: number;
+  timeAgo: string;
+  liked?: boolean;
+  saved?: boolean;
 };
 
 function formatTimeAgo(dateString: string): string {
@@ -64,7 +119,7 @@ function isAccountId(identifier: string): boolean {
   return /^[a-f0-9]{24}$/i.test(identifier);
 }
 
-function resolveProfileUser(identifier: string, posts: { author: string; avatar: string | null }[]): ProfileDisplay | null {
+function resolveProfileUser(identifier: string, posts: Post[]): ProfileDisplay | null {
   if (!identifier?.trim()) return null;
   // Id numérico: usuário dos stories
   if (/^\d+$/.test(identifier)) {
@@ -75,11 +130,14 @@ function resolveProfileUser(identifier: string, posts: { author: string; avatar:
   const known = getCommunityUserBySlug(identifier);
   if (known) return known;
   const name = slugToName(identifier);
-  const authorPosts = posts.filter((p) => p.author === name);
+  const authorPosts = posts.filter((p) =>
+    typeof p.author === 'object' ? p.author.name === name : p.author === name
+  );
   const firstPost = authorPosts[0];
+  const authorAvatar = firstPost?.author && typeof firstPost.author === 'object' ? firstPost.author.avatar_url : null;
   return {
     name,
-    avatar: firstPost?.avatar ?? null,
+    avatar: authorAvatar ?? null,
     initials: getInitialsFromName(name),
     interactionCount: 0,
     instagramProfile: undefined,
@@ -94,7 +152,7 @@ export default function PerfilComunidadePage() {
   const identifier = (params?.userId as string) ?? '';
   const { user } = useUser();
   const { account, fullName } = useAccount();
-  const { posts, updatePost, toggleSavePost } = usePosts();
+  const { posts, updatePost, toggleSave } = usePosts();
   const isOwnProfile = Boolean(
     identifier &&
     (
@@ -105,21 +163,6 @@ export default function PerfilComunidadePage() {
   const resolvedFromList = useMemo(() => resolveProfileUser(identifier, posts), [identifier, posts]);
 
   // Posts do próprio perfil: buscar da API (postagens reais da comunidade)
-  type ProfilePostFromApi = {
-    id: string;
-    type: PostType;
-    author: string;
-    avatar: string | null;
-    content: string;
-    imageUrl?: string | null;
-    imageUrls?: string[];
-    videoUrl?: string;
-    likes: number;
-    comments: number;
-    timeAgo: string;
-    liked?: boolean;
-    saved?: boolean;
-  };
   const [profilePostsFromApi, setProfilePostsFromApi] = useState<ProfilePostFromApi[]>([]);
   const [profilePostsLoading, setProfilePostsLoading] = useState(false);
 
@@ -264,11 +307,12 @@ export default function PerfilComunidadePage() {
   }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube]);
 
   const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
-  const userPosts = isOwnProfile
+  // Posts para exibir no perfil (todos do tipo ProfilePostFromApi para consistência)
+  const userPosts: ProfilePostFromApi[] = isOwnProfile
     ? profilePostsFromApi
     : isOtherUserById && otherProfileData
       ? otherProfileData.posts
-      : (authorNameForPosts ? posts.filter((p) => p.author === authorNameForPosts) : []);
+      : []; // Posts de outros usuários são carregados via API quando acessados por ID
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [seguidoresTooltipOpen, setSeguidoresTooltipOpen] = useState(false);
@@ -311,6 +355,7 @@ export default function PerfilComunidadePage() {
 
   const formatCount = (n: number) =>
     n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}k` : n.toLocaleString('pt-BR');
+
   const handleLike = (postId: string) => {
     if (isOwnProfile) {
       const post = profilePostsFromApi.find((p) => p.id === postId);
@@ -343,7 +388,7 @@ export default function PerfilComunidadePage() {
     if (post) {
       updatePost(postId, {
         liked: !post.liked,
-        likes: post.liked ? post.likes - 1 : post.likes + 1,
+        likes_count: post.liked ? post.likes_count - 1 : post.likes_count + 1,
       });
     }
   };
@@ -373,29 +418,58 @@ export default function PerfilComunidadePage() {
       );
       return;
     }
-    toggleSavePost(postId);
+    toggleSave(postId);
   };
 
+  // Loading state
   if (isOtherUserById && otherProfileLoading) {
     return (
-      <div className="max-w-2xl mx-auto w-full min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-8">
-        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-600 dark:text-slate-400">Carregando perfil...</p>
-      </div>
+      <Box
+        sx={{
+          maxWidth: 672,
+          mx: 'auto',
+          minHeight: '100vh',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+        }}
+      >
+        <CircularProgress size={40} sx={{ mb: 2 }} />
+        <Typography color="text.secondary">Carregando perfil...</Typography>
+      </Box>
     );
   }
 
+  // Not found state
   if (!profileUser) {
     return (
-      <div className="max-w-2xl mx-auto w-full min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center p-8">
-        <p className="text-gray-600 dark:text-slate-400 mb-4">Perfil não encontrado.</p>
-        <Link
+      <Box
+        sx={{
+          maxWidth: 672,
+          mx: 'auto',
+          minHeight: '100vh',
+          bgcolor: 'background.paper',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+        }}
+      >
+        <Typography color="text.secondary" sx={{ mb: 2 }}>
+          Perfil não encontrado.
+        </Typography>
+        <Button
+          component={Link}
           href="/dashboard/comunidade"
-          className="text-blue-600 dark:text-blue-400 font-medium"
+          color="primary"
         >
           Voltar para a comunidade
-        </Link>
-      </div>
+        </Button>
+      </Box>
     );
   }
 
@@ -416,324 +490,568 @@ export default function PerfilComunidadePage() {
   const displayAvatar = profileUser.avatar ?? null;
 
   return (
-    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen overflow-x-hidden">
-      {/* Header fixo - estilo Instagram */}
-      <div className="sticky top-0 z-40 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 shadow-sm backdrop-blur-lg bg-white/95 dark:bg-black/95">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button
+    <Box
+      sx={{
+        maxWidth: 672,
+        mx: 'auto',
+        pb: { xs: 12, sm: 4 },
+        bgcolor: 'background.paper',
+        minHeight: '100vh',
+        overflowX: 'hidden',
+      }}
+    >
+      {/* Header fixo */}
+      <AppBar
+        position="sticky"
+        color="inherit"
+        elevation={0}
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          backdropFilter: 'blur(8px)',
+          bgcolor: 'rgba(var(--mui-palette-background-defaultChannel) / 0.95)',
+        }}
+      >
+        <Toolbar sx={{ minHeight: 56, gap: 1.5 }}>
+          <IconButton
             onClick={() => router.back()}
-            className="w-8 h-8 flex items-center justify-center text-gray-700 dark:text-slate-200 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="Voltar"
+            size="small"
+            sx={{ color: 'text.primary' }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-slate-100 truncate flex-1">
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             Perfil
-          </h1>
-        </div>
-      </div>
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-      {/* Perfil - estilo Instagram */}
-      <div className="px-4 py-6 border-b border-gray-200 dark:border-neutral-800">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-          {/* Avatar: borda colorida só para quem está nos stories */}
-          <div className="flex justify-center sm:justify-start">
+      {/* Perfil section */}
+      <Box sx={{ px: 2, py: 3, borderBottom: 1, borderColor: 'divider' }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={3}
+          alignItems={{ xs: 'center', sm: 'flex-start' }}
+        >
+          {/* Avatar */}
+          <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
             {isFromStories ? (
-              <div className="rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 p-1">
-                <div className="rounded-full bg-white dark:bg-black p-1">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
-                    {displayAvatar ? (
-                      <img
-                        src={displayAvatar}
-                        alt={profileUser.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-bold text-3xl sm:text-4xl">
-                        {profileUser.initials}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-slate-600">
-                {displayAvatar ? (
-                  <img
-                    src={displayAvatar}
-                    alt={profileUser.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-600 dark:text-slate-300 font-bold text-3xl sm:text-4xl">
-                    {profileUser.initials}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0 text-center sm:text-left">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-1">
-              {profileUser.name}
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-              Membro da comunidade
-            </p>
-
-            {/* Stats estilo Instagram: publicações, interações e seguidores (redes) */}
-            <div className="flex justify-center sm:justify-start gap-6 mb-4 flex-wrap">
-              <div>
-                <span className="block font-semibold text-gray-900 dark:text-slate-100">
-                  {userPosts.length}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-slate-400">publicações</span>
-              </div>
-              <div>
-                <span className="block font-semibold text-gray-900 dark:text-slate-100">
-                  {profileUser.interactionCount}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-slate-400">interações</span>
-              </div>
-              {socialStats !== null && (
-                <div
-                  className="relative inline-flex flex-col items-center sm:items-start group"
-                  onMouseEnter={() => setSeguidoresTooltipOpen(true)}
-                  onMouseLeave={() => setSeguidoresTooltipOpen(false)}
+              <Box
+                sx={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)',
+                  p: 0.5,
+                }}
+              >
+                <Box
+                  sx={{
+                    borderRadius: '50%',
+                    bgcolor: 'background.paper',
+                    p: 0.5,
+                  }}
                 >
-                  <div className="flex items-center gap-1">
-                    <span className="block font-semibold text-gray-900 dark:text-slate-100">
-                      {formatCount(socialStats.totalFollowers)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSeguidoresTooltipOpen((v) => !v)}
-                      className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-400 cursor-help transition-colors flex-shrink-0 touch-manipulation"
-                      aria-label="Detalhes dos seguidores"
-                      aria-expanded={seguidoresTooltipOpen}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">seguidores</span>
-                  {/* Tooltip: soma das redes + detalhe por rede + atualização 24h */}
-                  <div
-                    role="tooltip"
-                    className={`absolute left-0 bottom-full mb-1 sm:left-0 sm:bottom-full sm:mb-1 w-56 px-3 py-2.5 rounded-lg bg-gray-900 dark:bg-slate-800 text-white text-xs shadow-xl transition-all duration-150 z-50 ${seguidoresTooltipOpen ? 'opacity-100 visible' : 'opacity-0 invisible sm:group-hover:opacity-100 sm:group-hover:visible'}`}
+                  <Avatar
+                    src={displayAvatar || undefined}
+                    sx={{
+                      width: { xs: 96, sm: 112 },
+                      height: { xs: 96, sm: 112 },
+                      background: 'linear-gradient(135deg, #60a5fa, #a855f7)',
+                      fontSize: { xs: 32, sm: 40 },
+                      fontWeight: 'bold',
+                    }}
                   >
-                    <p className="font-medium text-slate-200 dark:text-slate-200 mb-2">Soma das redes cadastradas</p>
-                    <ul className="space-y-1 text-slate-300 dark:text-slate-300">
-                      {socialStats.instagram != null && (
-                        <li>Instagram: {socialStats.instagram.followers != null ? formatCount(socialStats.instagram.followers) + ' seguidores' : '—'}</li>
-                      )}
-                      {socialStats.tiktok != null && (
-                        <li>TikTok: {socialStats.tiktok.followers != null ? formatCount(socialStats.tiktok.followers) + ' seguidores' : '—'}</li>
-                      )}
-                      {socialStats.youtube != null && (
-                        <li>YouTube: {socialStats.youtube.subscribers != null ? formatCount(socialStats.youtube.subscribers) + ' inscritos' : '—'}</li>
-                      )}
-                    </ul>
-                    <p className="mt-2 pt-2 border-t border-slate-600 text-slate-400 dark:text-slate-400">Dados atualizados a cada 24h</p>
-                  </div>
-                </div>
-              )}
-            </div>
+                    {profileUser.initials}
+                  </Avatar>
+                </Box>
+              </Box>
+            ) : (
+              <Avatar
+                src={displayAvatar || undefined}
+                sx={{
+                  width: { xs: 96, sm: 112 },
+                  height: { xs: 96, sm: 112 },
+                  bgcolor: 'grey.300',
+                  border: 2,
+                  borderColor: 'divider',
+                  fontSize: { xs: 32, sm: 40 },
+                  fontWeight: 'bold',
+                  color: 'text.secondary',
+                }}
+              >
+                {profileUser.initials}
+              </Avatar>
+            )}
+          </Box>
 
-            {/* Links para redes sociais (só aparecem se o perfil tiver redes cadastradas) */}
-            <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+          {/* Info */}
+          <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+            <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+              {profileUser.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Membro da comunidade
+            </Typography>
+
+            {/* Stats */}
+            <Stack
+              direction="row"
+              spacing={3}
+              sx={{
+                justifyContent: { xs: 'center', sm: 'flex-start' },
+                mb: 2,
+                flexWrap: 'wrap',
+                gap: 2,
+              }}
+            >
+              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {userPosts.length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  publicações
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {profileUser.interactionCount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  interações
+                </Typography>
+              </Box>
+              {socialStats !== null && (
+                <Tooltip
+                  open={seguidoresTooltipOpen}
+                  onClose={() => setSeguidoresTooltipOpen(false)}
+                  onOpen={() => setSeguidoresTooltipOpen(true)}
+                  title={
+                    <Box sx={{ p: 0.5 }}>
+                      <Typography variant="caption" fontWeight={500} display="block" sx={{ mb: 1 }}>
+                        Soma das redes cadastradas
+                      </Typography>
+                      <Stack spacing={0.5}>
+                        {socialStats.instagram != null && (
+                          <Typography variant="caption">
+                            Instagram: {socialStats.instagram.followers != null ? formatCount(socialStats.instagram.followers) + ' seguidores' : '—'}
+                          </Typography>
+                        )}
+                        {socialStats.tiktok != null && (
+                          <Typography variant="caption">
+                            TikTok: {socialStats.tiktok.followers != null ? formatCount(socialStats.tiktok.followers) + ' seguidores' : '—'}
+                          </Typography>
+                        )}
+                        {socialStats.youtube != null && (
+                          <Typography variant="caption">
+                            YouTube: {socialStats.youtube.subscribers != null ? formatCount(socialStats.youtube.subscribers) + ' inscritos' : '—'}
+                          </Typography>
+                        )}
+                      </Stack>
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider', display: 'block' }}>
+                        Dados atualizados a cada 24h
+                      </Typography>
+                    </Box>
+                  }
+                  arrow
+                  placement="top"
+                >
+                  <Box
+                    sx={{
+                      textAlign: { xs: 'center', sm: 'left' },
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: { xs: 'center', sm: 'flex-start' },
+                    }}
+                    onClick={() => setSeguidoresTooltipOpen((v) => !v)}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {formatCount(socialStats.totalFollowers)}
+                      </Typography>
+                      <InfoIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      seguidores
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              )}
+            </Stack>
+
+            {/* Social links */}
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                justifyContent: { xs: 'center', sm: 'flex-start' },
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
               {(instagramUrl || tiktokUrl || youtubeUrl) ? (
                 <>
                   {instagramUrl && (
-                    <a
+                    <Button
+                      component="a"
                       href={instagramUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                      variant="contained"
+                      size="small"
+                      startIcon={<InstagramIcon />}
+                      sx={{
+                        background: 'linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045)',
+                        '&:hover': {
+                          background: 'linear-gradient(45deg, #833ab4, #fd1d1d, #fcb045)',
+                          opacity: 0.9,
+                        },
+                        textTransform: 'none',
+                        fontWeight: 500,
+                      }}
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                      </svg>
                       Instagram
-                    </a>
+                    </Button>
                   )}
                   {tiktokUrl && (
-                    <a
+                    <Button
+                      component="a"
                       href={tiktokUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-900 dark:bg-slate-100 text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 transition-opacity"
+                      variant="contained"
+                      size="small"
+                      startIcon={<TikTokIcon />}
+                      sx={{
+                        bgcolor: 'grey.900',
+                        color: 'common.white',
+                        '&:hover': {
+                          bgcolor: 'grey.800',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 500,
+                      }}
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-                      </svg>
                       TikTok
-                    </a>
+                    </Button>
                   )}
                   {youtubeUrl && (
-                    <a
+                    <Button
+                      component="a"
                       href={youtubeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                      variant="contained"
+                      size="small"
+                      startIcon={<YouTubeIcon />}
+                      sx={{
+                        bgcolor: 'error.main',
+                        '&:hover': {
+                          bgcolor: 'error.dark',
+                        },
+                        textTransform: 'none',
+                        fontWeight: 500,
+                      }}
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                      </svg>
                       YouTube
-                    </a>
+                    </Button>
                   )}
                 </>
               ) : (
-                <span className="text-sm text-gray-500 dark:text-slate-400">
+                <Typography variant="body2" color="text.secondary">
                   Redes sociais não informadas
-                </span>
+                </Typography>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
+            </Stack>
+          </Box>
+        </Stack>
+      </Box>
 
-      {/* Feed - publicações da pessoa na comunidade */}
-      <div className="border-b border-gray-200 dark:border-neutral-800">
-        <h3 className="px-4 py-3 text-sm font-semibold text-gray-700 dark:text-slate-300 border-b border-gray-100 dark:border-neutral-800">
+      {/* Posts section header */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Typography
+          variant="subtitle2"
+          fontWeight={600}
+          color="text.secondary"
+          sx={{ px: 2, py: 1.5 }}
+        >
           Publicações na comunidade
-        </h3>
-      </div>
+        </Typography>
+      </Box>
 
+      {/* Posts */}
       {profilePostsLoading && isOwnProfile ? (
-        <div className="p-8 text-center border-b border-gray-200 dark:border-neutral-800">
-          <div className="w-10 h-10 mx-auto border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-600 dark:text-slate-300 font-medium">Carregando publicações...</p>
-        </div>
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <CircularProgress size={40} sx={{ mb: 2 }} />
+          <Typography color="text.secondary" fontWeight={500}>
+            Carregando publicações...
+          </Typography>
+        </Box>
       ) : userPosts.length === 0 ? (
-        <div className="p-8 text-center border-b border-gray-200 dark:border-neutral-800">
-          <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          </div>
-          <p className="text-gray-600 dark:text-slate-300 font-medium mb-1">Nenhuma publicação ainda</p>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              mx: 'auto',
+              borderRadius: '50%',
+              bgcolor: 'action.hover',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 2,
+            }}
+          >
+            <PhotoLibraryIcon sx={{ fontSize: 32, color: 'text.disabled' }} />
+          </Box>
+          <Typography fontWeight={500} sx={{ mb: 0.5 }}>
+            Nenhuma publicação ainda
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             As publicações de {profileUser.name.split(' ')[0]} na comunidade aparecerão aqui.
-          </p>
-        </div>
+          </Typography>
+        </Box>
       ) : (
-        <div className="divide-y divide-gray-200 dark:divide-neutral-800 overflow-hidden">
-          {userPosts.map((post) => (
-            <article key={post.id} className="bg-white dark:bg-black overflow-hidden">
-              <div className="p-3 sm:p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                    {typeof post.avatar === 'string' && post.avatar.length > 2 ? (
-                      <img
-                        src={post.avatar}
-                        alt={post.author}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
-                        {typeof post.avatar === 'string' ? post.avatar : post.author.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm text-gray-900 dark:text-slate-100 truncate">{post.author}</p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">{post.timeAgo}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-medium text-gray-600 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full flex-shrink-0">
-                    {postTypeLabels[post.type]}
-                  </span>
-                </div>
+        <Box>
+          {userPosts.map((post, index) => (
+            <Paper
+              key={post.id}
+              elevation={0}
+              sx={{
+                borderBottom: index < userPosts.length - 1 ? 1 : 0,
+                borderColor: 'divider',
+                borderRadius: 0,
+              }}
+            >
+              <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+                {/* Post header */}
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 1.5 }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0, flex: 1 }}>
+                    <Avatar
+                      src={typeof post.avatar === 'string' && post.avatar.length > 2 ? post.avatar : undefined}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        background: 'linear-gradient(135deg, #60a5fa, #a855f7)',
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {typeof post.avatar === 'string' ? post.avatar : post.author.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {post.author}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {post.timeAgo}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Chip
+                    label={postTypeLabels[post.type]}
+                    size="small"
+                    color={postTypeColors[post.type]}
+                    sx={{ fontSize: 10, height: 22 }}
+                  />
+                </Stack>
 
-                <div className="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-line break-words mb-3 leading-relaxed">
+                {/* Content */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    whiteSpace: 'pre-line',
+                    wordBreak: 'break-word',
+                    mb: 1.5,
+                    lineHeight: 1.6,
+                  }}
+                >
                   {post.content}
-                </div>
+                </Typography>
 
+                {/* Images */}
                 {post.imageUrls && post.imageUrls.length > 0 && (
-                  <div
-                    className="mb-3 -mx-3 sm:-mx-4 relative overflow-hidden w-[calc(100%+24px)] sm:w-[calc(100%+32px)]"
+                  <Box
+                    sx={{
+                      mb: 1.5,
+                      mx: { xs: -1.5, sm: -2 },
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
                     onDoubleClick={() => handleDoubleTap(post.id)}
                   >
                     <ImageCarousel images={post.imageUrls} />
                     {showHeartAnimation === post.id && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                        <svg className="w-24 h-24 text-white drop-shadow-2xl animate-ping" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                      </div>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          pointerEvents: 'none',
+                          zIndex: 10,
+                        }}
+                      >
+                        <FavoriteIcon
+                          sx={{
+                            fontSize: 96,
+                            color: 'common.white',
+                            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))',
+                            animation: 'ping 1s ease-out forwards',
+                            '@keyframes ping': {
+                              '0%': { transform: 'scale(1)', opacity: 1 },
+                              '100%': { transform: 'scale(1.5)', opacity: 0 },
+                            },
+                          }}
+                        />
+                      </Box>
                     )}
-                  </div>
+                  </Box>
                 )}
 
+                {/* Single image fallback */}
                 {!post.imageUrls && post.imageUrl && (
-                  <div
-                    className="mb-3 -mx-3 sm:-mx-4 relative select-none overflow-hidden w-[calc(100%+24px)] sm:w-[calc(100%+32px)]"
+                  <Box
+                    sx={{
+                      mb: 1.5,
+                      mx: { xs: -1.5, sm: -2 },
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
                     onDoubleClick={() => handleDoubleTap(post.id)}
                   >
-                    <img
+                    <Box
+                      component="img"
                       src={post.imageUrl}
                       alt="Post"
-                      className="w-full aspect-square object-cover bg-gray-100 dark:bg-slate-800"
+                      sx={{
+                        width: '100%',
+                        aspectRatio: '1',
+                        objectFit: 'cover',
+                        bgcolor: 'action.hover',
+                      }}
                       loading="lazy"
                     />
                     {showHeartAnimation === post.id && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <svg className="w-24 h-24 text-white drop-shadow-2xl animate-ping" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                      </div>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <FavoriteIcon
+                          sx={{
+                            fontSize: 96,
+                            color: 'common.white',
+                            filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))',
+                            animation: 'ping 1s ease-out forwards',
+                            '@keyframes ping': {
+                              '0%': { transform: 'scale(1)', opacity: 1 },
+                              '100%': { transform: 'scale(1.5)', opacity: 0 },
+                            },
+                          }}
+                        />
+                      </Box>
                     )}
-                  </div>
+                  </Box>
                 )}
 
+                {/* Video */}
                 {post.videoUrl && (
-                  <div className="mb-3">
+                  <Box sx={{ mb: 1.5 }}>
                     <VideoEmbed url={post.videoUrl} />
-                  </div>
+                  </Box>
                 )}
 
-                <div className="flex items-center space-x-4 sm:space-x-6 pt-3">
-                  <button
+                {/* Actions */}
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={{ xs: 2, sm: 3 }}
+                  sx={{ pt: 1.5 }}
+                >
+                  <IconButton
                     onClick={() => handleLike(post.id)}
-                    className={`flex items-center space-x-1.5 transition-all active:scale-95 ${post.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-slate-100'}`}
+                    size="small"
+                    sx={{
+                      color: post.liked ? 'error.main' : 'text.primary',
+                      '&:active': { transform: 'scale(0.95)' },
+                    }}
                   >
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7" fill={post.liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={post.liked ? 0 : 1.5} viewBox="0 0 24 24">
-                      {post.liked ? (
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                      )}
-                    </svg>
-                    <span className="text-sm sm:text-base font-semibold">{post.likes}</span>
-                  </button>
-                  <button
+                    {post.liked ? (
+                      <FavoriteIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
+                    ) : (
+                      <FavoriteBorderIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
+                    )}
+                  </IconButton>
+                  <Typography variant="body2" fontWeight={600} sx={{ ml: -1 }}>
+                    {post.likes}
+                  </Typography>
+
+                  <IconButton
                     onClick={() => setActiveCommentsPostId(post.id)}
-                    className="flex items-center space-x-1.5 text-gray-900 dark:text-slate-100 active:scale-95 transition-all"
+                    size="small"
+                    sx={{
+                      color: 'text.primary',
+                      '&:active': { transform: 'scale(0.95)' },
+                    }}
                   >
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337L5 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-                    </svg>
-                    <span className="text-sm sm:text-base font-semibold">{post.comments}</span>
-                  </button>
-                  <button
+                    <CommentIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
+                  </IconButton>
+                  <Typography variant="body2" fontWeight={600} sx={{ ml: -1 }}>
+                    {post.comments}
+                  </Typography>
+
+                  <Box sx={{ flex: 1 }} />
+
+                  <IconButton
                     onClick={() => handleToggleSave(post.id)}
-                    className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${post.saved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-slate-100'}`}
+                    size="small"
+                    sx={{
+                      color: post.saved ? 'primary.main' : 'text.primary',
+                      '&:active': { transform: 'scale(0.95)' },
+                    }}
                   >
-                    <svg className="w-6 h-6 sm:w-7 sm:h-7" fill={post.saved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={post.saved ? 0 : 1.5} d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </article>
+                    {post.saved ? (
+                      <BookmarkIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
+                    ) : (
+                      <BookmarkBorderIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />
+                    )}
+                  </IconButton>
+                </Stack>
+              </Box>
+            </Paper>
           ))}
-        </div>
+        </Box>
       )}
 
+      {/* Comments modal */}
       {activeCommentsPostId && (
         <CommentsSection
           postId={activeCommentsPostId}
@@ -741,6 +1059,6 @@ export default function PerfilComunidadePage() {
           onClose={() => setActiveCommentsPostId(null)}
         />
       )}
-    </div>
+    </Box>
   );
 }

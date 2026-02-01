@@ -5,6 +5,26 @@ import { useChatHistory } from '@/contexts/ChatHistoryContext';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 
+// MUI imports
+import {
+  Box,
+  Typography,
+  TextField,
+  IconButton,
+  Button,
+  Paper,
+  InputAdornment,
+  Stack,
+  Avatar,
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Search as SearchIcon,
+  Delete as DeleteIcon,
+  ChatBubble as ChatBubbleIcon,
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
+} from '@mui/icons-material';
+
 export default function HistoricoPage() {
   const { conversations, deleteConversation, setCurrentConversationId } = useChatHistory();
   const { user } = useUser();
@@ -66,123 +86,213 @@ export default function HistoricoPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <button
+    <Box
+      sx={{
+        maxWidth: 1152,
+        mx: 'auto',
+        px: { xs: 2, sm: 3 },
+        py: { xs: 2, sm: 4 },
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+          <IconButton
             onClick={() => router.push('/dashboard/chat')}
-            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+            }}
           >
-            <svg className="w-6 h-6 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Histórico de Conversas
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-neutral-400 mt-1">
-              {conversations.length} {conversations.length === 1 ? 'conversa' : 'conversas'} salvas
-            </p>
-          </div>
-        </div>
-
-        <div className="relative">
-          <svg
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-neutral-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Buscar conversas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500"
-          />
-        </div>
-      </div>
-
-      {filteredConversations.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-20 h-20 bg-gray-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-10 h-10 text-gray-400 dark:text-neutral-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <ArrowBackIcon />
+          </IconButton>
+          <Box>
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              sx={{ fontSize: { xs: '1.5rem', sm: '1.875rem' } }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Histórico de Conversas
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {conversations.length} {conversations.length === 1 ? 'conversa' : 'conversas'} salvas
+            </Typography>
+          </Box>
+        </Stack>
+
+        {/* Search */}
+        <TextField
+          fullWidth
+          placeholder="Buscar conversas..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.disabled' }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 3,
+              bgcolor: 'background.paper',
+            },
+          }}
+        />
+      </Box>
+
+      {/* Content */}
+      {filteredConversations.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              bgcolor: 'action.hover',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2,
+            }}
+          >
+            <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+          </Box>
+          <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
             {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
-          </h3>
-          <p className="text-gray-600 dark:text-neutral-400 mb-6">
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             {searchTerm
               ? 'Tente buscar com outros termos'
               : 'Comece uma nova conversa com a IA para criar seu primeiro histórico'}
-          </p>
+          </Typography>
           {!searchTerm && (
-            <button
+            <Button
+              variant="contained"
               onClick={handleNewChat}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg font-medium"
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                fontWeight: 500,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                },
+              }}
             >
               Iniciar Conversa
-            </button>
+            </Button>
           )}
-        </div>
+        </Box>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <Stack spacing={2}>
           {filteredConversations.map((conversation) => (
-            <div
+            <Paper
               key={conversation.id}
               onClick={() => handleOpenConversation(conversation.id)}
-              className="group bg-white dark:bg-neutral-900 border-2 border-gray-200 dark:border-neutral-700 rounded-xl p-4 sm:p-5 hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer"
+              elevation={0}
+              sx={{
+                p: { xs: 2, sm: 2.5 },
+                border: 2,
+                borderColor: 'divider',
+                borderRadius: 3,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  borderColor: 'primary.light',
+                  boxShadow: 3,
+                  '& .conversation-title': {
+                    color: 'primary.main',
+                  },
+                },
+              }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <Stack direction="row" alignItems="flex-start" spacing={2}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1 }}>
+                    <Avatar
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                        borderRadius: 2,
+                      }}
+                    >
+                      <ChatBubbleIcon sx={{ fontSize: 20 }} />
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        className="conversation-title"
+                        variant="subtitle1"
+                        fontWeight={600}
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          transition: 'color 0.15s ease-in-out',
+                        }}
+                      >
                         {conversation.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-neutral-400 mt-1">
-                        <span>{formatDate(conversation.updatedAt)}</span>
-                        <span>•</span>
-                        <span>
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1}
+                        divider={
+                          <Typography variant="caption" color="text.disabled">
+                            •
+                          </Typography>
+                        }
+                      >
+                        <Typography variant="caption" color="text.secondary">
+                          {formatDate(conversation.updatedAt)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
                           {conversation.messages.length}{' '}
                           {conversation.messages.length === 1 ? 'mensagem' : 'mensagens'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-neutral-400 line-clamp-2 ml-13">
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  </Stack>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      ml: 6.5,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
                     {getPreview(conversation)}
-                  </p>
-                </div>
-                <button
+                  </Typography>
+                </Box>
+                <IconButton
                   onClick={(e) => handleDeleteConversation(e, conversation.id)}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-gray-400 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                  size="small"
                   title="Excluir conversa"
+                  sx={{
+                    color: 'text.disabled',
+                    '&:hover': {
+                      bgcolor: 'error.main',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(244, 67, 54, 0.08)',
+                      color: 'error.main',
+                    },
+                  }}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Stack>
+            </Paper>
           ))}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Box>
   );
 }

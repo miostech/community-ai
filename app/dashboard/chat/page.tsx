@@ -4,12 +4,38 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { useSearchParams, useRouter } from 'next/navigation';
 
+// MUI imports
+import {
+  Box,
+  Typography,
+  TextField,
+  IconButton,
+  Chip,
+  CircularProgress,
+  Paper,
+  InputAdornment,
+  Stack,
+} from '@mui/material';
+import {
+  ArrowForward as ArrowForwardIcon,
+  History as HistoryIcon,
+} from '@mui/icons-material';
+
+const suggestionPrompts = [
+  'Criar roteiro para Reels',
+  'Ideia de post viral',
+  'Storytelling pessoal',
+  'Conteúdo educativo',
+  'Venda sem parecer venda',
+];
+
 function ChatPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const conversationId = searchParams.get('conversation');
   const [hasStarted, setHasStarted] = useState(false);
   const [initialPrompt, setInitialPrompt] = useState('');
+  const [inputValue, setInputValue] = useState('');
 
   useEffect(() => {
     if (conversationId) {
@@ -24,103 +50,223 @@ function ChatPageContent() {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleStart(inputValue);
+  };
+
   if (!hasStarted) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-8 md:pt-12 pb-20 sm:pb-32">
-        <div className="flex justify-end mb-8 sm:mb-12 md:hidden">
-          <button
+      <Box
+        sx={{
+          maxWidth: 1000,
+          mx: 'auto',
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2, sm: 4, md: 6 },
+          pb: { xs: 10, sm: 16 },
+        }}
+      >
+        {/* History button for mobile */}
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            justifyContent: 'flex-end',
+            mb: { xs: 4, sm: 6 },
+          }}
+        >
+          <IconButton
             onClick={() => router.push('/dashboard/chat/historico')}
-            className="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
             title="Ver histórico de conversas"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="text-center space-y-6 sm:space-y-8">
-          <div className="space-y-3 sm:space-y-4">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 dark:text-white leading-tight px-2">
-              O que vamos criar hoje?
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400 mt-2">
-              Converse com a IA treinada pela <span className="font-semibold text-gray-900 dark:text-white">Nat</span> e o <span className="font-semibold text-gray-900 dark:text-white">Luigi</span>
-            </p>
-          </div>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              const prompt = formData.get('prompt') as string;
-              handleStart(prompt);
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                bgcolor: 'action.hover',
+                color: 'text.primary',
+              },
             }}
-            className="max-w-3xl mx-auto mt-8 sm:mt-12"
           >
-            <div className="relative flex items-center bg-white dark:bg-neutral-900 border-2 border-gray-200 dark:border-neutral-700 rounded-xl sm:rounded-2xl p-1.5 sm:p-2 shadow-lg hover:border-gray-300 dark:hover:border-neutral-600 transition-all focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:shadow-xl">
-              <input
-                type="text"
-                name="prompt"
-                placeholder="Crie ideias de conteúdo para Instagram"
-                className="flex-1 px-3 sm:px-6 py-3 sm:py-4 text-sm sm:text-base md:text-lg outline-none bg-transparent text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center transition-colors shadow-md hover:shadow-lg flex-shrink-0"
-              >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </button>
-            </div>
-          </form>
+            <HistoryIcon />
+          </IconButton>
+        </Box>
 
-          <div className="mt-4 sm:mt-6">
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 mb-2 sm:mb-3">Sem ideias? Tente uma destas opções:</p>
-            <div className="flex flex-wrap items-center justify-center gap-2 px-4">
-              {[
-                'Criar roteiro para Reels',
-                'Ideia de post viral',
-                'Storytelling pessoal',
-                'Conteúdo educativo',
-                'Venda sem parecer venda',
-              ].map((prompt, index) => (
-                <button
+        {/* Main content */}
+        <Box sx={{ textAlign: 'center' }}>
+          <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 4, sm: 6 } }}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 700,
+                fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.75rem', lg: '3.25rem' },
+                lineHeight: 1.2,
+                px: 1,
+              }}
+            >
+              O que vamos criar hoje?
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
+              Converse com a IA treinada pela{' '}
+              <Typography component="span" fontWeight={600} color="text.primary">
+                Nat
+              </Typography>{' '}
+              e o{' '}
+              <Typography component="span" fontWeight={600} color="text.primary">
+                Luigi
+              </Typography>
+            </Typography>
+          </Stack>
+
+          {/* Input form */}
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{
+              maxWidth: 720,
+              mx: 'auto',
+              mt: { xs: 4, sm: 6 },
+            }}
+          >
+            <Paper
+              elevation={3}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                p: { xs: 0.75, sm: 1 },
+                borderRadius: { xs: 2, sm: 3 },
+                border: 2,
+                borderColor: 'divider',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  borderColor: 'text.disabled',
+                },
+                '&:focus-within': {
+                  borderColor: 'primary.main',
+                  boxShadow: (theme) => `0 0 0 4px ${theme.palette.primary.main}20`,
+                },
+              }}
+            >
+              <TextField
+                fullWidth
+                variant="standard"
+                placeholder="Crie ideias de conteúdo para Instagram"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                autoFocus
+                InputProps={{
+                  disableUnderline: true,
+                  sx: {
+                    px: { xs: 1.5, sm: 3 },
+                    py: { xs: 1.5, sm: 2 },
+                    fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
+                  },
+                }}
+              />
+              <IconButton
+                type="submit"
+                disabled={!inputValue.trim()}
+                sx={{
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  borderRadius: { xs: 1.5, sm: 2 },
+                  flexShrink: 0,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                  '&:disabled': {
+                    bgcolor: 'action.disabledBackground',
+                    color: 'action.disabled',
+                  },
+                }}
+              >
+                <ArrowForwardIcon />
+              </IconButton>
+            </Paper>
+          </Box>
+
+          {/* Suggestions */}
+          <Box sx={{ mt: { xs: 3, sm: 4 } }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: { xs: 1.5, sm: 2 } }}
+            >
+              Sem ideias? Tente uma destas opções:
+            </Typography>
+            <Stack
+              direction="row"
+              flexWrap="wrap"
+              justifyContent="center"
+              sx={{ gap: 1, px: 2 }}
+            >
+              {suggestionPrompts.map((prompt, index) => (
+                <Chip
                   key={index}
+                  label={prompt}
                   onClick={() => handleStart(prompt)}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 border border-gray-200 dark:border-neutral-600 rounded-full text-xs sm:text-sm text-gray-700 dark:text-neutral-200 transition-colors"
-                >
-                  {prompt}
-                </button>
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 5,
+                    px: 0.5,
+                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                    height: { xs: 28, sm: 32 },
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease-in-out',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                      borderColor: 'text.secondary',
+                    },
+                  }}
+                />
               ))}
-            </div>
-          </div>
-        </div>
-      </div>
+            </Stack>
+          </Box>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-0 sm:px-4 md:px-6 py-0 sm:py-4 md:py-6 lg:py-8 h-[calc(100vh-4rem)] sm:h-auto">
-      <div className="w-full h-full sm:h-auto">
-        <ChatInterface 
-          initialPrompt={initialPrompt} 
+    <Box
+      sx={{
+        maxWidth: 896,
+        mx: 'auto',
+        px: { xs: 0, sm: 2, md: 3 },
+        py: { xs: 0, sm: 2, md: 3, lg: 4 },
+        height: { xs: 'calc(100vh - 4rem)', sm: 'auto' },
+      }}
+    >
+      <Box sx={{ width: '100%', height: { xs: '100%', sm: 'auto' } }}>
+        <ChatInterface
+          initialPrompt={initialPrompt}
           conversationId={conversationId || undefined}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <CircularProgress size={48} />
+        </Box>
+      }
+    >
       <ChatPageContent />
     </Suspense>
   );

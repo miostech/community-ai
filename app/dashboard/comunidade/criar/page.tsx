@@ -2,9 +2,35 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { MultiImageUpload } from '@/components/community/MultiImageUpload';
 import { useAccount } from '@/contexts/AccountContext';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Chip,
+  Alert,
+  Paper,
+  Stack,
+  Tab,
+  Tabs,
+  IconButton,
+  LinearProgress,
+  Fade,
+  alpha,
+  useTheme,
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Image as ImageIcon,
+  VideoLibrary as VideoIcon,
+  CheckCircle as CheckIcon,
+  Error as ErrorIcon,
+  Close as CloseIcon,
+  CloudUpload as UploadIcon,
+  Movie as MovieIcon,
+} from '@mui/icons-material';
+import { MultiImageUpload } from '@/components/community/MultiImageUpload';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
@@ -25,16 +51,17 @@ interface UploadedVideo {
 }
 
 const categoryLabels: Record<PostCategory, string> = {
-  ideia: 'Ideia',
-  resultado: 'Resultado',
-  duvida: 'Dúvida',
-  roteiro: 'Roteiro',
-  geral: 'Geral',
+  ideia: '💡 Ideia',
+  resultado: '🏆 Resultado',
+  duvida: '❓ Dúvida',
+  roteiro: '📝 Roteiro',
+  geral: '💬 Geral',
 };
 
-export default function CriarPostPage() {
+export default function CriarPostPageMui() {
   const router = useRouter();
   const { account } = useAccount();
+  const theme = useTheme();
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [isPublishing, setIsPublishing] = useState(false);
@@ -50,11 +77,8 @@ export default function CriarPostPage() {
     link_instagram_post: '',
   });
 
-  // Imagens com status de upload individual
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
-  const [activeMediaTab, setActiveMediaTab] = useState<'images' | 'video' | 'links'>('images');
-
-  // Vídeo com status de upload
+  const [activeMediaTab, setActiveMediaTab] = useState(0);
   const [uploadedVideo, setUploadedVideo] = useState<UploadedVideo | null>(null);
 
   // Upload imediato ao selecionar imagens
@@ -64,7 +88,6 @@ export default function CriarPostPage() {
 
     if (filesToUpload.length === 0) return;
 
-    // Criar previews e marcar como uploading
     const newImages: UploadedImage[] = [];
 
     for (const file of filesToUpload) {
@@ -81,10 +104,8 @@ export default function CriarPostPage() {
       });
     }
 
-    // Adicionar imagens com status "uploading"
-    setUploadedImages(prev => [...prev, ...newImages]);
+    setUploadedImages((prev) => [...prev, ...newImages]);
 
-    // Fazer upload de cada imagem individualmente
     for (let i = 0; i < filesToUpload.length; i++) {
       const file = filesToUpload[i];
       const imageIndex = uploadedImages.length + i;
@@ -107,31 +128,26 @@ export default function CriarPostPage() {
         const data = await response.json();
         const uploadedUrl = data.urls[0];
 
-        // Atualizar a imagem com a URL do Azure
-        setUploadedImages(prev => prev.map((img, idx) =>
-          idx === imageIndex
-            ? { ...img, url: uploadedUrl, isUploading: false }
-            : img
-        ));
+        setUploadedImages((prev) =>
+          prev.map((img, idx) =>
+            idx === imageIndex ? { ...img, url: uploadedUrl, isUploading: false } : img
+          )
+        );
       } catch (err) {
         console.error('Erro no upload da imagem:', err);
-        // Marcar como erro
-        setUploadedImages(prev => prev.map((img, idx) =>
-          idx === imageIndex
-            ? { ...img, isUploading: false, error: 'Falha no upload' }
-            : img
-        ));
+        setUploadedImages((prev) =>
+          prev.map((img, idx) =>
+            idx === imageIndex ? { ...img, isUploading: false, error: 'Falha no upload' } : img
+          )
+        );
       }
     }
   };
 
   const handleRemoveImage = async (index: number) => {
     const imageToRemove = uploadedImages[index];
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
 
-    // Remover da lista imediatamente
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-
-    // Se já foi feito upload, deletar do Azure
     if (imageToRemove.url) {
       try {
         await fetch('/api/posts/media', {
@@ -141,23 +157,19 @@ export default function CriarPostPage() {
         });
       } catch (err) {
         console.error('Erro ao deletar imagem do Azure:', err);
-        // Não bloqueia a remoção da UI
       }
     }
   };
 
-  // Upload de vídeo
   const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tamanho (500MB max)
     if (file.size > 500 * 1024 * 1024) {
       setError('Vídeo muito grande. Máximo 500MB.');
       return;
     }
 
-    // Validar tipo
     const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo'];
     if (!allowedTypes.includes(file.type)) {
       setError('Formato não suportado. Use MP4, MOV, WEBM ou AVI.');
@@ -165,8 +177,6 @@ export default function CriarPostPage() {
     }
 
     setError(null);
-
-    // Criar preview do vídeo
     const preview = URL.createObjectURL(file);
 
     setUploadedVideo({
@@ -193,26 +203,22 @@ export default function CriarPostPage() {
       }
 
       const data = await response.json();
-      // API retorna 'url' para vídeo (singular), não 'urls'
       const uploadedUrl = data.url;
 
       if (!uploadedUrl) {
         throw new Error('URL do vídeo não retornada');
       }
 
-      setUploadedVideo(prev => prev ? {
-        ...prev,
-        url: uploadedUrl,
-        isUploading: false,
-        progress: 100,
-      } : null);
+      setUploadedVideo((prev) =>
+        prev ? { ...prev, url: uploadedUrl, isUploading: false, progress: 100 } : null
+      );
     } catch (err) {
       console.error('Erro no upload do vídeo:', err);
-      setUploadedVideo(prev => prev ? {
-        ...prev,
-        isUploading: false,
-        error: err instanceof Error ? err.message : 'Falha no upload',
-      } : null);
+      setUploadedVideo((prev) =>
+        prev
+          ? { ...prev, isUploading: false, error: err instanceof Error ? err.message : 'Falha no upload' }
+          : null
+      );
     }
   };
 
@@ -220,15 +226,12 @@ export default function CriarPostPage() {
     if (!uploadedVideo) return;
 
     const videoUrl = uploadedVideo.url;
-
-    // Revogar URL do preview
     if (uploadedVideo.preview) {
       URL.revokeObjectURL(uploadedVideo.preview);
     }
 
     setUploadedVideo(null);
 
-    // Se já foi feito upload, deletar do Azure
     if (videoUrl) {
       try {
         await fetch('/api/posts/media', {
@@ -243,7 +246,7 @@ export default function CriarPostPage() {
   };
 
   const handlePublish = async () => {
-    const validImages = uploadedImages.filter(img => img.url && !img.isUploading && !img.error);
+    const validImages = uploadedImages.filter((img) => img.url && !img.isUploading && !img.error);
     const videoUrl = uploadedVideo?.url;
 
     if (!newPost.content.trim() && validImages.length === 0 && !videoUrl) {
@@ -251,8 +254,7 @@ export default function CriarPostPage() {
       return;
     }
 
-    // Verificar se ainda há uploads em andamento
-    const imageUploading = uploadedImages.some(img => img.isUploading);
+    const imageUploading = uploadedImages.some((img) => img.isUploading);
     const videoUploading = uploadedVideo?.isUploading;
     if (imageUploading || videoUploading) {
       setError('Aguarde os uploads terminarem');
@@ -263,14 +265,12 @@ export default function CriarPostPage() {
     setError(null);
 
     try {
-      const imageUrls = validImages.map(img => img.url);
+      const imageUrls = validImages.map((img) => img.url);
       const finalVideoUrl = uploadedVideo?.url || undefined;
 
       const response = await fetch('/api/posts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: newPost.content,
           images: imageUrls,
@@ -285,7 +285,6 @@ export default function CriarPostPage() {
         throw new Error(data.error || 'Erro ao publicar post');
       }
 
-      // Sucesso - redirecionar para comunidade
       router.push('/dashboard/comunidade');
     } catch (err) {
       console.error('Erro ao publicar:', err);
@@ -295,270 +294,403 @@ export default function CriarPostPage() {
     }
   };
 
-  const isImageUploading = uploadedImages.some(img => img.isUploading);
+  const isImageUploading = uploadedImages.some((img) => img.isUploading);
   const isVideoUploading = uploadedVideo?.isUploading || false;
   const isAnyUploading = isImageUploading || isVideoUploading;
-  const validImageCount = uploadedImages.filter(img => img.url && !img.error).length;
+  const validImageCount = uploadedImages.filter((img) => img.url && !img.error).length;
   const hasVideo = !!uploadedVideo?.url;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8 pt-2 sm:pt-4">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Criar Post</h1>
-        <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">Compartilhe com a comunidade</p>
-      </div>
+    <Box sx={{ maxWidth: 800, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 }, pt: { xs: 1, sm: 2 } }}>
+      {/* Header */}
+      <Box sx={{ mb: { xs: 3, sm: 4 }, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <IconButton onClick={() => router.push('/dashboard/comunidade')} sx={{ mr: 1 }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Box>
+          <Typography variant="h4" fontWeight="bold">
+            Criar Post
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Compartilhe com a comunidade
+          </Typography>
+        </Box>
+      </Box>
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-xl">
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-        </div>
-      )}
+      {/* Error Alert */}
+      <Fade in={!!error}>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      </Fade>
 
-      <div className="space-y-6">
-        {/* Categoria do post */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100 mb-3">Tipo de post</label>
-          <div className="flex flex-wrap gap-2">
+      <Stack spacing={4}>
+        {/* Categoria */}
+        <Box>
+          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+            Tipo de post
+          </Typography>
+          <Stack direction="row" flexWrap="wrap" gap={1}>
             {(['ideia', 'resultado', 'duvida', 'roteiro', 'geral'] as PostCategory[]).map((cat) => (
-              <button
+              <Chip
                 key={cat}
+                label={categoryLabels[cat]}
                 onClick={() => setNewPost({ ...newPost, category: cat })}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${newPost.category === cat
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                  : 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-neutral-200 hover:bg-gray-200 dark:hover:bg-neutral-700 border border-transparent dark:border-neutral-700'
-                  }`}
-              >
-                {categoryLabels[cat]}
-              </button>
+                variant={newPost.category === cat ? 'filled' : 'outlined'}
+                color={newPost.category === cat ? 'primary' : 'default'}
+                sx={{
+                  borderRadius: 3,
+                  fontWeight: newPost.category === cat ? 600 : 400,
+                  transition: 'all 0.2s',
+                  ...(newPost.category === cat && {
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    color: 'white',
+                    '& .MuiChip-label': { color: 'white' },
+                  }),
+                }}
+              />
             ))}
-          </div>
-        </div>
+          </Stack>
+        </Box>
 
         {/* Conteúdo */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100 mb-2">Conteúdo</label>
-          <textarea
+        <Box>
+          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+            Conteúdo
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
             value={newPost.content}
             onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none transition-all"
-            rows={8}
             placeholder="O que você gostaria de compartilhar?"
-            suppressHydrationWarning
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+              },
+            }}
           />
-          <p className="text-xs text-gray-500 dark:text-neutral-400 mt-2">
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
             {newPost.content.length}/5000 caracteres
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
         {/* Mídia */}
-        <div className="space-y-4">
-          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100">Adicionar mídia (opcional)</label>
+        <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
+          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+            Adicionar mídia (opcional)
+          </Typography>
 
-          <div className="flex gap-2 border-b border-gray-100 dark:border-neutral-800">
-            <button
-              onClick={() => setActiveMediaTab('images')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeMediaTab === 'images'
-                ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200'
-                }`}
-            >
-              Imagens {uploadedImages.length > 0 && `(${uploadedImages.length})`}
-              {isImageUploading && <span className="ml-1 animate-pulse">⏳</span>}
-            </button>
-            <button
-              onClick={() => setActiveMediaTab('video')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeMediaTab === 'video'
-                ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200'
-                }`}
-            >
-              Vídeo {hasVideo && '✓'}
-              {isVideoUploading && <span className="ml-1 animate-pulse">⏳</span>}
-            </button>
-          </div>
+          <Tabs
+            value={activeMediaTab}
+            onChange={(_, v) => setActiveMediaTab(v)}
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab
+              icon={<ImageIcon fontSize="small" />}
+              iconPosition="start"
+              label={
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <span>Imagens</span>
+                  {uploadedImages.length > 0 && (
+                    <Chip label={uploadedImages.length} size="small" color="primary" sx={{ height: 20 }} />
+                  )}
+                  {isImageUploading && <span style={{ marginLeft: 4 }}>⏳</span>}
+                </Stack>
+              }
+            />
+            <Tab
+              icon={<VideoIcon fontSize="small" />}
+              iconPosition="start"
+              label={
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <span>Vídeo</span>
+                  {hasVideo && <CheckIcon fontSize="small" color="success" />}
+                  {isVideoUploading && <span style={{ marginLeft: 4 }}>⏳</span>}
+                </Stack>
+              }
+            />
+          </Tabs>
 
           {/* Tab Imagens */}
-          {activeMediaTab === 'images' && (
-            <div className="space-y-4">
-              {/* Grid de imagens com status */}
+          {activeMediaTab === 0 && (
+            <Stack spacing={2}>
               {uploadedImages.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', md: 'repeat(4, 1fr)' },
+                    gap: 2,
+                  }}
+                >
                   {uploadedImages.map((img, index) => (
-                    <div key={index} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-neutral-800">
-                      <img
+                    <Box
+                      key={index}
+                      sx={{
+                        position: 'relative',
+                        aspectRatio: '1',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        bgcolor: 'action.hover',
+                      }}
+                    >
+                      <Box
+                        component="img"
                         src={img.preview}
                         alt={`Imagem ${index + 1}`}
-                        className={`w-full h-full object-cover ${img.isUploading ? 'opacity-50' : ''} ${img.error ? 'opacity-30' : ''}`}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          opacity: img.isUploading ? 0.5 : img.error ? 0.3 : 1,
+                        }}
                       />
 
-                      {/* Overlay de loading */}
                       {img.isUploading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        </div>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: alpha('#000', 0.4),
+                          }}
+                        >
+                          <Box sx={{ width: 32, height: 32, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', '@keyframes spin': { to: { transform: 'rotate(360deg)' } } }} />
+                        </Box>
                       )}
 
-                      {/* Overlay de sucesso */}
                       {img.url && !img.isUploading && !img.error && (
-                        <div className="absolute top-2 left-2">
-                          <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">✓</span>
-                        </div>
+                        <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
+                          <CheckIcon sx={{ color: 'success.main', bgcolor: 'white', borderRadius: '50%', fontSize: 20 }} />
+                        </Box>
                       )}
 
-                      {/* Overlay de erro */}
                       {img.error && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-red-500/30">
-                          <span className="text-white text-sm font-medium">Erro</span>
-                        </div>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: alpha(theme.palette.error.main, 0.4),
+                          }}
+                        >
+                          <ErrorIcon sx={{ color: 'white' }} />
+                        </Box>
                       )}
 
-                      {/* Botão remover */}
-                      <button
+                      <IconButton
                         onClick={() => handleRemoveImage(index)}
-                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors shadow-lg"
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          '&:hover': { bgcolor: 'error.dark' },
+                        }}
                       >
-                        ×
-                      </button>
-                    </div>
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   ))}
-                </div>
+                </Box>
               )}
 
-              {/* Botão adicionar mais */}
               {uploadedImages.length < 10 && (
                 <MultiImageUpload
                   onImagesSelect={handleImagesSelect}
                   currentImages={[]}
-                  onRemoveImage={() => { }}
+                  onRemoveImage={() => {}}
                   maxImages={10 - uploadedImages.length}
                 />
               )}
 
-              {/* Status geral */}
               {uploadedImages.length > 0 && (
-                <p className="text-xs text-gray-500 dark:text-neutral-400">
+                <Typography variant="caption" color="text.secondary">
                   {validImageCount} de {uploadedImages.length} imagens prontas
                   {isImageUploading && ' • Fazendo upload...'}
-                </p>
+                </Typography>
               )}
-            </div>
+            </Stack>
           )}
 
           {/* Tab Vídeo */}
-          {activeMediaTab === 'video' && (
-            <div className="space-y-4">
+          {activeMediaTab === 1 && (
+            <Stack spacing={2}>
               {!uploadedVideo ? (
                 <>
-                  <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      📹 Faça upload de um vídeo do seu dispositivo (MP4, MOV, WEBM - máx. 500MB)
-                    </p>
-                  </div>
+                  <Alert severity="info" icon={<MovieIcon />}>
+                    Faça upload de um vídeo do seu dispositivo (MP4, MOV, WEBM - máx. 500MB)
+                  </Alert>
                   <input
                     ref={videoInputRef}
                     type="file"
                     accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"
                     onChange={handleVideoSelect}
-                    className="hidden"
+                    style={{ display: 'none' }}
                   />
-                  <button
+                  <Button
+                    variant="outlined"
                     onClick={() => videoInputRef.current?.click()}
-                    className="w-full py-8 border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-xl hover:border-blue-400 dark:hover:border-blue-500 transition-colors flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-neutral-400 hover:text-blue-500 dark:hover:text-blue-400"
+                    startIcon={<UploadIcon />}
+                    sx={{
+                      py: 4,
+                      borderStyle: 'dashed',
+                      borderRadius: 3,
+                      borderWidth: 2,
+                    }}
                   >
-                    <span className="text-3xl">🎬</span>
-                    <span className="text-sm font-medium">Clique para selecionar um vídeo</span>
-                  </button>
+                    Clique para selecionar um vídeo
+                  </Button>
                 </>
               ) : (
-                <div className="space-y-3">
-                  {/* Preview do vídeo */}
-                  <div className="relative rounded-xl overflow-hidden bg-black">
+                <Box>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      bgcolor: 'black',
+                    }}
+                  >
                     <video
                       src={uploadedVideo.preview}
                       controls
-                      className={`w-full max-h-80 ${uploadedVideo.isUploading ? 'opacity-50' : ''}`}
+                      style={{
+                        width: '100%',
+                        maxHeight: 320,
+                        opacity: uploadedVideo.isUploading ? 0.5 : 1,
+                      }}
                     />
 
-                    {/* Overlay de loading */}
                     {uploadedVideo.isUploading && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50">
-                        <div className="w-10 h-10 border-3 border-white border-t-transparent rounded-full animate-spin mb-2" />
-                        <span className="text-white text-sm">Enviando vídeo...</span>
-                      </div>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: alpha('#000', 0.6),
+                        }}
+                      >
+                        <Box sx={{ width: 40, height: 40, border: '3px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', mb: 1 }} />
+                        <Typography color="white" variant="body2">
+                          Enviando vídeo...
+                        </Typography>
+                        <LinearProgress sx={{ width: '50%', mt: 1 }} />
+                      </Box>
                     )}
 
-                    {/* Badge de sucesso */}
                     {uploadedVideo.url && !uploadedVideo.isUploading && !uploadedVideo.error && (
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-green-500 text-white text-xs px-3 py-1 rounded-full font-medium">✓ Vídeo pronto</span>
-                      </div>
+                      <Chip
+                        icon={<CheckIcon />}
+                        label="Vídeo pronto"
+                        color="success"
+                        size="small"
+                        sx={{ position: 'absolute', top: 12, left: 12 }}
+                      />
                     )}
 
-                    {/* Badge de erro */}
                     {uploadedVideo.error && (
-                      <div className="absolute top-3 left-3">
-                        <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full font-medium">Erro no upload</span>
-                      </div>
+                      <Chip
+                        icon={<ErrorIcon />}
+                        label="Erro no upload"
+                        color="error"
+                        size="small"
+                        sx={{ position: 'absolute', top: 12, left: 12 }}
+                      />
                     )}
 
-                    {/* Botão remover */}
-                    <button
+                    <IconButton
                       onClick={handleRemoveVideo}
-                      className="absolute top-3 right-3 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold transition-colors shadow-lg"
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        '&:hover': { bgcolor: 'error.dark' },
+                      }}
                     >
-                      ×
-                    </button>
-                  </div>
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
 
-                  {/* Nome do arquivo */}
                   {uploadedVideo.fileName && (
-                    <p className="text-xs text-gray-500 dark:text-neutral-400 truncate">
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                       📁 {uploadedVideo.fileName}
-                    </p>
+                    </Typography>
                   )}
-                </div>
+                </Box>
               )}
-            </div>
+            </Stack>
           )}
+        </Paper>
 
-        </div>
-
-        {/* Link da rede social (opcional) */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-900 dark:text-neutral-100 mb-2">
-            Link da publicação na rede social <span className="font-normal text-gray-400 dark:text-neutral-500">(opcional)</span>
-          </label>
-          <input
+        {/* Link da rede social */}
+        <Box>
+          <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+            Link da publicação na rede social{' '}
+            <Typography component="span" variant="caption" color="text.secondary">
+              (opcional)
+            </Typography>
+          </Typography>
+          <TextField
+            fullWidth
             type="url"
             value={newPost.link_instagram_post}
             onChange={(e) => setNewPost({ ...newPost, link_instagram_post: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
             placeholder="https://instagram.com/p/... ou tiktok.com/... ou youtube.com/..."
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+              },
+            }}
           />
-          <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
             Cole o link do post no Instagram, TikTok ou YouTube
-          </p>
-        </div>
+          </Typography>
+        </Box>
 
         {/* Botões */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200 dark:border-neutral-800">
+        <Stack
+          direction={{ xs: 'column-reverse', sm: 'row' }}
+          spacing={2}
+          sx={{ pt: 3, borderTop: 1, borderColor: 'divider' }}
+        >
           <Button
-            variant="ghost"
+            variant="outlined"
             onClick={() => router.push('/dashboard/comunidade')}
             disabled={isPublishing || isAnyUploading}
-            className="w-full sm:w-auto"
+            sx={{ borderRadius: 3 }}
           >
             Cancelar
           </Button>
           <Button
+            variant="contained"
             onClick={handlePublish}
             disabled={isPublishing || isAnyUploading || (!newPost.content.trim() && validImageCount === 0 && !hasVideo)}
-            className="w-full sm:w-auto sm:ml-auto"
+            sx={{
+              borderRadius: 3,
+              ml: { sm: 'auto' },
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+            }}
           >
             {isAnyUploading ? 'Aguarde o upload...' : isPublishing ? 'Publicando...' : 'Publicar'}
           </Button>
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Stack>
+    </Box>
   );
 }

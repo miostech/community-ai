@@ -4,15 +4,17 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountProvider, useAccount } from '@/contexts/AccountContext';
-import { Sidebar } from './Sidebar';
-import { MobileMenu } from './MobileMenu';
-import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { SidebarMui } from './SidebarMui';
+import { MobileMenuMui } from './MobileMenuMui';
+import { FloatingChatButtonMui } from '@/components/chat/FloatingChatButtonMui';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { CreatePostProvider } from '@/contexts/CreatePostContext';
 import { PostsProvider } from '@/contexts/PostsContext';
 import { ChatHistoryProvider } from '@/contexts/ChatHistoryContext';
 import { StoriesProvider } from '@/contexts/StoriesContext';
-import { Button } from '@/components/ui/Button';
+import { MuiProvider } from '@/components/providers/MuiProvider';
+import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
+import { Phone as PhoneIcon } from '@mui/icons-material';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -29,53 +31,117 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <PostsProvider>
           <CreatePostProvider>
             <ChatHistoryProvider>
-              <div className="flex min-h-screen bg-white dark:bg-black relative overflow-hidden">
+              <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
                 {/* Background decorative elements - apenas em páginas que não sejam comunidade */}
                 {!hideBlobs && (
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100 dark:bg-blue-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob"></div>
-                    <div className="absolute top-40 right-10 w-72 h-72 bg-purple-100 dark:bg-purple-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob animation-delay-2000"></div>
-                    <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-100 dark:bg-pink-500/20 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-xl opacity-20 dark:opacity-30 animate-blob animation-delay-4000"></div>
-                  </div>
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      overflow: 'hidden',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 80,
+                        left: 40,
+                        width: 288,
+                        height: 288,
+                        bgcolor: 'primary.light',
+                        borderRadius: '50%',
+                        filter: 'blur(64px)',
+                        opacity: 0.15
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 160,
+                        right: 40,
+                        width: 288,
+                        height: 288,
+                        bgcolor: 'secondary.light',
+                        borderRadius: '50%',
+                        filter: 'blur(64px)',
+                        opacity: 0.15
+                      }}
+                    />
+                  </Box>
                 )}
 
-                <Sidebar />
-                <MobileMenu />
-                <main className={`flex-1 md:ml-64 relative z-10 overflow-x-hidden ${isComunidadePage ? 'pt-0' : 'pt-16 md:pt-0'}`}>
-                  <div className={isComunidadePage ? 'overflow-x-hidden' : 'p-0 md:p-8'}>
-                    {children}
-                  </div>
-                </main>
+                <SidebarMui />
+                <MobileMenuMui />
+                <Box
+                  component="main"
+                  sx={{
+                    flexGrow: 1,
+                    // ml: { xs: 0, md: '256px' },
+                    position: 'relative',
+                    zIndex: 10,
+                    overflowX: 'hidden',
+                    pt: isComunidadePage ? 0 : { xs: 8, md: 0 },
+                  }}
+                >
+                  {isComunidadePage ? (
+                    children
+                  ) : (
+                    <Box sx={{ p: { xs: 0, md: 4 } }}>
+                      {children}
+                    </Box>
+                  )}
+                </Box>
 
-                {/* Modal de cadastro de telefone - overlay com blur quando usuário não tem telefone */}
-                {showPhoneModal && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-md" />
-                    <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-xl p-6 sm:p-8 text-center">
-                      <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 mb-4 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                        <svg className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
-                        Cadastre seu telefone
-                      </h3>
-                      <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mb-6">
-                        Para usar a comunidade, é preciso cadastrar seu número de telefone no seu perfil.
-                      </p>
-                      <Link href="/dashboard/perfil">
-                        <Button className="w-full sm:w-auto">
-                          Ir para Meu Perfil
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                )}
+                {/* Modal de cadastro de telefone */}
+                <Dialog
+                  open={showPhoneModal}
+                  PaperProps={{
+                    sx: {
+                      maxWidth: 400,
+                      mx: 2,
+                      borderRadius: 3,
+                    },
+                  }}
+                >
+                  <DialogContent sx={{ textAlign: 'center', py: 4 }}>
+                    <Avatar
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'warning.light',
+                        mx: 'auto',
+                        mb: 2,
+                      }}
+                    >
+                      <PhoneIcon sx={{ color: 'warning.dark' }} />
+                    </Avatar>
+                    <Typography variant="h6" gutterBottom>
+                      Cadastre seu telefone
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      Para usar a comunidade, é preciso cadastrar seu número de telefone no seu perfil.
+                    </Typography>
+                    <Button
+                      component={Link}
+                      href="/dashboard/perfil"
+                      variant="contained"
+                      fullWidth
+                      sx={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                        },
+                      }}
+                    >
+                      Ir para Meu Perfil
+                    </Button>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Botão flutuante de chat - apenas em páginas que não sejam comunidade */}
-                {/* (na comunidade o botão é renderizado dentro da página com controle do modal) */}
-                {!isComunidadePage && <FloatingChatButton />}
-              </div>
+                {!isComunidadePage && <FloatingChatButtonMui />}
+              </Box>
             </ChatHistoryProvider>
           </CreatePostProvider>
         </PostsProvider>
@@ -88,7 +154,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <AccountProvider>
-        <DashboardContent>{children}</DashboardContent>
+        <MuiProvider>
+          <DashboardContent>{children}</DashboardContent>
+        </MuiProvider>
       </AccountProvider>
     </ProtectedRoute>
   );

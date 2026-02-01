@@ -2,24 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUser } from '@/contexts/UserContext';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { CourseImage } from '@/components/ui/CourseImage';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Grid,
-  Skeleton,
-  Stack,
-  Chip,
-} from '@mui/material';
-import {
-  ArrowBack as ArrowBackIcon,
-  Lock as LockIcon,
-  Description as DescriptionIcon,
-  OpenInNew as OpenInNewIcon,
-} from '@mui/icons-material';
+import { useUser } from '@/contexts/UserContext';
 
 interface Module {
   id: string;
@@ -38,7 +24,7 @@ interface Course {
   modules: Module[];
   kiwifyId: string;
   kiwifyUrl: string;
-  kiwifyDashboardUrl?: string;
+  kiwifyDashboardUrl?: string; // URL do dashboard quando tem acesso
   isAvailable: boolean;
 }
 
@@ -185,7 +171,7 @@ const mockCourses: Record<string, Course> = {
     thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
     kiwifyId: 'AQDrLac',
     kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?src=bionat',
-    kiwifyDashboardUrl: undefined,
+    kiwifyDashboardUrl: undefined, // Adicionar quando tiver o link do dashboard
     isAvailable: false,
     modules: [
       {
@@ -241,8 +227,10 @@ export default function CourseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Simular carregamento
     const foundCourse = mockCourses[courseId];
     if (foundCourse) {
+      // Verificar assinatura
       checkCourseAccess(foundCourse);
     } else {
       setIsLoading(false);
@@ -262,21 +250,23 @@ export default function CourseDetailPage() {
         const data = await response.json();
         hasAccess = data.courseIds?.includes(courseData.kiwifyId) || false;
       } else {
+        // Para usuário de teste, dar acesso ao HPA
         if ((user.email === 'usuario@email.com' || user.email.includes('teste')) && courseData.kiwifyId === '96dk0GP') {
           hasAccess = true;
         }
       }
-
+      
       setCourse({
         ...courseData,
         isAvailable: hasAccess,
         modules: courseData.modules.map((module, index) => ({
           ...module,
-          isLocked: !hasAccess || index >= 2,
+          isLocked: !hasAccess || index >= 2, // Primeiros 2 módulos liberados se tiver acesso
         })),
       });
     } catch (error) {
       console.error('Erro ao verificar acesso:', error);
+      // Para usuário de teste, dar acesso ao HPA
       if ((user.email === 'usuario@email.com' || user.email.includes('teste')) && courseData.kiwifyId === '96dk0GP') {
         setCourse({
           ...courseData,
@@ -296,231 +286,163 @@ export default function CourseDetailPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
-        <Stack spacing={3}>
-          <Skeleton variant="text" width="40%" height={40} />
-          <Skeleton variant="rounded" height={300} />
-          <Grid container spacing={2}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+        <div className="animate-pulse space-y-4 sm:space-y-6">
+          <div className="h-6 sm:h-8 bg-gray-200 dark:bg-neutral-800 rounded w-1/2 sm:w-1/3"></div>
+          <div className="h-48 sm:h-64 bg-gray-200 dark:bg-neutral-800 rounded-xl"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Grid size={{ xs: 12, md: 6, lg: 4 }} key={i}>
-                <Skeleton variant="rounded" height={180} />
-              </Grid>
+              <div key={i} className="h-40 sm:h-48 bg-gray-200 dark:bg-neutral-800 rounded-xl"></div>
             ))}
-          </Grid>
-        </Stack>
-      </Box>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (!course) {
     return (
-      <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
-        <Paper sx={{ py: { xs: 4, sm: 6 }, textAlign: 'center' }}>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-            Curso não encontrado
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => router.push('/dashboard/cursos')}
-          >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+        <Card className="text-center py-8 sm:py-12">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400 mb-4">Curso não encontrado</p>
+          <Button onClick={() => router.push('/dashboard/cursos')} className="text-sm sm:text-base">
             Voltar para Cursos
           </Button>
-        </Paper>
-      </Box>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
-      {/* Header */}
-      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+      <div className="mb-6 sm:mb-8">
+        <button
           onClick={() => router.push('/dashboard/cursos')}
-          sx={{ mb: 2, color: 'text.secondary' }}
+          className="text-sm sm:text-base text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white mb-3 sm:mb-4 inline-flex items-center"
         >
-          Voltar para Cursos
-        </Button>
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          gutterBottom
-          sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' } }}
-        >
-          {course.title}
-        </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }}
-        >
-          {course.description}
-        </Typography>
-      </Box>
+          ← Voltar para Cursos
+        </button>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">{course.title}</h1>
+        <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-neutral-400">{course.description}</p>
+      </div>
 
       {/* Hero Section */}
-      <Paper sx={{ mb: { xs: 3, sm: 4 }, overflow: 'hidden', position: 'relative' }}>
-        <Box sx={{ position: 'relative' }}>
+      <Card className="mb-6 sm:mb-8 overflow-hidden">
+        <div className="relative">
           <CourseImage
             src={course.thumbnail}
             alt={course.title}
-            className="w-full object-cover"
+            className="w-full h-48 sm:h-64 md:h-96 rounded-xl"
           />
           {!course.isAvailable ? (
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                bgcolor: 'rgba(0, 0, 0, 0.7)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Box sx={{ textAlign: 'center', color: 'white', px: 2 }}>
-                <LockIcon sx={{ fontSize: { xs: 64, sm: 80 }, mb: 2, opacity: 0.9 }} />
-                <Typography variant="h5" fontWeight="bold" sx={{ mb: 1, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-                  Curso Bloqueado
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 3, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                  Adquira este curso para ter acesso completo
-                </Typography>
+            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+              <div className="text-center text-white px-4">
+                <svg
+                  className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">Curso Bloqueado</h3>
+                <p className="text-sm sm:text-base md:text-lg mb-4 sm:mb-6">Adquira este curso para ter acesso completo</p>
                 <Button
-                  variant="contained"
-                  size="large"
+                  size="lg"
                   onClick={() => window.open(course.kiwifyUrl, '_blank')}
-                  sx={{
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                    },
-                  }}
+                  className="text-sm sm:text-base"
                 >
                   Adquirir Curso
                 </Button>
-              </Box>
-            </Box>
+              </div>
+            </div>
           ) : (
-            <Box sx={{ position: 'absolute', top: { xs: 12, sm: 16 }, right: { xs: 12, sm: 16 } }}>
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
               <Button
-                variant="contained"
-                startIcon={<OpenInNewIcon />}
                 onClick={() => {
                   if (course.kiwifyDashboardUrl) {
                     window.open(course.kiwifyDashboardUrl, '_blank');
                   }
                 }}
-                sx={{
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                  },
-                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                }}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-xs sm:text-sm md:text-base px-3 py-2 sm:px-6 sm:py-3"
               >
                 Acessar no Dashboard
               </Button>
-            </Box>
+            </div>
           )}
-        </Box>
-      </Paper>
+        </div>
+      </Card>
 
-      {/* Modules Section */}
-      <Box sx={{ mb: 3 }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
-          <Box
-            sx={{
-              width: { xs: 28, sm: 32 },
-              height: { xs: 28, sm: 32 },
-              background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <DescriptionIcon sx={{ color: 'white', fontSize: { xs: 16, sm: 20 } }} />
-          </Box>
-          <Typography variant="h6" fontWeight="bold" sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
-            Módulos do Curso
-          </Typography>
-        </Stack>
+      <div className="mb-6">
+        <div className="flex items-center space-x-2 mb-4 sm:mb-6">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Módulos do Curso</h2>
+        </div>
 
-        <Grid container spacing={2}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {course.modules.map((module) => (
-            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={module.id}>
-              <Paper
-                sx={{
-                  overflow: 'hidden',
-                  transition: 'all 0.3s',
-                  opacity: module.isLocked ? 0.75 : 1,
-                  cursor: module.isLocked ? 'not-allowed' : 'pointer',
-                  '&:hover': module.isLocked ? {} : {
-                    boxShadow: 6,
-                    transform: 'translateY(-2px)',
-                  },
-                }}
-                onClick={() => {
-                  if (!module.isLocked && course.isAvailable && course.kiwifyDashboardUrl) {
+            <Card
+              key={module.id}
+              className={`overflow-hidden transition-all duration-300 ${
+                module.isLocked
+                  ? 'opacity-75 cursor-not-allowed'
+                  : 'hover:shadow-xl cursor-pointer'
+              }`}
+              onClick={() => {
+                if (!module.isLocked && course.isAvailable) {
+                  // Se tem acesso, redirecionar para o dashboard da Kiwify
+                  if (course.kiwifyDashboardUrl) {
                     window.open(course.kiwifyDashboardUrl, '_blank');
                   }
-                }}
-              >
-                <Box sx={{ position: 'relative' }}>
-                  <CourseImage
-                    src={module.thumbnail}
-                    alt={module.title}
-                    className="w-full h-32 object-cover"
-                  />
-                  {module.isLocked && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        bgcolor: 'rgba(0, 0, 0, 0.6)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                }
+              }}
+            >
+              <div className="relative">
+                <CourseImage
+                  src={module.thumbnail}
+                  alt={module.title}
+                  className="w-full h-32 sm:h-40"
+                />
+                {module.isLocked && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <svg
+                      className="w-10 h-10 sm:w-12 sm:h-12 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <LockIcon sx={{ fontSize: { xs: 40, sm: 48 }, color: 'white' }} />
-                    </Box>
-                  )}
-                  <Box sx={{ position: 'absolute', top: 8, left: 8 }}>
-                    <Chip
-                      label={`MÓDULO ${module.number}`}
-                      size="small"
-                      sx={{
-                        bgcolor: 'rgba(255, 255, 255, 0.9)',
-                        backdropFilter: 'blur(4px)',
-                        fontWeight: 'bold',
-                        fontSize: { xs: '0.625rem', sm: '0.75rem' },
-                      }}
-                    />
-                  </Box>
-                </Box>
-                <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-                  <Typography
-                    variant="subtitle2"
-                    fontWeight="bold"
-                    gutterBottom
-                    sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-                  >
-                    {module.title}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
-                  >
-                    {module.description}
-                  </Typography>
-                </Box>
-              </Paper>
-            </Grid>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
+                )}
+                <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+                  <span className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold text-gray-900 dark:text-neutral-100">
+                    MÓDULO {module.number}
+                  </span>
+                </div>
+              </div>
+              <div className="p-3 sm:p-4">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">{module.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-neutral-400">{module.description}</p>
+              </div>
+            </Card>
           ))}
-        </Grid>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

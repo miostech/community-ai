@@ -40,14 +40,20 @@ export async function GET() {
     }
 
     console.log('✅ Sessão encontrada, user.id:', session.user.id);
-    const accountId = new mongoose.Types.ObjectId(session.user.id as string);
     await connectMongo();
     console.log('✅ MongoDB conectado');
 
-    // Buscar quando foi a última vez que viu notificações
+    // Buscar a conta pelo auth_user_id (que é o session.user.id)
     const Account = (await import('@/models/Account')).default;
-    const account = await Account.findById(accountId).select('last_notifications_read_at').lean();
-    const lastReadAt = account?.last_notifications_read_at || new Date(0); // Se nunca leu, pega todas
+    const account = await Account.findOne({ auth_user_id: session.user.id }).lean();
+
+    if (!account) {
+      console.log('❌ Account não encontrada para auth_user_id:', session.user.id);
+      return NextResponse.json({ notifications: [], unread_count: 0 });
+    }
+
+    const accountId = account._id;
+    const lastReadAt = account.last_notifications_read_at || new Date(0); // Se nunca leu, pega todas
     console.log('📅 Última leitura:', lastReadAt);
 
     const myPosts = await Post.find({ author_id: accountId }).select('_id content').lean();
@@ -180,13 +186,13 @@ export async function POST() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const accountId = new mongoose.Types.ObjectId(session.user.id as string);
     await connectMongo();
 
     const Account = (await import('@/models/Account')).default;
-    await Account.findByIdAndUpdate(accountId, {
-      $set: { last_notifications_read_at: new Date() },
-    });
+    await Account.findOneAndUpdate(
+      { auth_user_id: session.user.id },
+      { $set: { last_notifications_read_at: new Date() } }
+    );
 
     console.log('✅ Notificações marcadas como lidas');
     return NextResponse.json({ success: true });

@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -12,11 +13,20 @@ export default function DashboardPage() {
   }, [router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white dark:bg-black">
-      <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-        <p className="mt-4 text-gray-600 dark:text-slate-400">Redirecionando para a comunidade...</p>
-      </div>
-    </div>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+      }}
+    >
+      <Box sx={{ textAlign: 'center' }}>
+        <CircularProgress size={32} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Redirecionando para a comunidade...
+        </Typography>
+      </Box>
+    </Box>
   );
 }

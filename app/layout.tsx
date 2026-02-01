@@ -4,6 +4,7 @@ import "./globals.css";
 import { UserProvider } from "@/contexts/UserContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { MuiProvider } from "@/components/providers/MuiProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,9 +49,11 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <AuthProvider>
           <ThemeProvider>
-            <UserProvider>
-              {children}
-            </UserProvider>
+            <MuiProvider>
+              <UserProvider>
+                {children}
+              </UserProvider>
+            </MuiProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>
