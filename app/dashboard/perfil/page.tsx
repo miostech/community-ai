@@ -1,24 +1,65 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAccount } from '@/contexts/AccountContext';
+import { signOut } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 
+interface FormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  phone_country_code: string;
+  link_instagram: string;
+  link_tiktok: string;
+  primary_social_link: 'instagram' | 'tiktok' | null;
+  avatar_url: string | null;
+}
+
 export default function PerfilPage() {
-  const { user, updateUser, updateAvatar, logout } = useUser();
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState(user.phone);
-  const [phoneCountryCode, setPhoneCountryCode] = useState(user.phoneCountryCode);
-  const [instagramProfile, setInstagramProfile] = useState(user.instagramProfile);
-  const [tiktokProfile, setTiktokProfile] = useState(user.tiktokProfile);
-  const [primarySocialLink, setPrimarySocialLink] = useState<'instagram' | 'tiktok' | null>(user.primarySocialLink);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { account, isLoading, updateAccount, refreshAccount } = useAccount();
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Form state
+  const [formData, setFormData] = useState<FormData>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    phone_country_code: '+55',
+    link_instagram: '',
+    link_tiktok: '',
+    primary_social_link: null,
+    avatar_url: null,
+  });
+
+  // Sincronizar form com account quando carregar
+  useEffect(() => {
+    console.log('🔵 Account carregado do MongoDB:', account);
+    if (account) {
+      setFormData({
+        first_name: account.first_name || '',
+        last_name: account.last_name || '',
+        email: account.email || '',
+        phone: account.phone || '',
+        phone_country_code: account.phone_country_code || '+55',
+        link_instagram: account.link_instagram || '',
+        link_tiktok: account.link_tiktok || '',
+        primary_social_link: account.primary_social_link || null,
+        avatar_url: account.avatar_url || null,
+      });
+    }
+  }, [account]);
+
+  const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -26,37 +67,74 @@ export default function PerfilPage() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setAvatarPreview(result);
-        updateAvatar(result);
+        updateField('avatar_url', result);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleRemoveAvatar = () => {
-    setAvatarPreview(null);
-    updateAvatar(null);
+    updateField('avatar_url', null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleSave = () => {
-    setIsSaving(true);
-    updateUser({
-      name,
-      email,
-      phone,
-      phoneCountryCode,
-      instagramProfile,
-      tiktokProfile,
-      primarySocialLink,
-    });
-    setTimeout(() => {
-      setIsSaving(false);
-      alert('Perfil atualizado com sucesso!');
-    }, 500);
+  const handleCancel = () => {
+    if (account) {
+      setFormData({
+        first_name: account.first_name || '',
+        last_name: account.last_name || '',
+        email: account.email || '',
+        phone: account.phone || '',
+        phone_country_code: account.phone_country_code || '+55',
+        link_instagram: account.link_instagram || '',
+        link_tiktok: account.link_tiktok || '',
+        primary_social_link: account.primary_social_link || null,
+        avatar_url: account.avatar_url || null,
+      });
+    }
   };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const success = await updateAccount(formData);
+
+      if (success) {
+        alert('Perfil atualizado com sucesso!');
+      } else {
+        throw new Error('Erro ao salvar perfil');
+      }
+    } catch (err) {
+      console.error('Erro ao salvar perfil:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao salvar perfil');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/' });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
+        <div className="mb-6 sm:mb-8 pt-4 sm:pt-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Meu Perfil</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">Carregando...</p>
+        </div>
+        <Card className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </Card>
+      </div>
+    );
+  }
+
+  const displayName = `${formData.first_name} ${formData.last_name}`.trim() || 'Usuário';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-24 sm:pb-8">
@@ -65,15 +143,21 @@ export default function PerfilPage() {
         <p className="text-sm sm:text-base text-gray-600 dark:text-neutral-400">Gerencie suas informações e foto de perfil</p>
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+          {error}
+        </div>
+      )}
+
       <Card className="space-y-6 sm:space-y-8">
         <div>
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Foto de Perfil</h2>
           <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
             <div className="relative flex-shrink-0">
-              {avatarPreview ? (
+              {formData.avatar_url ? (
                 <div className="relative">
                   <img
-                    src={avatarPreview}
+                    src={formData.avatar_url}
                     alt="Avatar"
                     className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-gray-100 dark:border-neutral-700"
                   />
@@ -88,7 +172,7 @@ export default function PerfilPage() {
                 </div>
               ) : (
                 <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-3xl sm:text-4xl font-bold">
-                  {name.charAt(0).toUpperCase()}
+                  {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
@@ -99,7 +183,7 @@ export default function PerfilPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full sm:w-auto"
                 >
-                  {avatarPreview ? 'Alterar foto' : 'Adicionar foto'}
+                  {formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
                 </Button>
                 <input
                   ref={fileInputRef}
@@ -119,17 +203,25 @@ export default function PerfilPage() {
         <div className="border-t border-gray-200 dark:border-neutral-700 pt-6 sm:pt-8">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">Informações Pessoais</h2>
           <div className="space-y-4 sm:space-y-6">
-            <Input
-              label="Nome"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Seu nome"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Nome"
+                value={formData.first_name}
+                onChange={(e) => updateField('first_name', e.target.value)}
+                placeholder="Seu nome"
+              />
+              <Input
+                label="Sobrenome"
+                value={formData.last_name}
+                onChange={(e) => updateField('last_name', e.target.value)}
+                placeholder="Seu sobrenome"
+              />
+            </div>
             <Input
               label="Email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={(e) => updateField('email', e.target.value)}
               placeholder="seu@email.com"
             />
           </div>
@@ -142,10 +234,10 @@ export default function PerfilPage() {
           </p>
           <PhoneInput
             label="Telefone/WhatsApp"
-            value={phone}
-            countryCode={phoneCountryCode}
-            onValueChange={setPhone}
-            onCountryCodeChange={setPhoneCountryCode}
+            value={formData.phone}
+            countryCode={formData.phone_country_code}
+            onValueChange={(value) => updateField('phone', value)}
+            onCountryCodeChange={(code) => updateField('phone_country_code', code)}
           />
         </div>
 
@@ -162,15 +254,15 @@ export default function PerfilPage() {
                 <span className="text-gray-500 dark:text-neutral-400 text-sm">@</span>
                 <input
                   type="text"
-                  value={instagramProfile}
-                  onChange={(e) => setInstagramProfile(e.target.value.replace('@', ''))}
+                  value={formData.link_instagram}
+                  onChange={(e) => updateField('link_instagram', e.target.value.replace('@', ''))}
                   placeholder="seu_usuario"
                   className="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                   suppressHydrationWarning
                 />
               </div>
-              {instagramProfile && (
-                <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: instagram.com/{instagramProfile}</p>
+              {formData.link_instagram && (
+                <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: instagram.com/{formData.link_instagram}</p>
               )}
             </div>
 
@@ -180,19 +272,19 @@ export default function PerfilPage() {
                 <span className="text-gray-500 dark:text-neutral-400 text-sm">@</span>
                 <input
                   type="text"
-                  value={tiktokProfile}
-                  onChange={(e) => setTiktokProfile(e.target.value.replace('@', ''))}
+                  value={formData.link_tiktok}
+                  onChange={(e) => updateField('link_tiktok', e.target.value.replace('@', ''))}
                   placeholder="seu_usuario"
                   className="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                   suppressHydrationWarning
                 />
               </div>
-              {tiktokProfile && (
-                <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: tiktok.com/@{tiktokProfile}</p>
+              {formData.link_tiktok && (
+                <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: tiktok.com/@{formData.link_tiktok}</p>
               )}
             </div>
 
-            {(instagramProfile || tiktokProfile) && (
+            {/* {(instagramProfile || tiktokProfile) && (
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/40 border border-purple-200 dark:border-purple-800 rounded-xl p-4 sm:p-6">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                   <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
@@ -209,13 +301,13 @@ export default function PerfilPage() {
                     <button
                       onClick={() => setPrimarySocialLink('instagram')}
                       className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${primarySocialLink === 'instagram'
-                          ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-950/50'
-                          : 'border-gray-200 dark:border-neutral-600 hover:border-purple-300 dark:hover:border-purple-500'
+                        ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-950/50'
+                        : 'border-gray-200 dark:border-neutral-600 hover:border-purple-300 dark:hover:border-purple-500'
                         }`}
                     >
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${primarySocialLink === 'instagram'
-                          ? 'border-purple-500 dark:border-purple-400'
-                          : 'border-gray-300 dark:border-neutral-500'
+                        ? 'border-purple-500 dark:border-purple-400'
+                        : 'border-gray-300 dark:border-neutral-500'
                         }`}>
                         {primarySocialLink === 'instagram' && (
                           <div className="w-3 h-3 rounded-full bg-purple-500 dark:bg-purple-400" />
@@ -235,13 +327,13 @@ export default function PerfilPage() {
                     <button
                       onClick={() => setPrimarySocialLink('tiktok')}
                       className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${primarySocialLink === 'tiktok'
-                          ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-950/50'
-                          : 'border-gray-200 dark:border-neutral-600 hover:border-purple-300 dark:hover:border-purple-500'
+                        ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-purple-950/50'
+                        : 'border-gray-200 dark:border-neutral-600 hover:border-purple-300 dark:hover:border-purple-500'
                         }`}
                     >
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${primarySocialLink === 'tiktok'
-                          ? 'border-purple-500 dark:border-purple-400'
-                          : 'border-gray-300 dark:border-neutral-500'
+                        ? 'border-purple-500 dark:border-purple-400'
+                        : 'border-gray-300 dark:border-neutral-500'
                         }`}>
                         {primarySocialLink === 'tiktok' && (
                           <div className="w-3 h-3 rounded-full bg-purple-500 dark:bg-purple-400" />
@@ -258,23 +350,14 @@ export default function PerfilPage() {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end space-y-reverse space-y-3 sm:space-y-0 sm:space-x-3 pt-6 border-t border-gray-200 dark:border-neutral-700">
           <Button
             variant="ghost"
-            onClick={() => {
-              setName(user.name);
-              setEmail(user.email);
-              setPhone(user.phone);
-              setPhoneCountryCode(user.phoneCountryCode);
-              setInstagramProfile(user.instagramProfile);
-              setTiktokProfile(user.tiktokProfile);
-              setPrimarySocialLink(user.primarySocialLink);
-              setAvatarPreview(user.avatar);
-            }}
+            onClick={handleCancel}
             className="w-full sm:w-auto"
           >
             Cancelar
@@ -297,7 +380,7 @@ export default function PerfilPage() {
           </div>
           <Button
             variant="secondary"
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full sm:w-auto bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border-red-200 dark:border-red-800 flex items-center justify-center"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

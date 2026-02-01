@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
 
@@ -72,5 +73,126 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error('Erro ao criar/atualizar conta', error);
         return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+    }
+}
+
+// GET - Buscar dados do usuário autenticado
+export async function GET() {
+    try {
+        const session = await auth();
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+        }
+
+        await connectMongo();
+
+        // Usar auth_user_id se disponível, senão usar id
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
+        console.log('🔍 Buscando conta com auth_user_id:', authUserId);
+
+        const account = await Account.findOne({ auth_user_id: authUserId });
+
+        if (!account) {
+            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            success: true,
+            account: {
+                id: account._id.toString(),
+                first_name: account.first_name,
+                last_name: account.last_name,
+                email: account.email || session.user.email,
+                phone: account.phone,
+                phone_country_code: account.phone_country_code || '+55',
+                link_instagram: account.link_instagram,
+                link_tiktok: account.link_tiktok,
+                primary_social_link: account.primary_social_link,
+                avatar_url: account.avatar_url || session.user.image,
+                background_url: account.background_url,
+                plan: account.plan,
+                code_invite: account.code_invite,
+            },
+        });
+    } catch (error) {
+        console.error('Erro ao buscar conta:', error);
+        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    }
+}
+
+// PATCH - Atualizar dados do usuário autenticado
+export async function PATCH(request: NextRequest) {
+    try {
+        const session = await auth();
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+        }
+
+        const body = await request.json();
+
+        // Campos permitidos para atualização
+        const allowedFields = [
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'phone_country_code',
+            'link_instagram',
+            'link_tiktok',
+            'primary_social_link',
+            'avatar_url',
+            'background_url',
+        ];
+
+        // Filtrar apenas campos permitidos
+        const updateData: Record<string, unknown> = {};
+        for (const field of allowedFields) {
+            if (body[field] !== undefined) {
+                updateData[field] = body[field];
+            }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
+        }
+
+        await connectMongo();
+
+        // Usar auth_user_id se disponível, senão usar id
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
+
+        const account = await Account.findOneAndUpdate(
+            { auth_user_id: authUserId },
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        if (!account) {
+            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Perfil atualizado com sucesso',
+            account: {
+                id: account._id.toString(),
+                first_name: account.first_name,
+                last_name: account.last_name,
+                email: account.email,
+                phone: account.phone,
+                phone_country_code: account.phone_country_code,
+                link_instagram: account.link_instagram,
+                link_tiktok: account.link_tiktok,
+                primary_social_link: account.primary_social_link,
+                avatar_url: account.avatar_url,
+                background_url: account.background_url,
+                plan: account.plan,
+            },
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar conta:', error);
+        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
     }
 }
