@@ -17,7 +17,8 @@ interface FormData {
   phone_country_code: string;
   link_instagram: string;
   link_tiktok: string;
-  primary_social_link: 'instagram' | 'tiktok' | null;
+  link_youtube: string;
+  primary_social_link: 'instagram' | 'tiktok' | 'youtube' | null;
   avatar_url: string | null;
 }
 
@@ -36,6 +37,7 @@ export default function PerfilPage() {
     phone_country_code: '+55',
     link_instagram: '',
     link_tiktok: '',
+    link_youtube: '',
     primary_social_link: null,
     avatar_url: null,
   });
@@ -52,6 +54,7 @@ export default function PerfilPage() {
         phone_country_code: account.phone_country_code || '+55',
         link_instagram: account.link_instagram || '',
         link_tiktok: account.link_tiktok || '',
+        link_youtube: account.link_youtube || '',
         primary_social_link: account.primary_social_link || null,
         avatar_url: account.avatar_url || null,
       });
@@ -62,22 +65,76 @@ export default function PerfilPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        updateField('avatar_url', result);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !file.type.startsWith('image/')) return;
+
+    // Validar tamanho (max 500MB para imagens 4K)
+    if (file.size > 500 * 1024 * 1024) {
+      setError('Arquivo muito grande. Máximo 500MB.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/accounts/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao fazer upload');
+      }
+
+      // Atualizar avatar no formulário
+      updateField('avatar_url', data.avatar_url);
+
+      // Atualizar o contexto
+      await refreshAccount();
+    } catch (err) {
+      console.error('Erro ao fazer upload do avatar:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao fazer upload do avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
-  const handleRemoveAvatar = () => {
-    updateField('avatar_url', null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleRemoveAvatar = async () => {
+    setIsUploadingAvatar(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/accounts/avatar', {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao remover avatar');
+      }
+
+      updateField('avatar_url', null);
+      await refreshAccount();
+    } catch (err) {
+      console.error('Erro ao remover avatar:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao remover avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -91,6 +148,7 @@ export default function PerfilPage() {
         phone_country_code: account.phone_country_code || '+55',
         link_instagram: account.link_instagram || '',
         link_tiktok: account.link_tiktok || '',
+        link_youtube: account.link_youtube || '',
         primary_social_link: account.primary_social_link || null,
         avatar_url: account.avatar_url || null,
       });
@@ -173,7 +231,11 @@ export default function PerfilPage() {
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Foto de Perfil</h2>
           <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
             <div className="relative flex-shrink-0">
-              {formData.avatar_url ? (
+              {isUploadingAvatar ? (
+                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-100 dark:bg-neutral-800 flex items-center justify-center border-4 border-gray-100 dark:border-neutral-700">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : formData.avatar_url ? (
                 <div className="relative">
                   <img
                     src={formData.avatar_url}
@@ -182,7 +244,8 @@ export default function PerfilPage() {
                   />
                   <button
                     onClick={handleRemoveAvatar}
-                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-red-500 text-white rounded-full p-1.5 sm:p-2 hover:bg-red-600 transition-colors shadow-lg"
+                    disabled={isUploadingAvatar}
+                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-red-500 text-white rounded-full p-1.5 sm:p-2 hover:bg-red-600 transition-colors shadow-lg disabled:opacity-50"
                   >
                     <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -200,20 +263,21 @@ export default function PerfilPage() {
                 <Button
                   variant="secondary"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
                   className="w-full sm:w-auto"
                 >
-                  {formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
+                  {isUploadingAvatar ? 'Enviando...' : formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
                 </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleAvatarChange}
                   className="hidden"
                 />
               </div>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400">
-                Imagem quadrada de 400x400px. JPG, PNG.
+                Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG, WebP ou GIF. Máximo 500MB.
               </p>
             </div>
           </div>
@@ -300,6 +364,24 @@ export default function PerfilPage() {
               </div>
               {formData.link_tiktok && (
                 <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: tiktok.com/@{formData.link_tiktok}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">YouTube</label>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 dark:text-neutral-400 text-sm">@</span>
+                <input
+                  type="text"
+                  value={formData.link_youtube}
+                  onChange={(e) => updateField('link_youtube', e.target.value.replace('@', ''))}
+                  placeholder="seu_canal"
+                  className="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
+                  suppressHydrationWarning
+                />
+              </div>
+              {formData.link_youtube && (
+                <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">Link: youtube.com/@{formData.link_youtube}</p>
               )}
             </div>
 
