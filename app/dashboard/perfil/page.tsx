@@ -171,7 +171,7 @@ export default function PerfilPage() {
           <p className="text-xs sm:text-sm text-gray-500 dark:text-neutral-400 mb-4 sm:mb-6">
             Preencha os que quiser. Os dois links aparecerão no seu perfil quando alguém visualizar.
           </p>
-          
+
           <div className="space-y-4 sm:space-y-6">
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Instagram</label>

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useUser } from '@/contexts/UserContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
@@ -80,7 +81,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useUser();
+  const { user } = useUser();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -113,7 +114,7 @@ export function Sidebar() {
         </Link>
         <ThemeToggle />
       </div>
-      
+
       <nav className="p-4 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
@@ -124,10 +125,9 @@ export function Sidebar() {
               className={`
                 flex items-center space-x-3 px-4 py-3 rounded-lg
                 transition-all duration-200
-                ${
-                  isActive
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-sm'
-                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+                ${isActive
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-sm'
+                  : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
                 }
               `}
             >
@@ -137,7 +137,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      
+
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-slate-800">
         <div className="relative" ref={menuRef}>
           <div
@@ -184,7 +184,7 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setShowUserMenu(false);
-                  logout();
+                  signOut({ callbackUrl: '/login' });
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors text-left"
               >
