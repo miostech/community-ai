@@ -12,7 +12,7 @@ const AccountSchema = new Schema(
         link_instagram: { type: String, trim: true },
         link_tiktok: { type: String, trim: true },
         link_youtube: { type: String, trim: true },
-        primary_social_link: { type: String, enum: ['instagram', 'tiktok', null], default: null },
+        primary_social_link: { type: String, enum: ['instagram', 'tiktok', 'youtube', null], default: null },
         avatar_url: { type: String, trim: true },
         background_url: { type: String, trim: true },
         code_invite: { type: String, unique: true, sparse: true, trim: true },
