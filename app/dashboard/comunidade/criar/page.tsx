@@ -25,11 +25,11 @@ interface UploadedVideo {
 }
 
 const categoryLabels: Record<PostCategory, string> = {
-  ideia: '💡 Ideia',
-  resultado: '🏆 Resultado',
-  duvida: '❓ Dúvida',
-  roteiro: '📝 Roteiro',
-  geral: '💬 Geral',
+  ideia: 'Ideia',
+  resultado: 'Resultado',
+  duvida: 'Dúvida',
+  roteiro: 'Roteiro',
+  geral: 'Geral',
 };
 
 export default function CriarPostPage() {
@@ -362,7 +362,7 @@ export default function CriarPostPage() {
                 : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200'
                 }`}
             >
-              📷 Imagens {uploadedImages.length > 0 && `(${uploadedImages.length})`}
+              Imagens {uploadedImages.length > 0 && `(${uploadedImages.length})`}
               {isImageUploading && <span className="ml-1 animate-pulse">⏳</span>}
             </button>
             <button
@@ -372,7 +372,7 @@ export default function CriarPostPage() {
                 : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200'
                 }`}
             >
-              🎬 Vídeo {hasVideo && '✓'}
+              Vídeo {hasVideo && '✓'}
               {isVideoUploading && <span className="ml-1 animate-pulse">⏳</span>}
             </button>
           </div>
