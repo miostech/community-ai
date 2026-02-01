@@ -1,37 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { VideoEmbed } from '@/components/community/VideoEmbed';
+import { useRouter } from 'next/navigation';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { Stories } from '@/components/community/Stories';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { CommentsSection } from '@/components/community/CommentsSection';
-import { communityUsers, nameToSlug } from '@/lib/community-users';
+import { usePosts, Post } from '@/contexts/PostsContext';
+import { communityUsers } from '@/lib/community-users';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
-
-interface PostAuthor {
-  id: string;
-  name: string;
-  avatar_url?: string;
-}
-
-interface Post {
-  id: string;
-  author: PostAuthor;
-  content: string;
-  images: string[];
-  video_url?: string;
-  link_instagram_post?: string;
-  category: PostCategory;
-  likes_count: number;
-  comments_count: number;
-  created_at: string;
-  // Estado local (não vem do banco)
-  liked?: boolean;
-  saved?: boolean;
-}
 
 const categoryLabels: Record<PostCategory, string> = {
   ideia: '💡 Ideia',
@@ -54,105 +33,64 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export default function ComunidadePage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Usar o contexto de posts
+  const {
+    posts,
+    isLoading,
+    isLoadingMore,
+    isRefreshing,
+    error,
+    hasMore,
+    page,
+    isInitialized,
+    fetchPosts,
+    loadMorePosts,
+    refreshPosts,
+    toggleLike,
+    toggleSave,
+  } = usePosts();
+
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
   // Ref para o elemento sentinela do Intersection Observer
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Buscar posts da API
-  const fetchPosts = useCallback(async (pageNum: number = 1, refresh: boolean = false) => {
-    try {
-      if (refresh) {
-        setIsRefreshing(true);
-      } else if (pageNum > 1) {
-        setIsLoadingMore(true);
-      }
+  // Função para navegar para o post salvando a posição do scroll
+  const navigateToPost = (postId: string) => {
+    sessionStorage.setItem('communityScrollPosition', window.scrollY.toString());
+    router.push(`/dashboard/comunidade/${postId}`);
+  };
 
-      const response = await fetch(`/api/posts?page=${pageNum}&limit=10`);
-
-      if (!response.ok) {
-        throw new Error('Erro ao carregar posts');
-      }
-
-      const data = await response.json();
-
-      if (refresh || pageNum === 1) {
-        setPosts(data.posts);
-      } else {
-        setPosts(prev => [...prev, ...data.posts]);
-      }
-
-      setHasMore(data.pagination.hasMore);
-      setPage(pageNum);
-      setError(null);
-    } catch (err) {
-      console.error('Erro ao buscar posts:', err);
-      setError('Não foi possível carregar os posts');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-      setIsLoadingMore(false);
-    }
-  }, []);
-
-  // Carregar posts ao montar
+  // Carregar posts apenas na primeira vez (se ainda não inicializado)
   useEffect(() => {
-    fetchPosts(1, true);
-  }, [fetchPosts]);
+    if (!isInitialized) {
+      fetchPosts(1);
+    }
+  }, [isInitialized, fetchPosts]);
 
-  const handleLike = async (postId: string) => {
-    // Otimista: atualizar UI imediatamente
-    setPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked: !post.liked,
-          likes_count: post.liked ? post.likes_count - 1 : post.likes_count + 1,
-        };
-      }
-      return post;
-    }));
-
-    // TODO: Chamar API de like quando implementada
-    // try {
-    //   await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
-    // } catch (err) {
-    //   // Reverter em caso de erro
-    // }
-  };
-
-  const handleSavePost = (postId: string) => {
-    setPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        return { ...post, saved: !post.saved };
-      }
-      return post;
-    }));
-    // TODO: Persistir no banco quando implementar
-  };
+  // Restaurar scroll ao voltar
+  useEffect(() => {
+    const savedScrollPosition = sessionStorage.getItem('communityScrollPosition');
+    if (savedScrollPosition && isInitialized) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedScrollPosition));
+      }, 100);
+      sessionStorage.removeItem('communityScrollPosition');
+    }
+  }, [isInitialized]);
 
   // Duplo clique para curtir (estilo Instagram)
   const handleDoubleTap = (postId: string) => {
     const post = posts.find(p => p.id === postId);
     if (post && !post.liked) {
-      handleLike(postId);
+      toggleLike(postId);
       setShowHeartAnimation(postId);
       setTimeout(() => setShowHeartAnimation(null), 1000);
     }
-  };
-
-  // Pull to refresh
-  const handleRefresh = async () => {
-    await fetchPosts(1, true);
   };
 
   // Intersection Observer para lazy loading
@@ -162,7 +100,7 @@ export default function ComunidadePage() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
-          fetchPosts(page + 1);
+          loadMorePosts();
         }
       },
       { threshold: 0.1, rootMargin: '100px' }
@@ -171,7 +109,7 @@ export default function ComunidadePage() {
     observer.observe(loadMoreRef.current);
 
     return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, isLoading, page, fetchPosts, showSavedOnly]);
+  }, [hasMore, isLoadingMore, isLoading, loadMorePosts, showSavedOnly]);
 
   // Filtrar posts - mostrar todos ou apenas salvos
   const displayedPosts = showSavedOnly
@@ -179,7 +117,7 @@ export default function ComunidadePage() {
     : posts;
 
   return (
-    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen">
+    <div className="max-w-2xl mx-auto w-full pb-24 sm:pb-8 bg-white dark:bg-black min-h-screen overflow-x-hidden">
       <div className="sticky top-0 z-40 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 px-4 py-3 mb-0 shadow-sm backdrop-blur-lg bg-white/95 dark:bg-black/95">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -190,7 +128,7 @@ export default function ComunidadePage() {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={handleRefresh}
+              onClick={refreshPosts}
               disabled={isRefreshing}
               className="sm:hidden w-8 h-8 flex items-center justify-center text-gray-600 dark:text-slate-400 active:bg-gray-100 dark:active:bg-slate-800 rounded-full transition-all"
             >
@@ -238,7 +176,7 @@ export default function ComunidadePage() {
         </div>
       )}
 
-      <div className="mb-0 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen">
+      <div className="mb-0 bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 pb-3 pt-3 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen sm:static sm:left-auto sm:right-auto sm:ml-0 sm:mr-0 sm:w-full">
         <Stories users={communityUsers} />
       </div>
 
@@ -295,7 +233,7 @@ export default function ComunidadePage() {
           </div>
         ) : (
           displayedPosts.map((post) => (
-            <div key={post.id} className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 last:border-b-0">
+            <div key={post.id} className="bg-white dark:bg-black border-b border-gray-200 dark:border-neutral-800 last:border-b-0 overflow-hidden">
               <div className="p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-3">
                   <Link
@@ -324,27 +262,49 @@ export default function ComunidadePage() {
                 </div>
 
                 {post.content && (
-                  <div className="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-line break-words mb-3 leading-relaxed">
+                  <div
+                    className="text-sm text-gray-900 dark:text-slate-100 whitespace-pre-line break-words mb-3 leading-relaxed cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 transition-colors overflow-hidden [word-break:break-word]"
+                    onClick={() => navigateToPost(post.id)}
+                  >
                     {post.content}
                   </div>
                 )}
 
                 {/* Carrossel de Imagens - múltiplas imagens */}
-                {post.images && post.images.length > 0 && (
+                {post.images && post.images.length > 1 && (
                   <div
-                    className="mb-3 -mx-3 sm:-mx-4 relative"
+                    className="mb-3 -mx-3 sm:-mx-4 relative overflow-hidden w-[calc(100%+24px)] sm:w-[calc(100%+32px)]"
                     onDoubleClick={() => handleDoubleTap(post.id)}
                   >
-                    {post.images.length > 1 ? (
-                      <ImageCarousel images={post.images} />
-                    ) : (
-                      <img
-                        src={post.images[0]}
-                        alt="Post image"
-                        className="w-full aspect-square object-cover bg-gray-100 dark:bg-slate-800"
-                        loading="lazy"
-                      />
+                    <ImageCarousel images={post.images} />
+                    {/* Animação de coração ao dar duplo clique */}
+                    {showHeartAnimation === post.id && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <svg
+                          className="w-24 h-24 text-white drop-shadow-2xl animate-ping"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                      </div>
                     )}
+                  </div>
+                )}
+
+                {/* Imagem única - clicável */}
+                {post.images && post.images.length === 1 && (
+                  <div
+                    className="mb-3 -mx-3 sm:-mx-4 relative cursor-pointer overflow-hidden w-[calc(100%+24px)] sm:w-[calc(100%+32px)]"
+                    onClick={() => navigateToPost(post.id)}
+                    onDoubleClick={() => handleDoubleTap(post.id)}
+                  >
+                    <img
+                      src={post.images[0]}
+                      alt="Post image"
+                      className="w-full h-[70vh] sm:h-auto sm:aspect-square object-cover bg-gray-100 dark:bg-slate-800"
+                      loading="lazy"
+                    />
                     {/* Animação de coração ao dar duplo clique */}
                     {showHeartAnimation === post.id && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -362,11 +322,15 @@ export default function ComunidadePage() {
 
                 {/* Vídeo */}
                 {post.video_url && (
-                  <div className="mb-3 -mx-3 sm:-mx-4">
+                  <div
+                    className="mb-3 -mx-3 sm:-mx-4 cursor-pointer overflow-hidden w-[calc(100%+24px)] sm:w-[calc(100%+32px)]"
+                    onClick={() => navigateToPost(post.id)}
+                  >
                     <video
                       src={post.video_url}
                       controls
-                      className="w-full max-h-[500px] bg-black"
+                      className="w-full h-[70vh] sm:h-auto sm:max-h-[500px] object-contain bg-black"
+                      onClick={(e) => e.stopPropagation()}
                     />
                   </div>
                 )}
@@ -389,7 +353,7 @@ export default function ComunidadePage() {
                 {/* Ações - estilo Instagram */}
                 <div className="flex items-center space-x-4 sm:space-x-6 pt-3">
                   <button
-                    onClick={() => handleLike(post.id)}
+                    onClick={() => toggleLike(post.id)}
                     className={`flex items-center space-x-1.5 transition-all active:scale-95 ${post.liked ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-slate-100'
                       }`}
                   >
@@ -432,7 +396,7 @@ export default function ComunidadePage() {
                     <span className="text-sm sm:text-base font-semibold">{post.comments_count}</span>
                   </button>
                   <button
-                    onClick={() => handleSavePost(post.id)}
+                    onClick={() => toggleSave(post.id)}
                     className={`flex items-center space-x-1.5 active:scale-95 transition-all ml-auto ${post.saved ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-slate-100'
                       }`}
                   >

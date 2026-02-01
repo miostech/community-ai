@@ -1,295 +1,213 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
-type PostType = 'idea' | 'script' | 'question' | 'result';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
-export interface Comment {
+export interface PostAuthor {
   id: string;
-  postId: string;
-  parentId?: string; // ID do comentário pai (se for uma resposta)
-  author: string;
-  avatar: string | null;
-  content: string;
-  timeAgo: string;
-  likes: number;
-  liked?: boolean;
-  replies?: number; // Número de respostas
+  name: string;
+  avatar_url?: string;
 }
 
 export interface Post {
   id: string;
-  type: PostType;
-  author: string;
-  avatar: string | null;
+  author: PostAuthor;
   content: string;
-  imageUrl?: string | null; // Para compatibilidade (imagem única)
-  imageUrls?: string[]; // Para carrossel (múltiplas imagens)
-  videoUrl?: string;
-  likes: number;
-  comments: number;
-  timeAgo: string;
+  images: string[];
+  video_url?: string;
+  link_instagram_post?: string;
+  category: PostCategory;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
   liked?: boolean;
   saved?: boolean;
 }
 
 interface PostsContextType {
+  // Estado
   posts: Post[];
-  comments: Comment[];
-  addPost: (post: Post) => void;
+  isLoading: boolean;
+  isLoadingMore: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  hasMore: boolean;
+  page: number;
+  isInitialized: boolean;
+
+  // Ações
+  fetchPosts: (pageNum?: number, refresh?: boolean) => Promise<void>;
+  loadMorePosts: () => Promise<void>;
+  refreshPosts: () => Promise<void>;
+  addPostToFeed: (post: Post) => void;
   updatePost: (postId: string, updates: Partial<Post>) => void;
-  deletePost: (postId: string) => void;
-  toggleSavePost: (postId: string) => void;
-  addComment: (postId: string, content: string, author: string, avatar: string | null, parentId?: string) => void;
-  getPostComments: (postId: string) => Comment[];
-  getCommentReplies: (commentId: string) => Comment[];
-  updateComment: (commentId: string, updates: Partial<Comment>) => void;
+  removePost: (postId: string) => void;
+  toggleLike: (postId: string) => void;
+  toggleSave: (postId: string) => void;
 }
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
 
+const POSTS_PER_PAGE = 10;
+
 export function PostsProvider({ children }: { children: React.ReactNode }) {
-  const [posts, setPosts] = useState<Post[]>([
-    {
-      id: '1',
-      type: 'idea',
-      author: 'Pedro Silva',
-      avatar: null,
-      content: 'Acabei de descobrir uma técnica incrível para aumentar o engajamento nos stories! Quem quer saber mais? 🚀',
-      likes: 24,
-      comments: 8,
-      timeAgo: '2h',
-      liked: false,
-    },
-    {
-      id: '2',
-      type: 'result',
-      author: 'Maria Santos',
-      avatar: null,
-      content: 'Meu primeiro post viralizou! 1M de views em 24h usando as estratégias da comunidade! 🎉🔥',
-      imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
-      likes: 156,
-      comments: 32,
-      timeAgo: '5h',
-      liked: true,
-    },
-    {
-      id: '3',
-      type: 'question',
-      author: 'João Costa',
-      avatar: null,
-      content: 'Qual a melhor hora para postar no Instagram para o nicho de tecnologia? Estou testando diferentes horários mas queria saber a experiência de vocês 🤔',
-      likes: 12,
-      comments: 15,
-      timeAgo: '1d',
-      liked: false,
-    },
-    {
-      id: '4',
-      type: 'script',
-      author: 'Ana Lima',
-      avatar: null,
-      content: 'Roteiro que me deu 500k views:\n\nGancho: "Você está perdendo dinheiro sem saber..."\nDesenvolvimento: Explico o problema\nSolução: Apresento a ferramenta\nCTA: "Salva esse post!"\n\nSimples e efetivo! 💡',
-      likes: 89,
-      comments: 21,
-      timeAgo: '2d',
-      liked: false,
-    },
-    {
-      id: '5',
-      type: 'result',
-      author: 'Maria Silva',
-      avatar: null,
-      content: 'Alcancei 50k seguidores usando as dicas da comunidade! O conteúdo de valor faz toda diferença. 🙌',
-      likes: 120,
-      comments: 18,
-      timeAgo: '3d',
-      liked: false,
-    },
-    {
-      id: '6',
-      type: 'idea',
-      author: 'Ana Costa',
-      avatar: null,
-      content: 'Ideia de série para TikTok: "Um dia na vida de quem cria conteúdo". Quem mais faria?',
-      imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop',
-      likes: 67,
-      comments: 12,
-      timeAgo: '1d',
-      liked: false,
-    },
-  ]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 'c1',
-      postId: '1',
-      author: 'Ana Costa',
-      avatar: null,
-      content: 'Quero saber sim! Compartilha com a gente! 🙏',
-      timeAgo: '1h',
-      likes: 5,
-      liked: false,
-      replies: 2,
-    },
-    {
-      id: 'c1-r1',
-      postId: '1',
-      parentId: 'c1',
-      author: 'Pedro Silva',
-      avatar: null,
-      content: 'Vou fazer um post explicando!',
-      timeAgo: '50min',
-      likes: 2,
-      liked: false,
-    },
-    {
-      id: 'c1-r2',
-      postId: '1',
-      parentId: 'c1',
-      author: 'Maria Santos',
-      avatar: null,
-      content: 'Ansiosa para ver! 👀',
-      timeAgo: '30min',
-      likes: 1,
-      liked: false,
-    },
-    {
-      id: 'c2',
-      postId: '1',
-      author: 'Lucas Alves',
-      avatar: null,
-      content: 'Também tô curioso! Tá bombando suas visualizações?',
-      timeAgo: '45min',
-      likes: 3,
-      liked: false,
-      replies: 0,
-    },
-    {
-      id: 'c3',
-      postId: '2',
-      author: 'João Santos',
-      avatar: null,
-      content: 'Parabéns! Qual foi o segredo?',
-      timeAgo: '4h',
-      likes: 12,
-      liked: true,
-      replies: 1,
-    },
-    {
-      id: 'c3-r1',
-      postId: '2',
-      parentId: 'c3',
-      author: 'Maria Santos',
-      avatar: null,
-      content: 'Usei as estratégias de storytelling que aprendi aqui!',
-      timeAgo: '3h',
-      likes: 5,
-      liked: false,
-    },
-    {
-      id: 'c4',
-      postId: '2',
-      author: 'Carla Mendes',
-      avatar: null,
-      content: 'Sensacional! 🚀🔥',
-      timeAgo: '3h',
-      likes: 8,
-      liked: false,
-      replies: 0,
-    },
-  ]);
+  // Buscar posts da API
+  const fetchPosts = useCallback(async (pageNum: number = 1, refresh: boolean = false) => {
+    try {
+      if (refresh) {
+        setIsRefreshing(true);
+      } else if (pageNum === 1) {
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
 
-  const addPost = (post: Post) => {
-    setPosts((prev) => [post, ...prev]);
-  };
+      const response = await fetch(`/api/posts?page=${pageNum}&limit=${POSTS_PER_PAGE}`);
 
-  const updatePost = (postId: string, updates: Partial<Post>) => {
-    setPosts((prev) =>
-      prev.map((post) => (post.id === postId ? { ...post, ...updates } : post))
+      if (!response.ok) {
+        throw new Error('Erro ao carregar posts');
+      }
+
+      const data = await response.json();
+
+      if (refresh || pageNum === 1) {
+        setPosts(data.posts);
+      } else {
+        setPosts(prev => [...prev, ...data.posts]);
+      }
+
+      setHasMore(data.pagination.hasMore);
+      setPage(pageNum);
+      setError(null);
+      setIsInitialized(true);
+    } catch (err) {
+      console.error('Erro ao buscar posts:', err);
+      setError('Não foi possível carregar os posts');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setIsLoadingMore(false);
+    }
+  }, []);
+
+  // Carregar mais posts (próxima página)
+  const loadMorePosts = useCallback(async () => {
+    if (!isLoadingMore && hasMore) {
+      await fetchPosts(page + 1);
+    }
+  }, [fetchPosts, isLoadingMore, hasMore, page]);
+
+  // Atualizar posts (pull to refresh)
+  const refreshPosts = useCallback(async () => {
+    await fetchPosts(1, true);
+  }, [fetchPosts]);
+
+  // Adicionar novo post ao topo do feed
+  const addPostToFeed = useCallback((post: Post) => {
+    setPosts(prev => [post, ...prev]);
+  }, []);
+
+  // Atualizar um post específico
+  const updatePost = useCallback((postId: string, updates: Partial<Post>) => {
+    setPosts(prev =>
+      prev.map(post => (post.id === postId ? { ...post, ...updates } : post))
     );
-  };
+  }, []);
 
-  const deletePost = (postId: string) => {
-    setPosts((prev) => prev.filter((post) => post.id !== postId));
-  };
+  // Remover post do feed
+  const removePost = useCallback((postId: string) => {
+    setPosts(prev => prev.filter(post => post.id !== postId));
+  }, []);
 
-  const toggleSavePost = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
+  // Toggle like (otimista)
+  const toggleLike = useCallback((postId: string) => {
+    setPosts(prev =>
+      prev.map(post => {
+        if (post.id === postId) {
+          const newLiked = !post.liked;
+          return {
+            ...post,
+            liked: newLiked,
+            likes_count: newLiked ? post.likes_count + 1 : post.likes_count - 1,
+          };
+        }
+        return post;
+      })
+    );
+
+    // Chamar API em background
+    fetch(`/api/posts/${postId}/like`, {
+      method: 'POST',
+    }).catch(err => {
+      console.error('Erro ao dar like:', err);
+      // Reverter em caso de erro
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id === postId) {
+            const newLiked = !post.liked;
+            return {
+              ...post,
+              liked: newLiked,
+              likes_count: newLiked ? post.likes_count + 1 : post.likes_count - 1,
+            };
+          }
+          return post;
+        })
+      );
+    });
+  }, []);
+
+  // Toggle save (otimista)
+  const toggleSave = useCallback((postId: string) => {
+    setPosts(prev =>
+      prev.map(post =>
         post.id === postId ? { ...post, saved: !post.saved } : post
       )
     );
-  };
 
-  const addComment = (postId: string, content: string, author: string, avatar: string | null, parentId?: string) => {
-    const newComment: Comment = {
-      id: `c${Date.now()}`,
-      postId,
-      parentId,
-      author,
-      avatar,
-      content,
-      timeAgo: 'agora',
-      likes: 0,
-      liked: false,
-      replies: 0,
-    };
-    
-    setComments((prev) => {
-      const updated = [newComment, ...prev];
-      
-      // Se for uma resposta, atualizar o contador de replies do comentário pai
-      if (parentId) {
-        const parentComment = updated.find(c => c.id === parentId);
-        if (parentComment) {
-          parentComment.replies = (parentComment.replies || 0) + 1;
-        }
-      }
-      
-      return updated;
-    });
-    
-    // Atualizar contador de comentários do post (só se não for resposta)
-    if (!parentId) {
-      setPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId ? { ...post, comments: post.comments + 1 } : post
+    // Chamar API em background
+    fetch(`/api/posts/${postId}/save`, {
+      method: 'POST',
+    }).catch(err => {
+      console.error('Erro ao salvar:', err);
+      // Reverter em caso de erro
+      setPosts(prev =>
+        prev.map(post =>
+          post.id === postId ? { ...post, saved: !post.saved } : post
         )
       );
-    }
-  };
-
-  const getPostComments = (postId: string): Comment[] => {
-    // Retorna apenas comentários principais (sem parentId)
-    return comments.filter((comment) => comment.postId === postId && !comment.parentId);
-  };
-
-  const getCommentReplies = (commentId: string): Comment[] => {
-    return comments.filter((comment) => comment.parentId === commentId);
-  };
-
-  const updateComment = (commentId: string, updates: Partial<Comment>) => {
-    setComments((prev) =>
-      prev.map((comment) =>
-        comment.id === commentId ? { ...comment, ...updates } : comment
-      )
-    );
-  };
+    });
+  }, []);
 
   return (
-    <PostsContext.Provider 
-      value={{ 
-        posts, 
-        comments,
-        addPost, 
-        updatePost, 
-        deletePost,
-        toggleSavePost,
-        addComment,
-        getPostComments,
-        getCommentReplies,
-        updateComment,
+    <PostsContext.Provider
+      value={{
+        posts,
+        isLoading,
+        isLoadingMore,
+        isRefreshing,
+        error,
+        hasMore,
+        page,
+        isInitialized,
+        fetchPosts,
+        loadMorePosts,
+        refreshPosts,
+        addPostToFeed,
+        updatePost,
+        removePost,
+        toggleLike,
+        toggleSave,
       }}
     >
       {children}
