@@ -412,13 +412,12 @@ export default function TrendsPage() {
                       variant="subtitle1"
                       fontWeight={700}
                       sx={{
-                        display: 'block',
+                        display: '-webkit-box',
                         mb: 0.25,
                         textDecoration: 'none',
                         color: 'text.primary',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         '&:hover': {

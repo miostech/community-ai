@@ -11,7 +11,7 @@ export interface CommunityUser {
   instagramProfile?: string;
   tiktokProfile?: string;
   youtubeProfile?: string;
-  primarySocialLink?: 'instagram' | 'tiktok' | null;
+  primarySocialLink?: 'instagram' | 'tiktok' | string | null;
 }
 
 export const communityUsers: CommunityUser[] = [

@@ -172,10 +172,10 @@ export function NotificationsButton() {
                           <span className="font-semibold">{n.actor.name}</span>{' '}
                           {getNotificationLabel(n.type)}
                         </p>
-                        {n.comment_preview && (
+                        {n.content_preview && (
                           <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                            &quot;{n.comment_preview}
-                            {n.comment_preview.length >= 100 ? '…' : ''}&quot;
+                            &quot;{n.content_preview}
+                            {n.content_preview.length >= 100 ? '…' : ''}&quot;
                           </p>
                         )}
                         <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">

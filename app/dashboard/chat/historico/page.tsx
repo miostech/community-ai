@@ -280,7 +280,6 @@ export default function HistoricoPage() {
                   sx={{
                     color: 'text.disabled',
                     '&:hover': {
-                      bgcolor: 'error.main',
                       bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(244, 67, 54, 0.08)',
                       color: 'error.main',
                     },

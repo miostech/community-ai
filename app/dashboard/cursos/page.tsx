@@ -133,7 +133,7 @@ export default function CursosPage() {
         </Box>
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           {[1, 2, 3].map((i) => (
-            <Grid item xs={12} sm={6} lg={4} key={i}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={i}>
               <Card sx={{ borderRadius: 3 }}>
                 <Skeleton variant="rectangular" height={192} />
                 <CardContent>
@@ -179,7 +179,7 @@ export default function CursosPage() {
       {/* Courses Grid */}
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         {courses.map((course) => (
-          <Grid item xs={12} sm={6} lg={4} key={course.id}>
+          <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={course.id}>
             <Card
               sx={{
                 height: '100%',

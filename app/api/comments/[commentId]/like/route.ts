@@ -74,10 +74,10 @@ export async function POST(
             // Remover notificação (se não for o próprio autor)
             if (comment.author_id.toString() !== accountId.toString()) {
                 await removeNotification({
-                    recipient_id: comment.author_id,
-                    actor_id: accountId,
+                    recipientId: comment.author_id,
+                    actorId: accountId,
                     type: 'like',
-                    comment_id: commentObjectId,
+                    commentId: commentObjectId,
                 });
             }
 
@@ -106,12 +106,12 @@ export async function POST(
                 const post = await mongoose.model('Post').findById(comment.post_id).lean();
 
                 await createNotification({
-                    recipient_id: comment.author_id,
-                    actor_id: accountId,
+                    recipientId: comment.author_id,
+                    actorId: accountId,
                     type: 'like',
-                    post_id: comment.post_id,
-                    comment_id: commentObjectId,
-                    content_preview: comment.content?.substring(0, 50) || '',
+                    postId: comment.post_id,
+                    commentId: commentObjectId,
+                    contentPreview: comment.content?.substring(0, 50) || '',
                 });
             }
 
