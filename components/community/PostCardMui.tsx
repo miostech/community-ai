@@ -305,7 +305,7 @@ export function PostCardMui({
             {/* Vídeo */}
             {post.video_url && (
                 <Box
-                    sx={{ mx: -2, cursor: 'pointer' }}
+                    sx={{ mx: 0, cursor: 'pointer' }}
                     onClick={onNavigate}
                 >
                     <Box
@@ -318,8 +318,8 @@ export function PostCardMui({
                         onClick={(e) => e.stopPropagation()}
                         sx={{
                             width: '100%',
-                            aspectRatio: '4/5',
-                            maxHeight: 600,
+                            aspectRatio: isVerticalVideo ? '9/16' : '16/9',
+                            maxHeight: "80vh",
                             objectFit: isVerticalVideo ? 'cover' : 'contain',
                             bgcolor: 'black',
                         }}
