@@ -61,7 +61,7 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim()) {
-      window.location.href = '/login';
+      window.location.href = '/precos';
     }
   };
 
@@ -69,7 +69,7 @@ export default function Home() {
     setInputValue(prompt);
     // Pequeno delay para atualizar o input antes de redirecionar
     setTimeout(() => {
-      window.location.href = '/login';
+      window.location.href = '/precos';
     }, 100);
   };
 
