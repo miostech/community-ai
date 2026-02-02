@@ -48,7 +48,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signIn('test', {
-        auth_user_id: '117397423200835053639',
+        auth_user_id: '107441171827965184215',
         callbackUrl: '/dashboard/comunidade',
         redirect: true,
       });
@@ -130,7 +130,7 @@ export default function LoginPage() {
             <span>Continuar com Apple</span>
           </Button>
 
-          {/* <Button
+          <Button
             variant="secondary"
             className="w-full flex items-center justify-center space-x-2 border border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10"
             onClick={handleTestLogin}
@@ -138,7 +138,7 @@ export default function LoginPage() {
             type="button"
           >
             <span>Entrar (teste)</span>
-          </Button> */}
+          </Button>
 
           <p className="text-center text-xs text-gray-500 dark:text-slate-500 mt-4">
             Ao continuar, você concorda com nossos{' '}

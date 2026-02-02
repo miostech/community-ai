@@ -303,8 +303,10 @@ export function PostCardMui({
                 >
                     <Box
                         component="video"
-                        src={post.video_url}
+                        src={`${post.video_url}#t=0.1`}
                         controls
+                        preload="metadata"
+                        playsInline
                         onClick={(e) => e.stopPropagation()}
                         sx={{
                             width: '100%',

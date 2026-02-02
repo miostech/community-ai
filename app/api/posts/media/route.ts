@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { auth } from '@/lib/auth';
 
+// Configurações do App Router para Vercel
+export const maxDuration = 60; // Tempo máximo em segundos
+export const dynamic = 'force-dynamic';
+
 // Configuração do Azure Blob Storage (via variáveis de ambiente)
-const AZURE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING || '';
-const CONTAINER_IMAGES = process.env.AZURE_STORAGE_CONTAINER_POSTS_IMAGES || 'ai-community-posts-images';
-const CONTAINER_VIDEOS = process.env.AZURE_STORAGE_CONTAINER_POSTS_VIDEOS || 'ai-community-posts-videos';
+const AZURE_CONNECTION_STRING = (process.env.AZURE_STORAGE_CONNECTION_STRING || '').trim();
+const CONTAINER_IMAGES = (process.env.AZURE_STORAGE_CONTAINER_POSTS_IMAGES || 'ai-community-posts-images').trim();
+const CONTAINER_VIDEOS = (process.env.AZURE_STORAGE_CONTAINER_POSTS_VIDEOS || 'ai-community-posts-videos').trim();
 
 // Limites
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB por imagem
