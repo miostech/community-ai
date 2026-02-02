@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
+import AccountPayment from '@/models/AccountPayment';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -98,7 +99,29 @@ export async function GET() {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        const acc = account as { _id: unknown; used_instagram_avatar?: boolean; [k: string]: unknown };
+        // Busca o último pagamento aprovado do usuário
+        const email = (account as any).email || session.user.email;
+        const lastPayment = await AccountPayment.findOne({
+            email: email?.toLowerCase().trim(),
+            webhook_event_type: { $in: ['order_approved', 'paid', 'subscription_renewed'] }
+        }).sort({ createdAt: -1 }).lean();
+
+        // Determina o status da assinatura
+        let subscriptionStatus = 'inactive';
+        let subscriptionExpiresAt: Date | null = null;
+
+        if (lastPayment) {
+            const payment = lastPayment as any;
+            // Verifica se há próximo pagamento na assinatura
+            if (payment.subscription?.next_payment) {
+                subscriptionExpiresAt = new Date(payment.subscription.next_payment);
+                subscriptionStatus = subscriptionExpiresAt > new Date() ? 'active' : 'expired';
+            }
+        }
+
+        const acc = account as { _id: unknown; used_instagram_avatar?: boolean;[k: string]: unknown };
+        const payment = lastPayment as any;
+
         return NextResponse.json({
             success: true,
             account: {
@@ -117,6 +140,13 @@ export async function GET() {
                 background_url: acc.background_url,
                 plan: acc.plan,
                 code_invite: acc.code_invite,
+            },
+            subscription: {
+                status: subscriptionStatus,
+                expires_at: subscriptionExpiresAt,
+                product_name: payment?.product_name || null,
+                last_payment_at: payment?.createdAt || null,
+                payment_method: payment?.payment_method || null,
             },
         });
     } catch (error) {

@@ -229,7 +229,7 @@ export function NotificationsButtonMui() {
                             </ListItemAvatar>
                             <ListItemText
                                 primary={
-                                    <Typography variant="body2" fontWeight={n.is_read ? 400 : 600}>
+                                    <Typography variant="body2" fontWeight={n.is_read ? 400 : 600} style={{ textWrap: "wrap" }}>
                                         <Typography component="span" fontWeight={600}>
                                             {n.actor.name}
                                         </Typography>{' '}

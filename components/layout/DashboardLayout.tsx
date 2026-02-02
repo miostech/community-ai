@@ -18,8 +18,10 @@ import { Phone as PhoneIcon } from '@mui/icons-material';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { hasPhone, isLoading } = useAccount();
-  const showPhoneModal = !isLoading && !hasPhone && pathname !== '/dashboard/perfil';
+  const { hasPhone, isLoading, isSubscriptionActive } = useAccount();
+
+  // Modal de telefone só aparece se tiver assinatura ativa e não tiver telefone
+  const showPhoneModal = !isLoading && isSubscriptionActive && !hasPhone && pathname !== '/dashboard/perfil';
 
   const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');
   const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
