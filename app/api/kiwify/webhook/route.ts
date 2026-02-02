@@ -200,14 +200,17 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const payload: KiwifyWebhookPayload = JSON.parse(rawBody);
+        const rawPayload = JSON.parse(rawBody);
+
+        // Kiwify envia o payload dentro de um objeto "order"
+        const payload: KiwifyWebhookPayload = rawPayload.order || rawPayload;
+
         // Kiwify usa webhook_event_type para o tipo de evento
         const eventType = payload.webhook_event_type as KiwifyEventType;
 
         // Normaliza os campos (Kiwify envia com letras maiúsculas)
         const customer = payload.Customer || payload.customer;
         const product = payload.Product || payload.product;
-        const subscription = payload.Subscription || payload.subscription;
 
         const email = customer?.email?.toLowerCase().trim();
 
@@ -216,16 +219,10 @@ export async function POST(request: NextRequest) {
             orderId: payload.order_id,
             email,
             product: product?.product_name,
-            rawPayload: JSON.stringify(payload).substring(0, 500), // Log parcial para debug
+            customerName: customer?.full_name,
         });
 
-        console.log('Full payload:', JSON.stringify(payload));
-
-        if (!email) {
-            console.error('❌ Email não encontrado no webhook');
-            return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-        }
-
+        // Mesmo sem email, salvamos o registro (pode ser útil para debug)
         await connectMongo();
 
         // Salva o registro de todos os eventos relevantes
@@ -236,13 +233,13 @@ export async function POST(request: NextRequest) {
         ].includes(eventType);
 
         if (shouldSaveRecord) {
-            await savePaymentRecord(payload, email, customer, product);
-            console.log(`✅ Registro salvo para evento: ${eventType}`);
+            await savePaymentRecord(payload, email || 'unknown@webhook.local', customer, product);
+            console.log(`✅ Registro salvo para evento: ${eventType}, email: ${email || 'N/A'}`);
         } else {
             console.log(`ℹ️ Evento não salvo: ${eventType}`);
         }
 
-        return NextResponse.json({ success: true, event: eventType });
+        return NextResponse.json({ success: true, event: eventType, email });
     } catch (error) {
         console.error('❌ Erro no webhook Kiwify:', error);
         return NextResponse.json(

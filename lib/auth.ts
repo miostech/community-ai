@@ -135,14 +135,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     useSecureCookies: process.env.NODE_ENV === 'production',
     callbacks: {
         async signIn({ user, account, profile }) {
-            if (account?.provider === 'credentials' || account?.provider === 'kiwify') return true;
-            if (!account?.providerAccountId) return false;
+            console.log('🔐 SignIn callback iniciado:', {
+                provider: account?.provider,
+                providerAccountId: account?.providerAccountId,
+                userId: user?.id,
+                userEmail: user?.email,
+                userName: user?.name,
+                profileEmail: (profile as Record<string, string>)?.email,
+            });
+
+            // Para providers Credentials (kiwify/test), o account já foi tratado no authorize()
+            if (account?.provider === 'credentials' || account?.provider === 'kiwify' || account?.provider === 'test') {
+                console.log('✅ Provider credentials/kiwify/test - retornando true');
+                return true;
+            }
+
+            // OAuth (Google/Apple) - precisa do providerAccountId
+            if (!account?.providerAccountId) {
+                console.log('❌ Sem providerAccountId - retornando false');
+                return false;
+            }
 
             const authUserId = account.providerAccountId;
             const providerOAuth = account.provider;
             const { first, last } = splitName(user.name);
 
-            console.log('🔐 SignIn callback - salvando no MongoDB:', { authUserId, providerOAuth, first, last });
+            console.log('🔐 SignIn OAuth - salvando no MongoDB:', { authUserId, providerOAuth, first, last, email: user.email });
 
             try {
                 await connectMongo();
