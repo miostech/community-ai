@@ -72,11 +72,13 @@ export async function POST(
             newLikesCount = Math.max(0, updatedComment?.likes_count || 0);
 
             // Remover notificação (se não for o próprio autor)
+            // postId é necessário para encontrar a notificação correta (foi incluído na criação)
             if (comment.author_id.toString() !== accountId.toString()) {
                 await removeNotification({
                     recipientId: comment.author_id,
                     actorId: accountId,
                     type: 'like',
+                    postId: comment.post_id,
                     commentId: commentObjectId,
                 });
             }
@@ -102,9 +104,6 @@ export async function POST(
 
             // Criar notificação (se não for o próprio autor)
             if (comment.author_id.toString() !== accountId.toString()) {
-                // Buscar post para ter o contexto
-                const post = await mongoose.model('Post').findById(comment.post_id).lean();
-
                 await createNotification({
                     recipientId: comment.author_id,
                     actorId: accountId,

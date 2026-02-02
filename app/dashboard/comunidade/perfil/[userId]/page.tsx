@@ -18,6 +18,7 @@ import { usePosts, type Post } from '@/contexts/PostsContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
+import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 
 // MUI imports
 import {
@@ -557,6 +558,7 @@ export default function PerfilComunidadePage() {
           >
             Perfil
           </Typography>
+          <NotificationsButtonMui />
         </Toolbar>
       </AppBar>
 
