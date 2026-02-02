@@ -233,7 +233,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return session;
         },
-        async redirect({ url, baseUrl, token }) {
+        async redirect({ url, baseUrl }) {
             console.log('🔄 Redirect callback:', { url, baseUrl });
 
             // Se a URL começa com /, é uma URL relativa - redireciona para ela
