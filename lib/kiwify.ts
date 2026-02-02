@@ -9,7 +9,7 @@ const KIWIFY_CLIENT_ID = process.env.KIWIFY_CLIENT_ID?.trim();
 const KIWIFY_CLIENT_SECRET = process.env.KIWIFY_CLIENT_SECRET?.trim();
 const KIWIFY_ACCOUNT_ID = process.env.KIWIFY_ACCOUNT_ID?.trim();
 
-/** Status de venda considerados "pago" para dar acesso */
+/** Status de venda considerados "pago" para dar acesso. Só paid e approved (não processing, authorized nem cancelado/refunded). */
 const PAID_STATUSES = new Set(['paid', 'approved']);
 
 /** Token OAuth em cache (expira em 24h) */
@@ -19,9 +19,6 @@ function isConfigured(): boolean {
   return !!(KIWIFY_CLIENT_ID && KIWIFY_CLIENT_SECRET && KIWIFY_ACCOUNT_ID);
 }
 
-/**
- * Obtém um Bearer token OAuth (usa cache até expirar).
- */
 async function getAccessToken(): Promise<string | null> {
   if (!KIWIFY_CLIENT_ID || !KIWIFY_CLIENT_SECRET) return null;
 
@@ -46,7 +43,7 @@ async function getAccessToken(): Promise<string | null> {
     }
     const data = (await res.json()) as { access_token?: string; expires_in?: number };
     const token = data.access_token;
-    const expiresIn = (data.expires_in ?? 86400) * 1000; // 24h default
+    const expiresIn = (data.expires_in ?? 86400) * 1000;
     if (token) {
       cachedToken = { access_token: token, expires_at: now + expiresIn };
       return token;
@@ -57,7 +54,6 @@ async function getAccessToken(): Promise<string | null> {
   return null;
 }
 
-/** Formato de uma venda na resposta da API (campos usados). */
 interface KiwifySale {
   id?: string;
   status?: string;
@@ -71,8 +67,14 @@ export type SubscriptionsByEmailResult = {
 };
 
 /**
- * Lista vendas em um intervalo de datas (até 90 dias) e retorna as que batem com o email.
- * Retorna IDs de produtos (UUID) e o nome do cliente da primeira venda encontrada.
+ * Normaliza email para comparação (trim, lowercase, NFC).
+ */
+function normalizeEmail(email: string): string {
+  return (email ?? '').trim().toLowerCase().normalize('NFC');
+}
+
+/**
+ * Lista vendas em um intervalo e retorna productIds + nome do cliente da primeira venda encontrada.
  */
 async function listSalesByEmail(
   accessToken: string,
@@ -82,11 +84,10 @@ async function listSalesByEmail(
 ): Promise<{ productIds: string[]; customerName?: string }> {
   const productIds: string[] = [];
   let customerName: string | undefined;
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmail(email);
   let page = 1;
   const pageSize = 100;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const params = new URLSearchParams({
       start_date: startDate,
@@ -117,7 +118,7 @@ async function listSalesByEmail(
     const pagination = data.pagination ?? {};
 
     for (const sale of sales) {
-      const customerEmail = sale.customer?.email?.trim().toLowerCase();
+      const customerEmail = normalizeEmail(sale.customer?.email ?? '');
       if (customerEmail !== normalizedEmail) continue;
       if (!PAID_STATUSES.has(sale.status ?? '')) continue;
       if (!customerName && sale.customer?.name?.trim()) {
@@ -137,8 +138,9 @@ async function listSalesByEmail(
 }
 
 /**
- * Busca os IDs de produtos que o email comprou (vendidos com status pago) e o nome do cliente.
- * Usa janelas de 90 dias (máximo permitido pela API); por padrão busca último ano.
+ * Busca os IDs de produtos que o email comprou (status pago) e o nome do cliente.
+ * Janelas de 90 dias; busca da mais recente para a mais antiga para priorizar vendas recentes.
+ * Para incluir "hoje" por timezone, na última janela usa end_date = dia seguinte.
  */
 export async function getSubscriptionsByEmail(email: string): Promise<SubscriptionsByEmailResult> {
   if (!email?.trim()) return { courseIds: [] };
@@ -167,8 +169,17 @@ export async function getSubscriptionsByEmail(email: string): Promise<Subscripti
     windowEnd.setDate(windowEnd.getDate() + 90);
     const endDate = windowEnd > end ? end : windowEnd;
     const startStr = start.toISOString().slice(0, 10);
-    const endStr = endDate.toISOString().slice(0, 10);
-    const { productIds, customerName } = await listSalesByEmail(accessToken, email, startStr, endStr);
+    const isLastWindow = endDate.getTime() >= end.getTime() - 86400000;
+    const endStr = isLastWindow
+      ? new Date(end.getTime() + 86400000).toISOString().slice(0, 10)
+      : endDate.toISOString().slice(0, 10);
+
+    const { productIds, customerName } = await listSalesByEmail(
+      accessToken,
+      email,
+      startStr,
+      endStr
+    );
     for (const id of productIds) {
       if (!allProductIds.includes(id)) allProductIds.push(id);
     }
@@ -185,9 +196,6 @@ export interface KiwifySubscriptionResult {
   customerName?: string;
 }
 
-/**
- * Verifica se o email tem pelo menos uma compra paga na Kiwify e retorna o nome do cliente (se houver).
- */
 export async function hasKiwifyPurchase(email: string): Promise<KiwifySubscriptionResult> {
   const { courseIds, customerName } = await getSubscriptionsByEmail(email);
   return {
