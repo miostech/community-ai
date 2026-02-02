@@ -167,8 +167,8 @@ export default function CriarPostPageMui() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 500 * 1024 * 1024) {
-      setError('Vídeo muito grande. Máximo 500MB.');
+    if (file.size > 4 * 1024 * 1024 * 1024) {
+      setError('Vídeo muito grande. Máximo 4GB.');
       return;
     }
 
@@ -208,7 +208,7 @@ export default function CriarPostPageMui() {
       }
 
       const { sasUrl, finalUrl } = await sasResponse.json();
-      
+
       console.log('📤 Upload direto para Azure:', { sasUrl: sasUrl.substring(0, 100) + '...', finalUrl });
 
       // 2. Upload direto para Azure com progresso
@@ -627,7 +627,7 @@ export default function CriarPostPageMui() {
                         Adicionar vídeo
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        MP4, MOV, WEBM • Máx. 500MB
+                        MP4, MOV, WEBM • Máx. 4GB
                       </Typography>
                     </Box>
                   </Box>
