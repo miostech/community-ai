@@ -49,8 +49,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signIn('google', {
-        callbackUrl: '/dashboard/comunidade',
-        redirect: true,
+        redirectTo: '/dashboard/comunidade',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Google', err);
@@ -62,8 +61,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signIn('apple', {
-        callbackUrl: '/dashboard/comunidade',
-        redirect: true,
+        redirectTo: '/dashboard/comunidade',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Apple', err);

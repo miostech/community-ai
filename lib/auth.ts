@@ -148,6 +148,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 await connectMongo();
                 console.log('✅ Conectado ao MongoDB');
 
+                // Pega o email do usuário (Apple pode não enviar em logins subsequentes)
+                const userEmail = user.email || (profile as Record<string, string>)?.email || '';
+
                 const savedAccount = await Account.findOneAndUpdate(
                     { auth_user_id: authUserId },
                     {
@@ -156,6 +159,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             code_invite: undefined,
                             // Só define avatar na criação; não sobrescreve avatar do Instagram/custom no login
                             avatar_url: user.image ?? '',
+                            // Email só é definido na criação (Apple só envia na primeira vez)
+                            email: userEmail,
                         },
                         $set: {
                             first_name: first || (profile as Record<string, string>)?.given_name || '',
@@ -163,11 +168,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             provider_oauth: providerOAuth,
                             plan: 'free',
                             last_access_at: new Date(),
+                            // Atualiza email apenas se ainda não tiver e vier um novo
+                            ...(userEmail ? { email: userEmail } : {}),
                         },
                     },
                     { upsert: true, new: true }
                 );
-                console.log('✅ Account salvo:', savedAccount?._id);
+                console.log('✅ Account salvo:', savedAccount?._id, 'email:', savedAccount?.email);
             } catch (err) {
                 console.error('❌ Erro ao salvar conta no MongoDB:', err);
             }

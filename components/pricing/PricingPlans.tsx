@@ -100,8 +100,7 @@ export function PricingPlans({
         setIsLoading(true);
         try {
             await signIn('google', {
-                callbackUrl: `/api/checkout-redirect?plan=${selectedPlan?.id}`,
-                redirect: true,
+                redirectTo: `/api/checkout-redirect?plan=${selectedPlan?.id}`,
             });
         } catch (err) {
             console.error('Falha ao iniciar login Google', err);
@@ -113,8 +112,7 @@ export function PricingPlans({
         setIsLoading(true);
         try {
             await signIn('apple', {
-                callbackUrl: `/api/checkout-redirect?plan=${selectedPlan?.id}`,
-                redirect: true,
+                redirectTo: `/api/checkout-redirect?plan=${selectedPlan?.id}`,
             });
         } catch (err) {
             console.error('Falha ao iniciar login Apple', err);
