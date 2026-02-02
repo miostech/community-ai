@@ -80,6 +80,13 @@ export function PostCardMui({
     isDeleting,
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+    const [isVerticalVideo, setIsVerticalVideo] = useState(false);
+
+    const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+        const video = e.currentTarget;
+        setIsVerticalVideo(video.videoHeight > video.videoWidth);
+    };
+
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setMenuAnchor(event.currentTarget);
@@ -307,12 +314,13 @@ export function PostCardMui({
                         controls
                         preload="metadata"
                         playsInline
+                        onLoadedMetadata={handleVideoMetadata}
                         onClick={(e) => e.stopPropagation()}
                         sx={{
                             width: '100%',
                             aspectRatio: '4/5',
                             maxHeight: 600,
-                            objectFit: 'contain',
+                            objectFit: isVerticalVideo ? 'cover' : 'contain',
                             bgcolor: 'black',
                         }}
                     />
