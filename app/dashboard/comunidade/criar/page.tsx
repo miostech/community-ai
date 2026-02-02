@@ -167,8 +167,8 @@ export default function CriarPostPageMui() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 500 * 1024 * 1024) {
-      setError('Vídeo muito grande. Máximo 500MB.');
+    if (file.size > 4 * 1024 * 1024 * 1024) {
+      setError('Vídeo muito grande. Máximo 4GB.');
       return;
     }
 
@@ -190,29 +190,64 @@ export default function CriarPostPageMui() {
     });
 
     try {
-      const formData = new FormData();
-      formData.append('type', 'video');
-      formData.append('files', file);
-
-      const response = await fetch('/api/posts/media', {
+      // 1. Pedir SAS URL do backend
+      const sasResponse = await fetch('/api/posts/media/sas', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'video',
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+        }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erro no upload do vídeo');
+      if (!sasResponse.ok) {
+        const data = await sasResponse.json();
+        throw new Error(data.error || 'Erro ao obter URL de upload');
       }
 
-      const data = await response.json();
-      const uploadedUrl = data.url;
+      const { sasUrl, finalUrl } = await sasResponse.json();
 
-      if (!uploadedUrl) {
-        throw new Error('URL do vídeo não retornada');
-      }
+      console.log('📤 Upload direto para Azure:', { sasUrl: sasUrl.substring(0, 100) + '...', finalUrl });
 
+      // 2. Upload direto para Azure com progresso
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const progress = Math.round((event.loaded / event.total) * 100);
+            setUploadedVideo((prev) =>
+              prev ? { ...prev, progress } : null
+            );
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          console.log('📤 XHR Load:', { status: xhr.status, response: xhr.responseText });
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload falhou: ${xhr.status} - ${xhr.responseText}`));
+          }
+        });
+
+        xhr.addEventListener('error', (e) => {
+          console.error('📤 XHR Error:', e, xhr.status, xhr.statusText);
+          reject(new Error(`Erro de conexão: ${xhr.status} ${xhr.statusText}`));
+        });
+        xhr.addEventListener('abort', () => reject(new Error('Upload cancelado')));
+
+        xhr.open('PUT', sasUrl);
+        xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+      });
+
+      // 3. Sucesso - atualizar com URL final
       setUploadedVideo((prev) =>
-        prev ? { ...prev, url: uploadedUrl, isUploading: false, progress: 100 } : null
+        prev ? { ...prev, url: finalUrl, isUploading: false, progress: 100 } : null
       );
     } catch (err) {
       console.error('Erro no upload do vídeo:', err);
@@ -592,7 +627,7 @@ export default function CriarPostPageMui() {
                         Adicionar vídeo
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        MP4, MOV, WEBM • Máx. 500MB
+                        MP4, MOV, WEBM • Máx. 4GB
                       </Typography>
                     </Box>
                   </Box>
@@ -638,9 +673,13 @@ export default function CriarPostPageMui() {
                       >
                         <Box sx={{ width: 40, height: 40, border: '3px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', mb: 1 }} />
                         <Typography color="white" variant="body2">
-                          Enviando vídeo...
+                          Enviando vídeo... {uploadedVideo.progress}%
                         </Typography>
-                        <LinearProgress sx={{ width: '50%', mt: 1 }} />
+                        <LinearProgress
+                          variant="determinate"
+                          value={uploadedVideo.progress}
+                          sx={{ width: '50%', mt: 1 }}
+                        />
                       </Box>
                     )}
 

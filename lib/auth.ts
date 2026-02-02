@@ -8,8 +8,6 @@ import { connectMongo } from '@/lib/mongoose';
 import { validateKiwifyCredentials } from '@/lib/kiwify-auth';
 import Account from '@/models/Account';
 
-const TEST_AUTH_USER_ID = '117397423200835053639';
-
 function splitName(name?: string | null): { first: string; last: string } {
     if (!name) return { first: '', last: '' };
     const parts = name.trim().split(/\s+/);
@@ -93,12 +91,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
             async authorize(credentials) {
                 const authUserId = credentials?.auth_user_id as string | undefined;
-                if (authUserId !== TEST_AUTH_USER_ID) return null;
+                console.log('🧪 Tentativa de login de teste:', { authUserId });
+
+                if (!authUserId) {
+                    console.log('❌ auth_user_id não fornecido');
+                    return null;
+                }
 
                 try {
                     await connectMongo();
                     const account = await Account.findOne({ auth_user_id: authUserId });
-                    if (!account) return null;
+                    console.log('🔍 Conta encontrada:', account ? account._id : 'NÃO ENCONTRADA');
+
+                    if (!account) {
+                        console.log('❌ Usuário não existe no banco - login de teste só funciona para usuários existentes');
+                        return null;
+                    }
 
                     await Account.updateOne(
                         { auth_user_id: authUserId },
@@ -171,6 +179,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.auth_user_id = user.auth_user_id;
                 token.sub = user.id;
             } else if (account) {
+                // OAuth (Google/Apple) - usa o providerAccountId
                 token.auth_user_id = account.providerAccountId;
             }
             if (user?.id) {
