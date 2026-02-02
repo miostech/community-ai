@@ -1,11 +1,32 @@
 'use client';
 
-import React from 'react';
-import { Box, Typography, Paper, Container } from '@mui/material';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import React, { useEffect } from 'react';
+import { Container, CircularProgress, Box } from '@mui/material';
+import { useRouter } from 'next/navigation';
 import { PricingPlans } from '@/components/pricing/PricingPlans';
+import { useAccount } from '@/contexts/AccountContext';
 
 export default function AssinaturaPage() {
+    const router = useRouter();
+    const { subscription, isLoading, isSubscriptionActive } = useAccount();
+
+    // Se já tem assinatura ativa, redireciona para o dashboard
+    useEffect(() => {
+        if (!isLoading && isSubscriptionActive) {
+            console.log('✅ Assinatura ativa - redirecionando para dashboard');
+            router.push('/dashboard/comunidade');
+        }
+    }, [isLoading, isSubscriptionActive, router]);
+
+    // Mostra loading enquanto carrega ou se vai redirecionar
+    if (isLoading || isSubscriptionActive) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
     return (
         <Container maxWidth="lg" sx={{ pb: 10 }}>
             <PricingPlans

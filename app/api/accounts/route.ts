@@ -107,15 +107,27 @@ export async function GET() {
         }).sort({ createdAt: -1 }).lean();
 
         // Determina o status da assinatura
-        let subscriptionStatus = 'inactive';
+        let subscriptionStatus: 'active' | 'expired' | 'inactive' = 'inactive';
         let subscriptionExpiresAt: Date | null = null;
 
         if (lastPayment) {
             const payment = lastPayment as any;
-            // Verifica se há próximo pagamento na assinatura
+
+            // Se tem dados de assinatura com próximo pagamento
             if (payment.subscription?.next_payment) {
                 subscriptionExpiresAt = new Date(payment.subscription.next_payment);
                 subscriptionStatus = subscriptionExpiresAt > new Date() ? 'active' : 'expired';
+            }
+            // Se é uma compra única aprovada (sem subscription), considera ativo
+            // Produtos do tipo "payment" ou "membership" são compras únicas
+            else if (
+                payment.order_status === 'paid' &&
+                ['order_approved', 'paid'].includes(payment.webhook_event_type)
+            ) {
+                // Compra única - ativo enquanto não houver reembolso
+                subscriptionStatus = 'active';
+                // Para compras únicas, não tem data de expiração
+                subscriptionExpiresAt = null;
             }
         }
 

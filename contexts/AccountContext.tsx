@@ -115,7 +115,17 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
         const isDashboardRoute = pathname?.startsWith('/dashboard');
 
-        if (isDashboardRoute && !isPublicRoute && subscription?.status === 'inactive') {
+        console.log('🔍 Verificando subscription:', {
+            status: subscription?.status,
+            isPublicRoute,
+            isDashboardRoute,
+            pathname,
+        });
+
+        // Só redireciona se status for explicitamente 'inactive' ou 'expired'
+        const isInactive = subscription?.status === 'inactive' || subscription?.status === 'expired';
+
+        if (isDashboardRoute && !isPublicRoute && isInactive) {
             console.log('🔴 Assinatura inativa - redirecionando para /dashboard/assinatura');
             router.push('/dashboard/assinatura');
         }

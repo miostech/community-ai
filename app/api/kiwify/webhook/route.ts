@@ -202,7 +202,7 @@ async function savePaymentRecord(
 export async function POST(request: NextRequest) {
     try {
         const rawBody = await request.text();
-        
+
         // Parse do payload
         const rawPayload = JSON.parse(rawBody);
 
