@@ -129,11 +129,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         $setOnInsert: {
                             auth_user_id: authUserId,
                             code_invite: undefined,
+                            // Só define avatar na criação; não sobrescreve avatar do Instagram/custom no login
+                            avatar_url: user.image ?? '',
                         },
                         $set: {
                             first_name: first || (profile as Record<string, string>)?.given_name || '',
                             last_name: last || (profile as Record<string, string>)?.family_name || '',
-                            avatar_url: user.image ?? '',
                             provider_oauth: providerOAuth,
                             plan: 'free',
                             last_access_at: new Date(),
