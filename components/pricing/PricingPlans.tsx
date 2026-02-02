@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { SocialLoginBox } from '@/components/auth/SocialLoginBox';
 
@@ -32,7 +32,7 @@ export const defaultPlans: Plan[] = [
             'Salvar projetos ilimitados',
             'Suporte prioritário',
         ],
-        kiwifyUrl: 'https://pay.kiwify.com.br/conteudo-ia',
+        kiwifyUrl: 'https://pay.kiwify.com.br/1k68u0Y',
         popular: false,
     },
     {
@@ -52,7 +52,7 @@ export const defaultPlans: Plan[] = [
             'Acesso à comunidade',
             'Suporte VIP',
         ],
-        kiwifyUrl: 'https://pay.kiwify.com.br/combo-viral',
+        kiwifyUrl: 'https://pay.kiwify.com.br/1k68u0Y',
         popular: true,
     },
 ];
@@ -70,9 +70,31 @@ export function PricingPlans({
     subtitle = 'Planos flexíveis para criar conteúdo e dominar estratégias de crescimento',
     showFAQ = true,
 }: PricingPlansProps) {
+    const { data: session, status } = useSession();
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+
+    // Busca o email do usuário logado quando a sessão estiver pronta
+    useEffect(() => {
+        const fetchUserEmail = async () => {
+            if (status === 'authenticated' && session?.user) {
+                try {
+                    const response = await fetch('/api/accounts');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.account?.email) {
+                            setUserEmail(data.account.email);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erro ao buscar email do usuário:', err);
+                }
+            }
+        };
+        fetchUserEmail();
+    }, [status, session]);
 
     // Bloqueia scroll do body quando o modal está aberto
     useEffect(() => {
@@ -86,7 +108,15 @@ export function PricingPlans({
         };
     }, [loginModalOpen]);
 
-    const openLoginModal = (plan: Plan) => {
+    const handleBuyClick = (plan: Plan) => {
+        // Se já está logado e tem email, vai direto para a Kiwify
+        if (status === 'authenticated' && userEmail) {
+            const kiwifyUrlWithEmail = `${plan.kiwifyUrl}?email=${encodeURIComponent(userEmail)}`;
+            window.location.href = kiwifyUrlWithEmail;
+            return;
+        }
+
+        // Se não está logado, abre o modal de login
         setSelectedPlan(plan);
         setLoginModalOpen(true);
     };
@@ -191,7 +221,7 @@ export function PricingPlans({
                                     ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
                                     : ''
                                     }`}
-                                onClick={() => openLoginModal(plan)}
+                                onClick={() => handleBuyClick(plan)}
                             >
                                 Comprar Agora
                             </Button>
