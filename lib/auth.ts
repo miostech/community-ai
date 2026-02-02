@@ -169,30 +169,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 // Pega o email do usuário (Apple pode não enviar em logins subsequentes)
                 const userEmail = user.email || (profile as Record<string, string>)?.email || '';
 
-                const savedAccount = await Account.findOneAndUpdate(
-                    { auth_user_id: authUserId },
-                    {
-                        $setOnInsert: {
-                            auth_user_id: authUserId,
-                            code_invite: undefined,
-                            // Só define avatar na criação; não sobrescreve avatar do Instagram/custom no login
-                            avatar_url: user.image ?? '',
-                            // Email só é definido na criação (Apple só envia na primeira vez)
-                            email: userEmail,
-                        },
-                        $set: {
-                            first_name: first || (profile as Record<string, string>)?.given_name || '',
-                            last_name: last || (profile as Record<string, string>)?.family_name || '',
-                            provider_oauth: providerOAuth,
-                            plan: 'free',
-                            last_access_at: new Date(),
-                            // Atualiza email apenas se ainda não tiver e vier um novo
-                            ...(userEmail ? { email: userEmail } : {}),
-                        },
-                    },
-                    { upsert: true, new: true }
-                );
-                console.log('✅ Account salvo:', savedAccount?._id, 'email:', savedAccount?.email);
+                // Primeiro, verifica se a conta já existe
+                const existingAccount = await Account.findOne({ auth_user_id: authUserId });
+
+                if (existingAccount) {
+                    // Conta existe - apenas atualiza campos que podem mudar
+                    const updateFields: Record<string, unknown> = {
+                        first_name: first || (profile as Record<string, string>)?.given_name || existingAccount.first_name || '',
+                        last_name: last || (profile as Record<string, string>)?.family_name || existingAccount.last_name || '',
+                        provider_oauth: providerOAuth,
+                        last_access_at: new Date(),
+                    };
+
+                    // Só atualiza email se ainda não tiver um
+                    if (!existingAccount.email && userEmail) {
+                        updateFields.email = userEmail;
+                    }
+
+                    await Account.updateOne(
+                        { auth_user_id: authUserId },
+                        { $set: updateFields }
+                    );
+                    console.log('✅ Account atualizado:', existingAccount._id, 'email:', existingAccount.email || userEmail);
+                } else {
+                    // Conta não existe - cria nova
+                    const newAccount = await Account.create({
+                        auth_user_id: authUserId,
+                        email: userEmail,
+                        first_name: first || (profile as Record<string, string>)?.given_name || '',
+                        last_name: last || (profile as Record<string, string>)?.family_name || '',
+                        provider_oauth: providerOAuth,
+                        avatar_url: user.image ?? '',
+                        plan: 'free',
+                        last_access_at: new Date(),
+                    });
+                    console.log('✅ Account criado:', newAccount._id, 'email:', newAccount.email);
+                }
             } catch (err) {
                 console.error('❌ Erro ao salvar conta no MongoDB:', err);
             }
@@ -221,7 +233,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return session;
         },
-        async redirect({ url, baseUrl }) {
+        async redirect({ url, baseUrl, token }) {
             console.log('🔄 Redirect callback:', { url, baseUrl });
 
             // Se a URL começa com /, é uma URL relativa - redireciona para ela
@@ -247,10 +259,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 // URL inválida, ignora
             }
 
-            // Se a URL é EXATAMENTE o baseUrl (sem path), redireciona para dashboard
+            // Se a URL é EXATAMENTE o baseUrl (sem path), verifica se há cookie de redirect
+            // (Apple OAuth às vezes perde o state do redirectTo)
             if (url === baseUrl || url === `${baseUrl}/`) {
-                console.log('📍 URL é baseUrl puro, redirecionando para dashboard/comunidade');
-                return `${baseUrl}/dashboard/comunidade`;
+                // Retorna uma URL especial que o middleware/client vai processar para ler o cookie
+                console.log('📍 URL é baseUrl puro, verificando se há redirect pendente...');
+                return `${baseUrl}/api/auth/post-login-redirect`;
             }
 
             // Se a URL é do mesmo domínio, permite o redirect

@@ -129,8 +129,11 @@ export function PricingPlans({
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         try {
+            const redirectPath = `/api/checkout-redirect?plan=${selectedPlan?.id}`;
+            // Salva o redirect em cookie como backup (Apple OAuth às vezes perde o state)
+            document.cookie = `post_login_redirect=${encodeURIComponent(redirectPath)}; path=/; max-age=600; SameSite=Lax`;
             await signIn('google', {
-                redirectTo: `/api/checkout-redirect?plan=${selectedPlan?.id}`,
+                redirectTo: redirectPath,
             });
         } catch (err) {
             console.error('Falha ao iniciar login Google', err);
@@ -141,8 +144,11 @@ export function PricingPlans({
     const handleAppleLogin = async () => {
         setIsLoading(true);
         try {
+            const redirectPath = `/api/checkout-redirect?plan=${selectedPlan?.id}`;
+            // Salva o redirect em cookie como backup (Apple OAuth às vezes perde o state)
+            document.cookie = `post_login_redirect=${encodeURIComponent(redirectPath)}; path=/; max-age=600; SameSite=Lax`;
             await signIn('apple', {
-                redirectTo: `/api/checkout-redirect?plan=${selectedPlan?.id}`,
+                redirectTo: redirectPath,
             });
         } catch (err) {
             console.error('Falha ao iniciar login Apple', err);
