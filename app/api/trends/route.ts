@@ -52,7 +52,7 @@ async function fetchTrendingNow(
   });
 
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24h = 1 vez por dia
+    next: { revalidate: 21600 }, // 6h
   });
 
   if (!res.ok) {

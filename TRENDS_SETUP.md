@@ -23,6 +23,6 @@ SEARCHAPI_API_KEY=sua_chave_api_aqui
 - **API**: `GET /api/trends` chama a SearchAPI com `engine=google_trends_trending_now` (Trending Now – o mesmo que aparece no site do Google em “Em alta”), `geo=BR`, `time=past_24_hours`.
 - **Região**: Brasil (`geo=BR`).
 - **Período**: últimas 24 horas (`now 1-d`). Sem fallback, para gastar só 1 crédito por carregamento.
-- **Cache**: a rota usa revalidação de 1h para reduzir chamadas à API.
+- **Cache**: a rota usa revalidação de 6h para reduzir chamadas à API.
 
 Sem `SEARCHAPI_API_KEY`, a página exibe uma mensagem orientando a configuração.
