@@ -8,7 +8,7 @@ const AccountSchema = new Schema(
         phone: { type: String, trim: true },
         phone_country_code: { type: String, trim: true, default: '+55' },
         auth_user_id: { type: String, required: true, unique: true, index: true, trim: true },
-        provider_oauth: { type: String, enum: ['google', 'apple', 'facebook'], trim: true },
+        provider_oauth: { type: String, enum: ['google', 'apple', 'facebook', 'kiwify'], trim: true },
         link_instagram: { type: String, trim: true },
         link_tiktok: { type: String, trim: true },
         link_youtube: { type: String, trim: true },
@@ -26,6 +26,8 @@ const AccountSchema = new Schema(
         utm_ref: { type: String, trim: true },
         last_access_at: { type: Date, default: Date.now },
         last_notifications_read_at: { type: Date, default: null },
+        /** Hash da senha (apenas para contas com provider_oauth === 'kiwify') */
+        password_hash: { type: String, trim: true, select: false },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

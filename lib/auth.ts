@@ -5,6 +5,7 @@ import Google from 'next-auth/providers/google';
 import Credentials from 'next-auth/providers/credentials';
 
 import { connectMongo } from '@/lib/mongoose';
+import { validateKiwifyCredentials } from '@/lib/kiwify-auth';
 import Account from '@/models/Account';
 
 const TEST_AUTH_USER_ID = '117397423200835053639';
@@ -69,6 +70,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             clientSecret: generateAppleClientSecret(),
         }),
         Credentials({
+            id: 'kiwify',
+            name: 'Email da compra (Kiwify)',
+            credentials: {
+                email: { label: 'Email', type: 'email' },
+                password: { label: 'Senha', type: 'password' },
+            },
+            async authorize(credentials) {
+                const creds = credentials ?? {};
+                const email = (typeof creds.email === 'string' ? creds.email : (creds as { get?: (k: string) => string | null }).get?.('email') ?? '').trim().toLowerCase();
+                const passwordRaw = typeof creds.password === 'string' ? creds.password : (creds as { get?: (k: string) => string | null }).get?.('password') ?? '';
+                const password = typeof passwordRaw === 'string' ? passwordRaw : String(passwordRaw ?? '');
+                const result = await validateKiwifyCredentials(email, password);
+                return result.ok ? result.user : null;
+            },
+        }),
+        Credentials({
             id: 'test',
             name: 'Login de teste',
             credentials: {
@@ -110,7 +127,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     useSecureCookies: process.env.NODE_ENV === 'production',
     callbacks: {
         async signIn({ user, account, profile }) {
-            if (account?.provider === 'credentials') return true;
+            if (account?.provider === 'credentials' || account?.provider === 'kiwify') return true;
             if (!account?.providerAccountId) return false;
 
             const authUserId = account.providerAccountId;
@@ -150,7 +167,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return true;
         },
         async jwt({ token, account, user }) {
-            if (account?.provider === 'credentials' && user?.auth_user_id) {
+            if ((account?.provider === 'credentials' || account?.provider === 'kiwify') && user?.auth_user_id) {
                 token.auth_user_id = user.auth_user_id;
                 token.sub = user.id;
             } else if (account) {
