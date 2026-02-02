@@ -208,6 +208,13 @@ export default function PostDetailPageMui() {
         );
     }
 
+    // const [isVerticalVideo, setIsVerticalVideo] = useState(false);
+
+    // const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    //     const video = e.currentTarget;
+    //     setIsVerticalVideo(video.videoHeight > video.videoWidth);
+    // };
+
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
             {/* Header */}
@@ -277,8 +284,28 @@ export default function PostDetailPageMui() {
 
                     {/* Video */}
                     {post.video_url && (
-                        <Box sx={{ position: 'relative' }} onDoubleClick={handleDoubleTap}>
-                            <video src={post.video_url} controls style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', backgroundColor: 'black' }} playsInline />
+                        // <Box sx={{ position: 'relative' }} onDoubleClick={handleDoubleTap}>
+                        //     <video src={post.video_url} controls style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', backgroundColor: 'black' }} playsInline />
+                        // </Box>
+                        <Box
+                            sx={{ mx: 0, cursor: 'pointer' }}
+                        >
+                            <Box
+                                component="video"
+                                src={`${post.video_url}#t=0.1`}
+                                controls
+                                preload="metadata"
+                                playsInline
+                                // onLoadedMetadata={handleVideoMetadata}
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{
+                                    width: '100%',
+                                    aspectRatio: '9/16',
+                                    objectFit: 'cover',
+                                    bgcolor: 'black',
+                                    maxHeight: "82vh",
+                                }}
+                            />
                         </Box>
                     )}
 
