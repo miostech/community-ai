@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 
 // MUI imports
 import {
+  AppBar,
+  Toolbar,
+  Avatar,
   Box,
   Typography,
   Button,
@@ -193,127 +196,140 @@ export default function TrendsPage() {
         minHeight: '100vh',
       }}
     >
-      {/* Header */}
-      <Box
+      {/* AppBar Fixo */}
+      <AppBar
+        position="fixed"
         sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          bgcolor: 'background.paper',
-          borderBottom: 1,
-          borderColor: 'divider',
-          backdropFilter: 'blur(8px)',
+          width: { xs: '100%', md: 'calc(100% - 256px)' },
         }}
       >
-        <Box sx={{ px: 2, py: 2 }}>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            sx={{ fontSize: { xs: '1.5rem', sm: '1.875rem' } }}
-          >
-            Top Trends
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Pesquisas em alta no Google no Brasil. Use para se inspirar e criar conteúdo em alta.
-          </Typography>
-          {data?.regionLabel && (
-            <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
-              Região: {data.regionLabel} · Últimas 24 horas
-            </Typography>
-          )}
-        </Box>
-
-        {/* Filters */}
-        {!loading && !error && trends.length > 0 && (
-          <Box
-            sx={{
-              px: 2,
-              pb: 1.5,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-            }}
-          >
-            <ToggleButtonGroup
-              value={filter}
-              exclusive
-              onChange={handleFilterChange}
-              size="small"
-              sx={{
-                '& .MuiToggleButton-root': {
-                  borderRadius: 5,
-                  px: 2,
-                  py: 0.75,
-                  fontSize: '0.8125rem',
-                  fontWeight: 500,
-                  textTransform: 'none',
-                  border: 'none',
-                  '&.Mui-selected': {
-                    bgcolor: 'text.primary',
-                    color: 'background.paper',
-                    '&:hover': {
-                      bgcolor: 'text.primary',
-                    },
-                  },
-                  '&:not(.Mui-selected)': {
-                    bgcolor: 'action.hover',
-                    '&:hover': {
-                      bgcolor: 'action.selected',
-                    },
-                  },
-                },
-              }}
-            >
-              <ToggleButton value="rising">Em alta</ToggleButton>
-              <ToggleButton value="top">Populares</ToggleButton>
-            </ToggleButtonGroup>
-
-            <Button
-              size="small"
-              onClick={handleCategoryClick}
-              endIcon={<KeyboardArrowDownIcon />}
-              sx={{
-                textTransform: 'none',
-                color: 'text.secondary',
-                fontSize: '0.75rem',
-              }}
-            >
-              {categoryFilter === 'all' ? 'Categoria' : translateCategory(categoryFilter)}
-            </Button>
-            <Menu
-              anchorEl={categoryAnchorEl}
-              open={Boolean(categoryAnchorEl)}
-              onClose={handleCategoryClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{
-                sx: {
-                  maxHeight: '70vh',
-                  minWidth: 180,
-                },
-              }}
-            >
-              <MenuItem
-                selected={categoryFilter === 'all'}
-                onClick={() => handleCategorySelect('all')}
+        <Box sx={{ maxWidth: 672, mx: 'auto', width: '100%' }}>
+          <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                }}
               >
-                Todas
-              </MenuItem>
-              <Divider />
-              {categoriesInData.map((key) => (
-                <MenuItem
-                  key={key}
-                  selected={categoryFilter === key}
-                  onClick={() => handleCategorySelect(key)}
-                >
-                  {translateCategory(key)}
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
+                <TrendingUpIcon sx={{ fontSize: 18 }} />
+              </Avatar>
+              <Typography variant="h6" fontWeight="bold">
+                Top Trends
+              </Typography>
+            </Stack>
+          </Toolbar>
+        </Box>
+      </AppBar>
+
+      {/* Spacer para compensar o header fixo */}
+      <Toolbar />
+
+      {/* Descrição */}
+      <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+        <Typography variant="body2" color="text.secondary">
+          Pesquisas em alta no Google no Brasil. Use para se inspirar e criar conteúdo em alta.
+        </Typography>
+        {data?.regionLabel && (
+          <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
+            Região: {data.regionLabel} · Últimas 24 horas
+          </Typography>
         )}
       </Box>
+
+      {/* Filters */}
+      {!loading && !error && trends.length > 0 && (
+        <Box
+          sx={{
+            px: 2,
+            pb: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <ToggleButtonGroup
+            value={filter}
+            exclusive
+            onChange={handleFilterChange}
+            size="small"
+            sx={{
+              '& .MuiToggleButton-root': {
+                borderRadius: 5,
+                px: 2,
+                py: 0.75,
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                textTransform: 'none',
+                border: 'none',
+                '&.Mui-selected': {
+                  bgcolor: 'text.primary',
+                  color: 'background.paper',
+                  '&:hover': {
+                    bgcolor: 'text.primary',
+                  },
+                },
+                '&:not(.Mui-selected)': {
+                  bgcolor: 'action.hover',
+                  '&:hover': {
+                    bgcolor: 'action.selected',
+                  },
+                },
+              },
+            }}
+          >
+            <ToggleButton value="rising">Em alta</ToggleButton>
+            <ToggleButton value="top">Populares</ToggleButton>
+          </ToggleButtonGroup>
+
+          <Button
+            size="small"
+            onClick={handleCategoryClick}
+            endIcon={<KeyboardArrowDownIcon />}
+            sx={{
+              textTransform: 'none',
+              color: 'text.secondary',
+              fontSize: '0.75rem',
+            }}
+          >
+            {categoryFilter === 'all' ? 'Categoria' : translateCategory(categoryFilter)}
+          </Button>
+          <Menu
+            anchorEl={categoryAnchorEl}
+            open={Boolean(categoryAnchorEl)}
+            onClose={handleCategoryClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                maxHeight: '70vh',
+                minWidth: 180,
+              },
+            }}
+          >
+            <MenuItem
+              selected={categoryFilter === 'all'}
+              onClick={() => handleCategorySelect('all')}
+            >
+              Todas
+            </MenuItem>
+            <Divider />
+            {categoriesInData.map((key) => (
+              <MenuItem
+                key={key}
+                selected={categoryFilter === key}
+                onClick={() => handleCategorySelect(key)}
+              >
+                {translateCategory(key)}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
+      )}
 
       {/* Content */}
       <Box sx={{ px: 2, py: 2 }}>

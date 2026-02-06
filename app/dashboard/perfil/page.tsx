@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useAccount } from '@/contexts/AccountContext';
 import {
+  AppBar,
+  Toolbar,
   Box,
   Typography,
   Avatar,
@@ -230,18 +232,40 @@ export default function PerfilPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ maxWidth: 896, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
-        <Box sx={{ mb: { xs: 3, sm: 4 }, pt: { xs: 2, sm: 0 } }}>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Meu Perfil
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Carregando...
-          </Typography>
+      <Box sx={{ maxWidth: 896, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
+        <AppBar
+          position="fixed"
+          sx={{
+            width: { xs: '100%', md: 'calc(100% - 256px)' },
+          }}
+        >
+          <Box sx={{ maxWidth: 896, mx: 'auto', width: '100%' }}>
+            <Toolbar sx={{ px: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {displayName.charAt(0).toUpperCase()}
+                </Avatar>
+                <Typography variant="h6" fontWeight="bold">
+                  Meu Perfil
+                </Typography>
+              </Stack>
+            </Toolbar>
+          </Box>
+        </AppBar>
+        <Toolbar />
+        <Box sx={{ px: { xs: 2, sm: 3 } }}>
+          <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Paper>
         </Box>
-        <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
-        </Paper>
       </Box>
     );
   }
@@ -258,7 +282,41 @@ export default function PerfilPage() {
   };
 
   return (
-    <Box sx={{ maxWidth: 896, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
+    <Box sx={{ maxWidth: 896, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
+      {/* AppBar Fixo */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { xs: '100%', md: 'calc(100% - 256px)' },
+        }}
+      >
+        <Box sx={{ maxWidth: 896, mx: 'auto', width: '100%' }}>
+          <Toolbar sx={{ px: 2 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Avatar
+                src={formData.avatar_url || undefined}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                }}
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="h6" fontWeight="bold">
+                Meu Perfil
+              </Typography>
+            </Stack>
+          </Toolbar>
+        </Box>
+      </AppBar>
+
+      {/* Spacer para compensar o header fixo */}
+      <Toolbar />
+
+      <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
       {!formData.phone.trim() && (
         <Alert
           severity="warning"
@@ -267,15 +325,6 @@ export default function PerfilPage() {
           O telefone é obrigatório para usar a comunidade. Preencha o campo abaixo e salve para continuar.
         </Alert>
       )}
-
-      <Box sx={{ mb: { xs: 3, sm: 4 }, pt: { xs: 2, sm: 0 } }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Meu Perfil
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Gerencie suas informações e foto de perfil
-        </Typography>
-      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -633,6 +682,7 @@ export default function PerfilPage() {
           </Button>
         </Stack>
       </Paper>
+      </Box>
     </Box>
   );
 }

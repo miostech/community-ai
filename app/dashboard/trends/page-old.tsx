@@ -124,9 +124,9 @@ export default function TrendsPage() {
   const capitalize = (s: string) =>
     s.length
       ? s
-          .split(' ')
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-          .join(' ')
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ')
       : s;
 
   const formatVolume = (num: number | undefined): string => {
@@ -166,22 +166,20 @@ export default function TrendsPage() {
               <button
                 type="button"
                 onClick={() => setFilter('rising')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filter === 'rising'
-                    ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
-                    : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-                }`}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'rising'
+                  ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
+                  : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                  }`}
               >
                 Em alta
               </button>
               <button
                 type="button"
                 onClick={() => setFilter('top')}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  filter === 'top'
-                    ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
-                    : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
-                }`}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === 'top'
+                  ? 'bg-gray-900 text-white dark:bg-slate-100 dark:text-black'
+                  : 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700'
+                  }`}
               >
                 Populares
               </button>
@@ -314,11 +312,10 @@ export default function TrendsPage() {
                   </a>
                   <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400">
                     <span
-                      className={`inline-flex items-center gap-1 font-medium ${
-                        trend.type === 'rising'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-gray-600 dark:text-slate-400'
-                      }`}
+                      className={`inline-flex items-center gap-1 font-medium ${trend.type === 'rising'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-gray-600 dark:text-slate-400'
+                        }`}
                     >
                       {trend.type === 'rising' ? (
                         <>
@@ -360,7 +357,7 @@ export default function TrendsPage() {
                           </svg>
                           {formatVolume(
                             trend.searchVolume ??
-                              (trend.type === 'top' ? trend.extractedValue : undefined)
+                            (trend.type === 'top' ? trend.extractedValue : undefined)
                           )}
                         </>
                       )}

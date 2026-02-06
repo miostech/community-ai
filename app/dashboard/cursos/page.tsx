@@ -5,6 +5,9 @@ import { useUser } from '@/contexts/UserContext';
 
 // MUI imports
 import {
+  AppBar,
+  Toolbar,
+  Avatar,
   Box,
   Typography,
   Button,
@@ -122,15 +125,35 @@ export default function CursosPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
-        <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-            Cursos
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Monetize seu conhecimento
-          </Typography>
-        </Box>
+      <Box sx={{ maxWidth: 1152, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
+        <AppBar
+          position="fixed"
+          sx={{
+            width: { xs: '100%', md: 'calc(100% - 256px)' },
+          }}
+        >
+          <Box sx={{ maxWidth: 1152, mx: 'auto', width: '100%' }}>
+            <Toolbar sx={{ px: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  <MenuBookIcon sx={{ fontSize: 18 }} />
+                </Avatar>
+                <Typography variant="h6" fontWeight="bold">
+                  Cursos
+                </Typography>
+              </Stack>
+            </Toolbar>
+          </Box>
+        </AppBar>
+        <Toolbar />
         <Grid container spacing={{ xs: 2, sm: 3 }}>
           {[1, 2, 3].map((i) => (
             <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={i}>
@@ -150,19 +173,41 @@ export default function CursosPage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1152, mx: 'auto', px: { xs: 2, sm: 3 }, pb: { xs: 12, sm: 4 } }}>
-      {/* Header */}
-      <Box sx={{ mb: { xs: 3, sm: 4, md: 6 }, textAlign: 'center' }}>
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          sx={{
-            mb: { xs: 1.5, sm: 2 },
-            fontSize: { xs: '1.5rem', sm: '1.875rem', md: '2.25rem' },
-          }}
-        >
-          Nossos Cursos
-        </Typography>
+    <Box sx={{ maxWidth: 1152, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
+      {/* AppBar Fixo */}
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { xs: '100%', md: 'calc(100% - 256px)' },
+        }}
+      >
+        <Box sx={{ maxWidth: 1152, mx: 'auto', width: '100%' }}>
+          <Toolbar sx={{ px: 2 }}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                }}
+              >
+                <MenuBookIcon sx={{ fontSize: 18 }} />
+              </Avatar>
+              <Typography variant="h6" fontWeight="bold">
+                Cursos
+              </Typography>
+            </Stack>
+          </Toolbar>
+        </Box>
+      </AppBar>
+
+      {/* Spacer para compensar o header fixo */}
+      <Toolbar />
+
+      {/* Descrição */}
+      <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: { xs: 3, sm: 4 }, textAlign: 'center' }}>
         <Typography
           variant="body1"
           color="text.secondary"
@@ -176,166 +221,169 @@ export default function CursosPage() {
         </Typography>
       </Box>
 
-      {/* Courses Grid */}
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {courses.map((course) => (
-          <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={course.id}>
-            <Card
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: 3,
-                overflow: 'hidden',
-                transition: 'all 0.3s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 6,
-                },
-              }}
-            >
-              {/* Image */}
-              <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-                <CardMedia
-                  component="img"
-                  image={course.thumbnail}
-                  alt={course.title}
-                  sx={{
-                    height: { xs: 160, sm: 192 },
-                    objectFit: 'cover',
-                    filter: !course.isAvailable ? 'grayscale(20%)' : 'none',
-                  }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/cursos/placeholder.jpg';
-                  }}
-                />
-                {!course.isAvailable && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                    }}
-                  />
-                )}
-                <Chip
-                  label={`${course.modules} módulos`}
-                  size="small"
-                  sx={{
-                    position: 'absolute',
-                    top: { xs: 8, sm: 12 },
-                    right: { xs: 8, sm: 12 },
-                    bgcolor: 'rgba(255,255,255,0.9)',
-                    backdropFilter: 'blur(8px)',
-                    fontSize: { xs: '0.625rem', sm: '0.75rem' },
-                    fontWeight: 500,
-                  }}
-                />
-              </Box>
+      <Box sx={{ px: { xs: 2, sm: 3 } }}>
 
-              {/* Content */}
-              <CardContent sx={{ flex: 1, p: { xs: 2, sm: 3 } }}>
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                  sx={{
-                    mb: 1,
-                    fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
-                  }}
-                >
-                  {course.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    lineHeight: 1.6,
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                  }}
-                >
-                  {course.description}
-                </Typography>
-              </CardContent>
-
-              {/* Actions */}
-              <CardActions
+        {/* Courses Grid */}
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
+          {courses.map((course) => (
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={course.id}>
+              <Card
                 sx={{
-                  p: { xs: 2, sm: 3 },
-                  pt: 0,
-                  borderTop: 1,
-                  borderColor: 'divider',
-                  mt: 'auto',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  transition: 'all 0.3s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 6,
+                  },
                 }}
               >
-                {course.isAvailable ? (
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<PlayArrowIcon />}
-                    onClick={() => {
-                      if (course.kiwifyDashboardUrl) {
-                        window.open(course.kiwifyDashboardUrl, '_blank');
-                      } else {
-                        window.location.href = `/dashboard/cursos/${course.id}`;
-                      }
-                    }}
+                {/* Image */}
+                <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+                  <CardMedia
+                    component="img"
+                    image={course.thumbnail}
+                    alt={course.title}
                     sx={{
-                      borderRadius: 2,
-                      py: { xs: 1, sm: 1.25 },
-                      textTransform: 'none',
-                      fontWeight: 600,
+                      height: { xs: 160, sm: 192 },
+                      objectFit: 'cover',
+                      filter: !course.isAvailable ? 'grayscale(20%)' : 'none',
                     }}
-                  >
-                    Acessar Curso
-                  </Button>
-                ) : (
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<ShoppingCartIcon />}
-                    onClick={() => window.open(course.kiwifyUrl, '_blank')}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/cursos/placeholder.jpg';
+                    }}
+                  />
+                  {!course.isAvailable && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        bgcolor: 'rgba(255,255,255,0.2)',
+                      }}
+                    />
+                  )}
+                  <Chip
+                    label={`${course.modules} módulos`}
+                    size="small"
                     sx={{
-                      borderRadius: 2,
-                      py: { xs: 1, sm: 1.25 },
-                      textTransform: 'none',
-                      fontWeight: 600,
+                      position: 'absolute',
+                      top: { xs: 8, sm: 12 },
+                      right: { xs: 8, sm: 12 },
+                      bgcolor: 'rgba(255,255,255,0.9)',
+                      backdropFilter: 'blur(8px)',
+                      fontSize: { xs: '0.625rem', sm: '0.75rem' },
+                      fontWeight: 500,
                     }}
-                  >
-                    Adquirir Curso
-                  </Button>
-                )}
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  />
+                </Box>
 
-      {/* Empty state */}
-      {courses.length === 0 && !isLoading && (
-        <Card sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, borderRadius: 3 }}>
-          <Box
-            sx={{
-              width: { xs: 48, sm: 64 },
-              height: { xs: 48, sm: 64 },
-              mx: 'auto',
-              mb: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              bgcolor: 'action.hover',
-            }}
-          >
-            <MenuBookIcon sx={{ fontSize: { xs: 24, sm: 32 }, color: 'text.disabled' }} />
-          </Box>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-            Nenhum curso disponível
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Novos cursos em breve!
-          </Typography>
-        </Card>
-      )}
+                {/* Content */}
+                <CardContent sx={{ flex: 1, p: { xs: 2, sm: 3 } }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={700}
+                    sx={{
+                      mb: 1,
+                      fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+                    }}
+                  >
+                    {course.title}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      lineHeight: 1.6,
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    }}
+                  >
+                    {course.description}
+                  </Typography>
+                </CardContent>
+
+                {/* Actions */}
+                <CardActions
+                  sx={{
+                    p: { xs: 2, sm: 3 },
+                    pt: 0,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    mt: 'auto',
+                  }}
+                >
+                  {course.isAvailable ? (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<PlayArrowIcon />}
+                      onClick={() => {
+                        if (course.kiwifyDashboardUrl) {
+                          window.open(course.kiwifyDashboardUrl, '_blank');
+                        } else {
+                          window.location.href = `/dashboard/cursos/${course.id}`;
+                        }
+                      }}
+                      sx={{
+                        borderRadius: 2,
+                        py: { xs: 1, sm: 1.25 },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Acessar Curso
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<ShoppingCartIcon />}
+                      onClick={() => window.open(course.kiwifyUrl, '_blank')}
+                      sx={{
+                        borderRadius: 2,
+                        py: { xs: 1, sm: 1.25 },
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Adquirir Curso
+                    </Button>
+                  )}
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Empty state */}
+        {courses.length === 0 && !isLoading && (
+          <Card sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, borderRadius: 3 }}>
+            <Box
+              sx={{
+                width: { xs: 48, sm: 64 },
+                height: { xs: 48, sm: 64 },
+                mx: 'auto',
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                bgcolor: 'action.hover',
+              }}
+            >
+              <MenuBookIcon sx={{ fontSize: { xs: 24, sm: 32 }, color: 'text.disabled' }} />
+            </Box>
+            <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+              Nenhum curso disponível
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Novos cursos em breve!
+            </Typography>
+          </Card>
+        )}
+      </Box>
     </Box>
   );
 }
