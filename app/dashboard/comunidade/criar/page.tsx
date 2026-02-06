@@ -786,7 +786,7 @@ export default function CriarPostPageMui() {
             direction={{ xs: 'column-reverse', sm: 'row' }}
             spacing={2}
             sx={{
-              pt: 3,
+              pt: 2,
               pb: { xs: 2, sm: 0 },
               borderTop: 1,
               borderColor: 'divider',
@@ -815,11 +815,11 @@ export default function CriarPostPageMui() {
               size="large"
               sx={{
                 borderRadius: 3,
-                ml: { sm: 'auto' },
-                py: { xs: 1.5, sm: 1 },
+                py: { xs: 1, sm: 1 },
                 fontSize: { xs: '1rem', sm: '0.875rem' },
                 fontWeight: 600,
                 background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                height: 48,
               }}
             >
               {isAnyUploading ? 'Aguarde o upload...' : isPublishing ? 'Publicando...' : 'Publicar'}

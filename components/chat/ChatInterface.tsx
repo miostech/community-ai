@@ -1,10 +1,21 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
 import { useUser } from '@/contexts/UserContext';
 import { useChatHistory, Message } from '@/contexts/ChatHistoryContext';
-import { useRouter } from 'next/navigation';
+
+import {
+  Typography,
+  IconButton,
+  Avatar,
+  Stack,
+  Box,
+  TextField,
+  InputAdornment,
+} from '@mui/material';
+import {
+  ArrowForward as SendIcon,
+} from '@mui/icons-material';
 
 interface ChatInterfaceProps {
   initialContent?: {
@@ -14,17 +25,17 @@ interface ChatInterfaceProps {
   };
   initialPrompt?: string;
   conversationId?: string;
+  onNewConversation?: () => void;
 }
 
-export function ChatInterface({ initialContent, initialPrompt, conversationId }: ChatInterfaceProps) {
+export function ChatInterface({ initialContent, initialPrompt, conversationId, onNewConversation }: ChatInterfaceProps) {
   const { user } = useUser();
-  const router = useRouter();
-  const { 
-    saveConversation, 
-    updateConversation, 
-    currentConversationId, 
+  const {
+    saveConversation,
+    updateConversation,
+    currentConversationId,
     setCurrentConversationId,
-    loadConversation 
+    loadConversation
   } = useChatHistory();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -35,7 +46,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
 
   useEffect(() => {
     if (hasInitialized) return;
-    
+
     if (initialContent) {
       // Mensagem inicial da IA
       const initialMessage: Message = {
@@ -57,7 +68,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
       setMessages([userMessage]);
       setIsLoading(true);
       setHasInitialized(true);
-      
+
       setTimeout(() => {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -136,186 +147,232 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId }:
     }, 1500);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
 
-  const suggestedPrompts = [
-    'Melhore o hook',
-    'Encurte o desenvolvimento',
-    'Adapte para TikTok',
-    'Torne o CTA mais persuasivo',
-    'Adicione mais storytelling',
-  ];
 
   return (
-    <div className="flex flex-col h-full sm:h-[calc(100vh-220px)] md:h-[600px] sm:max-h-[600px] bg-white dark:bg-black sm:bg-white/80 dark:sm:bg-black/80 sm:backdrop-blur-sm sm:rounded-xl sm:border sm:border-gray-100 dark:sm:border-neutral-800 sm:shadow-sm relative">
-      <button
-        onClick={() => router.push('/dashboard/chat/historico')}
-        className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-10 h-10 md:hidden flex items-center justify-center text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-        title="Ver histórico de conversas"
-      >
-        <svg 
-          className="w-6 h-6" 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-          />
-        </svg>
-      </button>
-      
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: { xs: '100%', sm: 'auto' },
+        minHeight: { xs: '100%' },
+        bgcolor: 'background.paper',
+        overflow: 'hidden',
+        borderRadius: { sm: 3 },
+        border: { sm: 1 },
+        borderColor: { sm: 'divider' },
+        boxShadow: { sm: 1 },
+        maxHeight: { sm: 600 },
+      }}
+    >
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6 pt-14 sm:pt-12">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex gap-2 sm:gap-3 md:gap-4 ${
-              message.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            {message.role === 'assistant' && (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200 dark:ring-blue-800">
-                <span className="text-white font-bold text-xs sm:text-sm">IA</span>
-              </div>
-            )}
-            <div
-              className={`max-w-[85%] sm:max-w-[80%] rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
-                message.role === 'user'
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-sm'
-                  : 'bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-slate-100 shadow-sm'
-              }`}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          px: { xs: 2, sm: 2.5, md: 3 },
+          py: { xs: 2, sm: 2.5, md: 3 },
+        }}
+      >
+        <Stack spacing={{ xs: 2, sm: 2.5 }}>
+          {messages.map((message) => (
+            <Stack
+              key={message.id}
+              direction="row"
+              spacing={1}
+              justifyContent={message.role === 'user' ? 'flex-end' : 'flex-start'}
+              alignItems="flex-start"
             >
-              <div className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed break-words">
-                {message.content}
-              </div>
-            </div>
-            {message.role === 'user' && (
-              <>
-                {user.avatar ? (
-                  <img
+              {message.role === 'assistant' && (
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    flexShrink: 0,
+                  }}
+                >
+                  IA
+                </Avatar>
+              )}
+              <Box
+                sx={{
+                  maxWidth: '80%',
+                  borderRadius: 3,
+                  px: 2,
+                  py: 1.5,
+                  ...(message.role === 'user'
+                    ? {
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                      color: 'white',
+                    }
+                    : {
+                      bgcolor: 'action.hover',
+                      color: 'text.primary',
+                      border: 1,
+                      borderColor: 'divider',
+                    }),
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.7,
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  }}
+                >
+                  {message.content}
+                </Typography>
+              </Box>
+              {message.role === 'user' && (
+                user.avatar ? (
+                  <Avatar
                     src={user.avatar}
                     alt={user.name}
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-gray-200 dark:border-slate-600 flex-shrink-0"
+                    sx={{ width: 32, height: 32, flexShrink: 0 }}
                   />
                 ) : (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-medium text-[10px] sm:text-xs">
-                      {user.name?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex gap-2 sm:gap-3 md:gap-4 justify-start">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-200 dark:ring-blue-800 animate-pulse">
-              <span className="text-white font-bold text-xs sm:text-sm">IA</span>
-            </div>
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200 dark:border-slate-600 rounded-xl sm:rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+                  <Avatar
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </Avatar>
+                )
+              )}
+            </Stack>
+          ))}
 
-      {/* Suggested Prompts */}
-      {messages.length > 0 && messages.length < 3 && (
-        <div className="px-3 sm:px-4 md:px-6 pb-2 overflow-x-auto">
-          <div className="flex flex-wrap gap-1.5 sm:gap-2 min-w-max">
-            {suggestedPrompts.slice(0, 3).map((prompt, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setInput(prompt);
-                  textareaRef.current?.focus();
+          {/* Loading indicator */}
+          {isLoading && (
+            <Stack direction="row" spacing={1} alignItems="flex-start">
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  flexShrink: 0,
+                  '@keyframes pulse': {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.5 },
+                  },
+                  animation: 'pulse 2s ease-in-out infinite',
                 }}
-                className="px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-full text-gray-700 dark:text-slate-300 transition-colors whitespace-nowrap"
               >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+                IA
+              </Avatar>
+              <Box
+                sx={{
+                  bgcolor: 'action.hover',
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 3,
+                  px: 2,
+                  py: 1.5,
+                }}
+              >
+                <Stack direction="row" spacing={0.5}>
+                  {[0, 0.2, 0.4].map((delay, i) => (
+                    <Box
+                      key={i}
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: i % 2 === 0 ? '#3b82f6' : '#9333ea',
+                        '@keyframes bounce': {
+                          '0%, 100%': { transform: 'translateY(0)' },
+                          '50%': { transform: 'translateY(-6px)' },
+                        },
+                        animation: `bounce 0.6s ease-in-out ${delay}s infinite`,
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            </Stack>
+          )}
+          <div ref={messagesEndRef} />
+        </Stack>
+      </Box>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 dark:border-slate-700 p-3 sm:p-4">
-        <form onSubmit={handleSend} className="flex items-end gap-2 sm:gap-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Digite sua mensagem..."
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 rounded-lg sm:rounded-xl border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 resize-none max-h-32 text-sm sm:text-base"
-              rows={1}
-              style={{
-                height: 'auto',
-                minHeight: '40px',
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="absolute right-1.5 sm:right-2 bottom-1.5 sm:bottom-2 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all shadow-md hover:shadow-lg disabled:bg-gray-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed"
-              style={
-                !input.trim() || isLoading
-                  ? {}
-                  : {
-                      background: 'linear-gradient(to right, rgb(37 99 235), rgb(147 51 234))',
-                    }
-              }
-              onMouseEnter={(e) => {
-                if (!(!input.trim() || isLoading)) {
-                  e.currentTarget.style.background = 'linear-gradient(to right, rgb(29 78 216), rgb(126 34 206))';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!(!input.trim() || isLoading)) {
-                  e.currentTarget.style.background = 'linear-gradient(to right, rgb(37 99 235), rgb(147 51 234))';
-                }
-              }}
-            >
-              <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      <Box
+        component="form"
+        onSubmit={handleSend}
+        sx={{
+          borderTop: 1,
+          borderColor: 'divider',
+          px: { xs: 1.5, sm: 2 },
+          pt: { xs: 1.5, sm: 2 },
+          pb: { xs: 1.5, sm: 2 },
+          flexShrink: 0,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <TextField
+          inputRef={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Digite aqui..."
+          multiline
+          maxRows={4}
+          fullWidth
+          variant="outlined"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    ...(!input.trim() || isLoading
+                      ? { bgcolor: 'action.disabledBackground' }
+                      : {
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                        },
+                      }),
+                  }}
+                >
+                  <SendIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 3,
+              bgcolor: 'background.default',
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              py: 0.5,
+            },
+          }}
+        />
+      </Box>
+    </Box>
   );
 }
 

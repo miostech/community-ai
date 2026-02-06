@@ -7,9 +7,11 @@ import { useUser } from '@/contexts/UserContext';
 
 // MUI imports
 import {
+  AppBar,
   Box,
   Typography,
   TextField,
+  Toolbar,
   IconButton,
   Button,
   Paper,
@@ -88,210 +90,224 @@ export default function HistoricoPage() {
   return (
     <Box
       sx={{
-        maxWidth: 1152,
-        mx: 'auto',
-        px: { xs: 2, sm: 3 },
-        py: { xs: 2, sm: 4 },
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
       }}
     >
-      {/* Header */}
-      <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
-          <IconButton
-            onClick={() => router.push('/dashboard/chat')}
-            sx={{
-              color: 'text.secondary',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Box>
-            <Typography
-              variant="h5"
-              fontWeight={700}
-              sx={{ fontSize: { xs: '1.5rem', sm: '1.875rem' } }}
-            >
-              Histórico de Conversas
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {conversations.length} {conversations.length === 1 ? 'conversa' : 'conversas'} salvas
-            </Typography>
+      <Box
+        sx={{
+          maxWidth: 672,
+          width: '100%',
+          pb: { xs: 12, sm: 4 },
+          bgcolor: 'background.paper',
+          minHeight: '100vh',
+        }}
+      >
+        {/* Header Fixo */}
+        <AppBar
+          position="fixed"
+          sx={{
+            width: { xs: '100%', md: 'calc(100% - 256px)' },
+          }}
+        >
+          <Box sx={{ maxWidth: 672, mx: 'auto', width: '100%' }}>
+            <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <IconButton
+                  onClick={() => router.push('/dashboard/chat')}
+                  edge="start"
+                  sx={{ color: 'text.primary' }}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+                <Typography variant="h6" fontWeight="bold">
+                  Histórico
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                {conversations.length} {conversations.length === 1 ? 'conversa' : 'conversas'}
+              </Typography>
+            </Toolbar>
           </Box>
-        </Stack>
+        </AppBar>
+
+        <Toolbar />
 
         {/* Search */}
-        <TextField
-          fullWidth
-          placeholder="Buscar conversas..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: 'text.disabled' }} />
-              </InputAdornment>
-            ),
-          }}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: 3,
-              bgcolor: 'background.paper',
-            },
-          }}
-        />
-      </Box>
-
-      {/* Content */}
-      {filteredConversations.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              bgcolor: 'action.hover',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mx: 'auto',
-              mb: 2,
+        <Box sx={{ px: 2, py: 2 }}>
+          <TextField
+            fullWidth
+            placeholder="Buscar conversas..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.disabled' }} />
+                </InputAdornment>
+              ),
             }}
-          >
-            <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
-          </Box>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-            {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {searchTerm
-              ? 'Tente buscar com outros termos'
-              : 'Comece uma nova conversa com a IA para criar seu primeiro histórico'}
-          </Typography>
-          {!searchTerm && (
-            <Button
-              variant="contained"
-              onClick={handleNewChat}
-              sx={{
-                px: 4,
-                py: 1.5,
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                fontWeight: 500,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                },
-              }}
-            >
-              Iniciar Conversa
-            </Button>
-          )}
-        </Box>
-      ) : (
-        <Stack spacing={2}>
-          {filteredConversations.map((conversation) => (
-            <Paper
-              key={conversation.id}
-              onClick={() => handleOpenConversation(conversation.id)}
-              elevation={0}
-              sx={{
-                p: { xs: 2, sm: 2.5 },
-                border: 2,
-                borderColor: 'divider',
+            sx={{
+              '& .MuiOutlinedInput-root': {
                 borderRadius: 3,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  borderColor: 'primary.light',
-                  boxShadow: 3,
-                  '& .conversation-title': {
-                    color: 'primary.main',
-                  },
-                },
-              }}
-            >
-              <Stack direction="row" alignItems="flex-start" spacing={2}>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1 }}>
-                    <Avatar
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                        borderRadius: 2,
-                      }}
-                    >
-                      <ChatBubbleIcon sx={{ fontSize: 20 }} />
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
-                        className="conversation-title"
-                        variant="subtitle1"
-                        fontWeight={600}
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          transition: 'color 0.15s ease-in-out',
-                        }}
-                      >
-                        {conversation.title}
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1}
-                        divider={
-                          <Typography variant="caption" color="text.disabled">
-                            •
-                          </Typography>
-                        }
-                      >
-                        <Typography variant="caption" color="text.secondary">
-                          {formatDate(conversation.updatedAt)}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {conversation.messages.length}{' '}
-                          {conversation.messages.length === 1 ? 'mensagem' : 'mensagens'}
-                        </Typography>
-                      </Stack>
-                    </Box>
-                  </Stack>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{
-                      ml: 6.5,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {getPreview(conversation)}
-                  </Typography>
-                </Box>
-                <IconButton
-                  onClick={(e) => handleDeleteConversation(e, conversation.id)}
-                  size="small"
-                  title="Excluir conversa"
+                bgcolor: 'background.paper',
+              },
+            }}
+          />
+        </Box>
+
+        {/* Content */}
+        <Box sx={{ px: 2 }}>
+          {filteredConversations.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  bgcolor: 'action.hover',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 2,
+                }}
+              >
+                <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+              </Box>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                {searchTerm
+                  ? 'Tente buscar com outros termos'
+                  : 'Comece uma nova conversa com a IA para criar seu primeiro histórico'}
+              </Typography>
+              {!searchTerm && (
+                <Button
+                  variant="contained"
+                  onClick={handleNewChat}
                   sx={{
-                    color: 'text.disabled',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                    fontWeight: 500,
                     '&:hover': {
-                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(244, 67, 54, 0.08)',
-                      color: 'error.main',
+                      background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
                     },
                   }}
                 >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-            </Paper>
-          ))}
-        </Stack>
-      )}
+                  Iniciar Conversa
+                </Button>
+              )}
+            </Box>
+          ) : (
+            <Stack spacing={2}>
+              {filteredConversations.map((conversation) => (
+                <Paper
+                  key={conversation.id}
+                  onClick={() => handleOpenConversation(conversation.id)}
+                  elevation={0}
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    border: 2,
+                    borderColor: 'divider',
+                    borderRadius: 3,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      borderColor: 'primary.light',
+                      boxShadow: 3,
+                      '& .conversation-title': {
+                        color: 'primary.main',
+                      },
+                    },
+                  }}
+                >
+                  <Stack direction="row" alignItems="flex-start" spacing={2}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1 }}>
+                        <Avatar
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                            borderRadius: 2,
+                          }}
+                        >
+                          <ChatBubbleIcon sx={{ fontSize: 20 }} />
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            className="conversation-title"
+                            variant="subtitle1"
+                            fontWeight={600}
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              transition: 'color 0.15s ease-in-out',
+                            }}
+                          >
+                            {conversation.title}
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            divider={
+                              <Typography variant="caption" color="text.disabled">
+                                •
+                              </Typography>
+                            }
+                          >
+                            <Typography variant="caption" color="text.secondary">
+                              {formatDate(conversation.updatedAt)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {conversation.messages.length}{' '}
+                              {conversation.messages.length === 1 ? 'mensagem' : 'mensagens'}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          ml: 6.5,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {getPreview(conversation)}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                      size="small"
+                      title="Excluir conversa"
+                      sx={{
+                        color: 'text.disabled',
+                        '&:hover': {
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(244, 67, 54, 0.1)' : 'rgba(244, 67, 54, 0.08)',
+                          color: 'error.main',
+                        },
+                      }}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 }

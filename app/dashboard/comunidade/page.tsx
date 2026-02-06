@@ -24,6 +24,7 @@ import { PostCardMui } from '@/components/community/PostCardMui';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 import { FloatingChatButtonMui } from '@/components/chat/FloatingChatButtonMui';
+
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { useAccount } from '@/contexts/AccountContext';
@@ -47,7 +48,7 @@ export default function ComunidadePageMui() {
     removePost,
   } = usePosts();
 
-  const { account } = useAccount();
+  const { account, isSubscriptionActive, isLoading: isAccountLoading } = useAccount();
   const { users: storyUsers } = useStories();
 
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);

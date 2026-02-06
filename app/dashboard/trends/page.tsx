@@ -225,11 +225,8 @@ export default function TrendsPage() {
         </Box>
       </AppBar>
 
-      {/* Spacer para compensar o header fixo */}
-      <Toolbar />
-
       {/* Descrição */}
-      <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+      <Box sx={{ px: 2, pt: 2, pb: 1 }}>
         <Typography variant="body2" color="text.secondary">
           Pesquisas em alta no Google no Brasil. Use para se inspirar e criar conteúdo em alta.
         </Typography>

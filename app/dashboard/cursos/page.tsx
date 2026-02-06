@@ -203,9 +203,6 @@ export default function CursosPage() {
         </Box>
       </AppBar>
 
-      {/* Spacer para compensar o header fixo */}
-      <Toolbar />
-
       {/* Descrição */}
       <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: { xs: 3, sm: 4 }, textAlign: 'center' }}>
         <Typography

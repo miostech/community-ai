@@ -7,19 +7,19 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
     const redirectCookie = request.cookies.get('post_login_redirect')?.value;
-    
-    console.log('🔄 Post-login redirect check:', { 
+
+    console.log('🔄 Post-login redirect check:', {
         hasRedirectCookie: !!redirectCookie,
-        cookieValue: redirectCookie 
+        cookieValue: redirectCookie
     });
 
     // Limpa o cookie de redirect (definindo expiração no passado)
     const response = NextResponse.redirect(
-        redirectCookie 
-            ? new URL(decodeURIComponent(redirectCookie), request.url) 
+        redirectCookie
+            ? new URL(decodeURIComponent(redirectCookie), request.url)
             : new URL('/dashboard/comunidade', request.url)
     );
-    
+
     // Remove o cookie após usar
     response.cookies.set('post_login_redirect', '', {
         path: '/',

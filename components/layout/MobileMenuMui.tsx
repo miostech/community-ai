@@ -117,7 +117,7 @@ export function MobileMenuMui() {
                         minWidth: 'auto',
                         padding: '6px 0',
                         '&.Mui-selected': {
-                            color: 'primary.main',
+                            color: 'text.primary',
                         },
                     },
                 }}

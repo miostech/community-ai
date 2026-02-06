@@ -231,6 +231,7 @@ export default function PerfilPage() {
   };
 
   if (isLoading) {
+    const loadingName = `${formData.first_name} ${formData.last_name}`.trim() || 'Usuário';
     return (
       <Box sx={{ maxWidth: 896, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
         <AppBar
@@ -251,7 +252,7 @@ export default function PerfilPage() {
                     fontWeight: 'bold',
                   }}
                 >
-                  {displayName.charAt(0).toUpperCase()}
+                  {loadingName.charAt(0).toUpperCase()}
                 </Avatar>
                 <Typography variant="h6" fontWeight="bold">
                   Meu Perfil
@@ -313,375 +314,372 @@ export default function PerfilPage() {
         </Box>
       </AppBar>
 
-      {/* Spacer para compensar o header fixo */}
-      <Toolbar />
-
       <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
-      {!formData.phone.trim() && (
-        <Alert
-          severity="warning"
-          sx={{ mb: 3 }}
-        >
-          O telefone é obrigatório para usar a comunidade. Preencha o campo abaixo e salve para continuar.
-        </Alert>
-      )}
+        {!formData.phone.trim() && (
+          <Alert
+            severity="warning"
+            sx={{ mb: 3 }}
+          >
+            O telefone é obrigatório para usar a comunidade. Preencha o campo abaixo e salve para continuar.
+          </Alert>
+        )}
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
-        <Stack spacing={4}>
-          {/* Foto de Perfil */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Foto de Perfil
-            </Typography>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={3}
-              alignItems={{ xs: 'center', sm: 'flex-start' }}
-            >
-              <Box sx={{ position: 'relative', flexShrink: 0 }}>
-                {isUploadingAvatar ? (
-                  <Box
-                    sx={{
-                      width: { xs: 96, sm: 128 },
-                      height: { xs: 96, sm: 128 },
-                      borderRadius: '50%',
-                      bgcolor: 'action.hover',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: 4,
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <CircularProgress size={32} />
-                  </Box>
-                ) : formData.avatar_url ? (
-                  <Box sx={{ position: 'relative' }}>
-                    <Avatar
-                      src={formData.avatar_url}
-                      alt="Avatar"
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Stack spacing={4}>
+            {/* Foto de Perfil */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Foto de Perfil
+              </Typography>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={3}
+                alignItems={{ xs: 'center', sm: 'flex-start' }}
+              >
+                <Box sx={{ position: 'relative', flexShrink: 0 }}>
+                  {isUploadingAvatar ? (
+                    <Box
                       sx={{
                         width: { xs: 96, sm: 128 },
                         height: { xs: 96, sm: 128 },
+                        borderRadius: '50%',
+                        bgcolor: 'action.hover',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         border: 4,
                         borderColor: 'divider',
                       }}
-                    />
-                    <IconButton
-                      onClick={handleRemoveAvatar}
-                      disabled={isUploadingAvatar}
-                      size="small"
+                    >
+                      <CircularProgress size={32} />
+                    </Box>
+                  ) : formData.avatar_url ? (
+                    <Box sx={{ position: 'relative' }}>
+                      <Avatar
+                        src={formData.avatar_url}
+                        alt="Avatar"
+                        sx={{
+                          width: { xs: 96, sm: 128 },
+                          height: { xs: 96, sm: 128 },
+                          border: 4,
+                          borderColor: 'divider',
+                        }}
+                      />
+                      <IconButton
+                        onClick={handleRemoveAvatar}
+                        disabled={isUploadingAvatar}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          bottom: { xs: -4, sm: -8 },
+                          right: { xs: -4, sm: -8 },
+                          bgcolor: 'error.main',
+                          color: 'white',
+                          '&:hover': { bgcolor: 'error.dark' },
+                          boxShadow: 2,
+                        }}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Avatar
                       sx={{
-                        position: 'absolute',
-                        bottom: { xs: -4, sm: -8 },
-                        right: { xs: -4, sm: -8 },
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        '&:hover': { bgcolor: 'error.dark' },
-                        boxShadow: 2,
+                        width: { xs: 96, sm: 128 },
+                        height: { xs: 96, sm: 128 },
+                        background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                        fontSize: { xs: '2rem', sm: '2.5rem' },
+                        fontWeight: 'bold',
                       }}
                     >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ) : (
-                  <Avatar
-                    sx={{
-                      width: { xs: 96, sm: 128 },
-                      height: { xs: 96, sm: 128 },
-                      background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                      fontSize: { xs: '2rem', sm: '2.5rem' },
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {displayName.charAt(0).toUpperCase()}
-                  </Avatar>
-                )}
-              </Box>
+                      {displayName.charAt(0).toUpperCase()}
+                    </Avatar>
+                  )}
+                </Box>
 
-              <Box sx={{ flex: 1, width: '100%', textAlign: { xs: 'center', sm: 'left' } }}>
-                <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent={{ xs: 'center', sm: 'flex-start' }} sx={{ mb: 1.5, gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingAvatar || isSyncingInstagramAvatar}
-                    startIcon={<PhotoCameraIcon />}
-                    size="small"
-                  >
-                    {isUploadingAvatar ? 'Enviando...' : formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
-                  </Button>
-                  {formData.link_instagram?.trim() && !account?.used_instagram_avatar && (
+                <Box sx={{ flex: 1, width: '100%', textAlign: { xs: 'center', sm: 'left' } }}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent={{ xs: 'center', sm: 'flex-start' }} sx={{ mb: 1.5, gap: 1 }}>
                     <Button
                       variant="outlined"
-                      onClick={handleSyncInstagramAvatar}
+                      onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingAvatar || isSyncingInstagramAvatar}
-                      startIcon={<InstagramIcon />}
+                      startIcon={<PhotoCameraIcon />}
                       size="small"
                     >
-                      {isSyncingInstagramAvatar ? 'Buscando...' : 'Usar foto do Instagram'}
+                      {isUploadingAvatar ? 'Enviando...' : formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
                     </Button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={handleAvatarChange}
-                    style={{ display: 'none' }}
+                    {formData.link_instagram?.trim() && !account?.used_instagram_avatar && (
+                      <Button
+                        variant="outlined"
+                        onClick={handleSyncInstagramAvatar}
+                        disabled={isUploadingAvatar || isSyncingInstagramAvatar}
+                        startIcon={<InstagramIcon />}
+                        size="small"
+                      >
+                        {isSyncingInstagramAvatar ? 'Buscando...' : 'Usar foto do Instagram'}
+                      </Button>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleAvatarChange}
+                      style={{ display: 'none' }}
+                    />
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG. Máximo 500MB.
+                    {formData.link_instagram?.trim() && !account?.used_instagram_avatar && ' Ou use a foto do seu perfil do Instagram (uma vez).'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Informações Pessoais */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Informações Pessoais
+              </Typography>
+              <Stack spacing={2}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <TextField
+                    label="Nome"
+                    value={formData.first_name}
+                    onChange={(e) => updateField('first_name', e.target.value)}
+                    placeholder="Seu nome"
+                    fullWidth
+                    size="small"
+                  />
+                  <TextField
+                    label="Sobrenome"
+                    value={formData.last_name}
+                    onChange={(e) => updateField('last_name', e.target.value)}
+                    placeholder="Seu sobrenome"
+                    fullWidth
+                    size="small"
                   />
                 </Stack>
-                <Typography variant="caption" color="text.secondary">
-                  Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG. Máximo 500MB.
-                  {formData.link_instagram?.trim() && !account?.used_instagram_avatar && ' Ou use a foto do seu perfil do Instagram (uma vez).'}
-                </Typography>
-              </Box>
-            </Stack>
-          </Box>
-
-          <Divider />
-
-          {/* Informações Pessoais */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Informações Pessoais
-            </Typography>
-            <Stack spacing={2}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
-                  label="Nome"
-                  value={formData.first_name}
-                  onChange={(e) => updateField('first_name', e.target.value)}
-                  placeholder="Seu nome"
-                  fullWidth
-                  size="small"
-                />
-                <TextField
-                  label="Sobrenome"
-                  value={formData.last_name}
-                  onChange={(e) => updateField('last_name', e.target.value)}
-                  placeholder="Seu sobrenome"
+                  label="Email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  placeholder="seu@email.com"
                   fullWidth
                   size="small"
                 />
               </Stack>
-              <TextField
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => updateField('email', e.target.value)}
-                placeholder="seu@email.com"
-                fullWidth
-                size="small"
-              />
-            </Stack>
-          </Box>
+            </Box>
 
-          <Divider />
+            <Divider />
 
-          {/* Contato */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Contato
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Seu telefone para contato direto com a comunidade{' '}
-              <Typography component="span" variant="caption" color="warning.main" fontWeight={500}>
-                (obrigatório)
+            {/* Contato */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Contato
               </Typography>
-            </Typography>
-            <PhoneInput
-              label="Telefone/WhatsApp"
-              value={formData.phone}
-              countryCode={formData.phone_country_code}
-              onValueChange={(value: string) => updateField('phone', value)}
-              onCountryCodeChange={(code: string) => updateField('phone_country_code', code)}
-            />
-          </Box>
-
-          <Divider />
-
-          {/* Redes Sociais */}
-          <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-              Redes Sociais
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Preencha os que quiser. Os links aparecerão no seu perfil quando alguém visualizar.
-            </Typography>
-
-            <Stack spacing={3}>
-              {/* Instagram */}
-              <Box>
-                <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                  Instagram
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                Seu telefone para contato direto com a comunidade{' '}
+                <Typography component="span" variant="caption" color="warning.main" fontWeight={500}>
+                  (obrigatório)
                 </Typography>
-                <TextField
-                  value={formData.link_instagram}
-                  onChange={(e) => updateField('link_instagram', e.target.value.replace('@', ''))}
-                  placeholder="seu_usuario"
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Typography color="text.secondary">@</Typography>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                {formData.link_instagram && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                    Link: instagram.com/{formData.link_instagram}
-                  </Typography>
-                )}
-              </Box>
+              </Typography>
+              <PhoneInput
+                label="Telefone/WhatsApp"
+                value={formData.phone}
+                countryCode={formData.phone_country_code}
+                onValueChange={(value: string) => updateField('phone', value)}
+                onCountryCodeChange={(code: string) => updateField('phone_country_code', code)}
+              />
+            </Box>
 
-              {/* TikTok */}
-              <Box>
-                <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                  TikTok
-                </Typography>
-                <TextField
-                  value={formData.link_tiktok}
-                  onChange={(e) => updateField('link_tiktok', e.target.value.replace('@', ''))}
-                  placeholder="seu_usuario"
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Typography color="text.secondary">@</Typography>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                {formData.link_tiktok && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                    Link: tiktok.com/@{formData.link_tiktok}
-                  </Typography>
-                )}
-              </Box>
+            <Divider />
 
-              {/* YouTube */}
-              <Box>
-                <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
-                  YouTube
-                </Typography>
-                <TextField
-                  value={formData.link_youtube}
-                  onChange={(e) => updateField('link_youtube', e.target.value.replace('@', ''))}
-                  placeholder="seu_canal"
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Typography color="text.secondary">@</Typography>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                {formData.link_youtube && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                    Link: youtube.com/@{formData.link_youtube}
+            {/* Redes Sociais */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Redes Sociais
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                Preencha os que quiser. Os links aparecerão no seu perfil quando alguém visualizar.
+              </Typography>
+
+              <Stack spacing={3}>
+                {/* Instagram */}
+                <Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Instagram
                   </Typography>
-                )}
-              </Box>
+                  <TextField
+                    value={formData.link_instagram}
+                    onChange={(e) => updateField('link_instagram', e.target.value.replace('@', ''))}
+                    placeholder="seu_usuario"
+                    fullWidth
+                    size="small"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Typography color="text.secondary">@</Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {formData.link_instagram && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      Link: instagram.com/{formData.link_instagram}
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* TikTok */}
+                <Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    TikTok
+                  </Typography>
+                  <TextField
+                    value={formData.link_tiktok}
+                    onChange={(e) => updateField('link_tiktok', e.target.value.replace('@', ''))}
+                    placeholder="seu_usuario"
+                    fullWidth
+                    size="small"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Typography color="text.secondary">@</Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {formData.link_tiktok && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      Link: tiktok.com/@{formData.link_tiktok}
+                    </Typography>
+                  )}
+                </Box>
+
+                {/* YouTube */}
+                <Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    YouTube
+                  </Typography>
+                  <TextField
+                    value={formData.link_youtube}
+                    onChange={(e) => updateField('link_youtube', e.target.value.replace('@', ''))}
+                    placeholder="seu_canal"
+                    fullWidth
+                    size="small"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Typography color="text.secondary">@</Typography>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                  {formData.link_youtube && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      Link: youtube.com/@{formData.link_youtube}
+                    </Typography>
+                  )}
+                </Box>
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Botões de Ação */}
+            <Stack
+              direction={{ xs: 'column-reverse', sm: 'row' }}
+              spacing={2}
+              justifyContent="flex-end"
+            >
+              <Button
+                variant="text"
+                onClick={handleCancel}
+                fullWidth
+                sx={{ display: { xs: 'flex', sm: 'inline-flex' }, width: { sm: 'auto' } }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSave}
+                disabled={isSaving || !formData.phone.trim()}
+                startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                fullWidth
+                sx={{ display: { xs: 'flex', sm: 'inline-flex' }, width: { sm: 'auto' } }}
+              >
+                {isSaving ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
             </Stack>
-          </Box>
+          </Stack>
+        </Paper>
 
-          <Divider />
-
-          {/* Botões de Ação */}
+        {/* Ver meu perfil público */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
           <Stack
-            direction={{ xs: 'column-reverse', sm: 'row' }}
+            direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
-            justifyContent="flex-end"
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
           >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Ver meu perfil público
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Veja como seu perfil aparece na comunidade
+              </Typography>
+            </Box>
             <Button
-              variant="text"
-              onClick={handleCancel}
+              component={Link}
+              href={`/dashboard/comunidade/perfil/${nameToSlug(displayName)}`}
+              variant="outlined"
+              startIcon={<VisibilityIcon />}
               fullWidth
-              sx={{ display: { xs: 'flex', sm: 'inline-flex' }, width: { sm: 'auto' } }}
+              sx={{ width: { sm: 'auto' } }}
             >
-              Cancelar
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleSave}
-              disabled={isSaving || !formData.phone.trim()}
-              startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-              fullWidth
-              sx={{ display: { xs: 'flex', sm: 'inline-flex' }, width: { sm: 'auto' } }}
-            >
-              {isSaving ? 'Salvando...' : 'Salvar alterações'}
+              Ver como outros me veem
             </Button>
           </Stack>
-        </Stack>
-      </Paper>
+        </Paper>
 
-      {/* Ver meu perfil público */}
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ sm: 'center' }}
-          justifyContent="space-between"
-        >
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              Ver meu perfil público
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Veja como seu perfil aparece na comunidade
-            </Typography>
-          </Box>
-          <Button
-            component={Link}
-            href={`/dashboard/comunidade/perfil/${nameToSlug(displayName)}`}
-            variant="outlined"
-            startIcon={<VisibilityIcon />}
-            fullWidth
-            sx={{ width: { sm: 'auto' } }}
+        {/* Sair da conta */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
           >
-            Ver como outros me veem
-          </Button>
-        </Stack>
-      </Paper>
-
-      {/* Sair da conta */}
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={2}
-          alignItems={{ sm: 'center' }}
-          justifyContent="space-between"
-        >
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              Sair da conta
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Desconectar desta conta no dispositivo
-            </Typography>
-          </Box>
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={handleLogout}
-            startIcon={<LogoutIcon />}
-            fullWidth
-            sx={{ width: { sm: 'auto' } }}
-          >
-            Sair
-          </Button>
-        </Stack>
-      </Paper>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Sair da conta
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Desconectar desta conta no dispositivo
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={handleLogout}
+              startIcon={<LogoutIcon />}
+              fullWidth
+              sx={{ width: { sm: 'auto' } }}
+            >
+              Sair
+            </Button>
+          </Stack>
+        </Paper>
       </Box>
     </Box>
   );
