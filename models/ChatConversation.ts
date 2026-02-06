@@ -1,4 +1,18 @@
-import mongoose, { InferSchemaType, Model, Schema } from 'mongoose';
+import mongoose, { Model, Schema, Types } from 'mongoose';
+
+export interface ChatConversation {
+    _id: Types.ObjectId;
+    account_id: Types.ObjectId;
+    title: string;
+    system_prompt?: string;
+    model: string;
+    summary: string;
+    total_tokens_in: number;
+    total_tokens_out: number;
+    status: 'active' | 'archived';
+    created_at: Date;
+    updated_at: Date;
+}
 
 const ChatConversationSchema = new Schema(
     {
@@ -26,8 +40,6 @@ const ChatConversationSchema = new Schema(
         versionKey: false,
     }
 );
-
-export type ChatConversation = InferSchemaType<typeof ChatConversationSchema>;
 
 const ChatConversationModel: Model<ChatConversation> =
     mongoose.models.ChatConversation ??

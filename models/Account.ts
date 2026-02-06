@@ -1,4 +1,35 @@
-import mongoose, { InferSchemaType, Model, Schema } from 'mongoose';
+import mongoose, { Model, Schema, Types } from 'mongoose';
+
+export interface Account {
+    _id: Types.ObjectId;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+    phone_country_code: string;
+    auth_user_id: string;
+    provider_oauth?: 'google' | 'apple' | 'facebook' | 'kiwify';
+    link_instagram?: string;
+    link_tiktok?: string;
+    link_youtube?: string;
+    primary_social_link?: 'instagram' | 'tiktok' | 'youtube' | null;
+    avatar_url?: string;
+    used_instagram_avatar: boolean;
+    background_url?: string;
+    code_invite?: string;
+    code_invite_ref?: string;
+    plan: 'free' | 'pro' | 'enterprise';
+    plan_expire_at?: Date;
+    total_tokens_used: number;
+    total_tokens_used_in_current_month: number;
+    total_tokens_used_current_week: number;
+    utm_ref?: string;
+    last_access_at: Date;
+    last_notifications_read_at?: Date | null;
+    password_hash?: string;
+    created_at: Date;
+    updated_at: Date;
+}
 
 const AccountSchema = new Schema(
     {
@@ -34,8 +65,6 @@ const AccountSchema = new Schema(
         versionKey: false,
     }
 );
-
-export type Account = InferSchemaType<typeof AccountSchema>;
 
 const AccountModel: Model<Account> =
     mongoose.models.Account ?? mongoose.model<Account>('Account', AccountSchema);

@@ -1,4 +1,15 @@
-import mongoose, { InferSchemaType, Model, Schema } from 'mongoose';
+import mongoose, { Model, Schema, Types } from 'mongoose';
+
+export interface ChatMessage {
+    _id: Types.ObjectId;
+    conversation_id: Types.ObjectId;
+    account_id: Types.ObjectId;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    tokens_in: number;
+    tokens_out: number;
+    created_at: Date;
+}
 
 const ChatMessageSchema = new Schema(
     {
@@ -31,8 +42,6 @@ const ChatMessageSchema = new Schema(
 
 /** Índice composto para buscar mensagens de uma conversa em ordem */
 ChatMessageSchema.index({ conversation_id: 1, created_at: 1 });
-
-export type ChatMessage = InferSchemaType<typeof ChatMessageSchema>;
 
 const ChatMessageModel: Model<ChatMessage> =
     mongoose.models.ChatMessage ??

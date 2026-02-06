@@ -131,7 +131,7 @@ export async function GET() {
             }
         }
 
-        const acc = account as { _id: unknown; used_instagram_avatar?: boolean;[k: string]: unknown };
+        const acc = account as unknown as { _id: unknown; used_instagram_avatar?: boolean;[k: string]: unknown };
         const payment = lastPayment as any;
 
         return NextResponse.json({
