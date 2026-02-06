@@ -154,8 +154,8 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: { xs: '100%', sm: 'auto' },
-        minHeight: { xs: '100%' },
+        height: { xs: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom))', sm: 'auto' },
+        minHeight: { xs: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom))' },
         bgcolor: 'background.paper',
         overflow: 'hidden',
         borderRadius: { sm: 3 },
@@ -171,7 +171,8 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
           flex: 1,
           overflowY: 'auto',
           px: { xs: 2, sm: 2.5, md: 3 },
-          py: { xs: 2, sm: 2.5, md: 3 },
+          pt: { xs: 9, sm: 2.5, md: 3 },
+          pb: { xs: 10, sm: 2.5, md: 3 },
         }}
       >
         <Stack spacing={{ xs: 2, sm: 2.5 }}>
@@ -317,9 +318,14 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
           borderColor: 'divider',
           px: { xs: 1.5, sm: 2 },
           pt: { xs: 1.5, sm: 2 },
-          pb: { xs: 1.5, sm: 2 },
+          pb: { xs: 1, sm: 0 },
           flexShrink: 0,
           bgcolor: 'background.paper',
+          position: { xs: 'fixed', sm: 'static' },
+          bottom: { xs: 'calc(56px + env(safe-area-inset-bottom))' },
+          left: { xs: 0 },
+          right: { xs: 0 },
+          zIndex: { xs: 40 },
         }}
       >
         <TextField
@@ -366,8 +372,9 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
             '& .MuiOutlinedInput-root': {
               borderRadius: 3,
               bgcolor: 'background.default',
-              fontSize: { xs: '0.875rem', sm: '1rem' },
+              fontSize: '1rem',
               py: 0.5,
+              height: 48
             },
           }}
         />

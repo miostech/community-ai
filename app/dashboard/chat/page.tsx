@@ -197,13 +197,12 @@ function ChatPageContent() {
                   placeholder="Crie ideias de conteúdo para Instagram"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  autoFocus
                   InputProps={{
                     disableUnderline: true,
                     sx: {
                       px: { xs: 1.5, sm: 3 },
                       py: { xs: 1.5, sm: 2 },
-                      fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
+                      fontSize: { xs: '1rem', md: '1.125rem' },
                     },
                   }}
                 />
@@ -290,7 +289,8 @@ function ChatPageContent() {
           mx: 'auto',
           px: { xs: 0, sm: 2, md: 3 },
           py: { xs: 0, sm: 2, md: 3, lg: 4 },
-          height: { xs: 'calc(100dvh - 56px)', sm: 'auto' },
+          pb: { xs: 'calc(56px + env(safe-area-inset-bottom))', md: 0 },
+          height: "100%",
           display: 'flex',
           flexDirection: 'column',
         }}
