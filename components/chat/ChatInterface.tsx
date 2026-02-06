@@ -154,6 +154,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
       sx={{
         display: 'flex',
         flexDirection: 'column',
+        mt: { xs: 7, sm: 0 },
         height: { xs: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom))', sm: 'auto' },
         minHeight: { xs: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom))' },
         bgcolor: 'background.paper',
@@ -171,7 +172,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
           flex: 1,
           overflowY: 'auto',
           px: { xs: 2, sm: 2.5, md: 3 },
-          pt: { xs: 9, sm: 2.5, md: 3 },
+          pt: { xs: 2, sm: 2.5, md: 3 },
           pb: { xs: 10, sm: 2.5, md: 3 },
         }}
       >
