@@ -1,8 +1,14 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser } from '@/contexts/UserContext';
-import { useChatHistory, Message } from '@/contexts/ChatHistoryContext';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+}
 
 import {
   Typography,
@@ -12,10 +18,12 @@ import {
   Box,
   TextField,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowForward as SendIcon,
 } from '@mui/icons-material';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatInterfaceProps {
   initialContent?: {
@@ -30,25 +38,58 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ initialContent, initialPrompt, conversationId, onNewConversation }: ChatInterfaceProps) {
   const { user } = useUser();
-  const {
-    saveConversation,
-    updateConversation,
-    currentConversationId,
-    setCurrentConversationId,
-    loadConversation
-  } = useChatHistory();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+  const hasInitializedRef = useRef(false);
+  const apiConversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Buscar mensagens de uma conversa existente da API
+  const loadConversationFromApi = useCallback(async (convId: string) => {
+    setLoadingConversation(true);
+    try {
+      const res = await fetch(`/api/chat/${convId}?limit=50`);
+      if (!res.ok) throw new Error('Erro ao carregar conversa');
+      const data = await res.json();
+
+      apiConversationIdRef.current = convId;
+
+      const loadedMessages: Message[] = data.messages.map((m: any) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        timestamp: new Date(m.created_at),
+      }));
+
+      setMessages(loadedMessages);
+    } catch (err) {
+      console.error('Erro ao carregar conversa:', err);
+      const errorMsg: Message = {
+        id: 'error',
+        role: 'assistant',
+        content: '❌ Não foi possível carregar a conversa. Tente novamente.',
+        timestamp: new Date(),
+      };
+      setMessages([errorMsg]);
+    } finally {
+      setLoadingConversation(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (hasInitialized) return;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
+    // Se veio um conversationId (do histórico), carregar da API
+    if (conversationId) {
+      loadConversationFromApi(conversationId);
+      return;
+    }
 
     if (initialContent) {
-      // Mensagem inicial da IA
       const initialMessage: Message = {
         id: '1',
         role: 'assistant',
@@ -56,9 +97,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
         timestamp: new Date(),
       };
       setMessages([initialMessage]);
-      setHasInitialized(true);
     } else if (initialPrompt) {
-      // Se houver um prompt inicial, enviar automaticamente
       const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
@@ -67,20 +106,11 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
       };
       setMessages([userMessage]);
       setIsLoading(true);
-      setHasInitialized(true);
 
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: generateResponse(initialPrompt, initialContent, user.name),
-          timestamp: new Date(),
-        };
-        setMessages([userMessage, assistantMessage]);
+      sendToApi(initialPrompt).catch(() => {
         setIsLoading(false);
-      }, 1500);
+      });
     } else {
-      // Mensagem de boas-vindas quando não há prompt inicial
       const welcomeMessage: Message = {
         id: '1',
         role: 'assistant',
@@ -88,36 +118,58 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
-      setHasInitialized(true);
     }
-  }, [initialContent, initialPrompt, hasInitialized, user.name]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Salvar automaticamente as mensagens
-  useEffect(() => {
-    if (messages.length > 0 && hasInitialized) {
-      if (currentConversationId) {
-        updateConversation(currentConversationId, messages);
-      } else {
-        saveConversation(messages);
-      }
-    }
-  }, [messages, hasInitialized]);
+  const sendToApi = async (content: string) => {
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: content,
+          conversation_id: apiConversationIdRef.current,
+        }),
+      });
 
-  // Carregar conversa existente se houver conversationId
-  useEffect(() => {
-    if (conversationId && !hasInitialized) {
-      const conversation = loadConversation(conversationId);
-      if (conversation) {
-        setMessages(conversation.messages);
-        setCurrentConversationId(conversationId);
-        setHasInitialized(true);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Erro ao enviar mensagem');
       }
+
+      const data = await res.json();
+
+      // Guardar o conversation_id para próximas mensagens
+      if (data.conversation_id) {
+        apiConversationIdRef.current = data.conversation_id;
+      }
+
+      const assistantMessage: Message = {
+        id: data.message.id,
+        role: 'assistant',
+        content: data.message.content,
+        timestamp: new Date(data.message.created_at),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err: any) {
+      console.error('Erro no chat:', err);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: '❌ Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
-  }, [conversationId]);
+  };
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -131,20 +183,11 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
-    // Simular resposta da IA
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: generateResponse(input, initialContent, user.name),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500);
+    await sendToApi(currentInput);
   };
 
 
@@ -176,6 +219,16 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
           pb: { xs: 10, sm: 2.5, md: 3 },
         }}
       >
+        {loadingConversation ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Stack spacing={2} alignItems="center">
+              <CircularProgress size={36} />
+              <Typography variant="body2" color="text.secondary">
+                Carregando conversa...
+              </Typography>
+            </Stack>
+          </Box>
+        ) : (
         <Stack spacing={{ xs: 2, sm: 2.5 }}>
           {messages.map((message) => (
             <Stack
@@ -218,17 +271,65 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
                     }),
                 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    lineHeight: 1.7,
-                    fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                  }}
-                >
-                  {message.content}
-                </Typography>
+                {message.role === 'user' ? (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      lineHeight: 1.7,
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                    }}
+                  >
+                    {message.content}
+                  </Typography>
+                ) : (
+                  <Box
+                    sx={{
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                      lineHeight: 1.7,
+                      wordBreak: 'break-word',
+                      '& p': { m: 0, mb: 1, '&:last-child': { mb: 0 } },
+                      '& strong': { fontWeight: 700 },
+                      '& h1, & h2, & h3': {
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        mt: 1.5,
+                        mb: 0.5,
+                        '&:first-of-type': { mt: 0 },
+                      },
+                      '& ul, & ol': { pl: 2.5, my: 0.5 },
+                      '& li': { mb: 0.3 },
+                      '& code': {
+                        bgcolor: 'action.selected',
+                        px: 0.5,
+                        py: 0.25,
+                        borderRadius: 0.5,
+                        fontSize: '0.8em',
+                        fontFamily: 'monospace',
+                      },
+                      '& pre': {
+                        bgcolor: 'action.selected',
+                        p: 1.5,
+                        borderRadius: 1,
+                        overflow: 'auto',
+                        my: 1,
+                        '& code': { bgcolor: 'transparent', p: 0 },
+                      },
+                      '& hr': { my: 1, borderColor: 'divider' },
+                      '& blockquote': {
+                        borderLeft: 3,
+                        borderColor: 'primary.main',
+                        pl: 1.5,
+                        ml: 0,
+                        fontStyle: 'italic',
+                        opacity: 0.85,
+                      },
+                    }}
+                  >
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </Box>
+                )}
               </Box>
               {message.role === 'user' && (
                 user.avatar ? (
@@ -308,6 +409,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
           )}
           <div ref={messagesEndRef} />
         </Stack>
+        )}
       </Box>
 
       {/* Input Area */}
@@ -374,53 +476,11 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
               borderRadius: 3,
               bgcolor: 'background.default',
               fontSize: '1rem',
-              py: 0.5,
-              height: 48
+              py: 0.5
             },
           }}
         />
       </Box>
     </Box>
   );
-}
-
-// Função para gerar respostas simuladas (em produção, chamaria API real)
-function generateResponse(userInput: string, initialContent?: any, userName?: string): string {
-  const lowerInput = userInput.toLowerCase();
-  const greeting = userName ? `${userName}` : 'Vamos lá';
-
-  if (lowerInput.includes('melhor') || lowerInput.includes('melhore')) {
-    return `✨ Ótima escolha, ${greeting}!\n\nAqui está uma versão melhorada usando a técnica de "hook curioso" que a Nat sempre usa:\n\n🎯 **Hook melhorado:**\n"Você já percebeu como o conteúdo que consome diariamente está moldando suas decisões sem você nem notar?"\n\n💡 **Por que funciona:**\n• Cria curiosidade imediata\n• Usa "você" para conexão direta\n• Questão que faz pensar\n\nEssa é uma das técnicas favoritas do Luigi para prender atenção nos primeiros 3 segundos!\n\nQuer que eu ajuste mais alguma coisa?`;
-  }
-
-  if (lowerInput.includes('encurt') || lowerInput.includes('curt')) {
-    return `📱 Perfeito, ${greeting}! Vou usar a regra dos "90 caracteres" da Nat:\n\n✂️ **Versão encurtada:**\n"Estamos sendo influenciados o tempo todo. Quando você entende isso, pode criar conteúdo que realmente impacta."\n\n🎯 **O que fiz:**\n• Reduzi de 2 parágrafos para 2 frases diretas\n• Mantive a essência da mensagem\n• Deixei mais fácil de ler no mobile\n\nEssa versão segue o método "fast content" que o Luigi usa para TikTok e Reels!\n\nFicou do jeito que você queria?`;
-  }
-
-  if (lowerInput.includes('tiktok') || lowerInput.includes('adapt')) {
-    return `🎬 Show, ${greeting}! Vou adaptar usando o framework de vídeos curtos da Nat:\n\n**⚡ Hook (primeiros 3 seg):**\n"POV: você descobrindo que TODO conteúdo que você vê está te influenciando"\n\n**📖 Desenvolvimento (7-15 seg):**\n"Mas calma, isso não é ruim! Quando você entende como funciona, você pode criar conteúdo que realmente ajuda as pessoas."\n\n**💥 CTA (últimos 3 seg):**\n"Salva esse vídeo e me conta: qual foi o último conteúdo que mudou sua cabeça?"\n\n🔥 **Dicas extras da Nat:**\n• Use texto na tela para o hook\n• Fale olhando na câmera\n• Trending sounds aumentam alcance\n\nPronto para gravar? 🚀`;
-  }
-
-  if (lowerInput.includes('cta') || lowerInput.includes('persuasiv')) {
-    return `💥 Vamos turbinar esse CTA, ${greeting}!\n\nAqui está usando a técnica de "engajamento ativo" que o Luigi ensina:\n\n**🎯 CTA mais persuasivo:**\n"Compartilhe nos comentários qual foi o último conteúdo que mudou sua perspectiva - vou ler CADA resposta e responder as melhores!"\n\n✨ **Por que funciona:**\n✅ Cria senso de urgência (vou ler CADA)\n✅ Promessa de interação (vou responder)\n✅ Uso de CAPS para ênfase\n✅ Recompensa social (as melhores)\n\nEsse é o estilo que a Nat usa e que gera +300% mais comentários!\n\nQuer testar outra variação ainda mais forte?`;
-  }
-
-  if (lowerInput.includes('storytelling') || lowerInput.includes('história')) {
-    return `📖 Excelente, ${greeting}! O storytelling é a especialidade da Nat!\n\nAqui está usando a estrutura "Antes → Descoberta → Depois → Convite":\n\n**🎬 Versão com storytelling:**\n\n**Hook:**\n"Eu estava criando conteúdo há 3 anos quando percebi algo que mudou tudo..."\n\n**Desenvolvimento:**\n"Descobri que estávamos sendo influenciados o tempo todo, sem perceber. Foi quando entendi que, ao invés de apenas consumir, eu poderia criar conteúdo que realmente impactasse a vida das pessoas de forma positiva. Hoje, cada post que crio tem esse propósito."\n\n**CTA:**\n"Qual foi o momento que mudou sua perspectiva sobre criar conteúdo? Conta aqui nos comentários!"\n\n💡 **O que adicionei:**\n• Narrativa pessoal (cria conexão)\n• Vulnerabilidade ("percebi algo")\n• Transformação clara\n• Convite à reflexão\n\nEssa é a fórmula que a Nat usa em posts que geram milhões de views!\n\nQuer adicionar mais algum elemento emocional?`;
-  }
-
-  if (lowerInput.includes('instagram') || lowerInput.includes('insta')) {
-    return `📸 Beleza, ${greeting}! Vou adaptar para o Instagram usando as técnicas da Nat:\n\n**🎯 Para Feed:**\n• Primeira frase deve ser impactante\n• Use quebras de linha (aumenta leitura)\n• Máximo 3 hashtags (parece mais orgânico)\n• Foto com texto overlay\n\n**📱 Para Reels:**\n• Hook nos primeiros 1-2 segundos\n• Legendas grandes e fáceis de ler\n• Música trending\n• CTA no fim do vídeo\n\n**💬 Para Stories:**\n• Use adesivos de enquete\n• Caixinha de perguntas\n• "Arrasta pra cima" mental\n\nQual formato você quer que eu desenvolva melhor?`;
-  }
-
-  if (lowerInput.includes('viral') || lowerInput.includes('viralizar')) {
-    return `🚀 Opa, ${greeting}! Vou te passar a fórmula de conteúdo viral que o Luigi usa:\n\n**🔥 Os 5 elementos do conteúdo viral:**\n\n1️⃣ **Hook inesperado** - surpreenda nos primeiros 3 seg\n2️⃣ **Valor rápido** - entregue algo útil logo\n3️⃣ **Emoção forte** - raiva, alegria ou surpresa\n4️⃣ **Identificação** - "isso é tão eu"\n5️⃣ **Compartilhável** - fácil de marcar amigos\n\n💡 **Tópicos que viralizam mais:**\n• Transformações (antes/depois)\n• Revelações (eu descobri que...)\n• Controvérsias (opinião forte)\n• Tutoriais rápidos (em 30 seg)\n\n🎯 **Dica da Nat:**\nConteúdo viral = 20% técnica + 80% timing\nPoste quando seu público está online!\n\nQuer que eu crie um conteúdo viral do zero pra você?`;
-  }
-
-  if (lowerInput.includes('ajuda') || lowerInput.includes('dúvida') || lowerInput.includes('não sei')) {
-    return `Relaxa, ${greeting}! Estou aqui pra isso! 😊\n\n✨ **Como posso te ajudar melhor:**\n\nMe conte:\n• Que tipo de conteúdo você quer criar?\n• Para qual rede social?\n• Qual seu objetivo? (engajamento, venda, autoridade)\n• Tem algum exemplo que você gosta?\n\n💡 **Ou escolha um desses:**\n• "Crie um roteiro viral para TikTok"\n• "Me dê 10 ideias de conteúdo"\n• "Adapte isso para Instagram"\n• "Melhore meu gancho"\n\nVamos criar juntos usando tudo que a Nat e o Luigi me ensinaram! 🚀`;
-  }
-
-  // Resposta genérica mais interativa
-  return `Entendi, ${greeting}! 👋\n\n✨ Como **IA treinada pessoalmente pela Nat e pelo Luigi**, posso fazer muito por você:\n\n**🎯 Criação de conteúdo:**\n• Roteiros completos (hook + desenvolvimento + CTA)\n• Ideias virais para qualquer nicho\n• Adaptação entre redes sociais\n\n**📱 Otimização:**\n• Melhorar hooks para prender atenção\n• CTAs que convertem\n• Adicionar storytelling\n• Encurtar/expandir textos\n\n**💡 Estratégia:**\n• Análise de conteúdo\n• Sugestões de trending topics\n• Timing de postagem\n\n🔥 **Fala pra mim:**\nO que você quer criar agora? Pode ser específico ou me perguntar qualquer coisa sobre estratégia de conteúdo!\n\nEstou aqui 24/7 usando o conhecimento da Nat e do Luigi pra te ajudar! 💪`;
 }

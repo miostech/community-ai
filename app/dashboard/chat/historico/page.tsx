@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useChatHistory } from '@/contexts/ChatHistoryContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 
@@ -18,6 +17,7 @@ import {
   InputAdornment,
   Stack,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -27,30 +27,66 @@ import {
   TextsmsOutlined as ChatBubbleOutlineIcon,
 } from '@mui/icons-material';
 
+interface ConversationItem {
+  _id: string;
+  title: string;
+  summary?: string;
+  model: string;
+  total_tokens_in: number;
+  total_tokens_out: number;
+  message_count: number;
+  preview: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function HistoricoPage() {
-  const { conversations, deleteConversation, setCurrentConversationId } = useChatHistory();
   const { user } = useUser();
   const router = useRouter();
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chat');
+      if (!res.ok) throw new Error('Erro ao buscar conversas');
+      const data = await res.json();
+      setConversations(data.conversations ?? []);
+    } catch (err) {
+      console.error('Erro ao carregar histórico:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
 
   const filteredConversations = conversations.filter((conv) =>
-    conv.title.toLowerCase().includes(searchTerm.toLowerCase())
+    conv.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conv.preview.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleOpenConversation = (conversationId: string) => {
-    setCurrentConversationId(conversationId);
     router.push(`/dashboard/chat?conversation=${conversationId}`);
   };
 
   const handleNewChat = () => {
-    setCurrentConversationId(null);
     router.push('/dashboard/chat');
   };
 
-  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    if (confirm('Tem certeza que deseja excluir esta conversa?')) {
-      deleteConversation(conversationId);
+    if (!confirm('Tem certeza que deseja excluir esta conversa?')) return;
+
+    try {
+      const res = await fetch(`/api/chat/${conversationId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Erro ao excluir');
+      setConversations((prev) => prev.filter((c) => c._id !== conversationId));
+    } catch (err) {
+      console.error('Erro ao excluir conversa:', err);
     }
   };
 
@@ -75,16 +111,6 @@ export default function HistoricoPage() {
         year: 'numeric',
       });
     }
-  };
-
-  const getPreview = (conversation: any) => {
-    const firstUserMessage = conversation.messages.find((msg: any) => msg.role === 'user');
-    if (firstUserMessage) {
-      return firstUserMessage.content.length > 100
-        ? firstUserMessage.content.substring(0, 100) + '...'
-        : firstUserMessage.content;
-    }
-    return 'Nova conversa';
   };
 
   return (
@@ -132,8 +158,6 @@ export default function HistoricoPage() {
           </Box>
         </AppBar>
 
-        <Toolbar />
-
         {/* Search */}
         <Box sx={{ px: 2, py: 2 }}>
           <TextField
@@ -159,7 +183,14 @@ export default function HistoricoPage() {
 
         {/* Content */}
         <Box sx={{ px: 2 }}>
-          {filteredConversations.length === 0 ? (
+          {isLoading ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <CircularProgress size={40} />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Carregando conversas...
+              </Typography>
+            </Box>
+          ) : filteredConversations.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 6 }}>
               <Box
                 sx={{
@@ -207,8 +238,8 @@ export default function HistoricoPage() {
             <Stack spacing={2}>
               {filteredConversations.map((conversation) => (
                 <Paper
-                  key={conversation.id}
-                  onClick={() => handleOpenConversation(conversation.id)}
+                  key={conversation._id}
+                  onClick={() => handleOpenConversation(conversation._id)}
                   elevation={0}
                   sx={{
                     p: { xs: 2, sm: 2.5 },
@@ -264,11 +295,11 @@ export default function HistoricoPage() {
                             }
                           >
                             <Typography variant="caption" color="text.secondary">
-                              {formatDate(conversation.updatedAt)}
+                              {formatDate(new Date(conversation.updated_at))}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {conversation.messages.length}{' '}
-                              {conversation.messages.length === 1 ? 'mensagem' : 'mensagens'}
+                              {conversation.message_count}{' '}
+                              {conversation.message_count === 1 ? 'mensagem' : 'mensagens'}
                             </Typography>
                           </Stack>
                         </Box>
@@ -284,11 +315,11 @@ export default function HistoricoPage() {
                           overflow: 'hidden',
                         }}
                       >
-                        {getPreview(conversation)}
+                        {conversation.preview}
                       </Typography>
                     </Box>
                     <IconButton
-                      onClick={(e) => handleDeleteConversation(e, conversation.id)}
+                      onClick={(e) => handleDeleteConversation(e, conversation._id)}
                       size="small"
                       title="Excluir conversa"
                       sx={{

@@ -24,7 +24,6 @@ import {
   History as HistoryIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import { useChatHistory } from '@/contexts/ChatHistoryContext';
 
 const suggestionPrompts = [
   'Criar roteiro para Reels',
@@ -37,7 +36,6 @@ const suggestionPrompts = [
 function ChatPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { setCurrentConversationId } = useChatHistory();
   const conversationId = searchParams.get('conversation');
   const [hasStarted, setHasStarted] = useState(false);
   const [initialPrompt, setInitialPrompt] = useState('');
@@ -96,7 +94,6 @@ function ChatPageContent() {
           {hasStarted && (
             <IconButton
               onClick={() => {
-                setCurrentConversationId(null);
                 setHasStarted(false);
                 setInitialPrompt('');
                 router.push('/dashboard/chat');
@@ -274,7 +271,6 @@ function ChatPageContent() {
   }
 
   const handleNewConversation = () => {
-    setCurrentConversationId(null);
     setHasStarted(false);
     setInitialPrompt('');
     router.push('/dashboard/chat');
