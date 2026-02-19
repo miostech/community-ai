@@ -57,9 +57,11 @@ export function Stories({ users }: StoriesProps) {
           >
             <div className="relative">
               {/* Ring gradient animado para stories */}
-              <div className={`rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2.5px] transition-all duration-200 ${
-                pressedStory === user.id ? 'scale-95' : 'group-hover:scale-105 group-active:scale-95'
-              }`}>
+              <div className={`rounded-full p-[2.5px] transition-all duration-200 ${
+                index === 0
+                  ? 'bg-gradient-to-tr from-amber-400 via-yellow-500 to-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.5)]'
+                  : 'bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600'
+              } ${pressedStory === user.id ? 'scale-95' : 'group-hover:scale-105 group-active:scale-95'}`}>
                 <div className="rounded-full bg-white dark:bg-black p-[2.5px]">
                   <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden shadow-md">
                     {user.avatar ? (
@@ -77,15 +79,6 @@ export function Stories({ users }: StoriesProps) {
                   </div>
                 </div>
               </div>
-              
-              {/* Badge de interação (top users) */}
-              {index < 3 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-orange-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-black">
-                  <span className="text-white text-[10px] font-bold">
-                    {index === 0 ? '🔥' : index === 1 ? '⭐' : '✨'}
-                  </span>
-                </div>
-              )}
             </div>
             
             <p className="mt-2 text-xs font-medium text-gray-900 dark:text-slate-100 text-center max-w-[64px] truncate">

@@ -7,7 +7,6 @@ import {
     Avatar,
     Typography,
     Stack,
-    Badge,
 } from '@mui/material';
 import { LocalFireDepartment as ThumbUpIcon } from '@mui/icons-material';
 
@@ -34,13 +33,6 @@ export function StoriesMui({ users }: StoriesProps) {
         router.push(`/dashboard/comunidade/perfil/${user.id}`);
     };
 
-    const getRankBadge = (index: number) => {
-        if (index === 0) return '🔥';
-        if (index === 1) return '⭐';
-        if (index === 2) return '✨';
-        return null;
-    };
-
     return (
         <Box
             sx={{
@@ -61,10 +53,7 @@ export function StoriesMui({ users }: StoriesProps) {
                     minWidth: 'min-content',
                 }}
             >
-                {users.map((user, index) => {
-                    const badge = getRankBadge(index);
-
-                    return (
+                {users.map((user, index) => (
                         <Box
                             key={user.id}
                             component="button"
@@ -88,64 +77,41 @@ export function StoriesMui({ users }: StoriesProps) {
                                 },
                             }}
                         >
-                            <Badge
-                                overlap="circular"
-                                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                                badgeContent={
-                                    badge && (
-                                        <Box
-                                            sx={{
-                                                width: 20,
-                                                height: 20,
-                                                borderRadius: '50%',
-                                                background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '10px',
-                                                border: '2px solid',
-                                                borderColor: 'background.paper',
-                                                boxShadow: 2,
-                                            }}
-                                        >
-                                            {badge}
-                                        </Box>
-                                    )
-                                }
+                            {/* Borda dourada só para o primeiro; colorida para os demais */}
+                            <Box
+                                sx={{
+                                    borderRadius: '50%',
+                                    background: index === 0
+                                        ? 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)'
+                                        : 'linear-gradient(135deg, #facc15 0%, #ec4899 50%, #9333ea 100%)',
+                                    p: '2.5px',
+                                    transition: 'transform 0.2s',
+                                    ...(index === 0 && { boxShadow: '0 0 12px rgba(251, 191, 36, 0.5)' }),
+                                }}
                             >
-                                {/* Ring gradient */}
                                 <Box
                                     sx={{
                                         borderRadius: '50%',
-                                        background: 'linear-gradient(135deg, #facc15 0%, #ec4899 50%, #9333ea 100%)',
+                                        bgcolor: 'background.paper',
                                         p: '2.5px',
-                                        transition: 'transform 0.2s',
                                     }}
                                 >
-                                    <Box
+                                    <Avatar
+                                        src={user.avatar || undefined}
+                                        alt={user.name}
                                         sx={{
-                                            borderRadius: '50%',
-                                            bgcolor: 'background.paper',
-                                            p: '2.5px',
+                                            width: { xs: 64, sm: 72 },
+                                            height: { xs: 64, sm: 72 },
+                                            background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                                            fontSize: '1.125rem',
+                                            fontWeight: 'bold',
+                                            boxShadow: 1,
                                         }}
                                     >
-                                        <Avatar
-                                            src={user.avatar || undefined}
-                                            alt={user.name}
-                                            sx={{
-                                                width: { xs: 64, sm: 72 },
-                                                height: { xs: 64, sm: 72 },
-                                                background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                                fontSize: '1.125rem',
-                                                fontWeight: 'bold',
-                                                boxShadow: 1,
-                                            }}
-                                        >
-                                            {user.initials}
-                                        </Avatar>
-                                    </Box>
+                                        {user.initials}
+                                    </Avatar>
                                 </Box>
-                            </Badge>
+                            </Box>
 
                             <Typography
                                 variant="caption"
@@ -173,8 +139,7 @@ export function StoriesMui({ users }: StoriesProps) {
                                 </Typography>
                             </Stack>
                         </Box>
-                    );
-                })}
+                ))}
             </Stack>
         </Box>
     );
