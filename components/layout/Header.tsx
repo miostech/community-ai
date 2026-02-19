@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 
 export function Header() {
   const pathname = usePathname();
@@ -14,11 +15,8 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-1.5 sm:space-x-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-base sm:text-lg">IA</span>
-            </div>
-            <span className="font-semibold text-base sm:text-lg text-gray-900 dark:text-slate-100">Conteúdo IA</span>
+          <Link href="/" className="flex items-center">
+            <DomeLogo className="text-base sm:text-lg" />
           </Link>
 
           {/* Navigation */}

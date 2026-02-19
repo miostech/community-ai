@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 
 interface NavItem {
   label: string;
@@ -108,12 +109,8 @@ export function Sidebar() {
   return (
     <aside className="hidden md:block w-64 bg-white/80 dark:bg-black/80 backdrop-blur-sm border-r border-gray-100 dark:border-neutral-800 min-h-screen fixed left-0 top-0 z-40">
       <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">IA</span>
-          </div>
-          <span className="font-semibold text-lg text-gray-900 dark:text-slate-100">Conteúdo IA</span>
-          <span className="text-sm text-gray-500 dark:text-slate-400 font-normal hidden sm:inline">2.0</span>
+        <Link href="/dashboard" className="flex items-center">
+          <DomeLogo className="text-lg" />
         </Link>
         <ThemeToggle />
       </div>

@@ -210,7 +210,7 @@ export default function Home() {
           {/* Launch Banner */}
           <Chip
             icon={<StarIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
-            label="Lançamento Conteúdo IA"
+            label="Lançamento Dome"
             variant="outlined"
             sx={{
               borderColor: alpha(theme.palette.primary.main, 0.3),

@@ -20,10 +20,10 @@ export interface Plan {
 export const defaultPlans: Plan[] = [
     {
         id: 'conteudo-ia',
-        name: 'Conteúdo IA',
+        name: 'Dome',
         price: '34,99',
         period: 'mês',
-        description: 'Acesso completo à plataforma de criação de conteúdo com IA',
+        description: 'Acesso completo à plataforma Dome de criação de conteúdo com IA',
         features: [
             'Criação ilimitada de conteúdo',
             'Templates exclusivos',
@@ -40,10 +40,10 @@ export const defaultPlans: Plan[] = [
         name: 'Combo Viral',
         price: '599,99',
         period: 'ano',
-        description: 'Todos os 3 cursos + Conteúdo IA por 1 ano completo',
+        description: 'Todos os 3 cursos + Dome por 1 ano completo',
         features: [
             'Acesso a todos os 3 cursos',
-            'Conteúdo IA por 1 ano',
+            'Dome por 1 ano',
             'Roteiro Viral!',
             'H.P.A. - Hackeando Passagens Aéreas',
             'Método Influência MILIONÁRIA',
@@ -255,7 +255,7 @@ export function PricingPlans({
                                 O que está incluído no Combo Viral?
                             </h3>
                             <p className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">
-                                O Combo Viral inclui acesso completo aos 3 cursos (Roteiro Viral, H.P.A. e Método Influência MILIONÁRIA) mais 1 ano completo de Conteúdo IA.
+                                O Combo Viral inclui acesso completo aos 3 cursos (Roteiro Viral, H.P.A. e Método Influência MILIONÁRIA) mais 1 ano completo de Dome.
                             </p>
                         </div>
                         <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-slate-600 p-4 sm:p-6">

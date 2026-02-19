@@ -31,8 +31,8 @@ const themeScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "Conteúdo IA - Crie conteúdo com inteligência artificial",
-  description: "Plataforma de IA para criação de conteúdo, roteiros e estratégias para criadores e empreendedores",
+  title: "Dome - Crie conteúdo com inteligência artificial",
+  description: "Plataforma Dome: criação de conteúdo com IA, roteiros e estratégias para criadores e empreendedores",
 };
 
 export default function RootLayout({

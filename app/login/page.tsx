@@ -8,6 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SocialLoginBox } from '@/components/auth/SocialLoginBox';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 
 export default function LoginPage() {
   const { status } = useSession();
@@ -198,12 +199,8 @@ export default function LoginPage() {
 
         <div className="w-full max-w-md relative z-10">
           <div className="text-center mb-6 sm:mb-8">
-            <Link href="/" className="inline-flex items-center space-x-2 mb-3 sm:mb-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg sm:text-xl">IA</span>
-              </div>
-              <span className="font-semibold text-lg sm:text-xl text-gray-900 dark:text-slate-100">Conteúdo IA</span>
-              <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 font-normal">2.0</span>
+            <Link href="/" className="inline-flex items-center mb-3 sm:mb-4">
+              <DomeLogo className="text-lg sm:text-xl" />
             </Link>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">Entre na sua conta</h1>
             <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mt-1 sm:mt-2">Continue criando conteúdo incrível</p>

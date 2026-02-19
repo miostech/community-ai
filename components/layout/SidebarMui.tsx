@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 import {
     Drawer,
     Box,
@@ -139,28 +140,8 @@ export function SidebarMui() {
                     borderColor: 'divider',
                 }}
             >
-                <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Box
-                        sx={{
-                            width: 32,
-                            height: 32,
-                            background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                            borderRadius: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
-                            IA
-                        </Typography>
-                    </Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                        Conteúdo IA
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        2.0
-                    </Typography>
+                <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                    <DomeLogo style={{ fontSize: 16, fontWeight: 600 }} />
                 </Link>
                 <IconButton onClick={toggleTheme} size="small">
                     {resolvedTheme === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
