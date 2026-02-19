@@ -12,7 +12,6 @@ import {
   Button,
   CircularProgress,
   Stack,
-  Avatar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -24,6 +23,7 @@ import { PostCardMui } from '@/components/community/PostCardMui';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 import { FloatingChatButtonMui } from '@/components/chat/FloatingChatButtonMui';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
@@ -168,17 +168,7 @@ export default function ComunidadePageMui() {
           <Box sx={{ maxWidth: 672, mx: 'auto', width: '100%' }}>
             <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <Avatar
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  IA
-                </Avatar>
+                <DomeLogo style={{ fontSize: 18, fontWeight: 600 }} />
                 <Typography variant="h6" fontWeight="bold">
                   Comunidade
                 </Typography>

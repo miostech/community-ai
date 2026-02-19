@@ -31,6 +31,7 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { StoriesMui } from '@/components/community/StoriesMui';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
 
@@ -284,17 +285,7 @@ export function ComunidadePreview() {
                     <Box sx={{ maxWidth: 672, mx: 'auto', width: '100%' }}>
                         <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
                             <Stack direction="row" spacing={1} alignItems="center">
-                                <Avatar
-                                    sx={{
-                                        width: 32,
-                                        height: 32,
-                                        background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 'bold',
-                                    }}
-                                >
-                                    IA
-                                </Avatar>
+                                <DomeLogo style={{ fontSize: 18, fontWeight: 600 }} />
                                 <Typography variant="h6" fontWeight="bold">
                                     Comunidade
                                 </Typography>
