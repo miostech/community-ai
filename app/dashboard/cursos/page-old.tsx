@@ -27,6 +27,16 @@ export default function CursosPage() {
     // Simular carregamento de cursos
     const mockCourses: Course[] = [
       {
+        id: '3',
+        title: 'Método Influência MILIONÁRIA',
+        description: 'Domine as estratégias de influência para construir uma marca milionária',
+        thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
+        modules: 5,
+        kiwifyId: 'AQDrLac',
+        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
+        isAvailable: false,
+      },
+      {
         id: '1',
         title: 'Roteiro Viral!',
         description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
@@ -45,16 +55,6 @@ export default function CursosPage() {
         kiwifyId: '96dk0GP',
         kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j',
         kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
-        isAvailable: false,
-      },
-      {
-        id: '3',
-        title: 'Método Influência MILIONÁRIA',
-        description: 'Domine as estratégias de influência para construir uma marca milionária',
-        thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
-        modules: 5,
-        kiwifyId: 'AQDrLac',
-        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
         isAvailable: false,
       },
     ];
@@ -139,7 +139,7 @@ export default function CursosPage() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Nossos Cursos</h1>
         </div>
         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 dark:text-neutral-400 max-w-2xl mx-auto px-2">
-          Aprenda a criar conteúdo que vende e a construir sua marca de forma orgânica.
+        Aprenda a criar conteúdo que vende, construa sua marca de forma orgânica e transforme suas redes sociais em uma fonte real de renda.
         </p>
       </div>
 
@@ -160,7 +160,7 @@ export default function CursosPage() {
                 <div className="absolute inset-0 bg-white/30 dark:bg-white/15 rounded-t-xl" />
               )}
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                <span className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900 dark:text-neutral-100">
+                <span className="bg-white/90 dark:bg-black/70 backdrop-blur-sm px-2 py-1 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white">
                   {course.modules} módulos
                 </span>
               </div>

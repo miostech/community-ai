@@ -34,13 +34,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
-
-/** Lista de cursos (id Kiwify, label, link de compra) */
-const CURSOS = [
-  { id: 'YIUXqzV', label: 'Roteiro Viral', kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N' },
-  { id: '96dk0GP', label: 'Hackeando Passagens Aéreas', kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j' },
-  { id: 'AQDrLac', label: 'Método Influência MILIONÁRIA', kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v' },
-];
+import { CURSOS } from '@/lib/courses';
 
 interface FormData {
   first_name: string;

@@ -225,6 +225,8 @@ export default function TrendsPage() {
         </Box>
       </AppBar>
 
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+
       {/* Descrição */}
       <Box sx={{ px: 2, pt: 2, pb: 1 }}>
         <Typography variant="body2" color="text.secondary">

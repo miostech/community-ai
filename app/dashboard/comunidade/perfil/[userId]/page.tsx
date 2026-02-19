@@ -19,6 +19,7 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
+import { sortCourseIds } from '@/lib/courses';
 
 // MUI imports
 import {
@@ -74,9 +75,6 @@ const COURSE_LABELS: Record<string, string> = {
   '96dk0GP': 'H.P.A',
   AQDrLac: 'M.I.M',
 };
-
-/** TESTE: exibir 2 cursos no próprio perfil para ver como fica. Remover depois. */
-// const TEST_MOCK_COURSE_IDS: string[] = ['YIUXqzV', '96dk0GP', 'AQDrLac'];
 
 const postTypeLabels: Record<PostType, string> = {
   idea: 'Ideia',
@@ -213,13 +211,11 @@ export default function PerfilComunidadePage() {
         if (data?.profile?.created_at) {
           setOwnCreatedAt(data.profile.created_at);
         }
-        // TESTE: usar 2 cursos mock para visualizar. Remover e descomentar o bloco abaixo.
-        setOwnCourseIds(TEST_MOCK_COURSE_IDS);
-        // if (Array.isArray(data?.profile?.courseIds)) {
-        //   setOwnCourseIds(data.profile.courseIds);
-        // } else {
-        //   setOwnCourseIds([]);
-        // }
+        if (Array.isArray(data?.profile?.courseIds)) {
+          setOwnCourseIds(data.profile.courseIds);
+        } else {
+          setOwnCourseIds([]);
+        }
       })
       .catch(() => { });
   }, [isOwnProfile, account?.id]);
@@ -750,7 +746,7 @@ export default function PerfilComunidadePage() {
                 gap={1}
                 sx={{ mb: 2, justifyContent: { xs: 'center', sm: 'flex-start' } }}
               >
-                {profileUser.courseIds.map((id) => {
+                {sortCourseIds(profileUser.courseIds ?? []).map((id) => {
                   const label = COURSE_LABELS[id];
                   if (!label) return null;
                   return (

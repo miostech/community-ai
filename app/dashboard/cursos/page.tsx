@@ -22,7 +22,6 @@ import {
 } from '@mui/material';
 import {
   PlayArrow as PlayArrowIcon,
-  ShoppingCart as ShoppingCartIcon,
   MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 import { getKiwifyIdFromUrl } from '@/lib/kiwify';
@@ -46,6 +45,16 @@ export default function CursosPage() {
   useEffect(() => {
     const mockCourses: Course[] = [
       {
+        id: '3',
+        title: 'Método Influência MILIONÁRIA',
+        description: 'Domine as estratégias de influência para construir uma marca milionária',
+        thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
+        modules: 5,
+        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
+        kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/66c42290-49a6-41d6-95e1-2d62c37f0078',
+        isAvailable: false,
+      },
+      {
         id: '1',
         title: 'Roteiro Viral!',
         description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
@@ -63,16 +72,6 @@ export default function CursosPage() {
         modules: 8,
         kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j',
         kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
-        isAvailable: false,
-      },
-      {
-        id: '3',
-        title: 'Método Influência MILIONÁRIA',
-        description: 'Domine as estratégias de influência para construir uma marca milionária',
-        thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
-        modules: 5,
-        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
-        kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/66c42290-49a6-41d6-95e1-2d62c37f0078',
         isAvailable: false,
       },
     ];
@@ -202,6 +201,8 @@ export default function CursosPage() {
         </Box>
       </AppBar>
 
+      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+
       {/* Descrição */}
       <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: { xs: 3, sm: 4 }, textAlign: 'center' }}>
         <Typography
@@ -213,7 +214,7 @@ export default function CursosPage() {
             fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
           }}
         >
-          Aprenda a criar conteúdo que vende e a construir sua marca de forma orgânica.
+          Aprenda a criar conteúdo que vende, construa sua marca de forma orgânica e transforme suas redes sociais em uma fonte real de renda.
         </Typography>
       </Box>
 
@@ -246,6 +247,7 @@ export default function CursosPage() {
                     sx={{
                       height: { xs: 160, sm: 192 },
                       objectFit: 'cover',
+                      objectPosition: { xs: 'top', sm: 'center' },
                       filter: !course.isAvailable ? 'grayscale(20%)' : 'none',
                     }}
                     onError={(e) => {
@@ -264,15 +266,16 @@ export default function CursosPage() {
                   <Chip
                     label={`${course.modules} módulos`}
                     size="small"
-                    sx={{
+                    sx={(theme) => ({
                       position: 'absolute',
                       top: { xs: 8, sm: 12 },
                       right: { xs: 8, sm: 12 },
-                      bgcolor: 'rgba(255,255,255,0.9)',
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)',
+                      color: theme.palette.mode === 'dark' ? theme.palette.common.white : theme.palette.grey[900],
                       backdropFilter: 'blur(8px)',
                       fontSize: { xs: '0.625rem', sm: '0.75rem' },
                       fontWeight: 500,
-                    }}
+                    })}
                   />
                 </Box>
 
@@ -335,7 +338,6 @@ export default function CursosPage() {
                     <Button
                       fullWidth
                       variant="outlined"
-                      startIcon={<ShoppingCartIcon />}
                       onClick={() => window.open(course.kiwifyUrl, '_blank')}
                       sx={{
                         borderRadius: 2,
