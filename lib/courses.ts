@@ -31,6 +31,6 @@ export const CURSOS = [
 
 /** Ordena um array de IDs de curso pela ordem canônica. */
 export function sortCourseIds(ids: string[]): string[] {
-  const order = [...COURSE_ORDER_KIWIFY_IDS];
+  const order: string[] = [...COURSE_ORDER_KIWIFY_IDS];
   return [...ids].sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
