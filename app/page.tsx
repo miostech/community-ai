@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
+import { DomeLogo } from '@/components/ui/DomeLogo';
 import {
   Box,
   Container,
@@ -89,6 +90,8 @@ const criadores = [
     usuario: '@natrombellii',
     seguidores: '+1.1 milhão',
     foto: '/images/cursos/natalia-trombelli.png',
+    /** Ajuste fino para centralizar o rosto no círculo (eixo X) */
+    imgPosition: '35% center',
     descricao: 'Criadora de conteúdo especializada em estratégias de engajamento e crescimento orgânico. Compartilha conhecimento prático sobre criação de conteúdo que converte.',
     instagram: 'https://instagram.com/natrombellii',
     tiktok: 'https://tiktok.com/@natrombellii',
@@ -98,6 +101,7 @@ const criadores = [
     usuario: '@luigi.andersen',
     seguidores: '+772 mil',
     foto: '/images/cursos/luigi-andersen.png',
+    imgPosition: '65% center',
     descricao: 'Especialista em criação de conteúdo estratégico e monetização. Ajuda criadores a transformarem sua paixão em negócio através de conteúdo de valor.',
     instagram: 'https://instagram.com/luigi.andersen',
     tiktok: 'https://tiktok.com/@luigi.andersen',
@@ -207,22 +211,26 @@ export default function Home() {
         }}
       >
         <Stack alignItems="center" spacing={{ xs: 3, sm: 4 }}>
-          {/* Launch Banner */}
-          <Chip
-            icon={<StarIcon sx={{ fontSize: 16, color: 'primary.main' }} />}
-            label="Lançamento Dome"
-            variant="outlined"
-            sx={{
-              borderColor: alpha(theme.palette.primary.main, 0.3),
-              bgcolor: alpha(theme.palette.primary.main, 0.06),
-              color: 'primary.main',
-              fontWeight: 500,
-              fontSize: { xs: '0.75rem', sm: '0.8rem' },
-              height: { xs: 32, sm: 36 },
-              borderRadius: 99,
-              '& .MuiChip-icon': { ml: 0.5 },
-            }}
-          />
+          {/* Logo + Slogan do Método */}
+          <Stack alignItems="center" spacing={1.5}>
+            <DomeLogo
+              style={{
+                fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+                fontWeight: 700,
+              }}
+            />
+            <Typography
+              variant="overline"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+              }}
+            >
+              Método do Zero ao Milhão
+            </Typography>
+          </Stack>
 
           {/* Headline */}
           <Stack spacing={1.5} alignItems="center" sx={{ px: 1 }}>
@@ -250,7 +258,8 @@ export default function Home() {
                 px: { xs: 1, sm: 2 },
               }}
             >
-              Crie roteiros, ideias e estratégias completas em minutos, apenas conversando com a IA.
+              Comunidade de criadores + IA exclusiva para gerar roteiros e estratégias em minutos.
+              Faça parte do Método do Zero ao Milhão.
             </Typography>
           </Stack>
 
@@ -438,16 +447,30 @@ export default function Home() {
                 }}
               >
                 <Stack alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
-                  <Avatar
-                    src={criador.foto}
-                    alt={criador.nome}
+                  <Box
                     sx={{
                       width: { xs: 80, sm: 96 },
                       height: { xs: 80, sm: 96 },
+                      borderRadius: '50%',
+                      overflow: 'hidden',
                       border: `2px solid ${theme.palette.divider}`,
                       mb: 0.5,
+                      flexShrink: 0,
                     }}
-                  />
+                  >
+                    <Box
+                      component="img"
+                      src={criador.foto}
+                      alt={criador.nome}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'block',
+                        objectFit: 'cover',
+                        objectPosition: criador.imgPosition ?? 'center center',
+                      }}
+                    />
+                  </Box>
                   <Typography variant="h6" fontWeight={700} color="text.primary">
                     {criador.nome}
                   </Typography>
