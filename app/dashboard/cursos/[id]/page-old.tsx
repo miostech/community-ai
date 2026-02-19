@@ -35,7 +35,7 @@ const mockCourses: Record<string, Course> = {
     description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
     thumbnail: '/images/cursos/roteiro-viral.jpeg',
     kiwifyId: 'YIUXqzV',
-    kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?src=bionat',
+    kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N',
     isAvailable: false,
     modules: [
       {
@@ -94,7 +94,7 @@ const mockCourses: Record<string, Course> = {
     description: 'Descubra estratégias para conseguir passagens aéreas com os melhores preços',
     thumbnail: '/images/cursos/hpa-passagens-aereas.png',
     kiwifyId: '96dk0GP',
-    kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP',
+    kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j',
     kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
     isAvailable: false,
     modules: [
@@ -170,7 +170,7 @@ const mockCourses: Record<string, Course> = {
     description: 'Domine as estratégias de influência para construir uma marca milionária',
     thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
     kiwifyId: 'AQDrLac',
-    kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?src=bionat',
+    kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
     kiwifyDashboardUrl: undefined, // Adicionar quando tiver o link do dashboard
     isAvailable: false,
     modules: [

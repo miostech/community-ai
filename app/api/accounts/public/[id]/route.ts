@@ -5,6 +5,7 @@ import Account from '@/models/Account';
 import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
+import { getSubscriptionsByEmail } from '@/lib/kiwify';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
@@ -31,11 +32,23 @@ export async function GET(
     const accountId = new mongoose.Types.ObjectId(id);
 
     const account = await Account.findById(accountId)
-      .select('first_name last_name avatar_url link_instagram link_tiktok link_youtube created_at')
+      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at')
       .lean();
 
     if (!account) {
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+    }
+
+    // Cursos que a pessoa tem acesso (Kiwify) – não expomos o email
+    let courseIds: string[] = [];
+    const email = (account as { email?: string }).email?.trim();
+    if (email) {
+      try {
+        const { courseIds: ids } = await getSubscriptionsByEmail(email);
+        courseIds = ids ?? [];
+      } catch {
+        // ignora erro Kiwify; perfil segue sem cursos
+      }
     }
 
     // Buscar estatísticas de interação
@@ -84,6 +97,7 @@ export async function GET(
           postsCount: postStats.count || 0,
           commentsCount,
         },
+        courseIds,
       },
     });
   } catch (error) {

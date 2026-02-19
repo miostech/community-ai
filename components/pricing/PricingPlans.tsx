@@ -20,8 +20,8 @@ export interface Plan {
 export const defaultPlans: Plan[] = [
     {
         id: 'conteudo-ia',
-        name: 'Dome',
-        price: '34,99',
+        name: 'Dome - Mensal',
+        price: '49,99',
         period: 'mês',
         description: 'Acesso completo à plataforma Dome de criação de conteúdo com IA',
         features: [
@@ -36,25 +36,42 @@ export const defaultPlans: Plan[] = [
         popular: false,
     },
     {
-        id: 'combo-viral',
-        name: 'Combo Viral',
-        price: '599,99',
-        period: 'ano',
-        description: 'Todos os 3 cursos + Dome por 1 ano completo',
+        id: 'conteudo-ia',
+        name: 'Dome - Anual',
+        price: '197,99',
+        period: 'anual',
+        description: 'Acesso completo à plataforma Dome de criação de conteúdo com IA por 1 ano por um preço especial',
         features: [
-            'Acesso a todos os 3 cursos',
-            'Dome por 1 ano',
-            'Roteiro Viral!',
-            'H.P.A. - Hackeando Passagens Aéreas',
-            'Método Influência MILIONÁRIA',
             'Criação ilimitada de conteúdo',
             'Templates exclusivos',
+            'Chat com IA para melhorias',
             'Acesso à comunidade',
-            'Suporte VIP',
+            'Salvar projetos ilimitados',
+            'Suporte prioritário',
         ],
         kiwifyUrl: 'https://pay.kiwify.com.br/1k68u0Y',
-        popular: true,
+        popular: false,
     },
+    // {
+    //     id: 'combo-viral',
+    //     name: 'Combo Viral',
+    //     price: '599,99',
+    //     period: 'ano',
+    //     description: 'Todos os 3 cursos + Dome por 1 ano completo',
+    //     features: [
+    //         'Acesso a todos os 3 cursos',
+    //         'Dome por 1 ano',
+    //         'Roteiro Viral!',
+    //         'H.P.A. - Hackeando Passagens Aéreas',
+    //         'Método Influência MILIONÁRIA',
+    //         'Criação ilimitada de conteúdo',
+    //         'Templates exclusivos',
+    //         'Acesso à comunidade',
+    //         'Suporte VIP',
+    //     ],
+    //     kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N',
+    //     popular: true,
+    // },
 ];
 
 interface PricingPlansProps {
@@ -250,14 +267,14 @@ export function PricingPlans({
                                 Sim, você pode cancelar sua assinatura a qualquer momento. Não há taxas de cancelamento.
                             </p>
                         </div>
-                        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-slate-600 p-4 sm:p-6">
+                        {/* <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-slate-600 p-4 sm:p-6">
                             <h3 className="font-semibold text-gray-900 dark:text-slate-100 text-sm sm:text-base mb-1 sm:mb-2">
                                 O que está incluído no Combo Viral?
                             </h3>
                             <p className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">
                                 O Combo Viral inclui acesso completo aos 3 cursos (Roteiro Viral, H.P.A. e Método Influência MILIONÁRIA) mais 1 ano completo de Dome.
                             </p>
-                        </div>
+                        </div> */}
                         <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-slate-600 p-4 sm:p-6">
                             <h3 className="font-semibold text-gray-900 dark:text-slate-100 text-sm sm:text-base mb-1 sm:mb-2">
                                 Como funciona o pagamento?

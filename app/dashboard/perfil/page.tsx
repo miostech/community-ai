@@ -29,8 +29,18 @@ import {
   Instagram as InstagramIcon,
   YouTube as YouTubeIcon,
   Delete as DeleteIcon,
+  School as SchoolIcon,
+  CheckCircle as CheckCircleIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
+
+/** Lista de cursos (id Kiwify, label, link de compra) */
+const CURSOS = [
+  { id: 'YIUXqzV', label: 'Roteiro Viral', kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N' },
+  { id: '96dk0GP', label: 'Hackeando Passagens Aéreas', kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j' },
+  { id: 'AQDrLac', label: 'Método Influência MILIONÁRIA', kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v' },
+];
 
 interface FormData {
   first_name: string;
@@ -64,6 +74,8 @@ export default function PerfilPage() {
   const [isSyncingInstagramAvatar, setIsSyncingInstagramAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [myCourseIds, setMyCourseIds] = useState<string[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
 
   useEffect(() => {
     if (account) {
@@ -83,6 +95,24 @@ export default function PerfilPage() {
       setIsLoading(false);
     }
   }, [account, accountLoading]);
+
+  useEffect(() => {
+    const email = account?.email?.trim();
+    if (!email) {
+      setMyCourseIds([]);
+      return;
+    }
+    setCoursesLoading(true);
+    fetch('/api/kiwify/check-subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+      .then((r) => (r.ok ? r.json() : { courseIds: [] }))
+      .then((data) => setMyCourseIds(data.courseIds ?? []))
+      .catch(() => setMyCourseIds([]))
+      .finally(() => setCoursesLoading(false));
+  }, [account?.email]);
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -621,6 +651,73 @@ export default function PerfilPage() {
               </Button>
             </Stack>
           </Stack>
+        </Paper>
+
+        {/* Meus cursos */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            Meus cursos
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Acesse seus cursos e desbloqueie os próximos.
+          </Typography>
+          {coursesLoading ? (
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <CircularProgress size={20} />
+              <Typography variant="body2" color="text.secondary">
+                Verificando cursos...
+              </Typography>
+            </Stack>
+          ) : (
+            <Stack spacing={1.5}>
+              {CURSOS.map((curso) => {
+                const hasAccess = myCourseIds.includes(curso.id);
+                return (
+                  <Stack
+                    key={curso.id}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{
+                      py: 1.5,
+                      px: 2,
+                      borderRadius: 1,
+                      bgcolor: 'action.hover',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                      <SchoolIcon sx={{ color: 'text.secondary', fontSize: 22 }} />
+                      <Typography variant="body2" fontWeight={500}>
+                        {curso.label}
+                      </Typography>
+                      {hasAccess && (
+                        <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20 }} titleAccess="Você tem acesso" />
+                      )}
+                    </Stack>
+                    {hasAccess ? (
+                      <Typography variant="caption" color="text.secondary">
+                        Acesso liberado
+                      </Typography>
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        // endIcon={<ShoppingCartIcon />}
+                        href={curso.kiwifyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        component="a"
+                      >
+                        Comprar
+                      </Button>
+                    )}
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
         </Paper>
 
         {/* Ver meu perfil público */}

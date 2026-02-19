@@ -20,6 +20,7 @@ import {
   Description as DescriptionIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
+import { getKiwifyIdFromUrl } from '@/lib/kiwify';
 
 interface Module {
   id: string;
@@ -36,7 +37,6 @@ interface Course {
   description: string;
   thumbnail: string;
   modules: Module[];
-  kiwifyId: string;
   kiwifyUrl: string;
   kiwifyDashboardUrl?: string;
   isAvailable: boolean;
@@ -48,8 +48,8 @@ const mockCourses: Record<string, Course> = {
     title: 'Roteiro Viral!',
     description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
     thumbnail: '/images/cursos/roteiro-viral.jpeg',
-    kiwifyId: 'YIUXqzV',
-    kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?src=bionat',
+    kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N',
+    kiwifyDashboardUrl: 'https://members.kiwify.com/?club=8b89b9db-3ff5-42ef-9abd-52a655725a84',
     isAvailable: false,
     modules: [
       {
@@ -107,8 +107,7 @@ const mockCourses: Record<string, Course> = {
     title: 'H.P.A. - Hackeando Passagens Aéreas',
     description: 'Descubra estratégias para conseguir passagens aéreas com os melhores preços',
     thumbnail: '/images/cursos/hpa-passagens-aereas.png',
-    kiwifyId: '96dk0GP',
-    kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP',
+    kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j',
     kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
     isAvailable: false,
     modules: [
@@ -183,9 +182,8 @@ const mockCourses: Record<string, Course> = {
     title: 'Método Influência MILIONÁRIA',
     description: 'Domine as estratégias de influência para construir uma marca milionária',
     thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
-    kiwifyId: 'AQDrLac',
-    kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?src=bionat',
-    kiwifyDashboardUrl: undefined,
+    kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
+    kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/66c42290-49a6-41d6-95e1-2d62c37f0078',
     isAvailable: false,
     modules: [
       {
@@ -260,9 +258,9 @@ export default function CourseDetailPage() {
       let hasAccess = false;
       if (response.ok) {
         const data = await response.json();
-        hasAccess = data.courseIds?.includes(courseData.kiwifyId) || false;
+        hasAccess = data.courseIds?.includes(getKiwifyIdFromUrl(courseData.kiwifyUrl)) || false;
       } else {
-        if ((user.email === 'usuario@email.com' || user.email.includes('teste')) && courseData.kiwifyId === '96dk0GP') {
+        if ((user.email === 'usuario@email.com' || user.email.includes('teste')) && getKiwifyIdFromUrl(courseData.kiwifyUrl) === '96dk0GP') {
           hasAccess = true;
         }
       }
@@ -277,7 +275,7 @@ export default function CourseDetailPage() {
       });
     } catch (error) {
       console.error('Erro ao verificar acesso:', error);
-      if ((user.email === 'usuario@email.com' || user.email.includes('teste')) && courseData.kiwifyId === '96dk0GP') {
+      if ((user.email === 'usuario@email.com' || user.email.includes('teste')) && getKiwifyIdFromUrl(courseData.kiwifyUrl) === '96dk0GP') {
         setCourse({
           ...courseData,
           isAvailable: true,

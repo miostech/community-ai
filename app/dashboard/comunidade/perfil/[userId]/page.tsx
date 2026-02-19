@@ -50,6 +50,7 @@ import {
   MusicNote as TikTokIcon,
   PhotoLibrary as PhotoLibraryIcon,
   OpenInNew as OpenInNewIcon,
+  School as SchoolIcon,
 } from '@mui/icons-material';
 
 type PostType = 'idea' | 'script' | 'question' | 'result' | 'general';
@@ -64,7 +65,18 @@ type ProfileDisplay = CommunityUser | {
   tiktokProfile?: string;
   youtubeProfile?: string;
   created_at?: string | null;
+  courseIds?: string[];
 };
+
+/** Labels dos cursos para exibir no perfil (ex.: "Roteiro Viral") */
+const COURSE_LABELS: Record<string, string> = {
+  YIUXqzV: 'Roteiro Viral',
+  '96dk0GP': 'H.P.A',
+  AQDrLac: 'M.I.M',
+};
+
+/** TESTE: exibir 2 cursos no próprio perfil para ver como fica. Remover depois. */
+// const TEST_MOCK_COURSE_IDS: string[] = ['YIUXqzV', '96dk0GP', 'AQDrLac'];
 
 const postTypeLabels: Record<PostType, string> = {
   idea: 'Ideia',
@@ -179,15 +191,17 @@ export default function PerfilComunidadePage() {
   } | null>(null);
   const [otherProfileLoading, setOtherProfileLoading] = useState(false);
 
-  // InteractionCount e created_at do próprio perfil (buscados da API)
+  // InteractionCount, created_at e cursos do próprio perfil (buscados da API)
   const [ownInteractionCount, setOwnInteractionCount] = useState<number>(0);
   const [ownCreatedAt, setOwnCreatedAt] = useState<string | null>(null);
+  const [ownCourseIds, setOwnCourseIds] = useState<string[]>([]);
 
-  // Buscar interactionCount e created_at do próprio perfil
+  // Buscar interactionCount, created_at e courseIds do próprio perfil
   useEffect(() => {
     if (!isOwnProfile || !account?.id) {
       setOwnInteractionCount(0);
       setOwnCreatedAt(null);
+      setOwnCourseIds([]);
       return;
     }
     fetch(`/api/accounts/public/${encodeURIComponent(account.id)}`)
@@ -199,6 +213,13 @@ export default function PerfilComunidadePage() {
         if (data?.profile?.created_at) {
           setOwnCreatedAt(data.profile.created_at);
         }
+        // TESTE: usar 2 cursos mock para visualizar. Remover e descomentar o bloco abaixo.
+        setOwnCourseIds(TEST_MOCK_COURSE_IDS);
+        // if (Array.isArray(data?.profile?.courseIds)) {
+        //   setOwnCourseIds(data.profile.courseIds);
+        // } else {
+        //   setOwnCourseIds([]);
+        // }
       })
       .catch(() => { });
   }, [isOwnProfile, account?.id]);
@@ -304,6 +325,7 @@ export default function PerfilComunidadePage() {
           tiktokProfile: profile?.link_tiktok?.trim() || undefined,
           youtubeProfile: profile?.link_youtube?.trim() || undefined,
           created_at: profile?.created_at ?? null,
+          courseIds: Array.isArray(profile?.courseIds) ? profile.courseIds : undefined,
         };
         const mappedPosts = posts.map(mapApiPostToProfilePost);
         setOtherProfileData({ profileUser, posts: mappedPosts });
@@ -337,10 +359,11 @@ export default function PerfilComunidadePage() {
         tiktokProfile,
         youtubeProfile,
         created_at: ownCreatedAt,
+        courseIds: ownCourseIds.length > 0 ? ownCourseIds : undefined,
       };
     }
     return resolvedFromList;
-  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownCreatedAt]);
+  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownCreatedAt, ownCourseIds]);
 
   const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
   // Posts para exibir no perfil (todos do tipo ProfilePostFromApi para consistência)
@@ -718,6 +741,37 @@ export default function PerfilComunidadePage() {
                 </Tooltip>
               )}
             </Stack>
+
+            {/* Cursos (ex.: Roteiro Viral) */}
+            {'courseIds' in profileUser && profileUser.courseIds && profileUser.courseIds.length > 0 && (
+              <Stack
+                direction="row"
+                flexWrap="wrap"
+                gap={1}
+                sx={{ mb: 2, justifyContent: { xs: 'center', sm: 'flex-start' } }}
+              >
+                {profileUser.courseIds.map((id) => {
+                  const label = COURSE_LABELS[id];
+                  if (!label) return null;
+                  return (
+                    <Chip
+                      key={id}
+                      icon={<SchoolIcon sx={{ fontSize: 14 }} />}
+                      label={label}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.75rem',
+                        fontWeight: 400,
+                        color: 'text.secondary',
+                        borderColor: 'divider',
+                        '& .MuiChip-icon': { color: 'text.secondary', opacity: 0.8 },
+                      }}
+                    />
+                  );
+                })}
+              </Stack>
+            )}
 
             {/* Social links */}
             <Stack

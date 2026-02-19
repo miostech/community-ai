@@ -25,6 +25,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
+import { getKiwifyIdFromUrl } from '@/lib/kiwify';
 
 interface Course {
   id: string;
@@ -32,7 +33,6 @@ interface Course {
   description: string;
   thumbnail: string;
   modules: number;
-  kiwifyId: string;
   kiwifyUrl: string;
   kiwifyDashboardUrl?: string;
   isAvailable: boolean;
@@ -51,8 +51,8 @@ export default function CursosPage() {
         description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
         thumbnail: '/images/cursos/roteiro-viral.jpeg',
         modules: 6,
-        kiwifyId: 'YIUXqzV',
-        kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?src=bionat',
+        kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N',
+        kiwifyDashboardUrl: 'https://members.kiwify.com/?club=8b89b9db-3ff5-42ef-9abd-52a655725a84',
         isAvailable: false,
       },
       {
@@ -61,8 +61,7 @@ export default function CursosPage() {
         description: 'Descubra estratégias para conseguir passagens aéreas com os melhores preços',
         thumbnail: '/images/cursos/hpa-passagens-aereas.png',
         modules: 8,
-        kiwifyId: '96dk0GP',
-        kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP',
+        kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j',
         kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
         isAvailable: false,
       },
@@ -72,8 +71,8 @@ export default function CursosPage() {
         description: 'Domine as estratégias de influência para construir uma marca milionária',
         thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
         modules: 5,
-        kiwifyId: 'AQDrLac',
-        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?src=bionat',
+        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
+        kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/66c42290-49a6-41d6-95e1-2d62c37f0078',
         isAvailable: false,
       },
     ];
@@ -88,7 +87,7 @@ export default function CursosPage() {
 
       const updatedCourses = coursesList.map(course => ({
         ...course,
-        isAvailable: availableCourseIds.includes(course.kiwifyId),
+        isAvailable: availableCourseIds.includes(getKiwifyIdFromUrl(course.kiwifyUrl)),
       }));
 
       setCourses(updatedCourses);

@@ -4,6 +4,19 @@
  * Documentação: https://docs.kiwify.com.br/api-reference/general
  */
 
+/**
+ * Extrai o ID do produto/checkout da URL da Kiwify (ex: pay.kiwify.com.br/ABC123?afid=... → ABC123).
+ * Use sempre a kiwifyUrl como fonte da verdade; o ID é derivado dela.
+ */
+export function getKiwifyIdFromUrl(url: string): string {
+  try {
+    const path = new URL(url).pathname;
+    return path.replace(/^\//, '').split('/')[0]?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
 const KIWIFY_BASE = 'https://public-api.kiwify.com/v1';
 const KIWIFY_CLIENT_ID = process.env.KIWIFY_CLIENT_ID?.trim();
 const KIWIFY_CLIENT_SECRET = process.env.KIWIFY_CLIENT_SECRET?.trim();
