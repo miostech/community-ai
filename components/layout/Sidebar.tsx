@@ -124,27 +124,27 @@ export function Sidebar() {
             return true;
           })
           .map((item) => {
-          const isActive = item.exactMatch
-            ? pathname === item.href
-            : pathname === item.href || pathname?.startsWith(item.href + '/');
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`
+            const isActive = item.exactMatch
+              ? pathname === item.href
+              : pathname === item.href || pathname?.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`
                 flex items-center space-x-3 px-4 py-3 rounded-lg
                 transition-all duration-200
                 ${isActive
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-sm'
-                  : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
-                }
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-sm'
+                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+                  }
               `}
-            >
-              {item.icon}
-              <span className="font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
+              >
+                {item.icon}
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
       </nav>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 dark:border-slate-800">

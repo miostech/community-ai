@@ -169,9 +169,9 @@ export default function ComunidadePageMui() {
             <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <DomeLogo style={{ fontSize: 18, fontWeight: 600 }} />
-                <Typography variant="h6" fontWeight="bold">
+                {/* <Typography variant="h6" fontWeight="bold">
                   Comunidade
-                </Typography>
+                </Typography> */}
               </Stack>
 
               <Stack direction="row" spacing={0.5}>
