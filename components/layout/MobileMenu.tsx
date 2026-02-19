@@ -69,32 +69,31 @@ export function MobileMenu() {
     const checkModal = () => {
       setIsModalOpen(document.body.classList.contains('comments-modal-open'));
     };
-    
+
     // Verificar inicialmente
     checkModal();
-    
+
     // Observar mudanças no body
     const observer = new MutationObserver(checkModal);
     observer.observe(document.body, {
       attributes: true,
       attributeFilter: ['class'],
     });
-    
+
     return () => observer.disconnect();
   }, []);
 
   return (
     <>
       {/* Bottom Navigation Bar - Estilo Instagram */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-neutral-800 z-50 safe-area-inset-bottom transition-opacity ${
-        isModalOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}>
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-neutral-800 z-50 safe-area-inset-bottom transition-opacity ${isModalOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'
+        }`}>
         <div className="flex items-center justify-around px-2 py-2 pb-safe">
           {bottomNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             const isProfile = item.href === '/dashboard/perfil';
             const isCreate = item.label === 'Criar';
-            
+
             if (isCreate) {
               return (
                 <Link
@@ -110,21 +109,19 @@ export function MobileMenu() {
                 </Link>
               );
             }
-            
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all active:scale-95 ${
-                  isActive ? '' : 'opacity-60'
-                }`}
+                className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all active:scale-95 ${isActive ? '' : 'opacity-60'
+                  }`}
               >
                 {isProfile ? (
-                  <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center overflow-hidden ${
-                    isActive 
-                      ? 'border-gray-900 dark:border-slate-100' 
+                  <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center overflow-hidden ${isActive
+                      ? 'border-gray-900 dark:border-slate-100'
                       : 'border-gray-300 dark:border-slate-600'
-                  }`}>
+                    }`}>
                     {user.avatar ? (
                       <img
                         src={user.avatar}

@@ -157,49 +157,49 @@ export function SidebarMui() {
                         return true;
                     })
                     .map((item) => {
-                    const isActive = item.exactMatch
-                        ? pathname === item.href
-                        : pathname === item.href || pathname?.startsWith(item.href + '/');
+                        const isActive = item.exactMatch
+                            ? pathname === item.href
+                            : pathname === item.href || pathname?.startsWith(item.href + '/');
 
-                    return (
-                        <ListItem key={item.href} disablePadding sx={{ px: 1, py: 0.25 }}>
-                            <ListItemButton
-                                component={Link}
-                                href={item.href}
-                                selected={isActive}
-                                sx={{
-                                    borderRadius: 2,
-                                    '&.Mui-selected': {
-                                        background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                                        color: 'white',
-                                        '& .MuiListItemIcon-root': {
-                                            color: 'white',
-                                        },
-                                        '&:hover': {
-                                            background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                                        },
-                                    },
-                                }}
-                            >
-                                <ListItemIcon
+                        return (
+                            <ListItem key={item.href} disablePadding sx={{ px: 1, py: 0.25 }}>
+                                <ListItemButton
+                                    component={Link}
+                                    href={item.href}
+                                    selected={isActive}
                                     sx={{
-                                        minWidth: 40,
-                                        color: isActive ? 'white' : 'text.secondary',
+                                        borderRadius: 2,
+                                        '&.Mui-selected': {
+                                            background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                            color: 'white',
+                                            '& .MuiListItemIcon-root': {
+                                                color: 'white',
+                                            },
+                                            '&:hover': {
+                                                background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                                            },
+                                        },
                                     }}
                                 >
-                                    {item.icon}
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={item.label}
-                                    primaryTypographyProps={{
-                                        fontSize: 14,
-                                        fontWeight: isActive ? 600 : 500,
-                                    }}
-                                />
-                            </ListItemButton>
-                        </ListItem>
-                    );
-                })}
+                                    <ListItemIcon
+                                        sx={{
+                                            minWidth: 40,
+                                            color: isActive ? 'white' : 'text.secondary',
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={item.label}
+                                        primaryTypographyProps={{
+                                            fontSize: 14,
+                                            fontWeight: isActive ? 600 : 500,
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
             </List>
 
             {/* User Menu */}
