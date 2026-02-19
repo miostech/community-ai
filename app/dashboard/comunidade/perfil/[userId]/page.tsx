@@ -76,6 +76,9 @@ const COURSE_LABELS: Record<string, string> = {
   AQDrLac: 'M.I.M',
 };
 
+/** TESTE cursos no bio: descomentar setOwnCourseIds(TEST_MOCK_COURSE_IDS) e comentar o bloco real para visualizar mock. */
+// const TEST_MOCK_COURSE_IDS: string[] = ['AQDrLac', 'YIUXqzV', '96dk0GP'];
+
 const postTypeLabels: Record<PostType, string> = {
   idea: 'Ideia',
   script: 'Roteiro',
@@ -211,6 +214,8 @@ export default function PerfilComunidadePage() {
         if (data?.profile?.created_at) {
           setOwnCreatedAt(data.profile.created_at);
         }
+        // Mock para testar exibição de cursos no bio (descomentar para testar):
+        // setOwnCourseIds(TEST_MOCK_COURSE_IDS);
         if (Array.isArray(data?.profile?.courseIds)) {
           setOwnCourseIds(data.profile.courseIds);
         } else {
