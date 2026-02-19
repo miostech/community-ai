@@ -7,6 +7,7 @@ import { signOut } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { DomeLogo } from '@/components/ui/DomeLogo';
+import { isChatLaunched } from '@/lib/chat-launch';
 
 interface NavItem {
   label: string;
@@ -116,7 +117,13 @@ export function Sidebar() {
       </div>
 
       <nav className="p-4 space-y-1">
-        {navItems.map((item) => {
+        {navItems
+          .filter((item) => {
+            // Histórico de conversas só aparece após o lançamento do chat
+            if (item.href === '/dashboard/chat/historico') return isChatLaunched();
+            return true;
+          })
+          .map((item) => {
           const isActive = item.exactMatch
             ? pathname === item.href
             : pathname === item.href || pathname?.startsWith(item.href + '/');

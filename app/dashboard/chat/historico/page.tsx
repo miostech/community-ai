@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
+import { isChatLaunched } from '@/lib/chat-launch';
 
 // MUI imports
 import {
@@ -63,6 +64,17 @@ export default function HistoricoPage() {
   useEffect(() => {
     fetchConversations();
   }, [fetchConversations]);
+
+  // Área indisponível até o lançamento do chat — redireciona para o chat
+  useEffect(() => {
+    if (!isChatLaunched()) {
+      router.replace('/dashboard/chat');
+    }
+  }, [router]);
+
+  if (!isChatLaunched()) {
+    return null; // evita flash da página antes do redirect
+  }
 
   const filteredConversations = conversations.filter((conv) =>
     conv.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,8 +170,8 @@ export default function HistoricoPage() {
           </Box>
         </AppBar>
 
-        {/* Search */}
-        <Box sx={{ px: 2, py: 2 }}>
+        {/* Search — pt para não ficar atrás do header fixo */}
+        <Box sx={{ px: 2, pt: 9, pb: 2 }}>
           <TextField
             fullWidth
             placeholder="Buscar conversas..."

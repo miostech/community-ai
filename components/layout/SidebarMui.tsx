@@ -35,6 +35,7 @@ import {
     KeyboardArrowUp as ArrowUpIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
+import { isChatLaunched } from '@/lib/chat-launch';
 
 const DRAWER_WIDTH = 256;
 
@@ -150,7 +151,12 @@ export function SidebarMui() {
 
             {/* Navigation */}
             <List sx={{ flex: 1, py: 1 }}>
-                {navItems.map((item) => {
+                {navItems
+                    .filter((item) => {
+                        if (item.href === '/dashboard/chat/historico') return isChatLaunched();
+                        return true;
+                    })
+                    .map((item) => {
                     const isActive = item.exactMatch
                         ? pathname === item.href
                         : pathname === item.href || pathname?.startsWith(item.href + '/');

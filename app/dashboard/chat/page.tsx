@@ -12,15 +12,14 @@ import {
   Paper,
 } from '@mui/material';
 import { RocketLaunch as RocketLaunchIcon } from '@mui/icons-material';
-
-const LAUNCH_DATE = new Date(new Date().getFullYear(), 2, 8); // 08/03 (mês 2 = março)
+import { CHAT_LAUNCH_DATE } from '@/lib/chat-launch';
 
 function getTimeLeft() {
   const now = new Date();
-  if (now >= LAUNCH_DATE) {
+  if (now >= CHAT_LAUNCH_DATE) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   }
-  const diff = LAUNCH_DATE.getTime() - now.getTime();
+  const diff = CHAT_LAUNCH_DATE.getTime() - now.getTime();
   // dias = dias inteiros; hours = total de horas restantes (sempre decrescente)
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
