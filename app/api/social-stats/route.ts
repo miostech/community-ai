@@ -41,7 +41,7 @@ async function fetchInstagramProfile(username: string): Promise<{ followers: num
     api_key: SEARCHAPI_API_KEY,
   });
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24h cache
+    next: { revalidate: 604800 }, // 7 dias
   });
   if (!res.ok) return { followers: null, avatar: null };
   const data = (await res.json()) as InstagramProfileResponse;
@@ -64,7 +64,7 @@ async function fetchTikTokFollowers(username: string): Promise<number | null> {
     api_key: SEARCHAPI_API_KEY,
   });
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24h cache
+    next: { revalidate: 604800 }, // 7 dias
   });
   if (!res.ok) return null;
   const data = (await res.json()) as TikTokProfileResponse;
@@ -82,7 +82,7 @@ async function fetchYouTubeSubscribers(channelId: string): Promise<number | null
     api_key: SEARCHAPI_API_KEY,
   });
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24h cache
+    next: { revalidate: 604800 }, // 7 dias
   });
   if (!res.ok) return null;
   const data = (await res.json()) as YouTubeChannelResponse;
