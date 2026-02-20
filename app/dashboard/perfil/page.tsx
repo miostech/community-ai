@@ -34,6 +34,7 @@ import {
   School as SchoolIcon,
   CheckCircle as CheckCircleIcon,
   ShoppingCart as ShoppingCartIcon,
+  Support as SupportIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
@@ -715,6 +716,37 @@ export default function PerfilPage() {
               })}
             </Stack>
           )}
+        </Paper>
+
+        {/* Acesso ao suporte */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Suporte
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Precisa de ajuda? Fale com a gente pelo WhatsApp.
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              href="https://wa.me/5511964056099"
+              target="_blank"
+              rel="noopener noreferrer"
+              component="a"
+              // startIcon={<SupportIcon />}
+              fullWidth
+              sx={{ width: { sm: 'auto' } }}
+            >
+              Acessar suporte
+            </Button>
+          </Stack>
         </Paper>
 
         {/* Sair da conta */}

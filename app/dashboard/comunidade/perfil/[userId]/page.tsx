@@ -15,6 +15,7 @@ import {
 import { useUser } from '@/contexts/UserContext';
 import { useAccount } from '@/contexts/AccountContext';
 import { usePosts, type Post } from '@/contexts/PostsContext';
+import { useStories } from '@/contexts/StoriesContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
@@ -38,6 +39,7 @@ import {
   Divider,
   AppBar,
   Toolbar,
+  Badge,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -53,6 +55,7 @@ import {
   PhotoLibrary as PhotoLibraryIcon,
   OpenInNew as OpenInNewIcon,
   School as SchoolIcon,
+  EmojiEvents as TrophyIcon,
 } from '@mui/icons-material';
 
 type PostType = 'idea' | 'script' | 'question' | 'result' | 'general';
@@ -167,6 +170,7 @@ export default function PerfilComunidadePage() {
   const { user } = useUser();
   const { account, fullName } = useAccount();
   const { posts, updatePost, toggleSave } = usePosts();
+  const { users: storyUsers } = useStories();
   const isOwnProfile = Boolean(
     identifier &&
     (
@@ -532,8 +536,12 @@ export default function PerfilComunidadePage() {
     ? `https://www.youtube.com/@${profileUser.youtubeProfile.replace(/^@/, '')}`
     : null;
 
-  /** Borda colorida (destaque) só para quem está nos stories */
-  const isFromStories = 'id' in profileUser;
+  /** ID do perfil atual para comparar com a lista de stories (URL quando é conta real, ou profileUser.id quando é lista estática) */
+  const profileIdForStories = isOtherUserById ? identifier : ('id' in profileUser ? (profileUser as CommunityUser).id : null);
+  /** Borda/badge: só para quem está na lista de stories (API) */
+  const isFromStories = profileIdForStories != null && storyUsers.some((u) => u.id === profileIdForStories);
+  /** Destaque (borda dourada + troféu) só para o primeiro da lista de stories */
+  const isFeaturedStory = isFromStories && storyUsers[0]?.id === profileIdForStories;
 
   /** Avatar: só a foto salva na conta (upload manual ou "Usar foto do Instagram" em Meu perfil) */
   const displayAvatar = profileUser.avatar ?? null;
@@ -585,14 +593,17 @@ export default function PerfilComunidadePage() {
           spacing={3}
           alignItems={{ xs: 'center', sm: 'flex-start' }}
         >
-          {/* Avatar */}
+          {/* Avatar: borda dourada + badge troféu para destaque (igual aos stories); borda colorida para os demais */}
           <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
             {isFromStories ? (
               <Box
                 sx={{
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)',
+                  background: isFeaturedStory
+                    ? 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)'
+                    : 'linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)',
                   p: 0.5,
+                  ...(isFeaturedStory && { boxShadow: '0 0 12px rgba(251, 191, 36, 0.5)' }),
                 }}
               >
                 <Box
@@ -602,18 +613,46 @@ export default function PerfilComunidadePage() {
                     p: 0.5,
                   }}
                 >
-                  <Avatar
-                    src={displayAvatar || undefined}
+                  <Badge
+                    overlap="circular"
+                    badgeContent={
+                      isFeaturedStory ? (
+                        <TrophyIcon
+                          sx={{
+                            fontSize: 22,
+                            color: '#fff',
+                            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
+                          }}
+                        />
+                      ) : null
+                    }
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     sx={{
-                      width: { xs: 96, sm: 112 },
-                      height: { xs: 96, sm: 112 },
-                      background: 'linear-gradient(135deg, #60a5fa, #a855f7)',
-                      fontSize: { xs: 32, sm: 40 },
-                      fontWeight: 'bold',
+                      '& .MuiBadge-badge': {
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
+                        color: 'inherit',
+                        p: 0.25,
+                        minWidth: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        border: 'none',
+                        boxShadow: '0 0 8px rgba(251, 191, 36, 0.4)',
+                      },
                     }}
                   >
-                    {profileUser.initials}
-                  </Avatar>
+                    <Avatar
+                      src={displayAvatar || undefined}
+                      sx={{
+                        width: { xs: 96, sm: 112 },
+                        height: { xs: 96, sm: 112 },
+                        background: 'linear-gradient(135deg, #60a5fa, #a855f7)',
+                        fontSize: { xs: 32, sm: 40 },
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {profileUser.initials}
+                    </Avatar>
+                  </Badge>
                 </Box>
               </Box>
             ) : (

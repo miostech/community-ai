@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
 import { DomeLogo } from '@/components/ui/DomeLogo';
@@ -17,8 +17,6 @@ import {
     Divider,
     Avatar,
     Typography,
-    Menu,
-    MenuItem,
     IconButton,
     Collapse,
 } from '@mui/material';
@@ -33,9 +31,9 @@ import {
     Logout as LogoutIcon,
     DarkMode as DarkModeIcon,
     LightMode as LightModeIcon,
-    KeyboardArrowUp as ArrowUpIcon,
     ExpandLess,
     ExpandMore,
+    EmojiEvents as EmojiEventsIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { isChatLaunched } from '@/lib/chat-launch';
@@ -62,6 +60,11 @@ const navItems: NavItem[] = [
                 href: '/dashboard/comunidade',
                 icon: <GroupIcon fontSize="small" />,
                 exactMatch: true,
+            },
+            {
+                label: 'Ranking',
+                href: '/dashboard/comunidade/ranking',
+                icon: <EmojiEventsIcon fontSize="small" />,
             },
             {
                 label: 'Criar Post',
@@ -94,11 +97,8 @@ const navItems: NavItem[] = [
 
 export function SidebarMui() {
     const pathname = usePathname();
-    const router = useRouter();
     const { account, fullName } = useAccount();
     const { theme, setTheme, resolvedTheme } = useAppTheme();
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const menuOpen = Boolean(anchorEl);
     const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
     const toggleSubmenu = (label: string) => {
@@ -114,24 +114,6 @@ export function SidebarMui() {
         return item.children?.some(
             (child) => pathname === child.href || pathname?.startsWith(child.href + '/')
         );
-    };
-
-    const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleUserMenuClose = () => {
-        setAnchorEl(null);
-    };
-
-    const handleLogout = () => {
-        handleUserMenuClose();
-        signOut({ callbackUrl: '/login' });
-    };
-
-    const handleProfile = () => {
-        handleUserMenuClose();
-        router.push('/dashboard/perfil');
     };
 
     const toggleTheme = () => {
@@ -309,23 +291,72 @@ export function SidebarMui() {
                             </React.Fragment>
                         );
                     })}
+
+                <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
+                    <ListItemButton
+                        component={Link}
+                        href="/dashboard/perfil"
+                        selected={pathname === '/dashboard/perfil'}
+                        sx={{
+                            borderRadius: 2,
+                            '&.Mui-selected': {
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                color: 'white',
+                                '& .MuiListItemIcon-root': { color: 'white' },
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                                },
+                            },
+                        }}
+                    >
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 40,
+                                color: pathname === '/dashboard/perfil' ? 'white' : 'text.secondary',
+                            }}
+                        >
+                            <PersonIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary="Meu Perfil"
+                            primaryTypographyProps={{
+                                fontSize: 14,
+                                fontWeight: pathname === '/dashboard/perfil' ? 600 : 500,
+                            }}
+                        />
+                    </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
+                    <ListItemButton
+                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        sx={{
+                            borderRadius: 2,
+                            color: 'error.main',
+                            '& .MuiListItemIcon-root': { color: 'error.main' },
+                            '&:hover': { bgcolor: 'error.main', color: 'white', '& .MuiListItemIcon-root': { color: 'white' } },
+                        }}
+                    >
+                        <ListItemIcon sx={{ minWidth: 40 }}>
+                            <LogoutIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary="Sair"
+                            primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
+                        />
+                    </ListItemButton>
+                </ListItem>
             </List>
 
-            {/* User Menu */}
+            {/* User Card */}
             <Box sx={{ borderTop: '1px solid', borderColor: 'divider', p: 1 }}>
-                <ListItemButton
-                    onClick={handleUserMenuOpen}
-                    sx={{
-                        borderRadius: 2,
-                        py: 1,
-                    }}
-                >
+                <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, gap: 1.5 }}>
                     <Avatar
                         src={account?.avatar_url || undefined}
                         sx={{
                             width: 32,
                             height: 32,
-                            mr: 1.5,
+                            flexShrink: 0,
                             background: !account?.avatar_url
                                 ? 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)'
                                 : undefined,
@@ -360,50 +391,7 @@ export function SidebarMui() {
                             {account?.email || ''}
                         </Typography>
                     </Box>
-                    <ArrowUpIcon
-                        sx={{
-                            color: 'text.secondary',
-                            transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.2s',
-                        }}
-                    />
-                </ListItemButton>
-
-                <Menu
-                    anchorEl={anchorEl}
-                    open={menuOpen}
-                    onClose={handleUserMenuClose}
-                    anchorOrigin={{
-                        vertical: 'top',
-                        horizontal: 'left',
-                    }}
-                    transformOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'left',
-                    }}
-                    slotProps={{
-                        paper: {
-                            sx: {
-                                width: DRAWER_WIDTH - 16,
-                                mb: 1,
-                            },
-                        },
-                    }}
-                >
-                    <MenuItem onClick={handleProfile}>
-                        <ListItemIcon>
-                            <PersonIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText primary="Meu Perfil" />
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-                        <ListItemIcon>
-                            <LogoutIcon fontSize="small" sx={{ color: 'error.main' }} />
-                        </ListItemIcon>
-                        <ListItemText primary="Sair" />
-                    </MenuItem>
-                </Menu>
+                </Box>
             </Box>
         </Drawer>
     );

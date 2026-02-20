@@ -244,7 +244,7 @@ export default function Home() {
                 color: 'text.primary',
               }}
             >
-              Dê vida às suas ideias de conteúdo
+              A primeira cúpula de criadores de conteúdo
             </Typography>
             <Typography
               variant="h5"
@@ -258,8 +258,9 @@ export default function Home() {
                 px: { xs: 1, sm: 2 },
               }}
             >
-              Comunidade de criadores + IA exclusiva para gerar roteiros e estratégias em minutos.
-              Faça parte do Método do Zero ao Milhão.
+              A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução.
+              <br />
+              Construa autoridade de forma intencional.
             </Typography>
           </Stack>
 
