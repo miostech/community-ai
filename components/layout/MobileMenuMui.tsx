@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAccount } from '@/contexts/AccountContext';
 import {
     BottomNavigation,
     BottomNavigationAction,
@@ -54,7 +53,6 @@ const bottomNavItems: NavItem[] = [
 
 export function MobileMenuMui() {
     const pathname = usePathname();
-    const { account } = useAccount();
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     // Observar se há modal aberto
@@ -74,12 +72,11 @@ export function MobileMenuMui() {
         return () => observer.disconnect();
     }, []);
 
-    const profileHref = account?.id ? `/dashboard/comunidade/perfil/${account.id}` : '/dashboard/perfil';
-
+    // Perfil na tab bar sempre vai para "Meu perfil" (/dashboard/perfil), não para o perfil público
     // Encontrar o índice do item ativo
     const getCurrentValue = () => {
         const index = bottomNavItems.findIndex((item) => {
-            const href = item.label === 'Perfil' ? profileHref : item.href;
+            const href = item.href;
             return pathname === href || pathname?.startsWith(href + '/');
         });
         return index >= 0 ? index : 0;
@@ -120,7 +117,7 @@ export function MobileMenuMui() {
             >
                 {bottomNavItems.map((item, index) => {
                     const isProfile = item.label === 'Perfil';
-                    const itemHref = isProfile ? profileHref : item.href;
+                    const itemHref = item.href; // sempre usa o href do item (Perfil = /dashboard/perfil = Meu perfil)
                     const isCreate = item.label === 'Criar';
                     const isActive = pathname === itemHref || pathname?.startsWith(itemHref + '/');
 
