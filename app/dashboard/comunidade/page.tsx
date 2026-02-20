@@ -219,7 +219,7 @@ export default function ComunidadePageMui() {
                   component={Link}
                   href={publicProfileHref}
                   aria-label="Meu perfil"
-                  sx={{ display: { xs: 'flex', md: 'none' }, p: 0.5 }}
+                  sx={{ display: 'flex', p: 0.5 }}
                 >
                   <Avatar
                     src={account?.avatar_url || undefined}
