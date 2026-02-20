@@ -79,9 +79,10 @@ const PostSchema = new Schema<IPost>(
         },
         content: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxlength: 5000,
+            default: '',
         },
         images: {
             type: [String],
