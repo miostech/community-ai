@@ -15,13 +15,20 @@ function splitName(name?: string | null): { first: string; last: string } {
     return { first: parts.slice(0, -1).join(' '), last: parts.at(-1) ?? '' };
 }
 
-// Gera o client secret para Apple OAuth (JWT assinado)
+// Gera o client secret para Apple OAuth (JWT assinado) — lazy para não crashar no build
+let _appleClientSecret: string | null = null;
 function generateAppleClientSecret(): string {
+    if (_appleClientSecret) return _appleClientSecret;
+
     const teamId = process.env.APPLE_TEAM_ID?.trim() || '';
     const clientId = process.env.APPLE_CLIENT_ID?.trim() || '';
     const keyId = process.env.APPLE_KEY_ID?.trim() || '';
-    // Converte \n literal para quebras de linha reais (caso esteja em uma linha só)
     const privateKey = (process.env.APPLE_PRIVATE_KEY || '').trim().replace(/\\n/g, '\n');
+
+    if (!privateKey) {
+        console.warn('⚠️ APPLE_PRIVATE_KEY não configurada — Apple OAuth desabilitado');
+        return '';
+    }
 
     console.log('🍎 Apple OAuth Config:', {
         teamId,
@@ -50,10 +57,11 @@ function generateAppleClientSecret(): string {
         );
 
         console.log('🍎 Apple JWT gerado com sucesso, tamanho:', token.length);
+        _appleClientSecret = token;
         return token;
     } catch (error) {
         console.error('❌ Erro ao gerar Apple JWT:', error);
-        throw error;
+        return '';
     }
 }
 
