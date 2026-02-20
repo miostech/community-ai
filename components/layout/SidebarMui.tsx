@@ -20,6 +20,7 @@ import {
     Menu,
     MenuItem,
     IconButton,
+    Collapse,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -33,6 +34,8 @@ import {
     DarkMode as DarkModeIcon,
     LightMode as LightModeIcon,
     KeyboardArrowUp as ArrowUpIcon,
+    ExpandLess,
+    ExpandMore,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { isChatLaunched } from '@/lib/chat-launch';
@@ -44,13 +47,28 @@ interface NavItem {
     href: string;
     icon: React.ReactNode;
     exactMatch?: boolean;
+    children?: NavItem[];
 }
 
 const navItems: NavItem[] = [
     {
-        label: 'Criar Post',
-        href: '/dashboard/comunidade/criar',
-        icon: <AddIcon />,
+        label: 'Comunidade',
+        href: '/dashboard/comunidade',
+        exactMatch: true,
+        icon: <GroupIcon />,
+        children: [
+            {
+                label: 'Feed',
+                href: '/dashboard/comunidade',
+                icon: <GroupIcon fontSize="small" />,
+                exactMatch: true,
+            },
+            {
+                label: 'Criar Post',
+                href: '/dashboard/comunidade/criar',
+                icon: <AddIcon />,
+            },
+        ],
     },
     {
         label: 'Chat com IA',
@@ -58,20 +76,14 @@ const navItems: NavItem[] = [
         icon: <ChatIcon />,
     },
     {
-        label: 'Top Trends',
-        href: '/dashboard/trends',
-        icon: <TrendingUpIcon />,
-    },
-    {
-        label: 'Comunidade',
-        href: '/dashboard/comunidade',
-        exactMatch: true,
-        icon: <GroupIcon />,
-    },
-    {
         label: 'Histórico de conversas',
         href: '/dashboard/chat/historico',
         icon: <HistoryIcon />,
+    },
+    {
+        label: 'Top Trends',
+        href: '/dashboard/trends',
+        icon: <TrendingUpIcon />,
     },
     {
         label: 'Cursos',
@@ -87,6 +99,22 @@ export function SidebarMui() {
     const { theme, setTheme, resolvedTheme } = useAppTheme();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const menuOpen = Boolean(anchorEl);
+    const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
+
+    const toggleSubmenu = (label: string) => {
+        setOpenSubmenus((prev) => ({ ...prev, [label]: !prev[label] }));
+    };
+
+    const openSubmenu = (label: string) => {
+        setOpenSubmenus((prev) => ({ ...prev, [label]: true }));
+    };
+
+    // Auto-open submenu if a child route is active
+    const isChildActive = (item: NavItem) => {
+        return item.children?.some(
+            (child) => pathname === child.href || pathname?.startsWith(child.href + '/')
+        );
+    };
 
     const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -161,43 +189,124 @@ export function SidebarMui() {
                             ? pathname === item.href
                             : pathname === item.href || pathname?.startsWith(item.href + '/');
 
+                        const hasChildren = item.children && item.children.length > 0;
+                        const isItemSelected = !hasChildren && isActive;
+                        const submenuOpen = openSubmenus[item.label] ?? isChildActive(item) ?? false;
+
                         return (
-                            <ListItem key={item.href} disablePadding sx={{ px: 1, py: 0.25 }}>
-                                <ListItemButton
-                                    component={Link}
-                                    href={item.href}
-                                    selected={isActive}
-                                    sx={{
-                                        borderRadius: 2,
-                                        '&.Mui-selected': {
-                                            background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                                            color: 'white',
-                                            '& .MuiListItemIcon-root': {
-                                                color: 'white',
-                                            },
-                                            '&:hover': {
-                                                background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                                            },
-                                        },
-                                    }}
-                                >
-                                    <ListItemIcon
+                            <React.Fragment key={item.href}>
+                                <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
+                                    <ListItemButton
+                                        component={Link}
+                                        href={item.href}
+                                        selected={isItemSelected}
+                                        onClick={() => {
+                                            if (hasChildren && !submenuOpen) {
+                                                openSubmenu(item.label);
+                                            }
+                                        }}
                                         sx={{
-                                            minWidth: 40,
-                                            color: isActive ? 'white' : 'text.secondary',
+                                            borderRadius: 2,
+                                            '&.Mui-selected': {
+                                                background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                                color: 'white',
+                                                '& .MuiListItemIcon-root': {
+                                                    color: 'white',
+                                                },
+                                                '&:hover': {
+                                                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                                                },
+                                            },
                                         }}
                                     >
-                                        {item.icon}
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary={item.label}
-                                        primaryTypographyProps={{
-                                            fontSize: 14,
-                                            fontWeight: isActive ? 600 : 500,
-                                        }}
-                                    />
-                                </ListItemButton>
-                            </ListItem>
+                                        <ListItemIcon
+                                            sx={{
+                                                minWidth: 40,
+                                                color: isItemSelected ? 'white' : 'text.secondary',
+                                            }}
+                                        >
+                                            {item.icon}
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={item.label}
+                                            primaryTypographyProps={{
+                                                fontSize: 14,
+                                                fontWeight: isItemSelected ? 600 : 500,
+                                            }}
+                                        />
+                                        {hasChildren && (
+                                            <IconButton
+                                                size="small"
+                                                edge="end"
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    toggleSubmenu(item.label);
+                                                }}
+                                            >
+                                                {submenuOpen ? (
+                                                    <ExpandLess sx={{ color: 'text.secondary' }} />
+                                                ) : (
+                                                    <ExpandMore sx={{ color: 'text.secondary' }} />
+                                                )}
+                                            </IconButton>
+                                        )}
+                                    </ListItemButton>
+                                </ListItem>
+
+                                {/* Submenu */}
+                                {hasChildren && (
+                                    <Collapse in={submenuOpen} timeout="auto" unmountOnExit>
+                                        <List disablePadding>
+                                            {item.children!.map((child) => {
+                                                const isChildItemActive = child.exactMatch
+                                                    ? pathname === child.href
+                                                    : pathname === child.href || pathname?.startsWith(child.href + '/');
+
+                                                return (
+                                                    <ListItem key={child.href} disablePadding sx={{ px: 1, py: 0.25 }}>
+                                                        <ListItemButton
+                                                            component={Link}
+                                                            href={child.href}
+                                                            selected={isChildItemActive}
+                                                            sx={{
+                                                                borderRadius: 2,
+                                                                pl: 6,
+                                                                '&.Mui-selected': {
+                                                                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                                                    color: 'white',
+                                                                    '& .MuiListItemIcon-root': {
+                                                                        color: 'white',
+                                                                    },
+                                                                    '&:hover': {
+                                                                        background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                                                                    },
+                                                                },
+                                                            }}
+                                                        >
+                                                            <ListItemIcon
+                                                                sx={{
+                                                                    minWidth: 32,
+                                                                    color: isChildItemActive ? 'white' : 'text.secondary',
+                                                                }}
+                                                            >
+                                                                {child.icon}
+                                                            </ListItemIcon>
+                                                            <ListItemText
+                                                                primary={child.label}
+                                                                primaryTypographyProps={{
+                                                                    fontSize: 13,
+                                                                    fontWeight: isChildItemActive ? 600 : 400,
+                                                                }}
+                                                            />
+                                                        </ListItemButton>
+                                                    </ListItem>
+                                                );
+                                            })}
+                                        </List>
+                                    </Collapse>
+                                )}
+                            </React.Fragment>
                         );
                     })}
             </List>
