@@ -126,7 +126,7 @@ export default function PerfilPage() {
       }
 
       const data = await response.json();
-      setFormData((prev) => ({ ...prev, avatar_url: data.url }));
+      setFormData((prev) => ({ ...prev, avatar_url: data.avatar_url }));
       await refreshAccount();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao enviar imagem');
@@ -460,7 +460,7 @@ export default function PerfilPage() {
                     />
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
-                    Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG. Máximo 500MB.
+                    Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG, WebP ou GIF. Máximo 10MB.
                     {formData.link_instagram?.trim() && !account?.used_instagram_avatar && ' Ou use a foto do seu perfil do Instagram (uma vez).'}
                   </Typography>
                 </Box>
