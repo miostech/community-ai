@@ -109,6 +109,15 @@ jobs:
         with:
           name: node-app
       
+      - name: Verify downloaded artifact
+        run: |
+          echo "=== Downloaded artifact contents ==="
+          ls -la
+          echo "--- .next directory ---"
+          ls -la .next/ 2>/dev/null || echo "WARNING: .next/ NOT FOUND!"
+          echo "--- server.js ---"
+          ls -la server.js 2>/dev/null || echo "WARNING: server.js NOT FOUND!"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -123,4 +132,5 @@ jobs:
           app-name: 'dome'
           slot-name: 'Production'
           package: .
+          clean: true
           
