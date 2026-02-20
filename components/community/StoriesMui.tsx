@@ -7,8 +7,9 @@ import {
     Avatar,
     Typography,
     Stack,
+    Badge,
 } from '@mui/material';
-import { LocalFireDepartment as ThumbUpIcon } from '@mui/icons-material';
+import { LocalFireDepartment as ThumbUpIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
 
 interface StoryUser {
     id: string;
@@ -96,20 +97,48 @@ export function StoriesMui({ users }: StoriesProps) {
                                         p: '2.5px',
                                     }}
                                 >
-                                    <Avatar
-                                        src={user.avatar || undefined}
-                                        alt={user.name}
+                                    <Badge
+                                        overlap="circular"
+                                        badgeContent={
+                                            index === 0 ? (
+                                                <TrophyIcon
+                                                    sx={{
+                                                        fontSize: 18,
+                                                        color: '#fff',
+                                                        filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
+                                                    }}
+                                                />
+                                            ) : null
+                                        }
+                                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                         sx={{
-                                            width: { xs: 64, sm: 72 },
-                                            height: { xs: 64, sm: 72 },
-                                            background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                            fontSize: '1.125rem',
-                                            fontWeight: 'bold',
-                                            boxShadow: 1,
+                                            '& .MuiBadge-badge': {
+                                                background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
+                                                color: 'inherit',
+                                                p: 0.25,
+                                                minWidth: 22,
+                                                height: 22,
+                                                borderRadius: '50%',
+                                                border: 'none',
+                                                boxShadow: '0 0 8px rgba(251, 191, 36, 0.4)',
+                                            },
                                         }}
                                     >
-                                        {user.initials}
-                                    </Avatar>
+                                        <Avatar
+                                            src={user.avatar || undefined}
+                                            alt={user.name}
+                                            sx={{
+                                                width: { xs: 64, sm: 72 },
+                                                height: { xs: 64, sm: 72 },
+                                                background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                                                fontSize: '1.125rem',
+                                                fontWeight: 'bold',
+                                                boxShadow: 1,
+                                            }}
+                                        >
+                                            {user.initials}
+                                        </Avatar>
+                                    </Badge>
                                 </Box>
                             </Box>
 
