@@ -22,7 +22,7 @@ const themeScript = `
     var k = 'theme';
     var v = localStorage.getItem(k);
     var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var useDark = v === 'dark' || (v !== 'light' && dark);
+    var useDark = v === 'light' ? false : (v === 'system' ? dark : true);
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(useDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', useDark ? 'dark' : 'light');
@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

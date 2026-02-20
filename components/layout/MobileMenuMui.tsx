@@ -3,13 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useUser } from '@/contexts/UserContext';
 import { useAccount } from '@/contexts/AccountContext';
 import {
     BottomNavigation,
     BottomNavigationAction,
     Paper,
-    Avatar,
     Box,
 } from '@mui/material';
 import {
@@ -17,7 +15,7 @@ import {
     TrendingUp as TrendingUpIcon,
     Add as AddIcon,
     MenuBook as MenuBookIcon,
-    Person as PersonIcon,
+    Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -50,14 +48,13 @@ const bottomNavItems: NavItem[] = [
     {
         label: 'Perfil',
         href: '/dashboard/perfil',
-        icon: <PersonIcon />,
+        icon: <SettingsIcon />,
     },
 ];
 
 export function MobileMenuMui() {
     const pathname = usePathname();
-    const { user } = useUser();
-    const { account, fullName } = useAccount();
+    const { account } = useAccount();
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     // Observar se há modal aberto
@@ -77,16 +74,15 @@ export function MobileMenuMui() {
         return () => observer.disconnect();
     }, []);
 
+    const profileHref = account?.id ? `/dashboard/comunidade/perfil/${account.id}` : '/dashboard/perfil';
+
     // Encontrar o índice do item ativo
     const getCurrentValue = () => {
-        const index = bottomNavItems.findIndex(
-            (item) => pathname === item.href || pathname?.startsWith(item.href + '/')
-        );
+        const index = bottomNavItems.findIndex((item) => {
+            const href = item.label === 'Perfil' ? profileHref : item.href;
+            return pathname === href || pathname?.startsWith(href + '/');
+        });
         return index >= 0 ? index : 0;
-    };
-
-    const getInitials = (name: string) => {
-        return name.charAt(0).toUpperCase();
     };
 
     if (isModalOpen) {
@@ -123,16 +119,17 @@ export function MobileMenuMui() {
                 }}
             >
                 {bottomNavItems.map((item, index) => {
-                    const isProfile = item.href === '/dashboard/perfil';
+                    const isProfile = item.label === 'Perfil';
+                    const itemHref = isProfile ? profileHref : item.href;
                     const isCreate = item.label === 'Criar';
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                    const isActive = pathname === itemHref || pathname?.startsWith(itemHref + '/');
 
                     if (isCreate) {
                         return (
                             <BottomNavigationAction
                                 key={item.href}
                                 component={Link}
-                                href={item.href}
+                                href={itemHref}
                                 icon={
                                     <Box
                                         sx={{
@@ -163,25 +160,11 @@ export function MobileMenuMui() {
                             <BottomNavigationAction
                                 key={item.href}
                                 component={Link}
-                                href={item.href}
-                                icon={
-                                    <Avatar
-                                        src={account?.avatar_url || user?.avatar || undefined}
-                                        sx={{
-                                            width: 28,
-                                            height: 28,
-                                            border: isActive ? '2px solid' : '2px solid transparent',
-                                            borderColor: isActive ? 'text.primary' : 'transparent',
-                                            background: !(account?.avatar_url || user?.avatar)
-                                                ? 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)'
-                                                : undefined,
-                                            fontSize: 12,
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        {!(account?.avatar_url || user?.avatar) && getInitials(fullName || user?.name || 'U')}
-                                    </Avatar>
-                                }
+                                href={itemHref}
+                                icon={<SettingsIcon />}
+                                sx={{
+                                    opacity: isActive ? 1 : 0.6,
+                                }}
                             />
                         );
                     }
@@ -190,7 +173,7 @@ export function MobileMenuMui() {
                         <BottomNavigationAction
                             key={item.href}
                             component={Link}
-                            href={item.href}
+                            href={itemHref}
                             icon={item.icon}
                             sx={{
                                 opacity: isActive ? 1 : 0.6,

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -12,6 +13,7 @@ import {
   Button,
   CircularProgress,
   Stack,
+  Avatar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -48,8 +50,11 @@ export default function ComunidadePageMui() {
     removePost,
   } = usePosts();
 
-  const { account, isSubscriptionActive, isLoading: isAccountLoading } = useAccount();
+  const { account, fullName, isSubscriptionActive, isLoading: isAccountLoading } = useAccount();
   const { users: storyUsers } = useStories();
+  const pathname = usePathname();
+  const publicProfileHref = account?.id ? `/dashboard/comunidade/perfil/${account.id}` : '/dashboard/perfil';
+  const isProfileActive = pathname === publicProfileHref;
 
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
@@ -169,12 +174,9 @@ export default function ComunidadePageMui() {
             <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <DomeLogo style={{ fontSize: 18, fontWeight: 600 }} />
-                {/* <Typography variant="h6" fontWeight="bold">
-                  Comunidade
-                </Typography> */}
               </Stack>
 
-              <Stack direction="row" spacing={0.5}>
+              <Stack direction="row" spacing={0.5} alignItems="center">
                 <NotificationsButtonMui />
                 <IconButton
                   onClick={refreshPosts}
@@ -218,6 +220,29 @@ export default function ComunidadePageMui() {
                     {showSavedOnly ? 'Todos' : 'Salvos'}
                   </Box>
                 </Button>
+                <IconButton
+                  component={Link}
+                  href={publicProfileHref}
+                  aria-label="Meu perfil"
+                  sx={{ display: { xs: 'flex', md: 'none' }, p: 0.5 }}
+                >
+                  <Avatar
+                    src={account?.avatar_url || undefined}
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      border: isProfileActive ? '2px solid' : '2px solid transparent',
+                      borderColor: isProfileActive ? 'primary.main' : 'transparent',
+                      background: !account?.avatar_url
+                        ? 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)'
+                        : undefined,
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {!account?.avatar_url && (fullName || 'U').charAt(0).toUpperCase()}
+                  </Avatar>
+                </IconButton>
               </Stack>
             </Toolbar>
           </Box>

@@ -173,10 +173,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 const existingAccount = await Account.findOne({ auth_user_id: authUserId });
 
                 if (existingAccount) {
-                    // Conta existe - apenas atualiza campos que podem mudar
+                    // Conta existe - NÃO sobrescreve first_name/last_name (respeita o nome editado pelo usuário no perfil)
                     const updateFields: Record<string, unknown> = {
-                        first_name: first || (profile as Record<string, string>)?.given_name || existingAccount.first_name || '',
-                        last_name: last || (profile as Record<string, string>)?.family_name || existingAccount.last_name || '',
                         provider_oauth: providerOAuth,
                         last_access_at: new Date(),
                     };
@@ -190,7 +188,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         { auth_user_id: authUserId },
                         { $set: updateFields }
                     );
-                    console.log('✅ Account atualizado:', existingAccount._id, 'email:', existingAccount.email || userEmail);
+                    console.log('✅ Account atualizado (nome preservado):', existingAccount._id, 'email:', existingAccount.email || userEmail);
                 } else {
                     // Conta não existe - cria nova
                     const newAccount = await Account.create({

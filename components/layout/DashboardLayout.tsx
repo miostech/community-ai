@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { AccountProvider, useAccount } from '@/contexts/AccountContext';
 import { SidebarMui } from './SidebarMui';
 import { MobileMenuMui } from './MobileMenuMui';
+import { MobileHeaderMui, MOBILE_HEADER_OFFSET } from './MobileHeaderMui';
 import { FloatingChatButtonMui } from '@/components/chat/FloatingChatButtonMui';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { CreatePostProvider } from '@/contexts/CreatePostContext';
@@ -74,16 +75,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 )}
 
                 <SidebarMui />
+                {!isComunidadePage && <MobileHeaderMui />}
                 <MobileMenuMui />
                 <Box
                   component="main"
                   sx={{
                     flexGrow: 1,
-                    // ml: { xs: 0, md: '256px' },
                     position: 'relative',
                     zIndex: 10,
                     overflowX: 'hidden',
-                    pt: isComunidadePage ? 0 : { xs: 8, md: 0 },
+                    pt: isComunidadePage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
                   }}
                 >
                   {isComunidadePage ? (

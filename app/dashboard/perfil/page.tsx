@@ -19,6 +19,7 @@ import {
   IconButton,
   InputAdornment,
   Divider,
+  Snackbar,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -67,6 +68,7 @@ export default function PerfilPage() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSyncingInstagramAvatar, setIsSyncingInstagramAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [myCourseIds, setMyCourseIds] = useState<string[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
@@ -217,6 +219,7 @@ export default function PerfilPage() {
       });
     }
     setError(null);
+    setSuccessMessage(null);
   };
 
   const handleSave = async () => {
@@ -242,9 +245,14 @@ export default function PerfilPage() {
         throw new Error(errorData.error || 'Erro ao salvar perfil');
       }
 
+      setSuccessMessage('Dados salvos com sucesso.');
+      setError(null);
       await refreshAccount();
+      // Esconde o alerta de sucesso após 5 segundos
+      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar perfil');
+      setSuccessMessage(null);
     } finally {
       setIsSaving(false);
     }
@@ -771,6 +779,23 @@ export default function PerfilPage() {
             </Button>
           </Stack>
         </Paper>
+
+        <Snackbar
+          open={Boolean(successMessage)}
+          autoHideDuration={5000}
+          onClose={() => setSuccessMessage(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          sx={{ mt: 7 }}
+        >
+          <Alert
+            severity="success"
+            onClose={() => setSuccessMessage(null)}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {successMessage}
+          </Alert>
+        </Snackbar>
       </Box>
     </Box>
   );
