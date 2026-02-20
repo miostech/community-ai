@@ -51,11 +51,50 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
+      - name: Verify build output
+        run: |
+          echo "=== Checking .next directory ==="
+          cat .next/BUILD_ID
+          echo ""
+          echo "=== Finding standalone server.js ==="
+          find .next/standalone -name "server.js" -type f
+          echo "Build output OK"
+
+      - name: Prepare standalone deployment
+        run: |
+          # Find the directory containing server.js (Next.js mirrors the absolute project path)
+          SERVER_DIR=$(dirname $(find .next/standalone -name "server.js" -type f | head -1))
+          echo "Standalone server directory: $SERVER_DIR"
+
+          # Copy static assets and public files into the server directory
+          cp -r public "$SERVER_DIR/public"
+          mkdir -p "$SERVER_DIR/.next"
+          cp -r .next/static "$SERVER_DIR/.next/static"
+
+          # Merge hoisted node_modules (from standalone root) into server dir
+          if [ -d ".next/standalone/node_modules" ]; then
+            echo "Merging hoisted node_modules..."
+            cp -rn .next/standalone/node_modules/* "$SERVER_DIR/node_modules/" 2>/dev/null || true
+          fi
+
+          # Flatten: move everything to a clean deploy directory
+          mkdir -p deploy
+          cp -r "$SERVER_DIR"/* deploy/
+          cp -r "$SERVER_DIR"/.next deploy/.next
+
+          # Verify everything is in place
+          echo "=== Final deploy structure ==="
+          ls -la deploy/
+          echo "--- .next/static ---"
+          ls deploy/.next/static/ | head -5
+          echo "--- public ---"
+          ls deploy/public/ | head -5
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: deploy/
 
   deploy:
     runs-on: ubuntu-latest
@@ -70,6 +109,15 @@ jobs:
         with:
           name: node-app
       
+      - name: Verify downloaded artifact
+        run: |
+          echo "=== Downloaded artifact contents ==="
+          ls -la
+          echo "--- .next directory ---"
+          ls -la .next/ 2>/dev/null || echo "WARNING: .next/ NOT FOUND!"
+          echo "--- server.js ---"
+          ls -la server.js 2>/dev/null || echo "WARNING: server.js NOT FOUND!"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -84,4 +132,5 @@ jobs:
           app-name: 'dome'
           slot-name: 'Production'
           package: .
+          clean: true
           
