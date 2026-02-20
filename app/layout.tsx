@@ -31,8 +31,23 @@ const themeScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "Dome - Crie conteúdo com inteligência artificial",
-  description: "Plataforma Dome: criação de conteúdo com IA, roteiros e estratégias para criadores e empreendedores",
+  title: "Dome - Cúpula de criadores de conteúdo",
+  description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "Dome - Cúpula de criadores de conteúdo",
+    description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
+    type: "website",
+    // opengraph-image.tsx gera a imagem automaticamente (mesmo visual do favicon)
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dome - Cúpula de criadores de conteúdo",
+    description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
+  },
 };
 
 export default function RootLayout({
