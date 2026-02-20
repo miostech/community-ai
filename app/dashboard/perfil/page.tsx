@@ -330,7 +330,7 @@ export default function PerfilPage() {
         </Box>
       </AppBar>
 
-      <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
+      <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: '72px', sm: '80px' } }}>
         {!formData.phone.trim() && (
           <Alert
             severity="warning"
@@ -441,6 +441,15 @@ export default function PerfilPage() {
                         {isSyncingInstagramAvatar ? 'Buscando...' : 'Usar foto do Instagram'}
                       </Button>
                     )}
+                    <Button
+                      component={Link}
+                      href={`/dashboard/comunidade/perfil/${nameToSlug(displayName)}`}
+                      variant="outlined"
+                      startIcon={<VisibilityIcon />}
+                      size="small"
+                    >
+                      Ver perfil público
+                    </Button>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -514,6 +523,7 @@ export default function PerfilPage() {
                 countryCode={formData.phone_country_code}
                 onValueChange={(value: string) => updateField('phone', value)}
                 onCountryCodeChange={(code: string) => updateField('phone_country_code', code)}
+                error={!formData.phone.trim()}
               />
             </Box>
 
@@ -617,14 +627,15 @@ export default function PerfilPage() {
               spacing={2}
               justifyContent="flex-end"
             >
-              <Button
+              {/* <Button
                 variant="text"
                 onClick={handleCancel}
                 fullWidth
                 sx={{ display: { xs: 'flex', sm: 'inline-flex' }, width: { sm: 'auto' } }}
               >
+               
                 Cancelar
-              </Button>
+              </Button> */}
               <Button
                 variant="contained"
                 onClick={handleSave}
@@ -642,7 +653,7 @@ export default function PerfilPage() {
         {/* Meus cursos */}
         <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Meus cursos
+            Cursos
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Acesse seus cursos e desbloqueie os próximos.
@@ -684,7 +695,7 @@ export default function PerfilPage() {
                     </Stack>
                     {hasAccess ? (
                       <Typography variant="caption" color="text.secondary">
-                        Acesso liberado
+                        Acessar
                       </Typography>
                     ) : (
                       <Button
@@ -696,7 +707,7 @@ export default function PerfilPage() {
                         rel="noopener noreferrer"
                         component="a"
                       >
-                        Comprar
+                        Adquirir
                       </Button>
                     )}
                   </Stack>
@@ -704,35 +715,6 @@ export default function PerfilPage() {
               })}
             </Stack>
           )}
-        </Paper>
-
-        {/* Ver meu perfil público */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            alignItems={{ sm: 'center' }}
-            justifyContent="space-between"
-          >
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                Ver meu perfil público
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Veja como seu perfil aparece na comunidade
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              href={`/dashboard/comunidade/perfil/${nameToSlug(displayName)}`}
-              variant="outlined"
-              startIcon={<VisibilityIcon />}
-              fullWidth
-              sx={{ width: { sm: 'auto' } }}
-            >
-              Ver como outros me veem
-            </Button>
-          </Stack>
         </Paper>
 
         {/* Sair da conta */}

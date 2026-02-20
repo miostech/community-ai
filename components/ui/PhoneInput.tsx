@@ -8,6 +8,7 @@ interface PhoneInputProps {
   countryCode: string;
   onValueChange: (value: string) => void;
   onCountryCodeChange: (code: string) => void;
+  error?: boolean;
 }
 
 const countryCodes = [
@@ -29,6 +30,7 @@ export function PhoneInput({
   countryCode,
   onValueChange,
   onCountryCodeChange,
+  error,
 }: PhoneInputProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -47,7 +49,7 @@ export function PhoneInput({
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="h-full px-3 py-3 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors flex items-center gap-2 min-w-[100px]"
+            className={`h-full px-3 py-3 bg-gray-50 dark:bg-neutral-800 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors flex items-center gap-2 min-w-[100px] border ${error ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-neutral-600'}`}
           >
             <span className="text-2xl">{selectedCountry.flag}</span>
             <span className="text-sm font-medium text-gray-700 dark:text-neutral-200">{selectedCountry.code}</span>
@@ -101,7 +103,7 @@ export function PhoneInput({
           value={value}
           onChange={(e) => onValueChange(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
+          className={`flex-1 px-4 py-3 rounded-lg border bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 placeholder-gray-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all ${error ? 'border-red-500 dark:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-neutral-600 focus:ring-blue-500 dark:focus:ring-blue-400'}`}
           suppressHydrationWarning
         />
       </div>
