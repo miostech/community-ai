@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useAccount } from '@/contexts/AccountContext';
+import { useCourses } from '@/contexts/CoursesContext';
 import {
   AppBar,
   Toolbar,
@@ -35,7 +36,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
-import { CURSOS } from '@/lib/courses';
+import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 
 interface FormData {
   first_name: string;
@@ -52,6 +53,7 @@ interface FormData {
 export default function PerfilPage() {
   const { data: session } = useSession();
   const { account, isLoading: accountLoading, refreshAccount } = useAccount();
+  const { courseIds: myCourseIds, loading: coursesLoading } = useCourses();
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
     last_name: '',
@@ -70,8 +72,7 @@ export default function PerfilPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [myCourseIds, setMyCourseIds] = useState<string[]>([]);
-  const [coursesLoading, setCoursesLoading] = useState(false);
+
 
   useEffect(() => {
     if (account) {
@@ -92,23 +93,6 @@ export default function PerfilPage() {
     }
   }, [account, accountLoading]);
 
-  useEffect(() => {
-    const email = account?.email?.trim();
-    if (!email) {
-      setMyCourseIds([]);
-      return;
-    }
-    setCoursesLoading(true);
-    fetch('/api/kiwify/check-subscriptions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    })
-      .then((r) => (r.ok ? r.json() : { courseIds: [] }))
-      .then((data) => setMyCourseIds(data.courseIds ?? []))
-      .catch(() => setMyCourseIds([]))
-      .finally(() => setCoursesLoading(false));
-  }, [account?.email]);
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -673,7 +657,7 @@ export default function PerfilPage() {
           ) : (
             <Stack spacing={1.5}>
               {CURSOS.map((curso) => {
-                const hasAccess = myCourseIds.includes(curso.id);
+                const hasAccess = courseIdsIncludeCourse(myCourseIds, curso);
                 return (
                   <Stack
                     key={curso.id}

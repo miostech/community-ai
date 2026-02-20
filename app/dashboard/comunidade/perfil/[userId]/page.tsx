@@ -19,7 +19,8 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
-import { sortCourseIds } from '@/lib/courses';
+import { sortCourseIds, getCourseLabel, CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
+import { useCourses } from '@/contexts/CoursesContext';
 
 // MUI imports
 import {
@@ -69,12 +70,6 @@ type ProfileDisplay = CommunityUser | {
   courseIds?: string[];
 };
 
-/** Labels dos cursos para exibir no perfil (ex.: "Roteiro Viral") */
-const COURSE_LABELS: Record<string, string> = {
-  YIUXqzV: 'Roteiro Viral',
-  '96dk0GP': 'H.P.A',
-  AQDrLac: 'M.I.M',
-};
 
 /** TESTE cursos no bio: descomentar setOwnCourseIds(TEST_MOCK_COURSE_IDS) e comentar o bloco real para visualizar mock. */
 // const TEST_MOCK_COURSE_IDS: string[] = ['AQDrLac', 'YIUXqzV', '96dk0GP'];
@@ -192,20 +187,21 @@ export default function PerfilComunidadePage() {
   } | null>(null);
   const [otherProfileLoading, setOtherProfileLoading] = useState(false);
 
-  // InteractionCount, created_at e cursos do próprio perfil (buscados da API)
+  // Cursos do próprio perfil — vêm do CoursesContext (já buscados uma vez, com cache de 1h)
+  const { courseIds: ownCourseIds } = useCourses();
+
+  // InteractionCount e created_at do próprio perfil
   const [ownInteractionCount, setOwnInteractionCount] = useState<number>(0);
   const [ownCreatedAt, setOwnCreatedAt] = useState<string | null>(null);
-  const [ownCourseIds, setOwnCourseIds] = useState<string[]>([]);
 
-  // Buscar interactionCount, created_at e courseIds do próprio perfil
   useEffect(() => {
     if (!isOwnProfile || !account?.id) {
       setOwnInteractionCount(0);
       setOwnCreatedAt(null);
-      setOwnCourseIds([]);
       return;
     }
-    fetch(`/api/accounts/public/${encodeURIComponent(account.id)}`)
+    // skipCourses=true → rota não chama Kiwify (cursos já vêm do CoursesContext)
+    fetch(`/api/accounts/public/${encodeURIComponent(account.id)}?skipCourses=true`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.profile?.interactionCount != null) {
@@ -213,13 +209,6 @@ export default function PerfilComunidadePage() {
         }
         if (data?.profile?.created_at) {
           setOwnCreatedAt(data.profile.created_at);
-        }
-        // Mock para testar exibição de cursos no bio (descomentar para testar):
-        // setOwnCourseIds(TEST_MOCK_COURSE_IDS);
-        if (Array.isArray(data?.profile?.courseIds)) {
-          setOwnCourseIds(data.profile.courseIds);
-        } else {
-          setOwnCourseIds([]);
         }
       })
       .catch(() => { });
@@ -752,7 +741,7 @@ export default function PerfilComunidadePage() {
                 sx={{ mb: 2, justifyContent: { xs: 'center', sm: 'flex-start' } }}
               >
                 {sortCourseIds(profileUser.courseIds ?? []).map((id) => {
-                  const label = COURSE_LABELS[id];
+                  const label = getCourseLabel(id);
                   if (!label) return null;
                   return (
                     <Chip

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountProvider, useAccount } from '@/contexts/AccountContext';
+import { CoursesProvider } from '@/contexts/CoursesContext';
 import { SidebarMui } from './SidebarMui';
 import { MobileMenuMui } from './MobileMenuMui';
 import { MobileHeaderMui, MOBILE_HEADER_OFFSET } from './MobileHeaderMui';
@@ -157,9 +158,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <AccountProvider>
-        <MuiProvider>
-          <DashboardContent>{children}</DashboardContent>
-        </MuiProvider>
+        <CoursesProvider>
+          <MuiProvider>
+            <DashboardContent>{children}</DashboardContent>
+          </MuiProvider>
+        </CoursesProvider>
       </AccountProvider>
     </ProtectedRoute>
   );

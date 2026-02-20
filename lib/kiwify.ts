@@ -86,30 +86,76 @@ function normalizeEmail(email: string): string {
   return (email ?? '').trim().toLowerCase().normalize('NFC');
 }
 
+/** Formato de data em UTC (YYYY-MM-DD) para alinhar com a API Kiwify. */
+function toDateString(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Formato com hora em UTC (doc Kiwify: "2020-07-10 15:00:00.000"). */
+function toKiwifyDateTime(d: Date, endOfDay: boolean): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  if (endOfDay) return `${y}-${m}-${day} 23:59:59.999`;
+  return `${y}-${m}-${day} 00:00:00.000`;
+}
+
 /**
- * Lista vendas em um intervalo e retorna productIds + nome do cliente da primeira venda encontrada.
+ * IDs de produto (UUIDs da API) para cada curso que verificamos acesso.
+ * A API filtra por product_id no servidor → muito menos dados por chamada.
+ * Atualizar aqui sempre que novos UUIDs de um curso forem identificados.
  */
-async function listSalesByEmail(
+const COURSE_PRODUCT_IDS: Record<string, string[]> = {
+  mim: [
+    'b28b7a90-b4cf-11ef-9456-6daddced3267', // Método Influência Milionária (original)
+    '6683aa80-bb2e-11f0-a386-7f084bbfb234', // Método Influencia Milionária Oficial
+    '92ff3db0-b1ea-11f0-8ead-2342e472677a', // Formação Milionária Anônima
+  ],
+  roteiroViral: [
+    '080a7190-ae0f-11f0-84ca-83ece070bd1d', // Roteiro Viral
+  ],
+  hpa: [
+    'c6547980-bb2e-11f0-8751-cd4e443e2330', // Haqueando Passagens Aereas
+    '97204820-d3e9-11ee-b35b-a7756e800fa3', // Hackeando Passagens Aéreas
+    'b1d89730-3533-11ee-84fd-bdb8d3fd9bc7', // Faturando Alto - Passagens Áreas
+  ],
+  dome: [
+    'b16382c0-0e74-11f1-9a8a-a594d751c201', // DOME
+  ],
+};
+
+/** Todos os UUIDs dos cursos que verificamos, em lista plana. */
+const ALL_COURSE_PRODUCT_IDS = Object.values(COURSE_PRODUCT_IDS).flat();
+
+/**
+ * Verifica se o email comprou um produto específico em um intervalo (máx. 90 dias).
+ * Usa product_id no filtro da API → a Kiwify filtra no servidor, muito menos dados.
+ * Retorna o nome do cliente se encontrado.
+ */
+async function checkProductPurchaseInRange(
   accessToken: string,
+  productId: string,
   email: string,
   startDate: string,
   endDate: string
-): Promise<{ productIds: string[]; customerName?: string }> {
-  const productIds: string[] = [];
-  let customerName: string | undefined;
+): Promise<{ bought: boolean; customerName?: string }> {
   const normalizedEmail = normalizeEmail(email);
+  const startWithTime = `${startDate} 00:00:00.000`;
+  const endWithTime = `${endDate} 23:59:59.999`;
   let page = 1;
-  const pageSize = 100;
 
   while (true) {
     const params = new URLSearchParams({
-      start_date: startDate,
-      end_date: endDate,
-      page_size: String(pageSize),
+      product_id: productId,
+      start_date: startWithTime,
+      end_date: endWithTime,
+      page_size: '100',
       page_number: String(page),
     });
-    const url = `${KIWIFY_BASE}/sales?${params.toString()}`;
-    const res = await fetch(url, {
+    const res = await fetch(`${KIWIFY_BASE}/sales?${params.toString()}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -119,41 +165,37 @@ async function listSalesByEmail(
     });
 
     if (!res.ok) {
-      console.warn('[Kiwify] List sales error:', res.status, await res.text());
-      break;
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[Kiwify] checkProductPurchaseInRange error:', res.status, productId);
+      }
+      return { bought: false };
     }
 
     const data = (await res.json()) as {
       data?: KiwifySale[];
-      pagination?: { page_number?: number; count?: number };
+      pagination?: { count?: number };
     };
     const sales = data.data ?? [];
-    const pagination = data.pagination ?? {};
 
     for (const sale of sales) {
-      const customerEmail = normalizeEmail(sale.customer?.email ?? '');
-      if (customerEmail !== normalizedEmail) continue;
+      if (normalizeEmail(sale.customer?.email ?? '') !== normalizedEmail) continue;
       if (!PAID_STATUSES.has(sale.status ?? '')) continue;
-      if (!customerName && sale.customer?.name?.trim()) {
-        customerName = sale.customer.name.trim();
-      }
-      const productId = sale.product?.id;
-      if (productId && !productIds.includes(productId)) productIds.push(productId);
+      return { bought: true, customerName: sale.customer?.name?.trim() };
     }
 
-    const count = pagination.count ?? sales.length;
-    if (sales.length < pageSize || count < pageSize) break;
+    const count = data.pagination?.count ?? sales.length;
+    if (sales.length < 100 || count < 100) break;
     page += 1;
-    if (page > 50) break;
+    if (page > 20) break;
   }
-
-  return { productIds, customerName };
+  return { bought: false };
 }
 
 /**
- * Busca os IDs de produtos que o email comprou (status pago) e o nome do cliente.
- * Janelas de 90 dias; busca da mais recente para a mais antiga para priorizar vendas recentes.
- * Para incluir "hoje" por timezone, na última janela usa end_date = dia seguinte.
+ * Busca os IDs de produtos que o email comprou (status pago).
+ * Estratégia: verifica apenas os 4 cursos do site usando product_id filter da API.
+ * Cada UUID faz 4 chamadas (janelas de 90 dias em 1 ano) → no máximo ~36 chamadas
+ * para todos os UUIDs dos 4 cursos. Muito abaixo do rate limit de 100 req/min.
  */
 export async function getSubscriptionsByEmail(email: string): Promise<SubscriptionsByEmailResult> {
   if (!email?.trim()) return { courseIds: [] };
@@ -163,7 +205,7 @@ export async function getSubscriptionsByEmail(email: string): Promise<Subscripti
       process.env.NODE_ENV !== 'production' &&
       (email === 'usuario@email.com' || /teste|test/i.test(email))
     ) {
-      return { courseIds: ['96dk0GP'] };
+      return { courseIds: ['yjHjvnY', 'cGQaf5s', '0c193809-a695-4f39-bc7b-b4e2794274a9'] };
     }
     return { courseIds: [] };
   }
@@ -171,42 +213,88 @@ export async function getSubscriptionsByEmail(email: string): Promise<Subscripti
   const accessToken = await getAccessToken();
   if (!accessToken) return { courseIds: [] };
 
-  const allProductIds: string[] = [];
+  const boughtProductIds: string[] = [];
   let firstCustomerName: string | undefined;
+
   const end = new Date();
-  let start = new Date(end);
-  start.setFullYear(start.getFullYear() - 1);
+  const start = new Date(end);
+  start.setUTCFullYear(start.getUTCFullYear() - 1);
 
-  while (start < end) {
-    const windowEnd = new Date(start);
-    windowEnd.setDate(windowEnd.getDate() + 90);
+  // Pré-calcula as janelas de 90 dias para reutilizar em cada produto
+  const windows: Array<{ startStr: string; endStr: string }> = [];
+  let windowStart = new Date(start.getTime());
+  while (windowStart.getTime() < end.getTime()) {
+    const windowEnd = new Date(windowStart.getTime());
+    windowEnd.setUTCDate(windowEnd.getUTCDate() + 90);
     const endDate = windowEnd > end ? end : windowEnd;
-    const startStr = start.toISOString().slice(0, 10);
-    const isLastWindow = endDate.getTime() >= end.getTime() - 86400000;
-    const endStr = isLastWindow
-      ? new Date(end.getTime() + 86400000).toISOString().slice(0, 10)
-      : endDate.toISOString().slice(0, 10);
-
-    const { productIds, customerName } = await listSalesByEmail(
-      accessToken,
-      email,
-      startStr,
-      endStr
-    );
-    for (const id of productIds) {
-      if (!allProductIds.includes(id)) allProductIds.push(id);
-    }
-    if (!firstCustomerName && customerName) firstCustomerName = customerName;
-    start = new Date(endDate.getTime() + 1);
+    windows.push({ startStr: toDateString(windowStart), endStr: toDateString(endDate) });
+    windowStart = new Date(endDate.getTime() + 1);
   }
 
-  return { courseIds: allProductIds, customerName: firstCustomerName };
+  // Para cada UUID dos 4 cursos, verifica se o email comprou (para na primeira janela encontrada)
+  for (const productId of ALL_COURSE_PRODUCT_IDS) {
+    if (boughtProductIds.includes(productId)) continue;
+    for (const { startStr, endStr } of windows) {
+      const { bought, customerName } = await checkProductPurchaseInRange(
+        accessToken,
+        productId,
+        email,
+        startStr,
+        endStr
+      );
+      if (bought) {
+        boughtProductIds.push(productId);
+        if (!firstCustomerName && customerName) firstCustomerName = customerName;
+        break; // Não precisa checar mais janelas para este produto
+      }
+    }
+  }
+
+  if (process.env.NODE_ENV !== 'production' && email) {
+    console.log('[Kiwify] getSubscriptionsByEmail:', {
+      email: email.slice(0, 5) + '***',
+      totalProductIds: boughtProductIds.length,
+      ids: boughtProductIds,
+    });
+  }
+  return { courseIds: boughtProductIds, customerName: firstCustomerName };
 }
 
 export interface KiwifySubscriptionResult {
   courseIds: string[];
   hasAccess: boolean;
   customerName?: string;
+}
+
+/** Lista produtos da conta (para mapear product.id das vendas com os nomes/cursos). */
+export async function listKiwifyProducts(): Promise<{ id: string; name: string }[]> {
+  if (!isConfigured()) return [];
+  const accessToken = await getAccessToken();
+  if (!accessToken) return [];
+  const out: { id: string; name: string }[] = [];
+  let page = 1;
+  const pageSize = 100;
+  while (true) {
+    const params = new URLSearchParams({ page_size: String(pageSize), page_number: String(page) });
+    const res = await fetch(`${KIWIFY_BASE}/products?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'x-kiwify-account-id': KIWIFY_ACCOUNT_ID!,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) break;
+    const data = (await res.json()) as { data?: { id?: string; name?: string }[]; pagination?: { count?: number } };
+    const list = data.data ?? [];
+    for (const p of list) {
+      if (p.id && p.name) out.push({ id: p.id, name: p.name });
+    }
+    if (list.length < pageSize) break;
+    page += 1;
+    if (page > 20) break;
+  }
+  return out;
 }
 
 export async function hasKiwifyPurchase(email: string): Promise<KiwifySubscriptionResult> {

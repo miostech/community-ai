@@ -6,6 +6,7 @@ import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
 import { getSubscriptionsByEmail } from '@/lib/kiwify';
+import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 /** GET - Dados públicos de uma conta (nome, avatar, redes, estatísticas) para exibir no perfil da comunidade */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -27,6 +28,9 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
+    // skipCourses=true: próprio perfil já busca via check-subscriptions no client
+    const skipCourses = request.nextUrl.searchParams.get('skipCourses') === 'true';
+
     await connectMongo();
 
     const accountId = new mongoose.Types.ObjectId(id);
@@ -39,15 +43,21 @@ export async function GET(
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
-    // Cursos que a pessoa tem acesso (Kiwify) – não expomos o email
+    // Cursos que a pessoa tem acesso (Kiwify) — só para perfis de outros usuários.
+    // Converte para slugs canônicos (mesma lógica da página /cursos com courseIdsIncludeCourse)
+    // para que getCourseLabel funcione corretamente na exibição.
     let courseIds: string[] = [];
-    const email = (account as { email?: string }).email?.trim();
-    if (email) {
-      try {
-        const { courseIds: ids } = await getSubscriptionsByEmail(email);
-        courseIds = ids ?? [];
-      } catch {
-        // ignora erro Kiwify; perfil segue sem cursos
+    if (!skipCourses) {
+      const email = (account as { email?: string }).email?.trim();
+      if (email) {
+        try {
+          const { courseIds: rawIds } = await getSubscriptionsByEmail(email);
+          courseIds = CURSOS
+            .filter((curso) => courseIdsIncludeCourse(rawIds ?? [], curso))
+            .map((curso) => curso.id);
+        } catch {
+          // ignora erro Kiwify; perfil segue sem cursos
+        }
       }
     }
 

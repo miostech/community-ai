@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useAccount } from '@/contexts/AccountContext';
+import { useCourses } from '@/contexts/CoursesContext';
 
 // MUI imports
 import {
@@ -24,7 +25,7 @@ import {
   PlayArrow as PlayArrowIcon,
   MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
-import { getKiwifyIdFromUrl } from '@/lib/kiwify';
+import { courseIdsIncludeCourse } from '@/lib/courses';
 
 interface Course {
   id: string;
@@ -34,92 +35,63 @@ interface Course {
   modules: number;
   kiwifyUrl: string;
   kiwifyDashboardUrl?: string;
+  /** IDs do produto (slugs ou UUID) para conferir se comprou */
+  kiwifyProductIds?: string[];
   isAvailable: boolean;
 }
 
 export default function CursosPage() {
-  const { user } = useUser();
+  const { hasCourse, courseIds, loading: coursesLoading } = useCourses();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const mockCourses: Course[] = [
+    {
+      id: '3',
+      title: 'Método Influência MILIONÁRIA',
+      description: 'Domine as estratégias de influência para construir uma marca milionária',
+      thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
+      modules: 5,
+      kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=10z1btuv',
+      kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/66c42290-49a6-41d6-95e1-2d62c37f0078',
+      kiwifyProductIds: ['b28b7a90-b4cf-11ef-9456-6daddced3267', '6683aa80-bb2e-11f0-a386-7f084bbfb234', '92ff3db0-b1ea-11f0-8ead-2342e472677a', '0pZo7Fz', 'sXB7hnD', '66c42290-49a6-41d6-95e1-2d62c37f0078'],
+      isAvailable: false,
+    },
+    {
+      id: '1',
+      title: 'Roteiro Viral!',
+      description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
+      thumbnail: '/images/cursos/roteiro-viral.jpeg',
+      modules: 6,
+      kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=kq3Wqjlq',
+      kiwifyDashboardUrl: 'https://members.kiwify.com/?club=8b89b9db-3ff5-42ef-9abd-52a655725a84',
+      kiwifyProductIds: ['080a7190-ae0f-11f0-84ca-83ece070bd1d', 'YIUXqzV', '8b89b9db-3ff5-42ef-9abd-52a655725a84'],
+      isAvailable: false,
+    },
+    {
+      id: '2',
+      title: 'H.P.A. - Hackeando Passagens Aéreas',
+      description: 'Descubra estratégias para conseguir passagens aéreas com os melhores preços',
+      thumbnail: '/images/cursos/hpa-passagens-aereas.png',
+      modules: 8,
+      kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=rXWOYDG7',
+      kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
+      kiwifyProductIds: ['c6547980-bb2e-11f0-8751-cd4e443e2330', '97204820-d3e9-11ee-b35b-a7756e800fa3', 'b1d89730-3533-11ee-84fd-bdb8d3fd9bc7', 'yjHjvnY', 'cGQaf5s', '0c193809-a695-4f39-bc7b-b4e2794274a9'],
+      isAvailable: false,
+    },
+  ];
+
+  // Atualiza isAvailable sempre que o contexto de cursos mudar
   useEffect(() => {
-    const mockCourses: Course[] = [
-      {
-        id: '3',
-        title: 'Método Influência MILIONÁRIA',
-        description: 'Domine as estratégias de influência para construir uma marca milionária',
-        thumbnail: '/images/cursos/metodo-influencia-milionaria.png',
-        modules: 5,
-        kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=9QWG5v3v',
-        kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/66c42290-49a6-41d6-95e1-2d62c37f0078',
-        isAvailable: false,
-      },
-      {
-        id: '1',
-        title: 'Roteiro Viral!',
-        description: 'Aprenda a criar roteiros que viralizam e engajam sua audiência',
-        thumbnail: '/images/cursos/roteiro-viral.jpeg',
-        modules: 6,
-        kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=Bjgtq25N',
-        kiwifyDashboardUrl: 'https://members.kiwify.com/?club=8b89b9db-3ff5-42ef-9abd-52a655725a84',
-        isAvailable: false,
-      },
-      {
-        id: '2',
-        title: 'H.P.A. - Hackeando Passagens Aéreas',
-        description: 'Descubra estratégias para conseguir passagens aéreas com os melhores preços',
-        thumbnail: '/images/cursos/hpa-passagens-aereas.png',
-        modules: 8,
-        kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=hRhsqA6j',
-        kiwifyDashboardUrl: 'https://dashboard.kiwify.com/course/premium/0c193809-a695-4f39-bc7b-b4e2794274a9',
-        isAvailable: false,
-      },
-    ];
-
-    checkKiwifySubscriptions(mockCourses);
-  }, [user.email]);
-
-  const checkKiwifySubscriptions = async (coursesList: Course[]) => {
-    setIsLoading(true);
-    try {
-      const availableCourseIds = await fetchKiwifySubscriptions(user.email);
-
-      const updatedCourses = coursesList.map(course => ({
-        ...course,
-        isAvailable: availableCourseIds.includes(getKiwifyIdFromUrl(course.kiwifyUrl)),
-      }));
-
-      setCourses(updatedCourses);
-    } catch (error) {
-      console.error('Erro ao verificar assinaturas:', error);
-      setCourses(coursesList);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchKiwifySubscriptions = async (email: string): Promise<string[]> => {
-    try {
-      const response = await fetch('/api/kiwify/check-subscriptions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao verificar assinaturas');
-      }
-
-      const data = await response.json();
-      return data.courseIds || [];
-    } catch (error) {
-      console.error('Erro ao buscar assinaturas:', error);
-      if (email === 'usuario@email.com' || email.includes('teste')) {
-        return ['96dk0GP'];
-      }
-      return [];
-    }
-  };
+    if (coursesLoading) return;
+    const updated = mockCourses.map((course) => ({
+      ...course,
+      isAvailable: hasCourse(course),
+    }));
+    setCourses(updated);
+    setIsLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseIds, coursesLoading]);
 
   if (isLoading) {
     return (
