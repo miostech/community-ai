@@ -51,11 +51,24 @@ jobs:
           npm run build --if-present
           npm run test --if-present
 
+      - name: Verify build output
+        run: |
+          echo "=== Checking .next directory ==="
+          ls -la .next/ | head -20
+          cat .next/BUILD_ID
+          echo ""
+          echo "Build output OK"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: |
+            .next/
+            node_modules/
+            public/
+            package.json
+            next.config.ts
 
   deploy:
     runs-on: ubuntu-latest
