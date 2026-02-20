@@ -25,6 +25,26 @@ jobs:
           cache: 'npm'
 
       - name: npm install, build, and test
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+          APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+          AZURE_STORAGE_CONTAINER_POSTS_IMAGES: ${{ secrets.AZURE_STORAGE_CONTAINER_POSTS_IMAGES }}
+          AZURE_STORAGE_CONTAINER_POSTS_VIDEOS: ${{ secrets.AZURE_STORAGE_CONTAINER_POSTS_VIDEOS }}
+          SEARCHAPI_API_KEY: ${{ secrets.SEARCHAPI_API_KEY }}
+          KIWIFY_CLIENT_ID: ${{ secrets.KIWIFY_CLIENT_ID }}
+          KIWIFY_CLIENT_SECRET: ${{ secrets.KIWIFY_CLIENT_SECRET }}
+          KIWIFY_ACCOUNT_ID: ${{ secrets.KIWIFY_ACCOUNT_ID }}
+          KIWIFY_WEBHOOK_TOKEN: ${{ secrets.KIWIFY_WEBHOOK_TOKEN }}
         run: |
           rm -rf node_modules package-lock.json
           npm install
