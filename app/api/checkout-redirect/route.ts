@@ -3,8 +3,9 @@ import { auth } from '@/lib/auth';
 
 // URLs de checkout da Kiwify para cada plano
 const PLAN_URLS: Record<string, string> = {
-    'conteudo-ia': 'https://pay.kiwify.com.br/1k68u0Y',
-    'combo-viral': 'https://pay.kiwify.com.br/1k68u0Y', // TODO: Atualizar com URL correta do combo
+    'dome-mensal': 'https://pay.kiwify.com.br/KV5Y885',
+    'dome-semestral': 'https://pay.kiwify.com.br/fd3eJFq',
+    'dome-anual': 'https://pay.kiwify.com.br/iLSMfoH',
 };
 
 export async function GET(request: NextRequest) {

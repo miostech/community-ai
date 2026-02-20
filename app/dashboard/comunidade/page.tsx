@@ -11,6 +11,7 @@ import {
   Typography,
   IconButton,
   Button,
+  Tooltip,
   CircularProgress,
   Stack,
   Avatar,
@@ -193,33 +194,27 @@ export default function ComunidadePageMui() {
                     }}
                   />
                 </IconButton>
-                <Button
-                  variant={showSavedOnly ? 'contained' : 'outlined'}
-                  size="small"
-                  onClick={() => setShowSavedOnly(!showSavedOnly)}
-                  startIcon={showSavedOnly ? <BookmarkIcon sx={{ color: 'white' }} /> : <BookmarkBorderIcon sx={{ color: 'text.primary' }} />}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    minWidth: {
-                      xs: 32,
-                      sm: 100,
-                    },
-                    px: { xs: 2, sm: 2 },
-                    '& .MuiButton-startIcon': {
-                      mr: { xs: 0, sm: 1 },
-                    },
-                    ...(showSavedOnly && {
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                    }),
-                    borderColor: showSavedOnly ? 'transparent' : 'text.secondary',
-                  }}
-                >
-                  <Box sx={{ display: { xs: 'none', sm: 'block' }, color: showSavedOnly ? 'white' : 'text.primary' }}>
-                    {showSavedOnly ? 'Todos' : 'Salvos'}
-                  </Box>
-                </Button>
+                <Tooltip title={showSavedOnly ? 'Todos' : 'Salvos'}>
+                  <IconButton
+                    onClick={() => setShowSavedOnly(!showSavedOnly)}
+                    aria-label={showSavedOnly ? 'Ver todos os posts' : 'Ver salvos'}
+                    sx={{
+                      ...(showSavedOnly && {
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                        color: 'white',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                        },
+                      }),
+                    }}
+                  >
+                    {showSavedOnly ? (
+                      <BookmarkIcon />
+                    ) : (
+                      <BookmarkBorderIcon sx={{ color: 'text.primary' }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
                 <IconButton
                   component={Link}
                   href={publicProfileHref}

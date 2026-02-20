@@ -19,9 +19,9 @@ export interface Plan {
 
 export const defaultPlans: Plan[] = [
     {
-        id: 'conteudo-ia',
+        id: 'dome-mensal',
         name: 'Dome - Mensal',
-        price: '49,99',
+        price: '47,90',
         period: 'mês',
         description: 'Acesso completo à plataforma Dome de criação de conteúdo com IA',
         features: [
@@ -32,15 +32,15 @@ export const defaultPlans: Plan[] = [
             'Salvar projetos ilimitados',
             'Suporte prioritário',
         ],
-        kiwifyUrl: 'https://pay.kiwify.com.br/1k68u0Y',
+        kiwifyUrl: 'https://pay.kiwify.com.br/KV5Y885',
         popular: false,
     },
     {
-        id: 'conteudo-ia',
-        name: 'Dome - Anual',
-        price: '197,99',
-        period: 'anual',
-        description: 'Acesso completo à plataforma Dome de criação de conteúdo com IA por 1 ano por um preço especial',
+        id: 'dome-semestral',
+        name: 'Dome - Semestral',
+        price: '287,40',
+        period: 'semestre',
+        description: '6 meses de acesso à plataforma Dome com desconto em relação ao mensal',
         features: [
             'Criação ilimitada de conteúdo',
             'Templates exclusivos',
@@ -49,7 +49,24 @@ export const defaultPlans: Plan[] = [
             'Salvar projetos ilimitados',
             'Suporte prioritário',
         ],
-        kiwifyUrl: 'https://pay.kiwify.com.br/1k68u0Y',
+        kiwifyUrl: 'https://pay.kiwify.com.br/fd3eJFq',
+        popular: true,
+    },
+    {
+        id: 'dome-anual',
+        name: 'Dome - Anual',
+        price: '397,90',
+        period: 'ano',
+        description: 'Acesso completo à plataforma Dome por 1 ano por um preço especial',
+        features: [
+            'Criação ilimitada de conteúdo',
+            'Templates exclusivos',
+            'Chat com IA para melhorias',
+            'Acesso à comunidade',
+            'Salvar projetos ilimitados',
+            'Suporte prioritário',
+        ],
+        kiwifyUrl: 'https://pay.kiwify.com.br/iLSMfoH',
         popular: false,
     },
     // {
@@ -190,7 +207,7 @@ export function PricingPlans({
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
                 {plans.map((plan) => (
                     <div
                         key={plan.id}
@@ -213,9 +230,9 @@ export function PricingPlans({
                                 <p className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">{plan.description}</p>
                             </div>
 
-                            <div className="flex items-baseline space-x-1 sm:space-x-2">
-                                <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-slate-100">R$ {plan.price}</span>
-                                <span className="text-sm sm:text-base text-gray-600 dark:text-slate-400">/{plan.period}</span>
+                            <div className="flex items-baseline flex-nowrap gap-1 sm:gap-2 min-w-0">
+                                <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-slate-100 whitespace-nowrap shrink-0">R$ {plan.price}</span>
+                                <span className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 shrink-0">/{plan.period}</span>
                             </div>
 
                             <ul className="space-y-3">
