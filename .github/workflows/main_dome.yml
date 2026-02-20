@@ -19,13 +19,16 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Node.js version
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22.x'
+          cache: 'npm'
 
       - name: npm install, build, and test
         run: |
-          npm install
+          npm ci
+          LIGHTNINGCSS_VERSION=$(node -p "require('./node_modules/lightningcss/package.json').version")
+          npm install --no-save "lightningcss-linux-x64-gnu@$LIGHTNINGCSS_VERSION"
           npm run build --if-present
           npm run test --if-present
 
