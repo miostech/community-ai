@@ -27,6 +27,7 @@ export default function AssinaturaPage() {
         );
     }
 
+
     return (
         <Container maxWidth="lg" sx={{ pb: 10 }}>
             <PricingPlans
