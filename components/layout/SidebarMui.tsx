@@ -329,7 +329,7 @@ export function SidebarMui() {
 
                 <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
                     <ListItemButton
-                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        onClick={() => signOut({ callbackUrl: '/' })}
                         sx={{
                             borderRadius: 2,
                             color: 'error.main',

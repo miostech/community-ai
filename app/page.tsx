@@ -386,7 +386,7 @@ export default function Home() {
             </AvatarGroup>
             <Box>
               <Typography variant="body2" fontWeight={600} color="text.primary">
-                +20 mil
+                +24 mil
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Alunos criando conteúdo
