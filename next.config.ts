@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Configurações otimizadas para Azure Static Web Apps
-  // O Azure detecta automaticamente Next.js e gerencia o build
+  // Standalone output para deploy no Azure Web App
+  // Produz um servidor auto-contido sem precisar de node_modules completo
+  output: 'standalone',
   experimental: {
-    // Otimizações para reduzir tempo de inicialização
     optimizePackageImports: ['react', 'react-dom'],
   },
   // Compressão para reduzir tamanho dos assets
