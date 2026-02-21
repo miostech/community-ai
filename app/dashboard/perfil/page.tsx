@@ -657,7 +657,7 @@ export default function PerfilPage() {
             Cursos
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Acesse seus cursos e desbloqueie os próximos.
+            Acesse seus cursos e desbloqueie os próximos.
           </Typography>
           {coursesLoading ? (
             <Stack direction="row" alignItems="center" spacing={1}>
