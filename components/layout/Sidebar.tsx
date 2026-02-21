@@ -193,7 +193,7 @@ export function Sidebar() {
               <button
                 onClick={() => {
                   setShowUserMenu(false);
-                  signOut({ callbackUrl: '/login' });
+                  signOut({ callbackUrl: '/' });
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors text-left"
               >

@@ -15,6 +15,8 @@ export interface Plan {
     features: string[];
     kiwifyUrl: string;
     popular?: boolean;
+    /** Texto do badge de destaque (ex: "20% OFF"). Se popular for true e badgeText não for passado, usa "Mais Popular". */
+    badgeText?: string;
 }
 
 export const defaultPlans: Plan[] = [
@@ -23,13 +25,12 @@ export const defaultPlans: Plan[] = [
         name: 'Dome - Mensal',
         price: '47,90',
         period: 'mês',
-        description: 'Acesso completo à plataforma Dome de criação de conteúdo com IA',
+        description: 'Acesso mensal à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
-            'Criação ilimitada de conteúdo',
-            'Templates exclusivos',
-            'Chat com IA para melhorias',
-            'Acesso à comunidade',
-            'Salvar projetos ilimitados',
+            'Ideias estruturadas de conteúdo (engajamento e conversão)',
+            'Chat com IA — assistente de criação treinada pelos criadores',
+            'Acesso à comunidade de criadores (troca de estratégias e inspiração)',
+            'Temas em alta (assuntos que estão gerando engajamento)',
             'Suporte prioritário',
         ],
         kiwifyUrl: 'https://pay.kiwify.com.br/KV5Y885',
@@ -40,34 +41,33 @@ export const defaultPlans: Plan[] = [
         name: 'Dome - Semestral',
         price: '287,40',
         period: 'semestre',
-        description: '6 meses de acesso à plataforma Dome com desconto em relação ao mensal',
+        description: '6 meses de acesso à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
-            'Criação ilimitada de conteúdo',
-            'Templates exclusivos',
-            'Chat com IA para melhorias',
-            'Acesso à comunidade',
-            'Salvar projetos ilimitados',
+            'Ideias estruturadas de conteúdo (engajamento e conversão)',
+            'Chat com IA — assistente de criação treinada pelos criadores',
+            'Acesso à comunidade de criadores (troca de estratégias e inspiração)',
+            'Temas em alta (assuntos que estão gerando engajamento)',
             'Suporte prioritário',
         ],
         kiwifyUrl: 'https://pay.kiwify.com.br/fd3eJFq',
-        popular: true,
+        popular: false,
     },
     {
         id: 'dome-anual',
         name: 'Dome - Anual',
         price: '397,90',
         period: 'ano',
-        description: 'Acesso completo à plataforma Dome por 1 ano por um preço especial',
+        description: '1 ano de acesso à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
-            'Criação ilimitada de conteúdo',
-            'Templates exclusivos',
-            'Chat com IA para melhorias',
-            'Acesso à comunidade',
-            'Salvar projetos ilimitados',
+            'Ideias estruturadas de conteúdo (engajamento e conversão)',
+            'Chat com IA — assistente de criação treinada pelos criadores',
+            'Acesso à comunidade de criadores (troca de estratégias e inspiração)',
+            'Temas em alta (assuntos que estão gerando engajamento)',
             'Suporte prioritário',
         ],
         kiwifyUrl: 'https://pay.kiwify.com.br/iLSMfoH',
-        popular: false,
+        popular: true,
+        badgeText: '20% OFF',
     },
     // {
     //     id: 'combo-viral',
@@ -219,7 +219,7 @@ export function PricingPlans({
                         {plan.popular && (
                             <div className="absolute -top-3 sm:-top-4 left-1/2 transform -translate-x-1/2">
                                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 sm:px-4 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-semibold">
-                                    Mais Popular
+                                    {plan.badgeText ?? 'Mais Popular'}
                                 </span>
                             </div>
                         )}
@@ -281,7 +281,7 @@ export function PricingPlans({
                                 Posso cancelar a qualquer momento?
                             </h3>
                             <p className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">
-                                Sim, você pode cancelar sua assinatura a qualquer momento. Não há taxas de cancelamento.
+                                Sim, você pode cancelar sua assinatura a qualquer momento.
                             </p>
                         </div>
                         {/* <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-slate-600 p-4 sm:p-6">
@@ -297,7 +297,7 @@ export function PricingPlans({
                                 Como funciona o pagamento?
                             </h3>
                             <p className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">
-                                O pagamento é processado de forma segura pela Kiwify. Você pode pagar com cartão de crédito, débito ou PIX.
+                                O pagamento é processado de forma segura pela Kiwify. Você pode pagar com cartão ou PIX.
                             </p>
                         </div>
                     </div>
