@@ -11,6 +11,8 @@ export interface Plan {
     name: string;
     price: string;
     period: string;
+    /** Preço antes da promoção (ex: "97,90"). Exibido riscado para dar sensação de oferta. */
+    originalPrice?: string;
     description: string;
     features: string[];
     kiwifyUrl: string;
@@ -24,6 +26,7 @@ export const defaultPlans: Plan[] = [
         id: 'dome-mensal',
         name: 'Dome - Mensal',
         price: '47,90',
+        originalPrice: '97,90',
         period: 'mês',
         description: 'Acesso mensal à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
@@ -40,6 +43,7 @@ export const defaultPlans: Plan[] = [
         id: 'dome-semestral',
         name: 'Dome - Semestral',
         price: '287,40',
+        originalPrice: '587,40',
         period: 'semestre',
         description: '6 meses de acesso à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
@@ -56,6 +60,7 @@ export const defaultPlans: Plan[] = [
         id: 'dome-anual',
         name: 'Dome - Anual',
         price: '397,90',
+        originalPrice: '997,90',
         period: 'ano',
         description: '1 ano de acesso à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
@@ -230,9 +235,19 @@ export function PricingPlans({
                                 <p className="text-gray-600 dark:text-slate-400 text-xs sm:text-sm">{plan.description}</p>
                             </div>
 
-                            <div className="flex items-baseline flex-nowrap gap-1 sm:gap-2 min-w-0">
-                                <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-slate-100 whitespace-nowrap shrink-0">R$ {plan.price}</span>
-                                <span className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 shrink-0">/{plan.period}</span>
+                            <div className="space-y-0.5">
+                                {plan.originalPrice && (
+                                    <p className="text-sm text-gray-500 dark:text-slate-500">
+                                        <span className="line-through">De R$ {plan.originalPrice}</span>
+                                    </p>
+                                )}
+                                <div className="flex items-baseline flex-nowrap gap-1 sm:gap-2 min-w-0">
+                                    <span className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-slate-100 whitespace-nowrap shrink-0">R$ {plan.price}</span>
+                                    <span className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 shrink-0">/{plan.period}</span>
+                                </div>
+                                {plan.originalPrice && (
+                                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400">Desconto por tempo limitado</p>
+                                )}
                             </div>
 
                             <ul className="space-y-3">
