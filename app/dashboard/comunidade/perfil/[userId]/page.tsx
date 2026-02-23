@@ -568,13 +568,39 @@ export default function PerfilComunidadePage() {
     if (!addStoryFile) return;
     setAddStoryUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', addStoryFile);
-      const res = await fetch('/api/stories', { method: 'POST', body: formData });
+      const isVideo = addStoryFile.type.startsWith('video/');
+      // Mesmo fluxo do feed: upload direto (SAS) para foto e vídeo — evita limite de payload da API
+      const urlRes = await fetch('/api/stories/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: isVideo ? 'video' : 'image',
+          fileName: addStoryFile.name,
+          contentType: addStoryFile.type,
+          fileSize: addStoryFile.size,
+        }),
+      });
+      if (!urlRes.ok) {
+        const data = await urlRes.json().catch(() => ({}));
+        throw new Error(data?.error || 'Erro ao gerar link de upload');
+      }
+      const { sasUrl, finalUrl, mediaType } = await urlRes.json();
+      const putRes = await fetch(sasUrl, {
+        method: 'PUT',
+        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': addStoryFile.type },
+        body: addStoryFile,
+      });
+      if (!putRes.ok) {
+        throw new Error('Falha ao enviar o arquivo. Tente novamente.');
+      }
+      const res = await fetch('/api/stories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mediaUrl: finalUrl, mediaType }),
+      });
       if (!res.ok) {
         const contentType = res.headers.get('content-type') ?? '';
-        const isJson = contentType.includes('application/json');
-        const data = isJson ? await res.json() : { error: await res.text() || 'Erro ao publicar' };
+        const data = contentType.includes('application/json') ? await res.json() : { error: await res.text() || 'Erro ao publicar' };
         throw new Error(typeof data?.error === 'string' ? data.error : 'Erro ao publicar story');
       }
       setAddStoryOpen(false);
