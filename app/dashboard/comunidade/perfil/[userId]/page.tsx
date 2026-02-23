@@ -393,8 +393,9 @@ export default function PerfilComunidadePage() {
   const profileUser = useMemo((): ProfileDisplay | null => {
     if (isOtherUserById) {
       if (otherProfileData) return otherProfileData.profileUser;
-      if (otherProfileLoading) return resolvedFromList;
-      return resolvedFromList;
+      // Enquanto carrega ou se falhou: não usar resolvedFromList (mostraria o ID como nome)
+      if (otherProfileLoading) return null;
+      return null;
     }
     if (!resolvedFromList) return null;
     if (isOwnProfile) {
@@ -688,8 +689,8 @@ export default function PerfilComunidadePage() {
     toggleSave(postId);
   };
 
-  // Loading state
-  if (isOtherUserById && otherProfileLoading && !otherProfileData && !resolvedFromList) {
+  // Loading state: ao acessar perfil por ID, não usar resolvedFromList (que mostra o ID como nome); mostrar loading até a API retornar.
+  if (isOtherUserById && otherProfileLoading && !otherProfileData) {
     return (
       <Box
         sx={{
