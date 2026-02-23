@@ -29,6 +29,8 @@ export interface Account {
     last_access_at: Date;
     last_notifications_read_at?: Date | null;
     password_hash?: string;
+    /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura — para monitorar crescimento e premiações */
+    followers_at_signup?: number | null;
     created_at: Date;
     updated_at: Date;
 }
@@ -62,6 +64,8 @@ const AccountSchema = new Schema(
         last_notifications_read_at: { type: Date, default: null },
         /** Hash da senha (apenas para contas com provider_oauth === 'kiwify') */
         password_hash: { type: String, trim: true, select: false },
+        /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura */
+        followers_at_signup: { type: Number, default: null },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

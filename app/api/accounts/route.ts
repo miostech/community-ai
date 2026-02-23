@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
+import { getTotalFollowers } from '@/lib/social-stats';
 import Account from '@/models/Account';
 import AccountPayment from '@/models/AccountPayment';
 
@@ -223,6 +224,25 @@ export async function PATCH(request: NextRequest) {
 
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        // Registrar seguidores no “cadastro” (primeira vez que temos redes) para monitorar crescimento e premiações
+        const accWithSignup = account as { followers_at_signup?: number | null };
+        const hasLinks = !!(account.link_instagram?.trim() || account.link_tiktok?.trim() || account.link_youtube?.trim());
+        if (hasLinks && (accWithSignup.followers_at_signup === undefined || accWithSignup.followers_at_signup === null)) {
+            try {
+                const total = await getTotalFollowers({
+                    instagram: account.link_instagram,
+                    tiktok: account.link_tiktok,
+                    youtube: account.link_youtube,
+                });
+                await Account.updateOne(
+                    { _id: account._id },
+                    { $set: { followers_at_signup: total } }
+                );
+            } catch (e) {
+                console.error('Erro ao registrar followers_at_signup:', e);
+            }
         }
 
         // Garantir que a resposta inclua os valores que acabamos de salvar (evita perda se o modelo estiver em cache sem o campo)

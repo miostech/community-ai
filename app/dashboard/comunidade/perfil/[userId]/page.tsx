@@ -76,6 +76,7 @@ type ProfileDisplay = CommunityUser | {
   tiktokProfile?: string;
   youtubeProfile?: string;
   created_at?: string | null;
+  followers_at_signup?: number | null;
   courseIds?: string[];
 };
 
@@ -200,14 +201,16 @@ export default function PerfilComunidadePage() {
   // Cursos do próprio perfil — vêm do CoursesContext (já buscados uma vez, com cache de 1h)
   const { courseIds: ownCourseIds } = useCourses();
 
-  // InteractionCount e created_at do próprio perfil
+  // InteractionCount, created_at e followers_at_signup do próprio perfil
   const [ownInteractionCount, setOwnInteractionCount] = useState<number>(0);
   const [ownCreatedAt, setOwnCreatedAt] = useState<string | null>(null);
+  const [ownFollowersAtSignup, setOwnFollowersAtSignup] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isOwnProfile || !account?.id) {
       setOwnInteractionCount(0);
       setOwnCreatedAt(null);
+      setOwnFollowersAtSignup(null);
       return;
     }
     // skipCourses=true → rota não chama Kiwify (cursos já vêm do CoursesContext)
@@ -219,6 +222,11 @@ export default function PerfilComunidadePage() {
         }
         if (data?.profile?.created_at) {
           setOwnCreatedAt(data.profile.created_at);
+        }
+        if (data?.profile?.followers_at_signup != null) {
+          setOwnFollowersAtSignup(data.profile.followers_at_signup);
+        } else {
+          setOwnFollowersAtSignup(null);
         }
       })
       .catch(() => { });
@@ -325,6 +333,7 @@ export default function PerfilComunidadePage() {
           tiktokProfile: profile?.link_tiktok?.trim() || undefined,
           youtubeProfile: profile?.link_youtube?.trim() || undefined,
           created_at: profile?.created_at ?? null,
+          followers_at_signup: profile?.followers_at_signup ?? null,
           courseIds: Array.isArray(profile?.courseIds) ? profile.courseIds : undefined,
         };
         const mappedPosts = posts.map(mapApiPostToProfilePost);
@@ -351,6 +360,7 @@ export default function PerfilComunidadePage() {
           if (!prev) return prev;
           const nextName = profile?.name?.trim() || prev.profileUser.name;
           const prevCreatedAt = 'created_at' in prev.profileUser ? prev.profileUser.created_at : null;
+          const prevFollowersAtSignup = 'followers_at_signup' in prev.profileUser ? prev.profileUser.followers_at_signup : null;
           const prevCourseIds = 'courseIds' in prev.profileUser ? prev.profileUser.courseIds : undefined;
           const nextProfile: ProfileDisplay = {
             ...prev.profileUser,
@@ -362,6 +372,7 @@ export default function PerfilComunidadePage() {
             tiktokProfile: profile?.link_tiktok?.trim() || prev.profileUser.tiktokProfile,
             youtubeProfile: profile?.link_youtube?.trim() || prev.profileUser.youtubeProfile,
             created_at: profile?.created_at ?? prevCreatedAt,
+            followers_at_signup: profile?.followers_at_signup ?? prevFollowersAtSignup,
             courseIds: Array.isArray(profile?.courseIds)
               ? profile.courseIds
               : prevCourseIds,
@@ -401,11 +412,12 @@ export default function PerfilComunidadePage() {
         tiktokProfile,
         youtubeProfile,
         created_at: ownCreatedAt,
+        followers_at_signup: ownFollowersAtSignup,
         courseIds: ownCourseIds.length > 0 ? ownCourseIds : undefined,
       };
     }
     return resolvedFromList;
-  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownCreatedAt, ownCourseIds]);
+  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownCreatedAt, ownFollowersAtSignup, ownCourseIds]);
 
   const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
   // Posts para exibir no perfil (todos do tipo ProfilePostFromApi para consistência)
@@ -905,9 +917,27 @@ export default function PerfilComunidadePage() {
               {profileUser.name}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Membro da comunidade desde {'created_at' in profileUser && profileUser.created_at
-                ? new Date(profileUser.created_at).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
-                : 'data desconhecida'}
+              {(() => {
+                const createdDate = 'created_at' in profileUser && profileUser.created_at
+                  ? new Date(profileUser.created_at)
+                  : null;
+                const createdAt = createdDate
+                  ? createdDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                  : null;
+                const mesAno = createdDate
+                  ? `${createdDate.getMonth() + 1}/${createdDate.getFullYear()}`
+                  : null;
+                const followersAtSignup = 'followers_at_signup' in profileUser ? profileUser.followers_at_signup : null;
+                const hasSignup = followersAtSignup != null && followersAtSignup >= 0;
+                if (createdDate && hasSignup) {
+                  if (followersAtSignup === 0) {
+                    return <>Iniciou na cúpula em {mesAno}</>;
+                  }
+                  return <>Iniciou na cúpula com {formatCount(followersAtSignup)} seguidores em {mesAno}</>;
+                }
+                if (createdAt) return <>Membro desde {createdAt}</>;
+                return 'Membro da comunidade';
+              })()}
             </Typography>
 
             {/* Stats */}
