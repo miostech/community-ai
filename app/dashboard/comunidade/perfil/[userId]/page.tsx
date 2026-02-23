@@ -1097,13 +1097,15 @@ export default function PerfilComunidadePage() {
                   </Box>
                 )}
 
-                {/* Video */}
+                {/* Video — #t=0.1 + preload="metadata" para exibir a capa (igual ao feed) */}
                 {post.videoUrl && (
                   <Box sx={{ mb: 1.5, mx: { xs: -1.5, sm: -2 } }}>
                     <Box
                       component="video"
-                      src={post.videoUrl}
+                      src={`${post.videoUrl}#t=0.1`}
                       controls
+                      preload="metadata"
+                      playsInline
                       sx={{
                         width: '100%',
                         aspectRatio: '4/5',
