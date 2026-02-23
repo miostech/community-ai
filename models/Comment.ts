@@ -7,6 +7,11 @@ export interface ICommentReport {
     created_at: Date;
 }
 
+export interface IMentionAccount {
+    handle: string;
+    account_id: Types.ObjectId;
+}
+
 export interface IComment extends Document {
     _id: Types.ObjectId;
     post_id: Types.ObjectId;
@@ -14,6 +19,8 @@ export interface IComment extends Document {
     parent_id?: Types.ObjectId; // Para respostas aninhadas
 
     content: string;
+    /** Menções @handle no texto → account_id (para linkar ao perfil) */
+    mention_accounts?: IMentionAccount[];
 
     // Contadores
     likes_count: number;
@@ -83,6 +90,15 @@ const CommentSchema = new Schema<IComment>(
             required: true,
             trim: true,
             maxlength: 2000,
+        },
+        mention_accounts: {
+            type: [
+                {
+                    handle: { type: String, required: true },
+                    account_id: { type: Schema.Types.ObjectId, ref: 'Account', required: true },
+                },
+            ],
+            default: undefined,
         },
 
         // Contadores

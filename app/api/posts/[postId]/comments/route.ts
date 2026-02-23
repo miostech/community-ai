@@ -8,6 +8,60 @@ import Like from '@/models/Like';
 import { createNotification } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
+/** Extrai handles únicos do texto (ex: @natrombellii @luigi → ['natrombellii', 'luigi']) */
+function extractMentionHandles(content: string): string[] {
+    const matches = content.match(/@([a-zA-Z0-9_.]+)/g);
+    if (!matches) return [];
+    const normalized = new Set<string>();
+    for (const m of matches) {
+        const handle = m.slice(1).toLowerCase().trim();
+        if (handle.length > 0) normalized.add(handle);
+    }
+    return Array.from(normalized);
+}
+
+function escapeRegex(s: string): string {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Resolve handles (sem @) para account IDs. Usa link_instagram, link_tiktok, link_youtube (case-insensitive). */
+async function resolveHandlesToAccountIds(handles: string[]): Promise<mongoose.Types.ObjectId[]> {
+    const pairs = await resolveHandlesToMentionAccounts(handles);
+    return pairs.map((p) => p.account_id);
+}
+
+/** Resolve handles para array { handle, account_id } (para guardar no comentário e linkar no perfil). */
+async function resolveHandlesToMentionAccounts(
+    handles: string[]
+): Promise<{ handle: string; account_id: mongoose.Types.ObjectId }[]> {
+    if (handles.length === 0) return [];
+    const result: { handle: string; account_id: mongoose.Types.ObjectId }[] = [];
+    const seenIds = new Set<string>();
+    for (const h of handles) {
+        const re = new RegExp('^' + escapeRegex(h) + '$', 'i');
+        const account = await Account.findOne({
+            $or: [
+                { link_instagram: re },
+                { link_tiktok: re },
+                { link_youtube: re },
+            ],
+        })
+            .select('_id')
+            .lean();
+        if (account) {
+            const idStr = (account as { _id: mongoose.Types.ObjectId })._id.toString();
+            if (!seenIds.has(idStr)) {
+                seenIds.add(idStr);
+                result.push({
+                    handle: h.toLowerCase(),
+                    account_id: (account as { _id: mongoose.Types.ObjectId })._id,
+                });
+            }
+        }
+    }
+    return result;
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -113,6 +167,14 @@ export async function GET(
             userLikedComments = new Set(userLikes.map((l: any) => l.target_id.toString()));
         }
 
+        function buildMentions(mentionAccounts: { handle: string; account_id: { toString: () => string } }[] | undefined): Record<string, string> {
+            const out: Record<string, string> = {};
+            (mentionAccounts || []).forEach((m) => {
+                out[m.handle] = m.account_id.toString();
+            });
+            return out;
+        }
+
         // Formatar comentários com replies
         const formattedComments = comments.map((comment: any) => {
             const author = comment.author_id;
@@ -130,6 +192,7 @@ export async function GET(
                 liked: userLikedComments.has(comment._id.toString()),
                 replies_count: comment.replies_count || 0,
                 created_at: comment.created_at,
+                mentions: buildMentions(comment.mention_accounts),
                 replies: commentReplies.map((reply: any) => {
                     const replyAuthor = reply.author_id;
                     return {
@@ -143,6 +206,7 @@ export async function GET(
                         likes_count: reply.likes_count || 0,
                         liked: userLikedComments.has(reply._id.toString()),
                         created_at: reply.created_at,
+                        mentions: buildMentions(reply.mention_accounts),
                     };
                 }),
             };
@@ -205,12 +269,19 @@ export async function POST(
             );
         }
 
-        // Criar comentário
+        const trimmedContent = content.trim();
+        const mentionHandlesForSave = extractMentionHandles(trimmedContent);
+        const mentionAccounts = mentionHandlesForSave.length > 0
+            ? await resolveHandlesToMentionAccounts(mentionHandlesForSave)
+            : [];
+
+        // Criar comentário (com mention_accounts para linkar @ ao perfil)
         const comment = new Comment({
             post_id: postId,
             author_id: account._id,
-            content: content.trim(),
+            content: trimmedContent,
             parent_id: parent_id || undefined,
+            mention_accounts: mentionAccounts.length > 0 ? mentionAccounts : undefined,
         });
 
         await comment.save();
@@ -248,10 +319,34 @@ export async function POST(
             }
         }
 
+        // Notificar usuários mencionados com @handle (arroba)
+        if (mentionHandlesForSave.length > 0) {
+            const mentionedAccountIds = mentionAccounts.map((m) => m.account_id);
+            const authorIdStr = account._id.toString();
+            const notifiedIds = new Set<string>();
+            for (const recipientId of mentionedAccountIds) {
+                const idStr = recipientId.toString();
+                if (idStr === authorIdStr || notifiedIds.has(idStr)) continue;
+                notifiedIds.add(idStr);
+                await createNotification({
+                    recipientId,
+                    actorId: account._id,
+                    type: 'mention',
+                    postId: postId,
+                    commentId: comment._id,
+                    contentPreview: content.trim().slice(0, 100),
+                });
+            }
+        }
+
         // Popular author para retornar
         await comment.populate('author_id', 'first_name last_name avatar_url');
 
         const author = comment.author_id as any;
+        const mentionsMap: Record<string, string> = {};
+        (comment.mention_accounts || []).forEach((m: { handle: string; account_id: mongoose.Types.ObjectId }) => {
+            mentionsMap[m.handle] = m.account_id.toString();
+        });
         const formattedComment = {
             _id: comment._id.toString(),
             author: {
@@ -263,6 +358,7 @@ export async function POST(
             likes_count: 0,
             replies_count: 0,
             created_at: comment.created_at,
+            mentions: mentionsMap,
         };
 
         return NextResponse.json({

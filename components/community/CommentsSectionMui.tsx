@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     Drawer,
     Box,
@@ -13,6 +14,12 @@ import {
     CircularProgress,
     Divider,
     Collapse,
+    Paper,
+    List,
+    ListItemButton,
+    ListItemAvatar,
+    ListItemText,
+    Popper,
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -40,6 +47,7 @@ interface Reply {
     created_at: string;
     likes_count?: number;
     liked?: boolean;
+    mentions?: Record<string, string>; // handle (lowercase) -> userId
 }
 
 interface Comment {
@@ -51,6 +59,7 @@ interface Comment {
     liked?: boolean;
     replies_count?: number;
     replies?: Reply[];
+    mentions?: Record<string, string>; // handle (lowercase) -> userId
 }
 
 interface CommentsSectionMuiProps {
@@ -79,6 +88,68 @@ function formatTimeAgo(dateString: string): string {
 
 const quickEmojis = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂'];
 
+/** Renderiza conteúdo de comentário com @handle destacado e clique para ir ao perfil. */
+function CommentContent({ content, mentions }: { content: string; mentions?: Record<string, string> }) {
+    const router = useRouter();
+    const parts = content.split(/(@[a-zA-Z0-9_.]+)/g);
+
+    const handleMentionClick = useCallback(
+        (e: React.MouseEvent, userId: string) => {
+            e.preventDefault();
+            e.stopPropagation();
+            router.push(`/dashboard/comunidade/perfil/${userId}`);
+        },
+        [router]
+    );
+
+    return (
+        <>
+            {parts.map((part, i) => {
+                if (!part.startsWith('@')) return <span key={i}>{part}</span>;
+                const handle = part.slice(1).toLowerCase();
+                const userId = mentions?.[handle];
+                if (!userId) {
+                    return (
+                        <Box key={i} component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                            {part}
+                        </Box>
+                    );
+                }
+                return (
+                    <Box
+                        key={i}
+                        component="span"
+                        role="link"
+                        tabIndex={0}
+                        sx={{
+                            color: 'primary.main',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            '&:hover': { opacity: 0.9 },
+                        }}
+                        onClick={(e) => handleMentionClick(e, userId)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleMentionClick(e as unknown as React.MouseEvent, userId);
+                            }
+                        }}
+                    >
+                        {part}
+                    </Box>
+                );
+            })}
+        </>
+    );
+}
+
+interface MentionUser {
+    id: string;
+    name: string;
+    handle: string;
+}
+
 export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: CommentsSectionMuiProps) {
     const { account } = useAccount();
     const [comments, setComments] = useState<Comment[]>([]);
@@ -87,8 +158,26 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
     const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
+    const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
+    const [mentionUsersLoading, setMentionUsersLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const inputWrapperRef = useRef<HTMLDivElement>(null);
+
+    // Query para autocomplete: texto após o último @ (sem espaços no meio)
+    const lastAtIndex = commentText.lastIndexOf('@');
+    const afterAt = lastAtIndex >= 0 ? commentText.slice(lastAtIndex + 1) : '';
+    const mentionQuery = afterAt.split(/\s/)[0] ?? '';
+    const showMentionDropdown = lastAtIndex >= 0 && !afterAt.includes(' ');
+
+    // Usuários filtrados pelo que foi digitado após @
+    const filteredMentionUsers = mentionQuery
+        ? mentionUsers.filter(
+              (u) =>
+                  u.handle.toLowerCase().includes(mentionQuery.toLowerCase()) ||
+                  u.name.toLowerCase().includes(mentionQuery.toLowerCase())
+          )
+        : mentionUsers;
 
     // Buscar comentários da API
     const fetchComments = useCallback(async () => {
@@ -115,6 +204,37 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             fetchComments();
         }
     }, [isOpen, postId, fetchComments]);
+
+    // Buscar lista de usuários para menção quando abrir o drawer
+    useEffect(() => {
+        if (!isOpen) return;
+        let cancelled = false;
+        setMentionUsersLoading(true);
+        fetch('/api/community/mention-users', { credentials: 'include' })
+            .then((res) => (res.ok ? res.json() : { users: [] }))
+            .then((data) => {
+                if (!cancelled && Array.isArray(data.users)) {
+                    setMentionUsers(data.users);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) setMentionUsers([]);
+            })
+            .finally(() => {
+                if (!cancelled) setMentionUsersLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen]);
+
+    const insertMention = useCallback((handle: string) => {
+        if (lastAtIndex < 0) return;
+        const before = commentText.slice(0, lastAtIndex);
+        const after = commentText.slice(lastAtIndex + 1 + mentionQuery.length);
+        setCommentText(before + '@' + handle + ' ' + after);
+        inputRef.current?.focus();
+    }, [commentText, lastAtIndex, mentionQuery]);
 
     // Enviar comentário
     const handleSubmit = async (e: React.FormEvent) => {
@@ -456,7 +576,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 variant="body2"
                                                 sx={{ wordBreak: 'break-word', mt: 0.25 }}
                                             >
-                                                {comment.content}
+                                                <CommentContent content={comment.content} mentions={comment.mentions} />
                                             </Typography>
                                         </Box>
 
@@ -581,7 +701,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         display="block"
                                                                         sx={{ wordBreak: 'break-word' }}
                                                                     >
-                                                                        {reply.content}
+                                                                        <CommentContent content={reply.content} mentions={reply.mentions} />
                                                                     </Typography>
                                                                 </Box>
                                                                 <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center">
@@ -725,21 +845,90 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     {userInitial}
                 </Avatar>
 
-                <TextField
-                    inputRef={inputRef}
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder={replyingTo ? `Responder a ${replyingTo.authorName}...` : 'Adicione um comentário...'}
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    sx={{
-                        '& .MuiOutlinedInput-root': {
-                            borderRadius: 6,
-                            bgcolor: 'action.hover',
-                        },
-                    }}
-                />
+                <Box ref={inputWrapperRef} sx={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                    <TextField
+                        inputRef={inputRef}
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        placeholder={replyingTo ? `Responder a ${replyingTo.authorName}...` : 'Adicione um comentário... Use @ para mencionar'}
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                borderRadius: 6,
+                                bgcolor: 'action.hover',
+                            },
+                        }}
+                    />
+                    <Popper
+                        open={showMentionDropdown}
+                        anchorEl={inputRef.current}
+                        placement="bottom-start"
+                        modifiers={[
+                            { name: 'offset', options: { offset: [0, 4] } },
+                            { name: 'flip', enabled: true },
+                        ]}
+                        style={{ zIndex: 1400 }}
+                    >
+                        <Paper
+                            elevation={3}
+                            sx={{
+                                minWidth: 260,
+                                maxWidth: 400,
+                                maxHeight: 220,
+                                overflow: 'auto',
+                                borderRadius: 2,
+                            }}
+                        >
+                            {mentionUsersLoading ? (
+                                <Box sx={{ px: 2, py: 2, textAlign: 'center' }}>
+                                    <CircularProgress size={24} />
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                        Carregando...
+                                    </Typography>
+                                </Box>
+                            ) : filteredMentionUsers.length === 0 ? (
+                                <Box sx={{ px: 2, py: 2 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {mentionUsers.length === 0
+                                            ? 'Nenhum usuário com Instagram/TikTok/YouTube cadastrado no perfil.'
+                                            : 'Nenhum resultado. Digite o nome ou @ do usuário.'}
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <List dense disablePadding>
+                                    {filteredMentionUsers.slice(0, 10).map((u) => (
+                                        <ListItemButton
+                                            key={u.id}
+                                            onClick={() => insertMention(u.handle)}
+                                            sx={{ py: 0.75 }}
+                                        >
+                                            <ListItemAvatar sx={{ minWidth: 40 }}>
+                                                <Avatar
+                                                    sx={{
+                                                        width: 32,
+                                                        height: 32,
+                                                        fontSize: '0.875rem',
+                                                        bgcolor: 'primary.main',
+                                                    }}
+                                                >
+                                                    {u.name.charAt(0).toUpperCase()}
+                                                </Avatar>
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={u.name}
+                                                secondary={'@' + u.handle}
+                                                primaryTypographyProps={{ fontWeight: 600, fontSize: '0.875rem' }}
+                                                secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                                            />
+                                        </ListItemButton>
+                                    ))}
+                                </List>
+                            )}
+                        </Paper>
+                    </Popper>
+                </Box>
 
                 <Button
                     type="submit"

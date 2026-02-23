@@ -20,6 +20,7 @@ import {
     Favorite as LikeIcon,
     ChatBubble as CommentIcon,
     Reply as ReplyIcon,
+    AlternateEmail as MentionIcon,
 } from '@mui/icons-material';
 
 export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention';
@@ -86,6 +87,8 @@ function getNotificationIcon(type: NotificationType) {
             return <CommentIcon sx={{ fontSize: 14, color: 'primary.main' }} />;
         case 'reply':
             return <ReplyIcon sx={{ fontSize: 14, color: 'success.main' }} />;
+        case 'mention':
+            return <MentionIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         default:
             return null;
     }
