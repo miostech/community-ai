@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAccount } from '@/contexts/AccountContext';
 import { useUser } from '@/contexts/UserContext';
-import { Box, IconButton, Avatar, Stack } from '@mui/material';
+import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
+import { Box, IconButton, Avatar, Stack, Tooltip } from '@mui/material';
 import { DomeLogo } from '@/components/ui/DomeLogo';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
+import { InstallDesktop as InstallDesktopIcon } from '@mui/icons-material';
 
 export const MOBILE_HEADER_HEIGHT_PX = 56;
 /** Para usar como padding-top do conteúdo: altura do header + safe area no notch */
@@ -17,6 +19,7 @@ export function MobileHeaderMui() {
   const pathname = usePathname();
   const { account, fullName } = useAccount();
   const { user } = useUser();
+  const { openAddToDesktopModal } = useAddToDesktop();
   const profileHref = account?.id ? `/dashboard/comunidade/perfil/${account.id}` : '/dashboard/perfil';
   const isActive = pathname === profileHref;
 
@@ -47,6 +50,11 @@ export function MobileHeaderMui() {
       </Link>
 
       <Stack direction="row" spacing={0.5} alignItems="center">
+        <Tooltip title="Adicionar atalho ao ambiente de trabalho">
+          <IconButton onClick={openAddToDesktopModal} aria-label="Adicionar atalho" size="small">
+            <InstallDesktopIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <NotificationsButtonMui />
         <IconButton
         component={Link}

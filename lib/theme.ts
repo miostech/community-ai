@@ -95,6 +95,14 @@ export const lightTheme = createTheme({
                 },
             },
         },
+        MuiBackdrop: {
+            styleOverrides: {
+                root: {
+                    backdropFilter: 'blur(6px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                },
+            },
+        },
     },
 });
 
@@ -200,6 +208,14 @@ export const darkTheme = createTheme({
                 draggable: false,
                 divider: false,
             }
+        },
+        MuiBackdrop: {
+            styleOverrides: {
+                root: {
+                    backdropFilter: 'blur(6px)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                },
+            },
         },
     },
 });

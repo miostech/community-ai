@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
   icons: {
     icon: "/icon.svg",
-    apple: "/icon.svg",
+    apple: "/apple-touch-icon",
   },
   openGraph: {
     title: "Dome - Cúpula de criadores de conteúdo",

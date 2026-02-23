@@ -34,8 +34,10 @@ import {
     ExpandLess,
     ExpandMore,
     EmojiEvents as EmojiEventsIcon,
+    InstallDesktop as InstallDesktopIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
+import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
 import { isChatLaunched } from '@/lib/chat-launch';
 
 const DRAWER_WIDTH = 256;
@@ -99,6 +101,7 @@ export function SidebarMui() {
     const pathname = usePathname();
     const { account, fullName } = useAccount();
     const { theme, setTheme, resolvedTheme } = useAppTheme();
+    const { openAddToDesktopModal } = useAddToDesktop();
     const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
     const toggleSubmenu = (label: string) => {
@@ -323,6 +326,25 @@ export function SidebarMui() {
                                 fontSize: 14,
                                 fontWeight: pathname === '/dashboard/perfil' ? 600 : 500,
                             }}
+                        />
+                    </ListItemButton>
+                </ListItem>
+
+                <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
+                    <ListItemButton
+                        onClick={openAddToDesktopModal}
+                        sx={{
+                            borderRadius: 2,
+                            color: 'text.secondary',
+                            '&:hover': { bgcolor: 'action.hover' },
+                        }}
+                    >
+                        <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
+                            <InstallDesktopIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary="Adicionar atalho"
+                            primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }}
                         />
                     </ListItemButton>
                 </ListItem>

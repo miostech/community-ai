@@ -14,6 +14,7 @@ import { CreatePostProvider } from '@/contexts/CreatePostContext';
 import { PostsProvider } from '@/contexts/PostsContext';
 import { ChatHistoryProvider } from '@/contexts/ChatHistoryContext';
 import { StoriesProvider } from '@/contexts/StoriesContext';
+import { AddToDesktopProvider } from '@/contexts/AddToDesktopContext';
 import { MuiProvider } from '@/components/providers/MuiProvider';
 import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
 import { Phone as PhoneIcon } from '@mui/icons-material';
@@ -35,6 +36,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         <PostsProvider>
           <CreatePostProvider>
             <ChatHistoryProvider>
+              <AddToDesktopProvider>
               <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
                 {/* Background decorative elements - apenas em páginas que não sejam comunidade */}
                 {!hideBlobs && (
@@ -146,6 +148,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 {/* Botão flutuante de chat - apenas em páginas que não sejam comunidade */}
                 {!isComunidadePage && <FloatingChatButtonMui />}
               </Box>
+              </AddToDesktopProvider>
             </ChatHistoryProvider>
           </CreatePostProvider>
         </PostsProvider>
