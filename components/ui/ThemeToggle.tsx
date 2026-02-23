@@ -3,25 +3,18 @@
 import { useTheme } from '@/contexts/ThemeContext';
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
-  const cycle = () => {
-    if (theme === 'light') setTheme('dark');
-    else if (theme === 'dark') setTheme('system');
-    else setTheme('light');
+  const toggle = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const label =
-    theme === 'system'
-      ? `Sistema (${resolvedTheme === 'dark' ? 'escuro' : 'claro'})`
-      : theme === 'dark'
-        ? 'Modo escuro'
-        : 'Modo claro';
+  const label = theme === 'dark' ? 'Modo escuro' : 'Modo claro';
 
   return (
     <button
       type="button"
-      onClick={cycle}
+      onClick={toggle}
       aria-label={label}
       title={label}
       className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -34,11 +27,6 @@ export function ThemeToggle() {
       {theme === 'dark' && (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-      )}
-      {theme === 'system' && (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       )}
     </button>

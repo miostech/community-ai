@@ -21,8 +21,7 @@ const themeScript = `
   try {
     var k = 'theme';
     var v = localStorage.getItem(k);
-    var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var useDark = v === 'light' ? false : (v === 'system' ? dark : true);
+    var useDark = v === 'light' ? false : true;
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(useDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', useDark ? 'dark' : 'light');

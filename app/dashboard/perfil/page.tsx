@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useAccount } from '@/contexts/AccountContext';
 import { useCourses } from '@/contexts/CoursesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   AppBar,
   Toolbar,
@@ -35,6 +36,8 @@ import {
   CheckCircle as CheckCircleIcon,
   ShoppingCart as ShoppingCartIcon,
   Support as SupportIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
@@ -55,6 +58,7 @@ export default function PerfilPage() {
   const { data: session } = useSession();
   const { account, isLoading: accountLoading, refreshAccount, setAccountFromResponse } = useAccount();
   const { courseIds: myCourseIds, loading: coursesLoading } = useCourses();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
     last_name: '',
@@ -625,6 +629,42 @@ export default function PerfilPage() {
                     </Typography>
                   )}
                 </Box>
+              </Stack>
+            </Box>
+
+            {/* Aparência (tema) — visível só no mobile, onde não há sidebar com toggle */}
+            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+              <Divider />
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ py: 2 }}
+              >
+                <Box>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    Aparência
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Modo escuro ou claro
+                  </Typography>
+                </Box>
+                <IconButton
+                  onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                  aria-label={theme === 'dark' ? 'Usar modo claro' : 'Usar modo escuro'}
+                  size="medium"
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'action.hover',
+                  }}
+                >
+                  {resolvedTheme === 'dark' ? (
+                    <LightModeIcon />
+                  ) : (
+                    <DarkModeIcon />
+                  )}
+                </IconButton>
               </Stack>
             </Box>
 
