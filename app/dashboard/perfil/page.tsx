@@ -187,11 +187,10 @@ export default function PerfilPage() {
       }
 
       const data = await response.json();
-      if (data.avatar_url) {
-        setFormData((prev) => ({ ...prev, avatar_url: data.avatar_url }));
-        if (data.account) {
-          setAccountFromResponse(account ? { ...account, ...data.account } : data.account);
-        }
+      if (data.account) {
+        const updatedAccount = data.account as import('@/contexts/AccountContext').Account;
+        setFormData((prev) => ({ ...prev, avatar_url: updatedAccount.avatar_url ?? prev.avatar_url }));
+        setAccountFromResponse(account ? { ...account, ...updatedAccount } : updatedAccount);
         await refreshAccount();
       }
     } catch (err) {
