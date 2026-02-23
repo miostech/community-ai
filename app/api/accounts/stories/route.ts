@@ -27,7 +27,7 @@ export async function GET() {
         const topByAccess = await AccountModel.find({})
             .select('_id')
             .sort({ last_access_at: -1 })
-            .limit(25)
+            .limit(200)
             .lean();
         const topIds = new Set(topByAccess.map((a) => a._id.toString()));
         accountIdsWithStories.forEach((id) => topIds.add(id.toString()));
