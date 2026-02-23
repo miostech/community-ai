@@ -11,8 +11,23 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Drawer,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Avatar,
 } from '@mui/material';
-import { Close as CloseIcon, MoreVert as MoreVertIcon, VolumeOff as VolumeOffIcon, VolumeUp as VolumeUpIcon } from '@mui/icons-material';
+import { Close as CloseIcon, MoreVert as MoreVertIcon, VolumeOff as VolumeOffIcon, VolumeUp as VolumeUpIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
+
+export type StoryViewerInfo = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  viewed_at: string;
+};
+
+export type ViewsByStory = Record<string, { count: number; viewers: StoryViewerInfo[] }>;
 
 export type StoryItem = {
   id: string;
@@ -39,6 +54,10 @@ interface StoryViewerProps {
   canDelete?: boolean;
   /** Chamado ao excluir; o componente não remove da lista — a lista é atualizada pelo pai. */
   onDeleteStory?: (storyId: string) => Promise<void>;
+  /** Chamado quando o usuário visualiza um story (para registrar view; não passar no próprio perfil). */
+  onStoryViewed?: (storyId: string) => void;
+  /** Quem e quantas pessoas viram cada story (só no próprio perfil). Chave = storyId. */
+  viewsByStory?: ViewsByStory;
 }
 
 const STORY_DURATION_MS = 5000;
@@ -71,11 +90,14 @@ export function StoryViewer({
   initialIndex = 0,
   canDelete = false,
   onDeleteStory,
+  onStoryViewed,
+  viewsByStory = {},
 }: StoryViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [viewsDrawerOpen, setViewsDrawerOpen] = useState(false);
   /** Começa mutado para autoplay funcionar (política do browser); usuário pode ativar o som. */
   const [isMuted, setIsMuted] = useState(true);
 
@@ -108,6 +130,12 @@ export function StoryViewer({
   useEffect(() => {
     if (current?.id) setIsMuted(true);
   }, [current?.id]);
+
+  /** Registrar visualização quando o usuário vê um story (perfil de outro). */
+  useEffect(() => {
+    if (!open || !current?.id || !onStoryViewed) return;
+    onStoryViewed(current.id);
+  }, [open, current?.id, onStoryViewed]);
 
   useEffect(() => {
     if (!open) return;
@@ -220,14 +248,36 @@ export function StoryViewer({
             </Typography>
           )}
         </Box>
-        <IconButton
-          onClick={() => onClose({ completedAll: currentIndex === stories.length - 1 })}
-          size="small"
-          sx={{ color: 'white' }}
-          aria-label="Fechar"
-        >
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {canDelete && current?.id && (
+            <>
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewsDrawerOpen(true);
+                }}
+                size="small"
+                sx={{ color: 'white' }}
+                aria-label="Quem viu este story"
+              >
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+              {viewsByStory[current.id] != null && (
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                  {viewsByStory[current.id].count}
+                </Typography>
+              )}
+            </>
+          )}
+          <IconButton
+            onClick={() => onClose({ completedAll: currentIndex === stories.length - 1 })}
+            size="small"
+            sx={{ color: 'white' }}
+            aria-label="Fechar"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Área clicável: esquerda = voltar, direita = avançar */}
@@ -425,6 +475,58 @@ export function StoryViewer({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Drawer: quem viu este story (só no próprio perfil) */}
+      <Drawer
+        anchor="bottom"
+        open={viewsDrawerOpen}
+        onClose={() => setViewsDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            maxHeight: '70vh',
+          },
+        }}
+      >
+        <Box sx={{ px: 2, pt: 2, pb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6">Quem viu este story</Typography>
+            <IconButton onClick={() => setViewsDrawerOpen(false)} aria-label="Fechar">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          {current?.id && viewsByStory[current.id] != null ? (
+            viewsByStory[current.id].viewers.length === 0 ? (
+              <Typography color="text.secondary">Ninguém visualizou ainda.</Typography>
+            ) : (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {viewsByStory[current.id].count} {viewsByStory[current.id].count === 1 ? 'pessoa viu' : 'pessoas viram'}
+                </Typography>
+                <List disablePadding>
+                  {viewsByStory[current.id].viewers.map((v) => (
+                    <ListItem key={v.id} disablePadding sx={{ py: 0.5 }}>
+                      <ListItemAvatar>
+                        <Avatar src={v.avatar || undefined} alt={v.name} sx={{ width: 40, height: 40 }}>
+                          {v.name.slice(0, 2).toUpperCase()}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={v.name}
+                        secondary={v.viewed_at ? new Date(v.viewed_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : null}
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </>
+            )
+          ) : (
+            <Typography color="text.secondary">Carregando...</Typography>
+          )}
+        </Box>
+      </Drawer>
     </Box>
   );
 }

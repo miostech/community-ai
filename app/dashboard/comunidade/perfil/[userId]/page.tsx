@@ -20,7 +20,7 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
-import { StoryViewer, type StoryItem } from '@/components/community/StoryViewer';
+import { StoryViewer, type StoryItem, type ViewsByStory } from '@/components/community/StoryViewer';
 import { sortCourseIds, getCourseLabel, CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 import { useCourses } from '@/contexts/CoursesContext';
 
@@ -448,6 +448,8 @@ export default function PerfilComunidadePage() {
   const [addStoryOpen, setAddStoryOpen] = useState(false);
   const [addStoryFile, setAddStoryFile] = useState<File | null>(null);
   const [addStoryUploading, setAddStoryUploading] = useState(false);
+  /** Quem viu cada story (só no próprio perfil, preenchido ao abrir o viewer). */
+  const [storyViewsByStory, setStoryViewsByStory] = useState<ViewsByStory>({});
 
   useEffect(() => {
     const instagram = profileUser && 'instagramProfile' in profileUser ? profileUser.instagramProfile?.trim() : undefined;
@@ -533,6 +535,24 @@ export default function PerfilComunidadePage() {
       });
     return () => { cancelled = true; };
   }, [profileAccountId]);
+
+  // Buscar quem viu os stories (só no próprio perfil, quando abre o viewer)
+  useEffect(() => {
+    if (!storyViewerOpen || !isOwnProfile || !profileAccountId) {
+      if (!storyViewerOpen) setStoryViewsByStory({});
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/accounts/${profileAccountId}/stories/views`)
+      .then((res) => (res.ok ? res.json() : { viewsByStory: {} }))
+      .then((data: { viewsByStory?: ViewsByStory }) => {
+        if (!cancelled && data?.viewsByStory) setStoryViewsByStory(data.viewsByStory);
+      })
+      .catch(() => {
+        if (!cancelled) setStoryViewsByStory({});
+      });
+    return () => { cancelled = true; };
+  }, [storyViewerOpen, isOwnProfile, profileAccountId]);
 
   // Sincronizar "última vez que viu todos os stories" do localStorage (por perfil)
   useEffect(() => {
@@ -1557,6 +1577,14 @@ export default function PerfilComunidadePage() {
               }
             : undefined
         }
+        onStoryViewed={
+          !isOwnProfile && profileAccountId
+            ? (storyId: string) => {
+                fetch(`/api/stories/${storyId}/view`, { method: 'POST' }).catch(() => {});
+              }
+            : undefined
+        }
+        viewsByStory={isOwnProfile ? storyViewsByStory : undefined}
       />
 
       {/* Dialog: escolher foto ou vídeo e publicar */}
