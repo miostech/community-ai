@@ -12,7 +12,7 @@ import {
   DialogActions,
   Button,
 } from '@mui/material';
-import { Close as CloseIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
+import { Close as CloseIcon, MoreVert as MoreVertIcon, VolumeOff as VolumeOffIcon, VolumeUp as VolumeUpIcon } from '@mui/icons-material';
 
 export type StoryItem = {
   id: string;
@@ -76,6 +76,8 @@ export function StoryViewer({
   const [progress, setProgress] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  /** Começa mutado para autoplay funcionar (política do browser); usuário pode ativar o som. */
+  const [isMuted, setIsMuted] = useState(true);
 
   const current = stories[currentIndex];
   const isVideo = current?.media_type === 'video';
@@ -101,6 +103,11 @@ export function StoryViewer({
     setCurrentIndex(initialIndex);
     setProgress(0);
   }, [open, initialIndex]);
+
+  /** Cada novo story começa mutado (autoplay); usuário pode ativar o som. */
+  useEffect(() => {
+    if (current?.id) setIsMuted(true);
+  }, [current?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -282,20 +289,44 @@ export function StoryViewer({
             }}
           />
         ) : (
-          <Box
-            component="video"
-            src={current.media_url}
-            autoPlay
-            playsInline
-            muted
-            loop={false}
-            onEnded={() => !deleteConfirmOpen && goNext()}
-            sx={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain',
-            }}
-          />
+          <>
+            <Box
+              component="video"
+              src={current.media_url}
+              autoPlay
+              playsInline
+              muted={isMuted}
+              loop={false}
+              onEnded={() => !deleteConfirmOpen && goNext()}
+              sx={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+              }}
+            />
+            <IconButton
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsMuted((m) => !m);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              size="medium"
+              sx={{
+                position: 'absolute',
+                left: 16,
+                bottom: 'max(24px, env(safe-area-inset-bottom, 0px) + 72px)',
+                zIndex: 20,
+                pointerEvents: 'auto',
+                color: 'white',
+                bgcolor: 'rgba(0,0,0,0.5)',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+              }}
+              aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
+            >
+              {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+            </IconButton>
+          </>
         )}
       </Box>
 
