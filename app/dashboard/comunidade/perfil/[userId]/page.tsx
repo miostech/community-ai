@@ -308,7 +308,7 @@ export default function PerfilComunidadePage() {
     });
 
     Promise.all([
-      fetch(`/api/accounts/public/${encodeURIComponent(identifier)}`).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/accounts/public/${encodeURIComponent(identifier)}?skipCourses=true`).then((r) => (r.ok ? r.json() : null)),
       fetch(`/api/posts?author_id=${encodeURIComponent(identifier)}&limit=50`).then((r) => (r.ok ? r.json() : null)),
     ])
       .then(([profileRes, postsRes]) => {
@@ -334,6 +334,46 @@ export default function PerfilComunidadePage() {
       .finally(() => { if (!cancelled) setOtherProfileLoading(false); });
 
     return () => { cancelled = true; };
+  }, [identifier, isOwnProfile]);
+
+  // Carregar cursos de outro usuário em segundo plano (evita bloquear render inicial)
+  useEffect(() => {
+    if (!identifier || !isAccountId(identifier) || isOwnProfile) return;
+    let cancelled = false;
+
+    fetch(`/api/accounts/public/${encodeURIComponent(identifier)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((profileRes) => {
+        if (cancelled) return;
+        const profile = profileRes?.profile;
+        if (!profile) return;
+        setOtherProfileData((prev) => {
+          if (!prev) return prev;
+          const nextName = profile?.name?.trim() || prev.profileUser.name;
+          const prevCreatedAt = 'created_at' in prev.profileUser ? prev.profileUser.created_at : null;
+          const prevCourseIds = 'courseIds' in prev.profileUser ? prev.profileUser.courseIds : undefined;
+          const nextProfile: ProfileDisplay = {
+            ...prev.profileUser,
+            name: nextName,
+            avatar: profile?.avatar_url ?? prev.profileUser.avatar,
+            initials: getInitialsFromName(nextName),
+            interactionCount: profile?.interactionCount ?? prev.profileUser.interactionCount,
+            instagramProfile: profile?.link_instagram?.trim() || prev.profileUser.instagramProfile,
+            tiktokProfile: profile?.link_tiktok?.trim() || prev.profileUser.tiktokProfile,
+            youtubeProfile: profile?.link_youtube?.trim() || prev.profileUser.youtubeProfile,
+            created_at: profile?.created_at ?? prevCreatedAt,
+            courseIds: Array.isArray(profile?.courseIds)
+              ? profile.courseIds
+              : prevCourseIds,
+          };
+          return { ...prev, profileUser: nextProfile };
+        });
+      })
+      .catch(() => { });
+
+    return () => {
+      cancelled = true;
+    };
   }, [identifier, isOwnProfile]);
 
   const isOtherUserById = isAccountId(identifier) && !isOwnProfile;
@@ -408,21 +448,52 @@ export default function PerfilComunidadePage() {
     if (instagram) params.set('instagram', instagram);
     if (tiktok) params.set('tiktok', tiktok);
     if (youtube) params.set('youtube', youtube);
-    fetch(`/api/social-stats?${params.toString()}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && typeof data.totalFollowers === 'number') {
-          setSocialStats({
-            totalFollowers: data.totalFollowers,
-            instagram: data.instagram ?? null,
-            tiktok: data.tiktok ?? null,
-            youtube: data.youtube ?? null,
-          });
-        } else {
+
+    const controller = new AbortController();
+    let cancelled = false;
+    let idleHandle: number | null = null;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+    const runFetch = () => {
+      fetch(`/api/social-stats?${params.toString()}`, { signal: controller.signal })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled) return;
+          if (data && typeof data.totalFollowers === 'number') {
+            setSocialStats({
+              totalFollowers: data.totalFollowers,
+              instagram: data.instagram ?? null,
+              tiktok: data.tiktok ?? null,
+              youtube: data.youtube ?? null,
+            });
+          } else {
+            setSocialStats(null);
+          }
+        })
+        .catch((err) => {
+          if (cancelled || err?.name === 'AbortError') return;
           setSocialStats(null);
-        }
-      })
-      .catch(() => setSocialStats(null));
+        });
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleHandle = window.requestIdleCallback(() => {
+        if (!cancelled) runFetch();
+      });
+    } else {
+      timeoutHandle = setTimeout(() => {
+        if (!cancelled) runFetch();
+      }, 0);
+    }
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      if (idleHandle !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+    };
   }, [profileUser?.name, profileUser && 'instagramProfile' in profileUser ? profileUser.instagramProfile : undefined, profileUser && 'tiktokProfile' in profileUser ? profileUser.tiktokProfile : undefined, profileUser && 'youtubeProfile' in profileUser ? profileUser.youtubeProfile : undefined]);
 
   const formatCount = (n: number) =>
@@ -580,7 +651,7 @@ export default function PerfilComunidadePage() {
   };
 
   // Loading state
-  if (isOtherUserById && otherProfileLoading) {
+  if (isOtherUserById && otherProfileLoading && !otherProfileData && !resolvedFromList) {
     return (
       <Box
         sx={{
@@ -654,13 +725,13 @@ export default function PerfilComunidadePage() {
     storyUsers.length > 0
       ? idForRanking
         ? (() => {
-            const idx = storyUsers.findIndex((u) => u.id === idForRanking);
-            return idx >= 0 ? idx + 1 : 0;
-          })()
+          const idx = storyUsers.findIndex((u) => u.id === idForRanking);
+          return idx >= 0 ? idx + 1 : 0;
+        })()
         : (() => {
-            const idx = storyUsers.findIndex((u) => u.name === profileUser.name);
-            return idx >= 0 ? idx + 1 : 0;
-          })()
+          const idx = storyUsers.findIndex((u) => u.name === profileUser.name);
+          return idx >= 0 ? idx + 1 : 0;
+        })()
       : 0;
 
   /** Avatar: só a foto salva na conta (upload manual ou "Usar foto do Instagram" em Meu perfil) */
