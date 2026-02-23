@@ -8,6 +8,8 @@ export interface StoryUser {
     avatar: string | null;
     initials: string;
     interactionCount: number;
+    /** Timestamp (ms) do story mais recente — usado no feed para borda "não visto". */
+    latestStoryAt?: number;
     stats?: {
         likesGiven: number;
         likesReceived: number;

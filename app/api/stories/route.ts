@@ -67,7 +67,10 @@ export async function POST(request: NextRequest) {
     const containerClient = blobServiceClient.getContainerClient(containerName);
     await containerClient.createIfNotExists({ access: 'blob' });
 
-    const ext = file.name.split('.').pop() || (isImage ? 'jpg' : 'mp4');
+    const rawExt = (file.name.split('.').pop() ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const ext = rawExt && ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'webm', 'mov'].includes(rawExt)
+      ? rawExt === 'jpeg' ? 'jpg' : rawExt
+      : (isImage ? 'jpg' : 'mp4');
     const blobName = `stories/${accountIdStr}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
     const arrayBuffer = await file.arrayBuffer();

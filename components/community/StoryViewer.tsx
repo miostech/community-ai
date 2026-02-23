@@ -6,8 +6,13 @@ import {
   IconButton,
   Typography,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
 
 export type StoryItem = {
   id: string;
@@ -21,15 +26,42 @@ export type StoryItem = {
   created_at: string;
 };
 
+export type StoryViewerCloseOptions = { completedAll?: boolean };
+
 interface StoryViewerProps {
   stories: StoryItem[];
   userName: string;
   open: boolean;
-  onClose: () => void;
+  /** Chamado ao fechar. completedAll: true quando o usuário estava no último story (viu todos). */
+  onClose: (opts?: StoryViewerCloseOptions) => void;
   initialIndex?: number;
+  /** Se true, mostra botão para excluir o story atual (próprio perfil). */
+  canDelete?: boolean;
+  /** Chamado ao excluir; o componente não remove da lista — a lista é atualizada pelo pai. */
+  onDeleteStory?: (storyId: string) => Promise<void>;
 }
 
 const STORY_DURATION_MS = 5000;
+
+function formatStoryTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diffInSeconds < 60) return 'agora';
+  if (diffInSeconds < 3600) {
+    const min = Math.floor(diffInSeconds / 60);
+    return min === 1 ? '1 minuto atrás' : `${min} minutos atrás`;
+  }
+  if (diffInSeconds < 86400) {
+    const h = Math.floor(diffInSeconds / 3600);
+    return h === 1 ? '1 hora atrás' : `${h} horas atrás`;
+  }
+  if (diffInSeconds < 604800) {
+    const d = Math.floor(diffInSeconds / 86400);
+    return d === 1 ? '1 dia atrás' : `${d} dias atrás`;
+  }
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+}
 
 export function StoryViewer({
   stories,
@@ -37,9 +69,13 @@ export function StoryViewer({
   open,
   onClose,
   initialIndex = 0,
+  canDelete = false,
+  onDeleteStory,
 }: StoryViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const current = stories[currentIndex];
   const isVideo = current?.media_type === 'video';
@@ -49,7 +85,7 @@ export function StoryViewer({
       setCurrentIndex((i) => i + 1);
       setProgress(0);
     } else {
-      onClose();
+      onClose({ completedAll: true });
     }
   }, [currentIndex, stories.length, onClose]);
 
@@ -67,7 +103,13 @@ export function StoryViewer({
   }, [open, initialIndex]);
 
   useEffect(() => {
-    if (!open || !current) return;
+    if (!open) return;
+    if (stories.length === 0) onClose();
+    else if (currentIndex >= stories.length) setCurrentIndex(Math.max(0, stories.length - 1));
+  }, [open, stories.length, currentIndex, onClose]);
+
+  useEffect(() => {
+    if (!open || !current || deleteConfirmOpen) return;
     if (isVideo) {
       setProgress(0);
       return;
@@ -83,7 +125,18 @@ export function StoryViewer({
       }
     }, 50);
     return () => clearInterval(interval);
-  }, [open, current?.id, isVideo, goNext]);
+  }, [open, current?.id, isVideo, goNext, deleteConfirmOpen]);
+
+  const handleDelete = async () => {
+    if (!current?.id || !onDeleteStory || deleting) return;
+    setDeleteConfirmOpen(false);
+    setDeleting(true);
+    try {
+      await onDeleteStory(current.id);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (!open || stories.length === 0) return null;
 
@@ -150,11 +203,18 @@ export function StoryViewer({
           zIndex: 1,
         }}
       >
-        <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
-          {userName}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
+          <Typography variant="subtitle2" sx={{ color: 'white', fontWeight: 600 }}>
+            {userName}
+          </Typography>
+          {current?.created_at && (
+            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.85)', flexShrink: 0 }}>
+              {formatStoryTimeAgo(current.created_at)}
+            </Typography>
+          )}
+        </Box>
         <IconButton
-          onClick={onClose}
+          onClick={() => onClose({ completedAll: currentIndex === stories.length - 1 })}
           size="small"
           sx={{ color: 'white' }}
           aria-label="Fechar"
@@ -172,7 +232,7 @@ export function StoryViewer({
         }}
       >
         <Box
-          onClick={goPrev}
+          onClick={() => !deleteConfirmOpen && goPrev()}
           sx={{
             position: 'absolute',
             left: 0,
@@ -180,11 +240,11 @@ export function StoryViewer({
             bottom: 0,
             width: '40%',
             zIndex: 2,
-            cursor: currentIndex > 0 ? 'pointer' : 'default',
+            cursor: !deleteConfirmOpen && currentIndex > 0 ? 'pointer' : 'default',
           }}
         />
         <Box
-          onClick={goNext}
+          onClick={() => !deleteConfirmOpen && goNext()}
           sx={{
             position: 'absolute',
             right: 0,
@@ -192,7 +252,7 @@ export function StoryViewer({
             bottom: 0,
             width: '60%',
             zIndex: 2,
-            cursor: 'pointer',
+            cursor: !deleteConfirmOpen ? 'pointer' : 'default',
           }}
         />
       </Box>
@@ -229,7 +289,7 @@ export function StoryViewer({
             playsInline
             muted
             loop={false}
-            onEnded={goNext}
+            onEnded={() => !deleteConfirmOpen && goNext()}
             sx={{
               maxWidth: '100%',
               maxHeight: '100%',
@@ -238,6 +298,38 @@ export function StoryViewer({
           />
         )}
       </Box>
+
+      {/* Botão 3 pontinhos (excluir) - canto inferior direito, acima da tab bar */}
+      {canDelete && (
+        <Box
+          sx={{
+            position: 'absolute',
+            right: 16,
+            bottom: 'max(24px, env(safe-area-inset-bottom, 0px) + 72px)',
+            zIndex: 15,
+            pointerEvents: 'auto',
+          }}
+        >
+          <IconButton
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteConfirmOpen(true);
+            }}
+            disabled={deleting}
+            size="large"
+            sx={{
+              color: 'white',
+              bgcolor: 'rgba(0,0,0,0.6)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
+              '& .MuiSvgIcon-root': { fontSize: 28 },
+            }}
+            aria-label="Opções do story"
+          >
+            <MoreVertIcon />
+          </IconButton>
+        </Box>
+      )}
 
       {/* Texto sobre a foto/vídeo (posição definida no editor ou barra inferior) */}
       {current.text && (
@@ -282,6 +374,26 @@ export function StoryViewer({
           </Typography>
         </Box>
       )}
+
+      {/* Diálogo: Deseja excluir esse story? */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        PaperProps={{ sx: { borderRadius: 2, minWidth: 280 } }}
+      >
+        <DialogTitle>Excluir story</DialogTitle>
+        <DialogContent>
+          <Typography>Deseja excluir esse story?</Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button onClick={() => setDeleteConfirmOpen(false)} color="inherit">
+            Não
+          </Button>
+          <Button onClick={handleDelete} variant="contained" color="error" disabled={deleting}>
+            {deleting ? 'Excluindo...' : 'Sim'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

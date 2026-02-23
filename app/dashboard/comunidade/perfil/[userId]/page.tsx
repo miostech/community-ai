@@ -389,6 +389,9 @@ export default function PerfilComunidadePage() {
   const [profileStories, setProfileStories] = useState<StoryItem[]>([]);
   const [profileStoriesLoading, setProfileStoriesLoading] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  /** Quando o usuário viu todos os stories deste perfil (para esconder a borda colorida). */
+  const [lastStoriesSeenAt, setLastStoriesSeenAt] = useState<number | null>(null);
+  const STORIES_SEEN_KEY = 'stories_seen_';
   const [addStoryOpen, setAddStoryOpen] = useState(false);
   const [addStoryFile, setAddStoryFile] = useState<File | null>(null);
   const [addStoryUploading, setAddStoryUploading] = useState(false);
@@ -447,6 +450,37 @@ export default function PerfilComunidadePage() {
     return () => { cancelled = true; };
   }, [profileAccountId]);
 
+  // Sincronizar "última vez que viu todos os stories" do localStorage (por perfil)
+  useEffect(() => {
+    if (!profileAccountId) {
+      setLastStoriesSeenAt(null);
+      return;
+    }
+    try {
+      const v = localStorage.getItem(STORIES_SEEN_KEY + profileAccountId);
+      setLastStoriesSeenAt(v ? Number(v) : null);
+    } catch {
+      setLastStoriesSeenAt(null);
+    }
+  }, [profileAccountId]);
+
+  /** Borda colorida só aparece se houver story novo que o usuário ainda não viu. */
+  const hasUnseenStories =
+    profileStories.length > 0 &&
+    (!lastStoriesSeenAt ||
+      Math.max(...profileStories.map((s) => new Date(s.created_at).getTime())) > lastStoriesSeenAt);
+
+  /** Índice do primeiro story não visto (para abrir o viewer já nos novos). */
+  const initialStoryIndex =
+    profileStories.length === 0
+      ? 0
+      : lastStoriesSeenAt == null
+        ? 0
+        : (() => {
+            const i = profileStories.findIndex((s) => new Date(s.created_at).getTime() > lastStoriesSeenAt!);
+            return i === -1 ? 0 : i;
+          })();
+
   const handleAddStorySubmit = async () => {
     if (!addStoryFile) return;
     setAddStoryUploading(true);
@@ -455,8 +489,10 @@ export default function PerfilComunidadePage() {
       formData.append('file', addStoryFile);
       const res = await fetch('/api/stories', { method: 'POST', body: formData });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Erro ao publicar');
+        const contentType = res.headers.get('content-type') ?? '';
+        const isJson = contentType.includes('application/json');
+        const data = isJson ? await res.json() : { error: await res.text() || 'Erro ao publicar' };
+        throw new Error(typeof data?.error === 'string' ? data.error : 'Erro ao publicar story');
       }
       setAddStoryOpen(false);
       setAddStoryFile(null);
@@ -468,7 +504,11 @@ export default function PerfilComunidadePage() {
         }
       }
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao publicar story');
+      const msg = e instanceof Error ? e.message : '';
+      const mensagem = msg && !/expected pattern|fetch failed|network/i.test(msg)
+        ? `${msg} Tente novamente.`
+        : 'Algo deu errado ao publicar. Tente novamente.';
+      alert(mensagem);
     } finally {
       setAddStoryUploading(false);
     }
@@ -679,6 +719,7 @@ export default function PerfilComunidadePage() {
               <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
                 {(() => {
                   const hasStories = profileStories.length > 0;
+                  const showStoryRing = hasUnseenStories;
                   const avatarEl = (
                     <Avatar
                       src={displayAvatar || undefined}
@@ -725,7 +766,7 @@ export default function PerfilComunidadePage() {
                         </Badge>
                       </Box>
                     </Box>
-                  ) : hasStories ? (
+                  ) : showStoryRing ? (
                     <Box
                       component="button"
                       type="button"
@@ -743,6 +784,15 @@ export default function PerfilComunidadePage() {
                       <Box sx={{ borderRadius: '50%', bgcolor: 'background.paper', p: '3px' }}>
                         {avatarEl}
                       </Box>
+                    </Box>
+                  ) : hasStories ? (
+                    <Box
+                      component="button"
+                      type="button"
+                      onClick={() => setStoryViewerOpen(true)}
+                      sx={{ border: 'none', padding: 0, cursor: 'pointer', borderRadius: '50%' }}
+                    >
+                      {avatarEl}
                     </Box>
                   ) : (
                     avatarEl
@@ -773,7 +823,7 @@ export default function PerfilComunidadePage() {
             )}
             {!profileStoriesLoading && isOwnProfile && profileStories.length > 0 && (
               <Typography variant="caption" color="text.secondary">
-                {profileStories.length} story{profileStories.length !== 1 ? 's' : ''} ativo{profileStories.length !== 1 ? 's' : ''} (24h)
+                {profileStories.length} story{profileStories.length !== 1 ? 's' : ''} ativo{profileStories.length !== 1 ? 's' : ''}
               </Typography>
             )}
           </Box>
@@ -1342,7 +1392,43 @@ export default function PerfilComunidadePage() {
         stories={profileStories}
         userName={profileUser.name}
         open={storyViewerOpen}
-        onClose={() => setStoryViewerOpen(false)}
+        initialIndex={initialStoryIndex}
+        onClose={(opts) => {
+          if (opts?.completedAll && profileAccountId) {
+            const now = Date.now();
+            try {
+              localStorage.setItem(STORIES_SEEN_KEY + profileAccountId, String(now));
+            } catch {}
+            setLastStoriesSeenAt(now);
+          }
+          setStoryViewerOpen(false);
+        }}
+        canDelete={isOwnProfile}
+        onDeleteStory={
+          isOwnProfile && (profileAccountId ?? account?.id)
+            ? async (storyId: string) => {
+                const accountId = profileAccountId ?? account?.id ?? '';
+                try {
+                  const res = await fetch(`/api/stories/${storyId}`, { method: 'DELETE' });
+                  if (!res.ok) {
+                    const contentType = res.headers.get('content-type') ?? '';
+                    const data = contentType.includes('application/json') ? await res.json() : {};
+                    throw new Error(typeof data?.error === 'string' ? data.error : 'Erro ao excluir. Tente novamente.');
+                  }
+                  if (accountId) {
+                    const listRes = await fetch(`/api/accounts/${accountId}/stories`);
+                    if (listRes.ok) {
+                      const list = await listRes.json();
+                      setProfileStories(Array.isArray(list) ? list : []);
+                    }
+                  }
+                } catch (e) {
+                  alert(e instanceof Error ? e.message : 'Algo deu errado ao excluir. Tente novamente.');
+                  throw e;
+                }
+              }
+            : undefined
+        }
       />
 
       {/* Dialog: escolher foto ou vídeo e publicar */}

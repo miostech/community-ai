@@ -4,20 +4,31 @@ import AccountModel from '@/models/Account';
 import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
+import StoryModel, { STORY_EXPIRY_HOURS } from '@/models/Story';
 import mongoose from 'mongoose';
 
 export async function GET() {
     try {
         await connectMongo();
 
-        // Buscar accounts ordenados pelo último acesso (mais recentes primeiro)
+        // Top 20 por ranking (last_access); primeiro lugar sempre aparece; demais só se tiverem stories
         const accounts = await AccountModel.find({})
             .select('_id first_name last_name avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
             .sort({ last_access_at: -1 })
-            .limit(20)
+            .limit(25)
             .lean();
 
         const accountIds = accounts.map((a) => a._id);
+
+        const since = new Date(Date.now() - STORY_EXPIRY_HOURS * 60 * 60 * 1000);
+        const storyAgg = await StoryModel.aggregate([
+            { $match: { created_at: { $gte: since } } },
+            { $group: { _id: '$account_id', latestStoryAt: { $max: '$created_at' } } },
+        ]).exec();
+        const latestStoryAtMap = new Map<string, Date>();
+        storyAgg.forEach((r: { _id: mongoose.Types.ObjectId; latestStoryAt: Date }) => {
+            latestStoryAtMap.set(r._id.toString(), r.latestStoryAt);
+        });
 
         // Buscar estatísticas de interação para todos os usuários de uma vez
 
@@ -72,13 +83,15 @@ export async function GET() {
             // Score = likes dados + likes recebidos nos posts + total de posts + total de comentários
             const interactionScore = likesGiven + postStats.totalLikes + (postStats.count * 2) + commentsCount;
 
+            const latestStoryAt = latestStoryAtMap.get(accountIdStr);
+
             return {
                 id: accountIdStr,
                 name: fullName,
                 avatar: account.avatar_url || null,
                 initials,
                 interactionCount: interactionScore,
-                // Detalhes do score para debug/display futuro
+                latestStoryAt: latestStoryAt ? new Date(latestStoryAt).getTime() : undefined,
                 stats: {
                     likesGiven,
                     likesReceived: postStats.totalLikes,
@@ -92,7 +105,7 @@ export async function GET() {
             };
         });
 
-        // Ordenar por score de interação (maior primeiro)
+        // Ordenar por score de interação (maior primeiro); todos aparecem (bolinhas), com ou sem stories
         storyUsers.sort((a, b) => b.interactionCount - a.interactionCount);
 
         return NextResponse.json(storyUsers);
