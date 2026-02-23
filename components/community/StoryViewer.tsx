@@ -223,7 +223,7 @@ export function StoryViewer({
         ))}
       </Box>
 
-      {/* Header */}
+      {/* Header (zIndex acima da área clicável para o olho e o X não avançarem o story) */}
       <Box
         sx={{
           position: 'absolute',
@@ -235,7 +235,7 @@ export function StoryViewer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          zIndex: 1,
+          zIndex: 10,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, minWidth: 0 }}>
@@ -253,9 +253,11 @@ export function StoryViewer({
             <>
               <IconButton
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   setViewsDrawerOpen(true);
                 }}
+                onPointerDown={(e) => e.stopPropagation()}
                 size="small"
                 sx={{ color: 'white' }}
                 aria-label="Quem viu este story"
@@ -270,7 +272,12 @@ export function StoryViewer({
             </>
           )}
           <IconButton
-            onClick={() => onClose({ completedAll: currentIndex === stories.length - 1 })}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose({ completedAll: currentIndex === stories.length - 1 });
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
             size="small"
             sx={{ color: 'white' }}
             aria-label="Fechar"
