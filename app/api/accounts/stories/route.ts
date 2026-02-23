@@ -11,24 +11,31 @@ export async function GET() {
     try {
         await connectMongo();
 
-        // Top 20 por ranking (last_access); primeiro lugar sempre aparece; demais só se tiverem stories
-        const accounts = await AccountModel.find({})
-            .select('_id first_name last_name avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
-            .sort({ last_access_at: -1 })
-            .limit(25)
-            .lean();
-
-        const accountIds = accounts.map((a) => a._id);
-
         const since = new Date(Date.now() - STORY_EXPIRY_HOURS * 60 * 60 * 1000);
         const storyAgg = await StoryModel.aggregate([
             { $match: { created_at: { $gte: since } } },
             { $group: { _id: '$account_id', latestStoryAt: { $max: '$created_at' } } },
         ]).exec();
         const latestStoryAtMap = new Map<string, Date>();
+        const accountIdsWithStories: mongoose.Types.ObjectId[] = [];
         storyAgg.forEach((r: { _id: mongoose.Types.ObjectId; latestStoryAt: Date }) => {
             latestStoryAtMap.set(r._id.toString(), r.latestStoryAt);
+            accountIdsWithStories.push(r._id);
         });
+
+        // Quem tem stories sempre aparece na faixa; preenchemos o resto por last_access
+        const topByAccess = await AccountModel.find({})
+            .select('_id')
+            .sort({ last_access_at: -1 })
+            .limit(25)
+            .lean();
+        const topIds = new Set(topByAccess.map((a) => a._id.toString()));
+        accountIdsWithStories.forEach((id) => topIds.add(id.toString()));
+        const accountIds = Array.from(topIds).map((id) => new mongoose.Types.ObjectId(id));
+
+        const accounts = await AccountModel.find({ _id: { $in: accountIds } })
+            .select('_id first_name last_name avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
+            .lean();
 
         // Buscar estatísticas de interação para todos os usuários de uma vez
 
