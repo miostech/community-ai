@@ -131,7 +131,7 @@ export async function GET() {
             }
         }
 
-        const acc = account as unknown as { _id: unknown; used_instagram_avatar?: boolean;[k: string]: unknown };
+        const acc = account as unknown as { _id: unknown; used_instagram_avatar?: boolean; instagram_avatar_used_at?: Date | string; [k: string]: unknown };
         const payment = lastPayment as any;
 
         return NextResponse.json({
@@ -149,6 +149,11 @@ export async function GET() {
                 primary_social_link: acc.primary_social_link,
                 avatar_url: acc.avatar_url || session.user.image,
                 used_instagram_avatar: acc.used_instagram_avatar === true,
+                instagram_avatar_used_at: acc.instagram_avatar_used_at
+                    ? (typeof acc.instagram_avatar_used_at === 'string'
+                        ? acc.instagram_avatar_used_at
+                        : new Date(acc.instagram_avatar_used_at as Date).toISOString())
+                    : null,
                 background_url: acc.background_url,
                 plan: acc.plan,
                 code_invite: acc.code_invite,

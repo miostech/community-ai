@@ -53,7 +53,7 @@ interface FormData {
 
 export default function PerfilPage() {
   const { data: session } = useSession();
-  const { account, isLoading: accountLoading, refreshAccount } = useAccount();
+  const { account, isLoading: accountLoading, refreshAccount, setAccountFromResponse } = useAccount();
   const { courseIds: myCourseIds, loading: coursesLoading } = useCourses();
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
@@ -74,6 +74,11 @@ export default function PerfilPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /** Botão "Usar foto do Instagram" só aparece uma vez por dia (24h desde o último uso). */
+  const canUseInstagramAvatar =
+    !!formData.link_instagram?.trim() &&
+    (!account?.instagram_avatar_used_at ||
+      Date.now() - new Date(account.instagram_avatar_used_at).getTime() > 24 * 60 * 60 * 1000);
 
   useEffect(() => {
     if (account) {
@@ -180,6 +185,9 @@ export default function PerfilPage() {
       const data = await response.json();
       if (data.avatar_url) {
         setFormData((prev) => ({ ...prev, avatar_url: data.avatar_url }));
+        if (data.account) {
+          setAccountFromResponse(account ? { ...account, ...data.account } : data.account);
+        }
         await refreshAccount();
       }
     } catch (err) {
@@ -431,7 +439,7 @@ export default function PerfilPage() {
                     >
                       {isUploadingAvatar ? 'Enviando...' : formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
                     </Button>
-                    {formData.link_instagram?.trim() && !account?.used_instagram_avatar && (
+                    {canUseInstagramAvatar && (
                       <Button
                         variant="outlined"
                         onClick={handleSyncInstagramAvatar}
@@ -461,7 +469,7 @@ export default function PerfilPage() {
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
                     Imagem quadrada de 400x400px ou maior (4K suportado). JPG, PNG, WebP ou GIF. Máximo 10MB.
-                    {formData.link_instagram?.trim() && !account?.used_instagram_avatar && ' Ou use a foto do seu perfil do Instagram (uma vez).'}
+                    {canUseInstagramAvatar && ' Ou use a foto do seu perfil do Instagram (uma vez por dia).'}
                   </Typography>
                 </Box>
               </Stack>

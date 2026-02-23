@@ -111,38 +111,46 @@ export default function TrendsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [categoryAnchorEl, setCategoryAnchorEl] = useState<null | HTMLElement>(null);
 
+  const TRENDS_REFRESH_MS = 3 * 60 * 60 * 1000; // 3 horas
+
+  async function loadTrends(silent = false) {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
+    try {
+      const res = await fetch('/api/trends');
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || 'Erro ao carregar trends');
+        setData(null);
+        return;
+      }
+
+      setData(json);
+      setError(null);
+    } catch {
+      setError('Falha ao conectar. Tente novamente.');
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('/api/trends');
-        const json = await res.json();
+    loadTrends(false);
 
-        if (cancelled) return;
+    const interval = setInterval(() => {
+      if (cancelled) return;
+      loadTrends(true); // refresh em background sem mostrar loading
+    }, TRENDS_REFRESH_MS);
 
-        if (!res.ok) {
-          setError(json.error || 'Erro ao carregar trends');
-          setData(null);
-          return;
-        }
-
-        setData(json);
-      } catch {
-        if (!cancelled) {
-          setError('Falha ao conectar. Tente novamente.');
-          setData(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, []);
 

@@ -17,6 +17,8 @@ export interface Account {
     primary_social_link: 'instagram' | 'tiktok' | 'youtube' | null;
     avatar_url: string | null;
     used_instagram_avatar: boolean;
+    /** ISO date do último uso do botão "Usar foto do Instagram". Botão reaparece após 24h. */
+    instagram_avatar_used_at: string | null;
     background_url: string | null;
     plan: 'free' | 'pro' | 'enterprise';
     code_invite: string | null;

@@ -15,6 +15,8 @@ export interface Account {
     primary_social_link?: 'instagram' | 'tiktok' | 'youtube' | null;
     avatar_url?: string;
     used_instagram_avatar: boolean;
+    /** Data/hora do último uso do botão "Usar foto do Instagram". Botão só reaparece após 24h. */
+    instagram_avatar_used_at?: Date;
     background_url?: string;
     code_invite?: string;
     code_invite_ref?: string;
@@ -46,6 +48,7 @@ const AccountSchema = new Schema(
         primary_social_link: { type: String, enum: ['instagram', 'tiktok', 'youtube', null], default: null },
         avatar_url: { type: String, trim: true },
         used_instagram_avatar: { type: Boolean, default: false },
+        instagram_avatar_used_at: { type: Date },
         background_url: { type: String, trim: true },
         code_invite: { type: String, unique: true, sparse: true, trim: true },
         code_invite_ref: { type: String, trim: true },

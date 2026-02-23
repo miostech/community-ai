@@ -108,9 +108,10 @@ export async function POST() {
       );
     }
 
+    const now = new Date();
     const updated = await Account.findOneAndUpdate(
       { auth_user_id: authUserId },
-      { $set: { avatar_url: finalAvatarUrl, used_instagram_avatar: true } },
+      { $set: { avatar_url: finalAvatarUrl, used_instagram_avatar: true, instagram_avatar_used_at: now } },
       { new: true }
     );
 
@@ -134,6 +135,9 @@ export async function POST() {
         primary_social_link: updated.primary_social_link,
         avatar_url: updated.avatar_url,
         used_instagram_avatar: updated.used_instagram_avatar,
+        instagram_avatar_used_at: (updated as any).instagram_avatar_used_at
+          ? new Date((updated as any).instagram_avatar_used_at).toISOString()
+          : null,
         background_url: updated.background_url,
         plan: updated.plan,
       },
