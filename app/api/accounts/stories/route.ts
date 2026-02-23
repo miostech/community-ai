@@ -14,7 +14,7 @@ export async function GET() {
         const accounts = await AccountModel.find({})
             .select('_id first_name last_name avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
             .sort({ last_access_at: -1 })
-            .limit(20)
+            .limit(200)
             .lean();
 
         const accountIds = accounts.map((a) => a._id);
