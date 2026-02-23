@@ -27,7 +27,16 @@ export default function RankingPage() {
 
   if (!isDesktop) {
     return (
-      <Box sx={{ p: 2, textAlign: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          p: 2,
+          textAlign: 'center',
+        }}
+      >
         <Typography color="text.secondary">
           O ranking está disponível apenas na versão desktop. Abra no computador para ver.
         </Typography>

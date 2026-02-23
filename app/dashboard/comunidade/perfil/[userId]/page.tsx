@@ -543,6 +543,21 @@ export default function PerfilComunidadePage() {
   /** Destaque (borda dourada + troféu) só para o primeiro da lista de stories */
   const isFeaturedStory = isFromStories && storyUsers[0]?.id === profileIdForStories;
 
+  /** Posição no ranking da comunidade (1-based; 0 se não estiver na lista) */
+  const idForRanking = isOtherUserById ? identifier : isOwnProfile ? account?.id ?? null : 'id' in profileUser ? (profileUser as CommunityUser).id : null;
+  const rankingPosition =
+    storyUsers.length > 0
+      ? idForRanking
+        ? (() => {
+            const idx = storyUsers.findIndex((u) => u.id === idForRanking);
+            return idx >= 0 ? idx + 1 : 0;
+          })()
+        : (() => {
+            const idx = storyUsers.findIndex((u) => u.name === profileUser.name);
+            return idx >= 0 ? idx + 1 : 0;
+          })()
+      : 0;
+
   /** Avatar: só a foto salva na conta (upload manual ou "Usar foto do Instagram" em Meu perfil) */
   const displayAvatar = profileUser.avatar ?? null;
 
@@ -593,17 +608,15 @@ export default function PerfilComunidadePage() {
           spacing={3}
           alignItems={{ xs: 'center', sm: 'flex-start' }}
         >
-          {/* Avatar: borda dourada + badge troféu para destaque (igual aos stories); borda colorida para os demais */}
+          {/* Avatar: borda dourada + badge troféu apenas para o 1º lugar do ranking; demais sem borda */}
           <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-            {isFromStories ? (
+            {isFeaturedStory ? (
               <Box
                 sx={{
                   borderRadius: '50%',
-                  background: isFeaturedStory
-                    ? 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)'
-                    : 'linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
                   p: 0.5,
-                  ...(isFeaturedStory && { boxShadow: '0 0 12px rgba(251, 191, 36, 0.5)' }),
+                  boxShadow: '0 0 12px rgba(251, 191, 36, 0.5)',
                 }}
               >
                 <Box
@@ -616,15 +629,13 @@ export default function PerfilComunidadePage() {
                   <Badge
                     overlap="circular"
                     badgeContent={
-                      isFeaturedStory ? (
-                        <TrophyIcon
-                          sx={{
-                            fontSize: 22,
-                            color: '#fff',
-                            filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
-                          }}
-                        />
-                      ) : null
+                      <TrophyIcon
+                        sx={{
+                          fontSize: 22,
+                          color: '#fff',
+                          filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
+                        }}
+                      />
                     }
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     sx={{
@@ -662,8 +673,6 @@ export default function PerfilComunidadePage() {
                   width: { xs: 96, sm: 112 },
                   height: { xs: 96, sm: 112 },
                   bgcolor: 'grey.300',
-                  border: 2,
-                  borderColor: 'divider',
                   fontSize: { xs: 32, sm: 40 },
                   fontWeight: 'bold',
                   color: 'text.secondary',
@@ -690,13 +699,13 @@ export default function PerfilComunidadePage() {
               direction="row"
               spacing={3}
               sx={{
-                justifyContent: { xs: 'center', sm: 'flex-start' },
+                justifyContent: 'center',
                 mb: 2,
                 flexWrap: 'wrap',
                 gap: 2,
               }}
             >
-              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+              <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="subtitle1" fontWeight={600}>
                   {userPosts.length}
                 </Typography>
@@ -704,7 +713,7 @@ export default function PerfilComunidadePage() {
                   publicações
                 </Typography>
               </Box>
-              <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+              <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="subtitle1" fontWeight={600}>
                   {profileUser.interactionCount}
                 </Typography>
@@ -712,6 +721,21 @@ export default function PerfilComunidadePage() {
                   interações
                 </Typography>
               </Box>
+              {rankingPosition > 0 && (
+                <Link
+                  href="/dashboard/comunidade/ranking"
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {rankingPosition}º
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      ranking
+                    </Typography>
+                  </Box>
+                </Link>
+              )}
               {socialStats !== null && (
                 <Tooltip
                   open={seguidoresTooltipOpen}
@@ -749,11 +773,11 @@ export default function PerfilComunidadePage() {
                 >
                   <Box
                     sx={{
-                      textAlign: { xs: 'center', sm: 'left' },
+                      textAlign: 'center',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: { xs: 'center', sm: 'flex-start' },
+                      alignItems: 'center',
                     }}
                     onClick={() => setSeguidoresTooltipOpen((v) => !v)}
                   >
