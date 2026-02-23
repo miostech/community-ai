@@ -20,6 +20,7 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSection } from '@/components/community/CommentsSection';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
+import { StoryViewer, type StoryItem } from '@/components/community/StoryViewer';
 import { sortCourseIds, getCourseLabel, CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 import { useCourses } from '@/contexts/CoursesContext';
 
@@ -40,6 +41,10 @@ import {
   AppBar,
   Toolbar,
   Badge,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -56,6 +61,7 @@ import {
   OpenInNew as OpenInNewIcon,
   School as SchoolIcon,
   EmojiEvents as TrophyIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 
 type PostType = 'idea' | 'script' | 'question' | 'result' | 'general';
@@ -331,6 +337,8 @@ export default function PerfilComunidadePage() {
   }, [identifier, isOwnProfile]);
 
   const isOtherUserById = isAccountId(identifier) && !isOwnProfile;
+  /** ID da conta do perfil (para buscar stories temporários). No próprio perfil = account.id; em outro por ID = identifier. */
+  const profileAccountId = isOwnProfile ? (account?.id ?? null) : (isOtherUserById && isAccountId(identifier) ? identifier : null);
   const profileUser = useMemo((): ProfileDisplay | null => {
     if (isOtherUserById) {
       if (otherProfileData) return otherProfileData.profileUser;
@@ -377,6 +385,14 @@ export default function PerfilComunidadePage() {
   };
   const [socialStats, setSocialStats] = useState<SocialStatsData | null>(null);
 
+  // Stories temporários (24h) — só no perfil público
+  const [profileStories, setProfileStories] = useState<StoryItem[]>([]);
+  const [profileStoriesLoading, setProfileStoriesLoading] = useState(false);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [addStoryOpen, setAddStoryOpen] = useState(false);
+  const [addStoryFile, setAddStoryFile] = useState<File | null>(null);
+  const [addStoryUploading, setAddStoryUploading] = useState(false);
+
   useEffect(() => {
     const instagram = profileUser && 'instagramProfile' in profileUser ? profileUser.instagramProfile?.trim() : undefined;
     const tiktok = profileUser && 'tiktokProfile' in profileUser ? profileUser.tiktokProfile?.trim() : undefined;
@@ -408,6 +424,55 @@ export default function PerfilComunidadePage() {
 
   const formatCount = (n: number) =>
     n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}k` : n.toLocaleString('pt-BR');
+
+  // Buscar stories temporários do perfil (quando é perfil por account id)
+  useEffect(() => {
+    if (!profileAccountId) {
+      setProfileStories([]);
+      return;
+    }
+    let cancelled = false;
+    setProfileStoriesLoading(true);
+    fetch(`/api/accounts/${profileAccountId}/stories`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: StoryItem[]) => {
+        if (!cancelled) setProfileStories(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileStories([]);
+      })
+      .finally(() => {
+        if (!cancelled) setProfileStoriesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [profileAccountId]);
+
+  const handleAddStorySubmit = async () => {
+    if (!addStoryFile) return;
+    setAddStoryUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', addStoryFile);
+      const res = await fetch('/api/stories', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erro ao publicar');
+      }
+      setAddStoryOpen(false);
+      setAddStoryFile(null);
+      if (profileAccountId) {
+        const listRes = await fetch(`/api/accounts/${profileAccountId}/stories`);
+        if (listRes.ok) {
+          const list = await listRes.json();
+          setProfileStories(Array.isArray(list) ? list : []);
+        }
+      }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao publicar story');
+    } finally {
+      setAddStoryUploading(false);
+    }
+  };
 
   const handleLike = (postId: string) => {
     if (isOwnProfile) {
@@ -608,78 +673,108 @@ export default function PerfilComunidadePage() {
           spacing={3}
           alignItems={{ xs: 'center', sm: 'flex-start' }}
         >
-          {/* Avatar: borda dourada + badge troféu apenas para o 1º lugar do ranking; demais sem borda */}
-          <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-            {isFeaturedStory ? (
-              <Box
-                sx={{
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
-                  p: 0.5,
-                  boxShadow: '0 0 12px rgba(251, 191, 36, 0.5)',
-                }}
-              >
-                <Box
-                  sx={{
-                    borderRadius: '50%',
-                    bgcolor: 'background.paper',
-                    p: 0.5,
-                  }}
-                >
-                  <Badge
-                    overlap="circular"
-                    badgeContent={
-                      <TrophyIcon
-                        sx={{
-                          fontSize: 22,
-                          color: '#fff',
-                          filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
-                        }}
-                      />
-                    }
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    sx={{
-                      '& .MuiBadge-badge': {
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
-                        color: 'inherit',
-                        p: 0.25,
-                        minWidth: 28,
-                        height: 28,
-                        borderRadius: '50%',
-                        border: 'none',
-                        boxShadow: '0 0 8px rgba(251, 191, 36, 0.4)',
-                      },
-                    }}
-                  >
+          {/* Avatar: borda dourada (ranking) ou anel de stories (24h); botão Adicionar story no próprio perfil */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+                {(() => {
+                  const hasStories = profileStories.length > 0;
+                  const avatarEl = (
                     <Avatar
                       src={displayAvatar || undefined}
                       sx={{
                         width: { xs: 96, sm: 112 },
                         height: { xs: 96, sm: 112 },
-                        background: 'linear-gradient(135deg, #60a5fa, #a855f7)',
+                        background: isFeaturedStory ? 'linear-gradient(135deg, #60a5fa, #a855f7)' : 'grey.300',
                         fontSize: { xs: 32, sm: 40 },
                         fontWeight: 'bold',
+                        color: isFeaturedStory ? undefined : 'text.secondary',
                       }}
                     >
                       {profileUser.initials}
                     </Avatar>
-                  </Badge>
-                </Box>
+                  );
+                  const wrappedAvatar = isFeaturedStory ? (
+                    <Box
+                      sx={{
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
+                        p: 0.5,
+                        boxShadow: '0 0 12px rgba(251, 191, 36, 0.5)',
+                      }}
+                    >
+                      <Box sx={{ borderRadius: '50%', bgcolor: 'background.paper', p: 0.5 }}>
+                        <Badge
+                          overlap="circular"
+                          badgeContent={<TrophyIcon sx={{ fontSize: 22, color: '#fff', filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))' }} />}
+                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                          sx={{
+                            '& .MuiBadge-badge': {
+                              background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
+                              color: 'inherit',
+                              p: 0.25,
+                              minWidth: 28,
+                              height: 28,
+                              borderRadius: '50%',
+                              border: 'none',
+                              boxShadow: '0 0 8px rgba(251, 191, 36, 0.4)',
+                            },
+                          }}
+                        >
+                          {avatarEl}
+                        </Badge>
+                      </Box>
+                    </Box>
+                  ) : hasStories ? (
+                    <Box
+                      component="button"
+                      type="button"
+                      onClick={() => setStoryViewerOpen(true)}
+                      sx={{
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        background: 'linear-gradient(135deg, #facc15 0%, #ec4899 50%, #9333ea 100%)',
+                        borderRadius: '50%',
+                        p: '3px',
+                        boxShadow: '0 0 12px rgba(236, 72, 153, 0.4)',
+                      }}
+                    >
+                      <Box sx={{ borderRadius: '50%', bgcolor: 'background.paper', p: '3px' }}>
+                        {avatarEl}
+                      </Box>
+                    </Box>
+                  ) : (
+                    avatarEl
+                  );
+                  return wrappedAvatar;
+                })()}
               </Box>
-            ) : (
-              <Avatar
-                src={displayAvatar || undefined}
-                sx={{
-                  width: { xs: 96, sm: 112 },
-                  height: { xs: 96, sm: 112 },
-                  bgcolor: 'grey.300',
-                  fontSize: { xs: 32, sm: 40 },
-                  fontWeight: 'bold',
-                  color: 'text.secondary',
-                }}
-              >
-                {profileUser.initials}
-              </Avatar>
+              {isOwnProfile && (
+                <Tooltip title="Adicionar story (aparece no seu perfil por 24h)">
+                  <IconButton
+                    onClick={() => setAddStoryOpen(true)}
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      border: '2px dashed',
+                      borderColor: 'divider',
+                      bgcolor: 'action.hover',
+                      '&:hover': { borderColor: 'primary.main', bgcolor: 'action.selected' },
+                    }}
+                  >
+                    <AddIcon sx={{ color: 'text.secondary' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+            {profileStoriesLoading && profileAccountId && (
+              <Typography variant="caption" color="text.secondary">Carregando stories...</Typography>
+            )}
+            {!profileStoriesLoading && isOwnProfile && profileStories.length > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                {profileStories.length} story{profileStories.length !== 1 ? 's' : ''} ativo{profileStories.length !== 1 ? 's' : ''} (24h)
+              </Typography>
             )}
           </Box>
 
@@ -1241,6 +1336,67 @@ export default function PerfilComunidadePage() {
           onClose={() => setActiveCommentsPostId(null)}
         />
       )}
+
+      {/* Viewer de stories (fullscreen) */}
+      <StoryViewer
+        stories={profileStories}
+        userName={profileUser.name}
+        open={storyViewerOpen}
+        onClose={() => setStoryViewerOpen(false)}
+      />
+
+      {/* Dialog: escolher foto ou vídeo e publicar */}
+      <Dialog
+        open={addStoryOpen}
+        onClose={() => {
+          if (!addStoryUploading) {
+            setAddStoryOpen(false);
+            setAddStoryFile(null);
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Adicionar story</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Sua foto ou vídeo aparece no seu perfil público por 24 horas.
+          </Typography>
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            startIcon={<PhotoLibraryIcon />}
+            sx={{ py: 2 }}
+          >
+            {addStoryFile ? addStoryFile.name : 'Escolher imagem ou vídeo'}
+            <input
+              type="file"
+              hidden
+              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/mov"
+              onChange={(e) => setAddStoryFile(e.target.files?.[0] ?? null)}
+            />
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setAddStoryOpen(false);
+              setAddStoryFile(null);
+            }}
+            disabled={addStoryUploading}
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddStorySubmit}
+            disabled={!addStoryFile || addStoryUploading}
+          >
+            {addStoryUploading ? 'Publicando...' : 'Publicar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
