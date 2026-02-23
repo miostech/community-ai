@@ -20,6 +20,11 @@ import {
     ListItemAvatar,
     ListItemText,
     Popper,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -160,6 +165,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
     const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
     const [mentionUsers, setMentionUsers] = useState<MentionUser[]>([]);
     const [mentionUsersLoading, setMentionUsersLoading] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ commentId: string; isReply: boolean; parentId?: string } | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const inputWrapperRef = useRef<HTMLDivElement>(null);
@@ -313,9 +320,14 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         });
     };
 
-    const handleDeleteComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
-        if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
+    const handleDeleteCommentClick = (commentId: string, isReply: boolean = false, parentId?: string) => {
+        setDeleteConfirm({ commentId, isReply, parentId });
+    };
 
+    const handleDeleteCommentConfirm = async () => {
+        if (!deleteConfirm) return;
+        const { commentId, isReply, parentId } = deleteConfirm;
+        setIsDeleting(true);
         try {
             const response = await fetch(`/api/posts/${postId}/comments?commentId=${commentId}`, {
                 method: 'DELETE',
@@ -339,6 +351,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     setComments(prev => prev.filter(c => c._id !== commentId));
                 }
                 onCommentAdded?.();
+                setDeleteConfirm(null);
             } else {
                 const data = await response.json();
                 alert(data.error || 'Erro ao deletar comentário');
@@ -346,6 +359,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         } catch (error) {
             console.error('Erro ao deletar comentário:', error);
             alert('Erro ao deletar comentário');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -462,6 +477,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
     const userInitial = userName.charAt(0).toUpperCase();
 
     return (
+        <>
         <Drawer
             anchor="bottom"
             open={isOpen}
@@ -626,7 +642,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 <Button
                                                     size="small"
                                                     color="error"
-                                                    onClick={() => handleDeleteComment(comment._id)}
+                                                    onClick={() => handleDeleteCommentClick(comment._id)}
                                                     sx={{
                                                         p: 0,
                                                         minWidth: 'auto',
@@ -737,7 +753,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         <Button
                                                                             size="small"
                                                                             color="error"
-                                                                            onClick={() => handleDeleteComment(reply._id, true, comment._id)}
+                                                                            onClick={() => handleDeleteCommentClick(reply._id, true, comment._id)}
                                                                             sx={{
                                                                                 p: 0,
                                                                                 minWidth: 'auto',
@@ -943,5 +959,28 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                 </Button>
             </Box>
         </Drawer>
+
+        <Dialog
+            open={!!deleteConfirm}
+            onClose={() => !isDeleting && setDeleteConfirm(null)}
+            aria-labelledby="delete-comment-dialog-title"
+            aria-describedby="delete-comment-dialog-description"
+        >
+            <DialogTitle id="delete-comment-dialog-title">Dome</DialogTitle>
+            <DialogContent>
+                <DialogContentText id="delete-comment-dialog-description">
+                    Tem certeza que deseja excluir este comentário?
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={() => setDeleteConfirm(null)} disabled={isDeleting}>
+                    Cancelar
+                </Button>
+                <Button onClick={handleDeleteCommentConfirm} color="error" disabled={isDeleting} autoFocus>
+                    {isDeleting ? <CircularProgress size={24} /> : 'Excluir'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+        </>
     );
 }
