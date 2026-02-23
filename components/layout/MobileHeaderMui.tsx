@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAccount } from '@/contexts/AccountContext';
 import { useUser } from '@/contexts/UserContext';
-import { Box, IconButton, Avatar } from '@mui/material';
+import { Box, IconButton, Avatar, Stack } from '@mui/material';
 import { DomeLogo } from '@/components/ui/DomeLogo';
+import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 
 export const MOBILE_HEADER_HEIGHT_PX = 56;
 /** Para usar como padding-top do conteúdo: altura do header + safe area no notch */
@@ -42,10 +43,12 @@ export function MobileHeaderMui() {
       }}
     >
       <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-        <DomeLogo style={{ fontSize: 18, fontWeight: 600 }} />
+        <DomeLogo style={{ fontSize: 22, fontWeight: 600 }} />
       </Link>
 
-      <IconButton
+      <Stack direction="row" spacing={0.5} alignItems="center">
+        <NotificationsButtonMui />
+        <IconButton
         component={Link}
         href={profileHref}
         aria-label="Meu perfil"
@@ -71,6 +74,7 @@ export function MobileHeaderMui() {
           {!(account?.avatar_url || user?.avatar) && getInitials(fullName || user?.name || 'U')}
         </Avatar>
       </IconButton>
+      </Stack>
     </Box>
   );
 }

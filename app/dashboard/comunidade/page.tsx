@@ -174,7 +174,7 @@ export default function ComunidadePageMui() {
           <Box sx={{ maxWidth: 672, mx: 'auto', width: '100%' }}>
             <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <DomeLogo style={{ fontSize: 18, fontWeight: 600 }} />
+                <DomeLogo style={{ fontSize: 22, fontWeight: 600 }} />
               </Stack>
 
               <Stack direction="row" spacing={0.5} alignItems="center">

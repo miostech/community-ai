@@ -16,7 +16,7 @@ export function Header() {
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <DomeLogo className="text-base sm:text-lg" />
+            <DomeLogo className="text-base sm:text-xl" />
           </Link>
 
           {/* Navigation */}

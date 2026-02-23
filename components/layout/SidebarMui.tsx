@@ -152,7 +152,7 @@ export function SidebarMui() {
                 }}
             >
                 <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                    <DomeLogo style={{ fontSize: 16, fontWeight: 600 }} />
+                    <DomeLogo style={{ fontSize: 20, fontWeight: 600 }} />
                 </Link>
                 <IconButton onClick={toggleTheme} size="small">
                     {resolvedTheme === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
