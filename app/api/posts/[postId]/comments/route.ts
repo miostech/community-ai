@@ -83,8 +83,6 @@ export async function GET(
         // Converter postId para ObjectId
         const postObjectId = new mongoose.Types.ObjectId(postId);
 
-        console.log('🔍 Buscando comentários para post_id:', postId);
-
         // Verificar se o post existe
         const post = await Post.findById(postObjectId);
         if (!post) {
@@ -107,13 +105,6 @@ export async function GET(
         const moderationFilter = viewerIsModerator
             ? {}
             : { $or: [{ moderation_status: 'approved' }, { moderation_status: { $exists: false } }] };
-
-        // Debug: buscar todos os comentários desse post sem filtros
-        const allCommentsForPost = await Comment.find({ post_id: postObjectId }).lean();
-        console.log('📝 Total de comentários no banco para este post:', allCommentsForPost.length);
-        if (allCommentsForPost.length > 0) {
-            console.log('📝 Exemplo de comentário:', JSON.stringify(allCommentsForPost[0], null, 2));
-        }
 
         // Buscar comentários (apenas comentários de primeiro nível; ocultar pendentes para não-moderadores)
         const comments = await Comment.find({
