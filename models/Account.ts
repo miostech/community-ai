@@ -31,6 +31,8 @@ export interface Account {
     password_hash?: string;
     /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura — para monitorar crescimento e premiações */
     followers_at_signup?: number | null;
+    /** Papel na comunidade: moderador pode aprovar/ocultar comentários e deletar qualquer comentário */
+    role?: 'user' | 'moderator' | 'admin';
     created_at: Date;
     updated_at: Date;
 }
@@ -66,6 +68,7 @@ const AccountSchema = new Schema(
         password_hash: { type: String, trim: true, select: false },
         /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura */
         followers_at_signup: { type: Number, default: null },
+        role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

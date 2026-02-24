@@ -52,7 +52,8 @@ interface Reply {
     created_at: string;
     likes_count?: number;
     liked?: boolean;
-    mentions?: Record<string, string>; // handle (lowercase) -> userId
+    mentions?: Record<string, string>;
+    moderation_status?: 'pending' | 'approved';
 }
 
 interface Comment {
@@ -64,7 +65,8 @@ interface Comment {
     liked?: boolean;
     replies_count?: number;
     replies?: Reply[];
-    mentions?: Record<string, string>; // handle (lowercase) -> userId
+    mentions?: Record<string, string>;
+    moderation_status?: 'pending' | 'approved';
 }
 
 interface CommentsSectionMuiProps {
@@ -175,6 +177,9 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         content: string;
     } | null>(null);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [viewerIsModerator, setViewerIsModerator] = useState(false);
+    const [approvingId, setApprovingId] = useState<string | null>(null);
+    const [showPendingNotice, setShowPendingNotice] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const inputWrapperRef = useRef<HTMLDivElement>(null);
@@ -205,6 +210,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             if (response.ok) {
                 const data = await response.json();
                 setComments(data.comments || []);
+                setViewerIsModerator(!!data.viewerIsModerator);
             }
         } catch (error) {
             console.error('Erro ao buscar comentários:', error);
@@ -287,6 +293,10 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     setReplyingTo(null);
                 } else {
                     setComments(prev => [{ ...data.comment, replies: [] }, ...prev]);
+                }
+                if (data.comment?.moderation_status === 'pending') {
+                    setShowPendingNotice(true);
+                    setTimeout(() => setShowPendingNotice(false), 6000);
                 }
 
                 setCommentText('');
@@ -435,6 +445,47 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             alert('Erro ao editar comentário');
         } finally {
             setIsSavingEdit(false);
+        }
+    };
+
+    const handleApproveComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+        if (!viewerIsModerator || approvingId) return;
+        setApprovingId(commentId);
+        try {
+            const response = await fetch(
+                `/api/posts/${postId}/comments?commentId=${commentId}`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'approve' }),
+                }
+            );
+            if (response.ok) {
+                if (isReply && parentId) {
+                    setComments(prev =>
+                        prev.map(c => {
+                            if (c._id !== parentId) return c;
+                            return {
+                                ...c,
+                                replies: c.replies?.map(r =>
+                                    r._id === commentId ? { ...r, moderation_status: 'approved' as const } : r
+                                ) || [],
+                            };
+                        })
+                    );
+                } else {
+                    setComments(prev =>
+                        prev.map(c =>
+                            c._id === commentId ? { ...c, moderation_status: 'approved' as const } : c
+                        )
+                    );
+                }
+                onCommentAdded?.();
+            }
+        } catch (e) {
+            console.error('Erro ao aprovar comentário:', e);
+        } finally {
+            setApprovingId(null);
         }
     };
 
@@ -736,9 +787,14 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                     <CommentContent content={comment.content} mentions={comment.mentions} />
                                                 </Typography>
                                             )}
+                                            {comment.moderation_status === 'pending' && (
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                                    Aguardando moderação
+                                                </Typography>
+                                            )}
                                         </Box>
 
-                                        <Stack direction="row" spacing={2} sx={{ mt: 0.75, pl: 1.5 }} alignItems="center">
+                                        <Stack direction="row" spacing={2} sx={{ mt: 0.75, pl: 1.5 }} alignItems="center" flexWrap="wrap">
                                             <Typography variant="caption" color="text.secondary">
                                                 {formatTimeAgo(comment.created_at)}
                                             </Typography>
@@ -780,6 +836,24 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             >
                                                 Responder
                                             </Button>
+                                            {viewerIsModerator && comment.moderation_status === 'pending' && (
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    onClick={() => handleApproveComment(comment._id, false)}
+                                                    disabled={approvingId === comment._id}
+                                                    sx={{
+                                                        p: 0,
+                                                        minWidth: 'auto',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        textTransform: 'none',
+                                                    }}
+                                                >
+                                                    {approvingId === comment._id ? <CircularProgress size={14} /> : 'Aprovar'}
+                                                </Button>
+                                            )}
                                             {isMyComment(comment.author.id) && (
                                                 <>
                                                     <Button
@@ -813,6 +887,22 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                         Excluir
                                                     </Button>
                                                 </>
+                                            )}
+                                            {viewerIsModerator && !isMyComment(comment.author.id) && (
+                                                <Button
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={() => handleDeleteCommentClick(comment._id)}
+                                                    sx={{
+                                                        p: 0,
+                                                        minWidth: 'auto',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        textTransform: 'none',
+                                                    }}
+                                                >
+                                                    Excluir
+                                                </Button>
                                             )}
                                         </Stack>
 
@@ -953,8 +1043,13 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                             <CommentContent content={reply.content} mentions={reply.mentions} />
                                                                         </Typography>
                                                                     )}
+                                                                    {reply.moderation_status === 'pending' && (
+                                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}>
+                                                                            Aguardando moderação
+                                                                        </Typography>
+                                                                    )}
                                                                 </Box>
-                                                                <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center">
+                                                                <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center" flexWrap="wrap">
                                                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
                                                                         {formatTimeAgo(reply.created_at)}
                                                                     </Typography>
@@ -982,6 +1077,24 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         >
                                                                             {reply.likes_count}
                                                                         </Typography>
+                                                                    )}
+                                                                    {viewerIsModerator && reply.moderation_status === 'pending' && (
+                                                                        <Button
+                                                                            size="small"
+                                                                            variant="outlined"
+                                                                            color="primary"
+                                                                            onClick={() => handleApproveComment(reply._id, true, comment._id)}
+                                                                            disabled={approvingId === reply._id}
+                                                                            sx={{
+                                                                                p: 0,
+                                                                                minWidth: 'auto',
+                                                                                fontSize: '0.6875rem',
+                                                                                fontWeight: 600,
+                                                                                textTransform: 'none',
+                                                                            }}
+                                                                        >
+                                                                            {approvingId === reply._id ? <CircularProgress size={12} /> : 'Aprovar'}
+                                                                        </Button>
                                                                     )}
                                                                     {isMyComment(reply.author.id) && (
                                                                         <>
@@ -1021,6 +1134,22 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                                 Excluir
                                                                             </Button>
                                                                         </>
+                                                                    )}
+                                                                    {viewerIsModerator && !isMyComment(reply.author.id) && (
+                                                                        <Button
+                                                                            size="small"
+                                                                            color="error"
+                                                                            onClick={() => handleDeleteCommentClick(reply._id, true, comment._id)}
+                                                                            sx={{
+                                                                                p: 0,
+                                                                                minWidth: 'auto',
+                                                                                fontSize: '0.6875rem',
+                                                                                fontWeight: 600,
+                                                                                textTransform: 'none',
+                                                                            }}
+                                                                        >
+                                                                            Excluir
+                                                                        </Button>
                                                                     )}
                                                                 </Stack>
                                                             </Box>
@@ -1099,12 +1228,29 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     px: 2,
                     py: 1.5,
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
+                    flexDirection: 'column',
+                    gap: 1,
                     bgcolor: 'background.paper',
                     boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
                 }}
             >
+                {showPendingNotice && (
+                    <Box
+                        sx={{
+                            py: 0.75,
+                            px: 1.5,
+                            borderRadius: 1,
+                            bgcolor: 'action.selected',
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                        }}
+                    >
+                        <Typography variant="caption" color="text.secondary">
+                            Seu comentário está em análise e será exibido após aprovação de um moderador.
+                        </Typography>
+                    </Box>
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Avatar
                     sx={{
                         width: 36,
@@ -1214,6 +1360,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                 >
                     {isSubmitting ? <CircularProgress size={20} /> : 'Enviar'}
                 </Button>
+                </Box>
             </Box>
         </Drawer>
 

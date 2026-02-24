@@ -30,6 +30,9 @@ export interface IComment extends Document {
     is_edited: boolean;
     is_deleted: boolean; // Soft delete para manter thread
 
+    /** 'pending' = oculto até moderador aprovar; 'approved' = visível. Ausente = tratado como aprovado. */
+    moderation_status?: 'pending' | 'approved';
+
     // Moderação
     reports: ICommentReport[];
     reports_count: number;
@@ -121,6 +124,11 @@ const CommentSchema = new Schema<IComment>(
         is_deleted: {
             type: Boolean,
             default: false,
+        },
+        moderation_status: {
+            type: String,
+            enum: ['pending', 'approved'],
+            default: 'approved',
         },
 
         // Moderação

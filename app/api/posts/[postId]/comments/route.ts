@@ -6,6 +6,7 @@ import Post from '@/models/Post';
 import Account from '@/models/Account';
 import Like from '@/models/Like';
 import { createNotification } from '@/lib/notifications';
+import { commentNeedsModeration } from '@/lib/moderation-bad-words';
 import mongoose from 'mongoose';
 
 /** Extrai handles únicos do texto (ex: @natrombellii @luigi → ['natrombellii', 'luigi']) */
@@ -90,16 +91,22 @@ export async function GET(
             return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
         }
 
-        // Buscar conta do usuário logado para verificar likes
+        // Buscar conta do usuário logado (likes + se é moderador)
         let currentAccountId: mongoose.Types.ObjectId | null = null;
+        let viewerIsModerator = false;
         const session = await auth();
         if (session?.user?.id) {
             const authUserId = (session.user as any).auth_user_id || session.user.id;
-            const account = await Account.findOne({ auth_user_id: authUserId }).lean();
+            const account = await Account.findOne({ auth_user_id: authUserId }).select('_id role').lean();
             if (account) {
                 currentAccountId = account._id as mongoose.Types.ObjectId;
+                viewerIsModerator = (account as { role?: string }).role === 'moderator' || (account as { role?: string }).role === 'admin';
             }
         }
+
+        const moderationFilter = viewerIsModerator
+            ? {}
+            : { $or: [{ moderation_status: 'approved' }, { moderation_status: { $exists: false } }] };
 
         // Debug: buscar todos os comentários desse post sem filtros
         const allCommentsForPost = await Comment.find({ post_id: postObjectId }).lean();
@@ -108,10 +115,11 @@ export async function GET(
             console.log('📝 Exemplo de comentário:', JSON.stringify(allCommentsForPost[0], null, 2));
         }
 
-        // Buscar comentários (apenas comentários de primeiro nível, não respostas)
+        // Buscar comentários (apenas comentários de primeiro nível; ocultar pendentes para não-moderadores)
         const comments = await Comment.find({
             post_id: postObjectId,
             is_deleted: { $ne: true },
+            ...moderationFilter,
             $or: [
                 { parent_id: { $exists: false } },
                 { parent_id: null }
@@ -126,17 +134,19 @@ export async function GET(
         const total = await Comment.countDocuments({
             post_id: postObjectId,
             is_deleted: { $ne: true },
+            ...moderationFilter,
             $or: [
                 { parent_id: { $exists: false } },
                 { parent_id: null }
             ]
         });
 
-        // Buscar replies para cada comentário
+        // Buscar replies (ocultar pendentes para não-moderadores)
         const commentIds = comments.map((c: any) => c._id);
         const replies = await Comment.find({
             parent_id: { $in: commentIds },
             is_deleted: { $ne: true },
+            ...moderationFilter,
         })
             .sort({ created_at: 1 })
             .populate('author_id', 'first_name last_name avatar_url')
@@ -193,6 +203,7 @@ export async function GET(
                 replies_count: comment.replies_count || 0,
                 created_at: comment.created_at,
                 mentions: buildMentions(comment.mention_accounts),
+                moderation_status: comment.moderation_status || 'approved',
                 replies: commentReplies.map((reply: any) => {
                     const replyAuthor = reply.author_id;
                     return {
@@ -207,6 +218,7 @@ export async function GET(
                         liked: userLikedComments.has(reply._id.toString()),
                         created_at: reply.created_at,
                         mentions: buildMentions(reply.mention_accounts),
+                        moderation_status: reply.moderation_status || 'approved',
                     };
                 }),
             };
@@ -214,6 +226,7 @@ export async function GET(
 
         return NextResponse.json({
             comments: formattedComments,
+            viewerIsModerator,
             pagination: {
                 page,
                 limit,
@@ -275,13 +288,14 @@ export async function POST(
             ? await resolveHandlesToMentionAccounts(mentionHandlesForSave)
             : [];
 
-        // Criar comentário (com mention_accounts para linkar @ ao perfil)
+        const needsModeration = commentNeedsModeration(trimmedContent);
         const comment = new Comment({
             post_id: postId,
             author_id: account._id,
             content: trimmedContent,
             parent_id: parent_id || undefined,
             mention_accounts: mentionAccounts.length > 0 ? mentionAccounts : undefined,
+            moderation_status: needsModeration ? 'pending' : 'approved',
         });
 
         await comment.save();
@@ -359,6 +373,7 @@ export async function POST(
             replies_count: 0,
             created_at: comment.created_at,
             mentions: mentionsMap,
+            moderation_status: comment.moderation_status || 'approved',
         };
 
         return NextResponse.json({
@@ -398,7 +413,7 @@ export async function PATCH(
 
         await connectMongo();
 
-        const account = await Account.findOne({ auth_user_id: authUserId });
+        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id role');
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
@@ -408,12 +423,45 @@ export async function PATCH(
             return NextResponse.json({ error: 'Comentário não encontrado' }, { status: 404 });
         }
 
+        const body = await request.json();
+        const { content, action } = body;
+
+        const isModerator = (account as { role?: string }).role === 'moderator' || (account as { role?: string }).role === 'admin';
+
+        if (action === 'approve') {
+            if (!isModerator) {
+                return NextResponse.json({ error: 'Sem permissão para aprovar comentários' }, { status: 403 });
+            }
+            comment.moderation_status = 'approved';
+            await comment.save();
+            await comment.populate('author_id', 'first_name last_name avatar_url');
+            const author = comment.author_id as any;
+            const mentionsMap: Record<string, string> = {};
+            (comment.mention_accounts || []).forEach((m: { handle: string; account_id: mongoose.Types.ObjectId }) => {
+                mentionsMap[m.handle] = m.account_id.toString();
+            });
+            return NextResponse.json({
+                success: true,
+                comment: {
+                    _id: comment._id.toString(),
+                    author: {
+                        id: author?._id?.toString() || '',
+                        name: author ? `${author.first_name || ''} ${author.last_name || ''}`.trim() : 'Usuário',
+                        avatar_url: author?.avatar_url || null,
+                    },
+                    content: comment.content,
+                    likes_count: comment.likes_count || 0,
+                    replies_count: comment.replies_count || 0,
+                    created_at: comment.created_at,
+                    mentions: mentionsMap,
+                    moderation_status: 'approved',
+                },
+            });
+        }
+
         if (comment.author_id.toString() !== account._id.toString()) {
             return NextResponse.json({ error: 'Sem permissão para editar este comentário' }, { status: 403 });
         }
-
-        const body = await request.json();
-        const { content } = body;
 
         if (!content?.trim()) {
             return NextResponse.json(
@@ -490,20 +538,19 @@ export async function DELETE(
 
         await connectMongo();
 
-        // Buscar account do usuário
-        const account = await Account.findOne({ auth_user_id: authUserId });
+        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id role');
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        // Buscar o comentário
         const comment = await Comment.findById(commentId);
         if (!comment) {
             return NextResponse.json({ error: 'Comentário não encontrado' }, { status: 404 });
         }
 
-        // Verificar se o usuário é o autor do comentário
-        if (comment.author_id.toString() !== account._id.toString()) {
+        const isAuthor = comment.author_id.toString() === account._id.toString();
+        const isModerator = (account as { role?: string }).role === 'moderator' || (account as { role?: string }).role === 'admin';
+        if (!isAuthor && !isModerator) {
             return NextResponse.json({ error: 'Sem permissão para deletar este comentário' }, { status: 403 });
         }
 
