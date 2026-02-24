@@ -262,16 +262,31 @@ export default function ComunidadePageMui() {
           </Box>
         )}
 
-        {/* Stories */}
+        {/* Stories (Ranking) */}
         {storyUsers.length > 0 && (
           <Box
             sx={{
               borderBottom: 1,
               borderColor: 'divider',
               py: 1.5,
+              px: 2,
               bgcolor: 'background.paper',
             }}
           >
+            <Typography
+              component={Link}
+              href="/dashboard/comunidade/ranking"
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: 'block',
+                mb: 0.5,
+                textDecoration: 'none',
+                '&:hover': { color: 'text.primary', textDecoration: 'underline' },
+              }}
+            >
+              Top do Ranking
+            </Typography>
             <StoriesMui users={storyUsers} />
           </Box>
         )}
