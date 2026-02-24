@@ -547,7 +547,7 @@ export default function PerfilPage() {
                 Redes Sociais
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Preencha os que quiser. Os links aparecerão no seu perfil quando alguém visualizar.
+                Preencha os que quiser. Os links aparecerão no seu perfil quando alguém visualizar. Coloque apenas o nome do usuário, sem o @.
               </Typography>
 
               <Stack spacing={3}>
