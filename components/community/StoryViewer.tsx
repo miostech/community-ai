@@ -17,6 +17,7 @@ import {
   ListItemAvatar,
   ListItemText,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import { Close as CloseIcon, MoreVert as MoreVertIcon, VolumeOff as VolumeOffIcon, VolumeUp as VolumeUpIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
 
@@ -100,6 +101,8 @@ export function StoryViewer({
   const [viewsDrawerOpen, setViewsDrawerOpen] = useState(false);
   /** Começa mutado para autoplay funcionar (política do browser); usuário pode ativar o som. */
   const [isMuted, setIsMuted] = useState(true);
+  /** True quando a mídia (imagem ou vídeo) do story atual terminou de carregar — evita tela preta. */
+  const [mediaReady, setMediaReady] = useState(false);
 
   /** Índice seguro para não renderizar com current indefinido (ex.: lista trocou e currentIndex ficou fora do range). */
   const safeIndex =
@@ -136,6 +139,11 @@ export function StoryViewer({
   /** Cada novo story começa mutado (autoplay); usuário pode ativar o som. */
   useEffect(() => {
     if (current?.id) setIsMuted(true);
+  }, [current?.id]);
+
+  /** Ao trocar de story, resetar estado de carregamento da mídia. */
+  useEffect(() => {
+    setMediaReady(false);
   }, [current?.id]);
 
   /** Registrar visualização quando o usuário vê um story (perfil de outro). */
@@ -341,15 +349,39 @@ export function StoryViewer({
           px: 1,
         }}
       >
+        {/* Overlay de carregamento: evita tela preta até a mídia estar pronta */}
+        {!mediaReady && (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              zIndex: 5,
+              bgcolor: 'black',
+            }}
+          >
+            <CircularProgress size={40} sx={{ color: 'white' }} />
+            <Typography color="white" variant="body2">
+              Carregando...
+            </Typography>
+          </Box>
+        )}
         {current.media_type === 'image' ? (
           <Box
             component="img"
             src={current.media_url}
             alt="Story"
+            onLoad={() => setMediaReady(true)}
             sx={{
               maxWidth: '100%',
               maxHeight: '100%',
               objectFit: 'contain',
+              opacity: mediaReady ? 1 : 0,
+              transition: 'opacity 0.2s ease-in-out',
             }}
           />
         ) : (
@@ -361,11 +393,14 @@ export function StoryViewer({
               playsInline
               muted={isMuted}
               loop={false}
+              onLoadedData={() => setMediaReady(true)}
               onEnded={() => !deleteConfirmOpen && goNext()}
               sx={{
                 maxWidth: '100%',
                 maxHeight: '100%',
                 objectFit: 'contain',
+                opacity: mediaReady ? 1 : 0,
+                transition: 'opacity 0.2s ease-in-out',
               }}
             />
             <IconButton
