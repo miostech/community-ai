@@ -98,10 +98,7 @@ export function PostCardMui({
     const [videoError, setVideoError] = useState(false);
     const [videoReady, setVideoReady] = useState(false);
     const [videoRetryKey, setVideoRetryKey] = useState(0);
-    /** Incrementa quando o vídeo volta a ficar visível (ex.: fechou comentários, voltou do perfil) para forçar reload e evitar tela preta */
-    const [videoVisibilityKey, setVideoVisibilityKey] = useState(0);
     const videoContainerRef = useRef<HTMLDivElement>(null);
-    const wasVisibleRef = useRef<boolean | 'init'>('init');
     const videoErrorRef = useRef(false);
     videoErrorRef.current = videoError;
 
@@ -111,6 +108,7 @@ export function PostCardMui({
         setVideoRetryKey((k) => k + 1);
     }, []);
 
+    // Só tenta de novo quando o vídeo volta à tela e havia erro (não remonta o vídeo ao entrar na visão)
     useEffect(() => {
         if (!post.video_url) return;
         const el = videoContainerRef.current;
@@ -118,16 +116,7 @@ export function PostCardMui({
         const obs = new IntersectionObserver(
             (entries) => {
                 const [entry] = entries;
-                const isVisible = entry.isIntersecting;
-                if (wasVisibleRef.current === 'init') {
-                    wasVisibleRef.current = isVisible;
-                    return;
-                }
-                if (isVisible && wasVisibleRef.current === false) {
-                    setVideoVisibilityKey((k) => k + 1);
-                    if (videoErrorRef.current) triggerVideoRetry();
-                }
-                wasVisibleRef.current = isVisible;
+                if (entry.isIntersecting && videoErrorRef.current) triggerVideoRetry();
             },
             { threshold: 0.1, rootMargin: '50px' }
         );
@@ -452,7 +441,7 @@ export function PostCardMui({
                         <>
                             <Box
                                 component="video"
-                                key={`${videoRetryKey}-${videoVisibilityKey}-${videoReloadTrigger}`}
+                                key={`${videoRetryKey}-${videoReloadTrigger}`}
                                 src={`${post.video_url}#t=0.1`}
                                 controls
                                 preload="metadata"
