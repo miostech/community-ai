@@ -692,7 +692,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                         {comments.map((comment) => (
                             <Box key={comment._id}>
                                 {/* Comentário principal */}
-                                <Stack direction="row" spacing={1.5}>
+                                <Stack direction="row" spacing={1.5} alignItems="flex-start">
                                     <Box
                                         component="button"
                                         type="button"
@@ -703,8 +703,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             border: 'none',
                                             background: 'none',
                                             cursor: 'pointer',
-                                            display: 'flex',
-                                            alignSelf: 'flex-start',
+                                            flexShrink: 0,
+                                            lineHeight: 0,
                                         }}
                                     >
                                         <Avatar
@@ -727,7 +727,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 bgcolor: 'action.hover',
                                                 borderRadius: 3,
                                                 px: 2,
-                                                py: 1.5,
+                                                pt: 0.5,
+                                                pb: 1.5,
                                             }}
                                         >
                                             <Typography
@@ -937,7 +938,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             {comment.replies && comment.replies.length > 0 && (
                                                 <Stack spacing={1.5} sx={{ mt: 1.5, pl: 1 }}>
                                                     {comment.replies.map((reply) => (
-                                                        <Stack key={reply._id} direction="row" spacing={1}>
+                                                        <Stack key={reply._id} direction="row" spacing={1} alignItems="flex-start">
                                                             <Box
                                                                 component="button"
                                                                 type="button"
@@ -948,8 +949,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                     border: 'none',
                                                                     background: 'none',
                                                                     cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    alignSelf: 'flex-start',
+                                                                    flexShrink: 0,
+                                                                    lineHeight: 0,
                                                                 }}
                                                             >
                                                                 <Avatar
@@ -972,7 +973,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         bgcolor: 'action.selected',
                                                                         borderRadius: 2,
                                                                         px: 1.5,
-                                                                        py: 1,
+                                                                        pt: 0.25,
+                                                                        pb: 1,
                                                                     }}
                                                                 >
                                                                     <Typography
