@@ -25,6 +25,7 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
+    Tooltip,
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -43,6 +44,7 @@ interface CommentAuthor {
     id: string;
     name: string;
     avatar_url?: string;
+    role?: 'user' | 'moderator' | 'admin' | 'criador';
 }
 
 interface Reply {
@@ -731,24 +733,69 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 pb: 1.5,
                                             }}
                                         >
-                                            <Typography
-                                                component="button"
-                                                type="button"
-                                                variant="body2"
-                                                fontWeight={600}
-                                                onClick={() => goToProfile(comment.author.id)}
-                                                sx={{
-                                                    p: 0,
-                                                    m: 0,
-                                                    border: 'none',
-                                                    background: 'none',
-                                                    cursor: 'pointer',
-                                                    textAlign: 'left',
-                                                    '&:hover': { textDecoration: 'underline' },
-                                                }}
-                                            >
-                                                {comment.author.name}
-                                            </Typography>
+                                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                                                <Typography
+                                                    component="button"
+                                                    type="button"
+                                                    variant="body2"
+                                                    fontWeight={600}
+                                                    onClick={() => goToProfile(comment.author.id)}
+                                                    sx={{
+                                                        p: 0,
+                                                        m: 0,
+                                                        border: 'none',
+                                                        background: 'none',
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        '&:hover': { textDecoration: 'underline' },
+                                                    }}
+                                                >
+                                                    {comment.author.name}
+                                                </Typography>
+                                                {(comment.author.role === 'moderator' || comment.author.role === 'admin' || comment.author.role === 'criador') && (
+                                                    <Tooltip
+                                                        title={
+                                                            comment.author.role === 'admin'
+                                                                ? 'Administrador(a) Dome'
+                                                                : comment.author.role === 'moderator'
+                                                                    ? 'Moderador(a) Dome'
+                                                                    : 'Criador(a) Dome'
+                                                        }
+                                                        arrow
+                                                        placement="top"
+                                                        enterDelay={300}
+                                                        leaveDelay={0}
+                                                        enterTouchDelay={0}
+                                                    >
+                                                        <Box
+                                                            component="span"
+                                                            tabIndex={0}
+                                                            role="img"
+                                                            aria-label={
+                                                                comment.author.role === 'admin'
+                                                                    ? 'Administrador(a) Dome'
+                                                                    : comment.author.role === 'moderator'
+                                                                        ? 'Moderador(a) Dome'
+                                                                        : 'Criador(a) Dome'
+                                                            }
+                                                            sx={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                cursor: 'help',
+                                                                outline: 'none',
+                                                                '&:focus-visible': { opacity: 0.9 },
+                                                            }}
+                                                        >
+                                                            <Box
+                                                                component="img"
+                                                                src={comment.author.role === 'admin' ? '/moderador.png' : comment.author.role === 'moderator' ? '/coroa.png' : '/verificado.png'}
+                                                                alt=""
+                                                                sx={{ width: 14, height: 14, verticalAlign: 'middle', pointerEvents: 'none' }}
+                                                            />
+                                                        </Box>
+                                                    </Tooltip>
+                                                )}
+                                            </Stack>
                                             {editingComment?.id === comment._id && !editingComment.isReply ? (
                                                 <Box sx={{ mt: 1 }}>
                                                     <TextField
@@ -977,25 +1024,70 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         pb: 1,
                                                                     }}
                                                                 >
-                                                                    <Typography
-                                                                        component="button"
-                                                                        type="button"
-                                                                        variant="caption"
-                                                                        fontWeight={600}
-                                                                        onClick={() => goToProfile(reply.author.id)}
-                                                                        sx={{
-                                                                            p: 0,
-                                                                            m: 0,
-                                                                            border: 'none',
-                                                                            background: 'none',
-                                                                            cursor: 'pointer',
-                                                                            textAlign: 'left',
-                                                                            display: 'block',
-                                                                            '&:hover': { textDecoration: 'underline' },
-                                                                        }}
-                                                                    >
-                                                                        {reply.author.name}
-                                                                    </Typography>
+                                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                                                                        <Typography
+                                                                            component="button"
+                                                                            type="button"
+                                                                            variant="caption"
+                                                                            fontWeight={600}
+                                                                            onClick={() => goToProfile(reply.author.id)}
+                                                                            sx={{
+                                                                                p: 0,
+                                                                                m: 0,
+                                                                                border: 'none',
+                                                                                background: 'none',
+                                                                                cursor: 'pointer',
+                                                                                textAlign: 'left',
+                                                                                display: 'block',
+                                                                                '&:hover': { textDecoration: 'underline' },
+                                                                            }}
+                                                                        >
+                                                                            {reply.author.name}
+                                                                        </Typography>
+                                                                        {(reply.author.role === 'moderator' || reply.author.role === 'admin' || reply.author.role === 'criador') && (
+                                                                            <Tooltip
+                                                                                title={
+                                                                                    reply.author.role === 'admin'
+                                                                                        ? 'Administrador(a) Dome'
+                                                                                        : reply.author.role === 'moderator'
+                                                                                            ? 'Moderador(a) Dome'
+                                                                                            : 'Criador(a) Dome'
+                                                                                }
+                                                                                arrow
+                                                                                placement="top"
+                                                                                enterDelay={300}
+                                                                                leaveDelay={0}
+                                                                                enterTouchDelay={0}
+                                                                            >
+                                                                                <Box
+                                                                                    component="span"
+                                                                                    tabIndex={0}
+                                                                                    role="img"
+                                                                                    aria-label={
+                                                                                        reply.author.role === 'admin'
+                                                                                            ? 'Administrador(a) Dome'
+                                                                                            : reply.author.role === 'moderator'
+                                                                                                ? 'Moderador(a) Dome'
+                                                                                                : 'Criador(a) Dome'
+                                                                                    }
+                                                                                    sx={{
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        cursor: 'help',
+                                                                                        outline: 'none',
+                                                                                        '&:focus-visible': { opacity: 0.9 },
+                                                                                    }}
+                                                                                >
+                                                                                    <Box
+                                                                                        component="img"
+                                                                                        src={reply.author.role === 'admin' ? '/moderador.png' : reply.author.role === 'moderator' ? '/coroa.png' : '/verificado.png'}
+                                                                                        alt=""
+                                                                                        sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }}
+                                                                                />
+                                                                                </Box>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                    </Stack>
                                                                     {editingComment?.id === reply._id && editingComment.isReply ? (
                                                                         <Box sx={{ mt: 0.75 }}>
                                                                             <TextField

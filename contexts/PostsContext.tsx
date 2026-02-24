@@ -8,6 +8,7 @@ export interface PostAuthor {
   id: string;
   name: string;
   avatar_url?: string;
+  role?: 'user' | 'moderator' | 'admin' | 'criador';
 }
 
 export interface Post {

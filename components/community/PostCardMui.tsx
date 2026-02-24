@@ -18,6 +18,7 @@ import {
     CircularProgress,
     ListItemIcon,
     ListItemText,
+    Tooltip,
 } from '@mui/material';
 import {
     Favorite as FavoriteIcon,
@@ -292,18 +293,63 @@ export function PostCardMui({
                     </Stack>
                 }
                 title={
-                    <Link
-                        href={`/dashboard/comunidade/perfil/${post.author.id}`}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                        <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ '&:hover': { textDecoration: 'underline' } }}
+                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                        <Link
+                            href={`/dashboard/comunidade/perfil/${post.author.id}`}
+                            style={{ textDecoration: 'none', color: 'inherit' }}
                         >
-                            {post.author.name}
-                        </Typography>
-                    </Link>
+                            <Typography
+                                variant="subtitle2"
+                                fontWeight={600}
+                                sx={{ '&:hover': { textDecoration: 'underline' } }}
+                            >
+                                {post.author.name}
+                            </Typography>
+                        </Link>
+                        {(post.author.role === 'moderator' || post.author.role === 'admin' || post.author.role === 'criador') && (
+                            <Tooltip
+                                title={
+                                    post.author.role === 'admin'
+                                        ? 'Administrador(a) Dome'
+                                        : post.author.role === 'moderator'
+                                            ? 'Moderador(a) Dome'
+                                            : 'Criador(a) Dome'
+                                }
+                                arrow
+                                placement="top"
+                                enterDelay={300}
+                                leaveDelay={0}
+                                enterTouchDelay={0}
+                            >
+                                <Box
+                                    component="span"
+                                    tabIndex={0}
+                                    role="img"
+                                    aria-label={
+                                        post.author.role === 'admin'
+                                            ? 'Administrador(a) Dome'
+                                            : post.author.role === 'moderator'
+                                                ? 'Moderador(a) Dome'
+                                                : 'Criador(a) Dome'
+                                    }
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        cursor: 'help',
+                                        outline: 'none',
+                                        '&:focus-visible': { opacity: 0.9 },
+                                    }}
+                                >
+                                    <Box
+                                        component="img"
+                                        src={post.author.role === 'admin' ? '/moderador.png' : post.author.role === 'moderator' ? '/coroa.png' : '/verificado.png'}
+                                        alt=""
+                                        sx={{ width: 16, height: 16, verticalAlign: 'middle', pointerEvents: 'none' }}
+                                    />
+                                </Box>
+                            </Tooltip>
+                        )}
+                    </Stack>
                 }
                 subheader={
                     <Typography variant="caption" color="text.secondary">

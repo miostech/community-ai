@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
                 .sort({ is_pinned: -1, created_at: -1 })
                 .skip(skip)
                 .limit(limit)
-                .populate('author_id', 'first_name last_name avatar_url link_instagram link_tiktok link_youtube')
+                .populate('author_id', 'first_name last_name avatar_url link_instagram link_tiktok link_youtube role')
                 .lean(),
             Post.countDocuments(query),
         ]);
@@ -190,6 +190,7 @@ export async function GET(request: NextRequest) {
                 link_instagram: post.author_id?.link_instagram,
                 link_tiktok: post.author_id?.link_tiktok,
                 link_youtube: post.author_id?.link_youtube,
+                role: post.author_id?.role,
             },
             content: post.content,
             images: post.images,

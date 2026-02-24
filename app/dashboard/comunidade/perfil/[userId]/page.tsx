@@ -78,6 +78,7 @@ type ProfileDisplay = CommunityUser | {
   created_at?: string | null;
   followers_at_signup?: number | null;
   courseIds?: string[];
+  role?: 'user' | 'moderator' | 'admin' | 'criador';
 };
 
 
@@ -450,6 +451,7 @@ export default function PerfilComunidadePage() {
           created_at: profile?.created_at ?? null,
           followers_at_signup: profile?.followers_at_signup ?? null,
           courseIds: Array.isArray(profile?.courseIds) ? profile.courseIds : undefined,
+          role: profile?.role,
         };
         const mappedPosts = posts.map(mapApiPostToProfilePost);
         setOtherProfileData({ profileUser, posts: mappedPosts });
@@ -491,6 +493,7 @@ export default function PerfilComunidadePage() {
             courseIds: Array.isArray(profile?.courseIds)
               ? profile.courseIds
               : prevCourseIds,
+            role: profile?.role ?? ('role' in prev.profileUser ? prev.profileUser.role : undefined),
           };
           return { ...prev, profileUser: nextProfile };
         });
@@ -530,6 +533,7 @@ export default function PerfilComunidadePage() {
         created_at: ownCreatedAt,
         followers_at_signup: ownFollowersAtSignup,
         courseIds: ownCourseIds.length > 0 ? ownCourseIds : undefined,
+        role: account?.role,
       };
     }
     return resolvedFromList;
@@ -1104,9 +1108,60 @@ export default function PerfilComunidadePage() {
 
           {/* Info */}
           <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
-            <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
-              {profileUser.name}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.5, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+              <Typography variant="h6" fontWeight={600}>
+                {profileUser.name}
+              </Typography>
+              {'role' in profileUser && (profileUser.role === 'moderator' || profileUser.role === 'admin' || profileUser.role === 'criador') && (
+                <Tooltip
+                  title={
+                    profileUser.role === 'admin'
+                      ? 'Administrador(a) Dome'
+                      : profileUser.role === 'moderator'
+                        ? 'Moderador(a) Dome'
+                        : 'Criador(a) Dome'
+                  }
+                  arrow
+                  placement="top"
+                  enterDelay={300}
+                  leaveDelay={0}
+                  enterTouchDelay={0}
+                >
+                  <Box
+                    component="span"
+                    tabIndex={0}
+                    role="img"
+                    aria-label={
+                      profileUser.role === 'admin'
+                        ? 'Administrador(a) Dome'
+                        : profileUser.role === 'moderator'
+                          ? 'Moderador(a) Dome'
+                          : 'Criador(a) Dome'
+                    }
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      cursor: 'help',
+                      outline: 'none',
+                      '&:focus-visible': { opacity: 0.9 },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={
+                        profileUser.role === 'admin'
+                          ? '/moderador.png'
+                          : profileUser.role === 'moderator'
+                            ? '/coroa.png'
+                            : '/verificado.png'
+                      }
+                      alt=""
+                      sx={{ width: 20, height: 20, verticalAlign: 'middle', pointerEvents: 'none' }}
+                    />
+                  </Box>
+                </Tooltip>
+              )}
+            </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {(() => {
                 const createdDate = 'created_at' in profileUser && profileUser.created_at

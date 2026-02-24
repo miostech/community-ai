@@ -22,7 +22,7 @@ export interface Account {
     background_url: string | null;
     plan: 'free' | 'pro' | 'enterprise';
     code_invite: string | null;
-    role?: 'user' | 'moderator' | 'admin';
+    role?: 'user' | 'moderator' | 'admin' | 'criador';
 }
 
 export interface Subscription {

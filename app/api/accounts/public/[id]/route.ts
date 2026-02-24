@@ -36,7 +36,7 @@ export async function GET(
     const accountId = new mongoose.Types.ObjectId(id);
 
     const account = await Account.findById(accountId)
-      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at followers_at_signup')
+      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at followers_at_signup role')
       .lean();
 
     if (!account) {
@@ -90,6 +90,7 @@ export async function GET(
       link_youtube?: string | null;
       created_at?: Date | string;
       followers_at_signup?: number | null;
+      role?: 'user' | 'moderator' | 'admin' | 'criador';
     };
 
     return NextResponse.json({
@@ -102,6 +103,7 @@ export async function GET(
         link_youtube: acc.link_youtube?.trim() || null,
         created_at: acc.created_at ?? null,
         followers_at_signup: acc.followers_at_signup ?? null,
+        role: acc.role,
         interactionCount,
         stats: {
           likesGiven,
