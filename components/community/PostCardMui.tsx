@@ -65,6 +65,8 @@ interface PostCardMuiProps {
     showHeartAnimation?: boolean;
     onDoubleTap: () => void;
     isDeleting?: boolean;
+    /** Quando true, exibe a borda colorida de stories no avatar do autor */
+    authorHasStories?: boolean;
 }
 
 export function PostCardMui({
@@ -78,6 +80,7 @@ export function PostCardMui({
     showHeartAnimation,
     onDoubleTap,
     isDeleting,
+    authorHasStories = false,
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [isVerticalVideo, setIsVerticalVideo] = useState(false);
@@ -122,18 +125,49 @@ export function PostCardMui({
             <CardHeader
                 avatar={
                     <Link href={`/dashboard/comunidade/perfil/${post.author.id}`}>
-                        <Avatar
-                            src={post.author.avatar_url}
-                            sx={{
-                                width: 40,
-                                height: 40,
-                                background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                cursor: 'pointer',
-                                '&:hover': { opacity: 0.9 },
-                            }}
-                        >
-                            {post.author.name.charAt(0).toUpperCase()}
-                        </Avatar>
+                        {authorHasStories ? (
+                            <Box
+                                sx={{
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #facc15 0%, #ec4899 50%, #9333ea 100%)',
+                                    p: '2px',
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        borderRadius: '50%',
+                                        bgcolor: 'background.paper',
+                                        p: '2px',
+                                    }}
+                                >
+                                    <Avatar
+                                        src={post.author.avatar_url}
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                                            cursor: 'pointer',
+                                            '&:hover': { opacity: 0.9 },
+                                        }}
+                                    >
+                                        {post.author.name.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                </Box>
+                            </Box>
+                        ) : (
+                            <Avatar
+                                src={post.author.avatar_url}
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                                    cursor: 'pointer',
+                                    '&:hover': { opacity: 0.9 },
+                                }}
+                            >
+                                {post.author.name.charAt(0).toUpperCase()}
+                            </Avatar>
+                        )}
                     </Link>
                 }
                 action={

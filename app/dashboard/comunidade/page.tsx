@@ -146,6 +146,24 @@ export default function ComunidadePageMui() {
     ? posts.filter(post => post.saved === true)
     : posts;
 
+  /** Mesma lógica do ranking de stories: borda colorida só quando há stories não vistos (some depois de ver). */
+  const STORIES_SEEN_KEY = 'stories_seen_';
+  const hasUnseenStories = (userId: string, latestStoryAt: number | undefined) => {
+    if (latestStoryAt == null) return false;
+    try {
+      const v = typeof window !== 'undefined' ? localStorage.getItem(STORIES_SEEN_KEY + userId) : null;
+      const lastSeenAt = v ? Number(v) : null;
+      return lastSeenAt == null || latestStoryAt > lastSeenAt;
+    } catch {
+      return true;
+    }
+  };
+  /** IDs de autores que têm stories não vistos (borda colorida no avatar do feed = mesma lógica do ranking). */
+  const authorIdsWithUnseenStories = React.useMemo(
+    () => new Set(storyUsers.filter(u => hasUnseenStories(u.id, u.latestStoryAt)).map(u => u.id)),
+    [storyUsers, pathname]
+  );
+
   return (
     <Box
       sx={{
@@ -358,6 +376,7 @@ export default function ComunidadePageMui() {
                 onDoubleTap={() => handleDoubleTap(post.id)}
                 showHeartAnimation={showHeartAnimation === post.id}
                 isDeleting={deletingPostId === post.id}
+                authorHasStories={authorIdsWithUnseenStories.has(post.author.id)}
               />
             ))
           )}
