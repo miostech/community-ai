@@ -442,6 +442,8 @@ export default function PerfilComunidadePage() {
   const [profileStories, setProfileStories] = useState<StoryItem[]>([]);
   const [profileStoriesLoading, setProfileStoriesLoading] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  /** Abrir o viewer assim que os stories terminarem de carregar (evita tela preta ao clicar antes do load). */
+  const [pendingOpenStories, setPendingOpenStories] = useState(false);
   /** Quando o usuário viu todos os stories deste perfil (para esconder a borda colorida). */
   const [lastStoriesSeenAt, setLastStoriesSeenAt] = useState<number | null>(null);
   const STORIES_SEEN_KEY = 'stories_seen_';
@@ -514,13 +516,22 @@ export default function PerfilComunidadePage() {
   const formatCount = (n: number) =>
     n >= 1e6 ? `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}k` : n.toLocaleString('pt-BR');
 
-  // Buscar stories temporários do perfil (quando é perfil por account id)
+  // Ao trocar de perfil: limpar stories e fechar viewer para não mostrar dados do usuário anterior (evita tela preta)
   useEffect(() => {
     if (!profileAccountId) {
       setProfileStories([]);
-      return;
+      setStoryViewerOpen(false);
+      setPendingOpenStories(false);
     }
+  }, [profileAccountId]);
+
+  // Buscar stories temporários do perfil (quando é perfil por account id)
+  useEffect(() => {
+    if (!profileAccountId) return;
     let cancelled = false;
+    setProfileStories([]);
+    setStoryViewerOpen(false);
+    setPendingOpenStories(false);
     setProfileStoriesLoading(true);
     fetch(`/api/accounts/${profileAccountId}/stories`)
       .then((res) => (res.ok ? res.json() : []))
@@ -535,6 +546,17 @@ export default function PerfilComunidadePage() {
       });
     return () => { cancelled = true; };
   }, [profileAccountId]);
+
+  // Abrir viewer quando os stories terminarem de carregar (usuário clicou antes do load)
+  useEffect(() => {
+    if (profileStoriesLoading) return;
+    if (pendingOpenStories && profileStories.length > 0) {
+      setStoryViewerOpen(true);
+      setPendingOpenStories(false);
+    } else if (pendingOpenStories) {
+      setPendingOpenStories(false);
+    }
+  }, [profileStoriesLoading, pendingOpenStories, profileStories.length]);
 
   // Buscar quem viu os stories (só no próprio perfil, quando abre o viewer)
   useEffect(() => {
@@ -900,7 +922,10 @@ export default function PerfilComunidadePage() {
                     <Box
                       component="button"
                       type="button"
-                      onClick={() => setStoryViewerOpen(true)}
+                      onClick={() => {
+                        if (profileStoriesLoading) setPendingOpenStories(true);
+                        else if (profileStories.length > 0) setStoryViewerOpen(true);
+                      }}
                       sx={{
                         border: 'none',
                         padding: 0,
@@ -919,7 +944,10 @@ export default function PerfilComunidadePage() {
                     <Box
                       component="button"
                       type="button"
-                      onClick={() => setStoryViewerOpen(true)}
+                      onClick={() => {
+                        if (profileStoriesLoading) setPendingOpenStories(true);
+                        else if (profileStories.length > 0) setStoryViewerOpen(true);
+                      }}
                       sx={{ border: 'none', padding: 0, cursor: 'pointer', borderRadius: '50%' }}
                     >
                       {avatarEl}
@@ -1533,6 +1561,28 @@ export default function PerfilComunidadePage() {
           isOpen={!!activeCommentsPostId}
           onClose={() => setActiveCommentsPostId(null)}
         />
+      )}
+
+      {/* Loading ao abrir stories (enquanto ainda carrega) */}
+      {pendingOpenStories && profileStoriesLoading && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1399,
+            bgcolor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+          }}
+        >
+          <CircularProgress size={48} sx={{ color: 'white' }} />
+          <Typography variant="body1" sx={{ color: 'white', fontWeight: 500 }}>
+            Carregando stories...
+          </Typography>
+        </Box>
       )}
 
       {/* Viewer de stories (fullscreen) */}

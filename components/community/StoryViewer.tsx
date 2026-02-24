@@ -101,8 +101,15 @@ export function StoryViewer({
   /** Começa mutado para autoplay funcionar (política do browser); usuário pode ativar o som. */
   const [isMuted, setIsMuted] = useState(true);
 
-  const current = stories[currentIndex];
+  /** Índice seguro para não renderizar com current indefinido (ex.: lista trocou e currentIndex ficou fora do range). */
+  const safeIndex =
+    stories.length === 0 ? 0 : Math.min(currentIndex, Math.max(0, stories.length - 1));
+  const current = stories[safeIndex];
   const isVideo = current?.media_type === 'video';
+
+  useEffect(() => {
+    if (currentIndex !== safeIndex) setCurrentIndex(safeIndex);
+  }, [currentIndex, safeIndex]);
 
   const goNext = useCallback(() => {
     if (currentIndex < stories.length - 1) {
@@ -173,7 +180,7 @@ export function StoryViewer({
     }
   };
 
-  if (!open || stories.length === 0) return null;
+  if (!open || stories.length === 0 || !current) return null;
 
   return (
     <Box
@@ -209,7 +216,7 @@ export function StoryViewer({
             <LinearProgress
               variant="determinate"
               value={
-                i < currentIndex ? 100 : i === currentIndex ? progress : 0
+                i < safeIndex ? 100 : i === safeIndex ? progress : 0
               }
               sx={{
                 height: '100%',
