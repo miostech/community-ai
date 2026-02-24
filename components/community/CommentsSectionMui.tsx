@@ -182,9 +182,11 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
     const [viewerIsModerator, setViewerIsModerator] = useState(false);
     const [approvingId, setApprovingId] = useState<string | null>(null);
     const [showPendingNotice, setShowPendingNotice] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [keyboardOffset, setKeyboardOffset] = useState(0);
+    const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const inputWrapperRef = useRef<HTMLDivElement>(null);
+    const bottomBarRef = useRef<HTMLDivElement>(null);
 
     // Query para autocomplete: texto após o último @ (sem espaços no meio)
     const lastAtIndex = commentText.lastIndexOf('@');
@@ -248,6 +250,27 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             });
         return () => {
             cancelled = true;
+        };
+    }, [isOpen]);
+
+    // Colar a barra de input ao teclado no mobile (eliminar vão transparente)
+    useEffect(() => {
+        if (!isOpen) {
+            setKeyboardOffset(0);
+            return;
+        }
+        const updateOffset = () => {
+            if (typeof window === 'undefined' || !window.visualViewport) return;
+            const vv = window.visualViewport;
+            const offset = window.innerHeight - vv.height - vv.offsetTop;
+            setKeyboardOffset(offset > 10 ? offset : 0);
+        };
+        updateOffset();
+        window.visualViewport?.addEventListener('resize', updateOffset);
+        window.visualViewport?.addEventListener('scroll', updateOffset);
+        return () => {
+            window.visualViewport?.removeEventListener('resize', updateOffset);
+            window.visualViewport?.removeEventListener('scroll', updateOffset);
         };
     }, [isOpen]);
 
@@ -1286,6 +1309,30 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                 </Box>
             )}
 
+            {/* Espaçador quando teclado aberto (evita lista ficar atrás da barra fixa) */}
+            {keyboardOffset > 0 && <Box sx={{ minHeight: 160, flexShrink: 0 }} />}
+
+            {/* Barra de emojis + campo de entrada (fixa no topo do teclado quando aberto) */}
+            <Box
+                ref={bottomBarRef}
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{
+                    flexShrink: 0,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
+                    ...(keyboardOffset > 0 && {
+                        position: 'fixed' as const,
+                        left: 0,
+                        right: 0,
+                        bottom: keyboardOffset,
+                        zIndex: 1300,
+                        borderRadius: '24px 24px 0 0',
+                    }),
+                }}
+            >
             {/* Barra de emojis */}
             <Box
                 sx={{
@@ -1314,8 +1361,6 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
 
             {/* Campo de entrada */}
             <Box
-                component="form"
-                onSubmit={handleSubmit}
                 sx={{
                     borderTop: 2,
                     borderColor: 'divider',
@@ -1324,8 +1369,6 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 1,
-                    bgcolor: 'background.paper',
-                    boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
                 }}
             >
                 {showPendingNotice && (
@@ -1367,10 +1410,18 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                         variant="outlined"
                         size="small"
                         fullWidth
+                        multiline
+                        minRows={1}
+                        maxRows={5}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 6,
                                 bgcolor: 'action.hover',
+                                alignItems: 'flex-end',
+                            },
+                            '& .MuiInputBase-input': {
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
                             },
                         }}
                     />
@@ -1455,6 +1506,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                     {isSubmitting ? <CircularProgress size={20} /> : 'Enviar'}
                 </Button>
                 </Box>
+            </Box>
             </Box>
         </Drawer>
 
