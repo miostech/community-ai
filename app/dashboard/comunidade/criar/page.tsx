@@ -245,6 +245,7 @@ export default function CriarPostPageMui() {
 
         xhr.open('PUT', sasUrl);
         xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+        xhr.setRequestHeader('x-ms-blob-cache-control', 'public, max-age=2592000, immutable');
         xhr.setRequestHeader('Content-Type', file.type);
         xhr.send(file);
       });
