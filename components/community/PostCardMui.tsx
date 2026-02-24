@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
     Box,
@@ -102,9 +102,17 @@ export function PostCardMui({
     const [videoVisibilityKey, setVideoVisibilityKey] = useState(0);
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const wasVisibleRef = useRef<boolean | 'init'>('init');
+    const videoErrorRef = useRef(false);
+    videoErrorRef.current = videoError;
+
+    const triggerVideoRetry = useCallback(() => {
+        setVideoError(false);
+        setVideoReady(false);
+        setVideoRetryKey((k) => k + 1);
+    }, []);
 
     useEffect(() => {
-        if (!post.video_url || videoError) return;
+        if (!post.video_url) return;
         const el = videoContainerRef.current;
         if (!el) return;
         const obs = new IntersectionObserver(
@@ -117,6 +125,7 @@ export function PostCardMui({
                 }
                 if (isVisible && wasVisibleRef.current === false) {
                     setVideoVisibilityKey((k) => k + 1);
+                    if (videoErrorRef.current) triggerVideoRetry();
                 }
                 wasVisibleRef.current = isVisible;
             },
@@ -124,7 +133,7 @@ export function PostCardMui({
         );
         obs.observe(el);
         return () => obs.disconnect();
-    }, [post.video_url, videoError]);
+    }, [post.video_url, triggerVideoRetry]);
 
     const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
         const video = e.currentTarget;
@@ -136,12 +145,13 @@ export function PostCardMui({
         setVideoReady(true);
         setVideoError(false);
     };
-    const handleVideoRetry = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setVideoError(false);
-        setVideoReady(false);
-        setVideoRetryKey((k) => k + 1);
-    };
+
+    /** Quando o vídeo falha e já está visível, tenta de novo após 1,5s. */
+    useEffect(() => {
+        if (!videoError) return;
+        const t = setTimeout(triggerVideoRetry, 1500);
+        return () => clearTimeout(t);
+    }, [videoError, triggerVideoRetry]);
 
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -430,33 +440,13 @@ export function PostCardMui({
                                 width: '100%',
                                 aspectRatio: isVerticalVideo ? '9/16' : '16/9',
                                 maxHeight: '80vh',
-                                bgcolor: 'grey.900',
+                                bgcolor: 'black',
                                 display: 'flex',
-                                flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: 1.5,
-                                py: 3,
                             }}
                         >
-                            <Typography variant="body2" color="text.secondary">
-                                Vídeo não carregou
-                            </Typography>
-                            <Typography
-                                component="button"
-                                variant="caption"
-                                onClick={handleVideoRetry}
-                                sx={{
-                                    border: 'none',
-                                    background: 'none',
-                                    color: 'primary.main',
-                                    cursor: 'pointer',
-                                    textDecoration: 'underline',
-                                    '&:hover': { opacity: 0.9 },
-                                }}
-                            >
-                                Tentar de novo
-                            </Typography>
+                            <CircularProgress size={32} sx={{ color: 'grey.500' }} />
                         </Box>
                     ) : (
                         <>

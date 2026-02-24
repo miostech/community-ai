@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -143,7 +143,7 @@ function isAccountId(identifier: string): boolean {
   return /^[a-f0-9]{24}$/i.test(identifier);
 }
 
-/** Vídeo no perfil com tratamento de erro, loading e reload ao voltar (evita tela preta) */
+/** Vídeo no perfil com tratamento de erro, loading e reload ao voltar (evita tela preta). Em erro, tenta de novo sozinho ao ficar visível. */
 function ProfilePostVideo({
   videoUrl,
   videoReloadTrigger = 0,
@@ -157,9 +157,17 @@ function ProfilePostVideo({
   const [videoVisibilityKey, setVideoVisibilityKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const wasVisibleRef = useRef<boolean | 'init'>('init');
+  const videoErrorRef = useRef(false);
+  videoErrorRef.current = videoError;
+
+  const triggerVideoRetry = useCallback(() => {
+    setVideoError(false);
+    setVideoReady(false);
+    setVideoRetryKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
-    if (!videoUrl || videoError) return;
+    if (!videoUrl) return;
     const el = containerRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
@@ -172,6 +180,7 @@ function ProfilePostVideo({
         }
         if (isVisible && wasVisibleRef.current === false) {
           setVideoVisibilityKey((k) => k + 1);
+          if (videoErrorRef.current) triggerVideoRetry();
         }
         wasVisibleRef.current = isVisible;
       },
@@ -179,7 +188,13 @@ function ProfilePostVideo({
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [videoUrl, videoError]);
+  }, [videoUrl, triggerVideoRetry]);
+
+  useEffect(() => {
+    if (!videoError) return;
+    const t = setTimeout(triggerVideoRetry, 1500);
+    return () => clearTimeout(t);
+  }, [videoError, triggerVideoRetry]);
 
   if (videoError) {
     return (
@@ -189,39 +204,15 @@ function ProfilePostVideo({
           width: '100%',
           aspectRatio: '4/5',
           maxHeight: 600,
-          bgcolor: 'grey.900',
+          bgcolor: 'black',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 1.5,
-          py: 3,
           mb: 1.5,
           mx: { xs: -1.5, sm: -2 },
         }}
       >
-        <Typography variant="body2" color="text.secondary">
-          Vídeo não carregou
-        </Typography>
-        <Typography
-          component="button"
-          variant="caption"
-          onClick={() => {
-            setVideoError(false);
-            setVideoReady(false);
-            setVideoRetryKey((k) => k + 1);
-          }}
-          sx={{
-            border: 'none',
-            background: 'none',
-            color: 'primary.main',
-            cursor: 'pointer',
-            textDecoration: 'underline',
-            '&:hover': { opacity: 0.9 },
-          }}
-        >
-          Tentar de novo
-        </Typography>
+        <CircularProgress size={32} sx={{ color: 'grey.500' }} />
       </Box>
     );
   }
