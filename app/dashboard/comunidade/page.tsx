@@ -62,6 +62,7 @@ export default function ComunidadePageMui() {
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [togglingPinPostId, setTogglingPinPostId] = useState<string | null>(null);
+  const [videoReloadTrigger, setVideoReloadTrigger] = useState(0);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const previousPathnameRef = useRef<string | null>(null);
@@ -419,6 +420,7 @@ export default function ComunidadePageMui() {
                 isAdmin={isAdmin}
                 onPinToggle={() => handlePinToggle(post.id)}
                 isTogglingPin={togglingPinPostId === post.id}
+                videoReloadTrigger={videoReloadTrigger}
               />
             ))
           )}
@@ -446,7 +448,10 @@ export default function ComunidadePageMui() {
           <CommentsSectionMui
             postId={activeCommentsPostId}
             isOpen={!!activeCommentsPostId}
-            onClose={() => setActiveCommentsPostId(null)}
+            onClose={() => {
+              setActiveCommentsPostId(null);
+              setVideoReloadTrigger((t) => t + 1);
+            }}
             onCommentAdded={() => {
               updatePost(activeCommentsPostId, {
                 comments_count: (posts.find(p => p.id === activeCommentsPostId)?.comments_count || 0) + 1

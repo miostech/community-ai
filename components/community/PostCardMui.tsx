@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
     Box,
@@ -72,6 +72,8 @@ interface PostCardMuiProps {
     isAdmin?: boolean;
     onPinToggle?: () => void;
     isTogglingPin?: boolean;
+    /** Quando muda, o vídeo remonta (evita tela preta ao fechar comentários) */
+    videoReloadTrigger?: number;
 }
 
 export function PostCardMui({
@@ -89,13 +91,56 @@ export function PostCardMui({
     isAdmin = false,
     onPinToggle,
     isTogglingPin = false,
+    videoReloadTrigger = 0,
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [isVerticalVideo, setIsVerticalVideo] = useState(false);
+    const [videoError, setVideoError] = useState(false);
+    const [videoReady, setVideoReady] = useState(false);
+    const [videoRetryKey, setVideoRetryKey] = useState(0);
+    /** Incrementa quando o vídeo volta a ficar visível (ex.: fechou comentários, voltou do perfil) para forçar reload e evitar tela preta */
+    const [videoVisibilityKey, setVideoVisibilityKey] = useState(0);
+    const videoContainerRef = useRef<HTMLDivElement>(null);
+    const wasVisibleRef = useRef<boolean | 'init'>('init');
+
+    useEffect(() => {
+        if (!post.video_url || videoError) return;
+        const el = videoContainerRef.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(
+            (entries) => {
+                const [entry] = entries;
+                const isVisible = entry.isIntersecting;
+                if (wasVisibleRef.current === 'init') {
+                    wasVisibleRef.current = isVisible;
+                    return;
+                }
+                if (isVisible && wasVisibleRef.current === false) {
+                    setVideoVisibilityKey((k) => k + 1);
+                }
+                wasVisibleRef.current = isVisible;
+            },
+            { threshold: 0.1, rootMargin: '50px' }
+        );
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, [post.video_url, videoError]);
 
     const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
         const video = e.currentTarget;
         setIsVerticalVideo(video.videoHeight > video.videoWidth);
+    };
+
+    const handleVideoError = () => setVideoError(true);
+    const handleVideoLoadedData = () => {
+        setVideoReady(true);
+        setVideoError(false);
+    };
+    const handleVideoRetry = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setVideoError(false);
+        setVideoReady(false);
+        setVideoRetryKey((k) => k + 1);
     };
 
 
@@ -375,25 +420,82 @@ export function PostCardMui({
             {/* Vídeo */}
             {post.video_url && (
                 <Box
-                    sx={{ mx: 0, cursor: 'pointer' }}
+                    ref={videoContainerRef}
+                    sx={{ mx: 0, cursor: 'pointer', position: 'relative' }}
                     onClick={onNavigate}
                 >
-                    <Box
-                        component="video"
-                        src={`${post.video_url}#t=0.1`}
-                        controls
-                        preload="metadata"
-                        playsInline
-                        onLoadedMetadata={handleVideoMetadata}
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{
-                            width: '100%',
-                            aspectRatio: isVerticalVideo ? '9/16' : '16/9',
-                            maxHeight: "80vh",
-                            objectFit: isVerticalVideo ? 'cover' : 'contain',
-                            bgcolor: 'black',
-                        }}
-                    />
+                    {videoError ? (
+                        <Box
+                            sx={{
+                                width: '100%',
+                                aspectRatio: isVerticalVideo ? '9/16' : '16/9',
+                                maxHeight: '80vh',
+                                bgcolor: 'grey.900',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 1.5,
+                                py: 3,
+                            }}
+                        >
+                            <Typography variant="body2" color="text.secondary">
+                                Vídeo não carregou
+                            </Typography>
+                            <Typography
+                                component="button"
+                                variant="caption"
+                                onClick={handleVideoRetry}
+                                sx={{
+                                    border: 'none',
+                                    background: 'none',
+                                    color: 'primary.main',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    '&:hover': { opacity: 0.9 },
+                                }}
+                            >
+                                Tentar de novo
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <>
+                            <Box
+                                component="video"
+                                key={`${videoRetryKey}-${videoVisibilityKey}-${videoReloadTrigger}`}
+                                src={`${post.video_url}#t=0.1`}
+                                controls
+                                preload="metadata"
+                                playsInline
+                                onLoadedMetadata={handleVideoMetadata}
+                                onLoadedData={handleVideoLoadedData}
+                                onError={handleVideoError}
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{
+                                    width: '100%',
+                                    aspectRatio: isVerticalVideo ? '9/16' : '16/9',
+                                    maxHeight: '80vh',
+                                    objectFit: isVerticalVideo ? 'cover' : 'contain',
+                                    bgcolor: 'black',
+                                }}
+                            />
+                            {!videoReady && !videoError && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: 'black',
+                                        pointerEvents: 'none',
+                                    }}
+                                >
+                                    <CircularProgress size={32} sx={{ color: 'grey.500' }} />
+                                </Box>
+                            )}
+                        </>
+                    )}
                 </Box>
             )}
 

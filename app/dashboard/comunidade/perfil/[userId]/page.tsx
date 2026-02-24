@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -18,7 +18,7 @@ import { usePosts, type Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
-import { CommentsSection } from '@/components/community/CommentsSection';
+import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 import { StoryViewer, type StoryItem, type ViewsByStory } from '@/components/community/StoryViewer';
 import { sortCourseIds, getCourseLabel, CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
@@ -141,6 +141,130 @@ function formatTimeAgo(dateString: string): string {
 /** Identificador é um ID de conta (MongoDB ObjectId, 24 hex) */
 function isAccountId(identifier: string): boolean {
   return /^[a-f0-9]{24}$/i.test(identifier);
+}
+
+/** Vídeo no perfil com tratamento de erro, loading e reload ao voltar (evita tela preta) */
+function ProfilePostVideo({
+  videoUrl,
+  videoReloadTrigger = 0,
+}: {
+  videoUrl: string;
+  videoReloadTrigger?: number;
+}) {
+  const [videoError, setVideoError] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoRetryKey, setVideoRetryKey] = useState(0);
+  const [videoVisibilityKey, setVideoVisibilityKey] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wasVisibleRef = useRef<boolean | 'init'>('init');
+
+  useEffect(() => {
+    if (!videoUrl || videoError) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        const isVisible = entry.isIntersecting;
+        if (wasVisibleRef.current === 'init') {
+          wasVisibleRef.current = isVisible;
+          return;
+        }
+        if (isVisible && wasVisibleRef.current === false) {
+          setVideoVisibilityKey((k) => k + 1);
+        }
+        wasVisibleRef.current = isVisible;
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [videoUrl, videoError]);
+
+  if (videoError) {
+    return (
+      <Box
+        ref={containerRef}
+        sx={{
+          width: '100%',
+          aspectRatio: '4/5',
+          maxHeight: 600,
+          bgcolor: 'grey.900',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1.5,
+          py: 3,
+          mb: 1.5,
+          mx: { xs: -1.5, sm: -2 },
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Vídeo não carregou
+        </Typography>
+        <Typography
+          component="button"
+          variant="caption"
+          onClick={() => {
+            setVideoError(false);
+            setVideoReady(false);
+            setVideoRetryKey((k) => k + 1);
+          }}
+          sx={{
+            border: 'none',
+            background: 'none',
+            color: 'primary.main',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            '&:hover': { opacity: 0.9 },
+          }}
+        >
+          Tentar de novo
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box ref={containerRef} sx={{ mb: 1.5, mx: { xs: -1.5, sm: -2 }, position: 'relative' }}>
+      <Box
+        component="video"
+        key={`${videoRetryKey}-${videoVisibilityKey}-${videoReloadTrigger}`}
+        src={`${videoUrl}#t=0.1`}
+        controls
+        preload="metadata"
+        playsInline
+        onLoadedData={() => {
+          setVideoReady(true);
+          setVideoError(false);
+        }}
+        onError={() => setVideoError(true)}
+        sx={{
+          width: '100%',
+          aspectRatio: '4/5',
+          maxHeight: 600,
+          objectFit: 'contain',
+          bgcolor: 'black',
+        }}
+      />
+      {!videoReady && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'black',
+            pointerEvents: 'none',
+          }}
+        >
+          <CircularProgress size={32} sx={{ color: 'grey.500' }} />
+        </Box>
+      )}
+    </Box>
+  );
 }
 
 function resolveProfileUser(identifier: string, posts: Post[]): ProfileDisplay | null {
@@ -429,6 +553,7 @@ export default function PerfilComunidadePage() {
       : []; // Posts de outros usuários são carregados via API quando acessados por ID
   const [showHeartAnimation, setShowHeartAnimation] = useState<string | null>(null);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
+  const [videoReloadTrigger, setVideoReloadTrigger] = useState(0);
   const [seguidoresTooltipOpen, setSeguidoresTooltipOpen] = useState(false);
   type SocialStatsData = {
     totalFollowers: number;
@@ -1442,24 +1567,12 @@ export default function PerfilComunidadePage() {
                   </Box>
                 )}
 
-                {/* Video — #t=0.1 + preload="metadata" para exibir a capa (igual ao feed) */}
+                {/* Video — mesmo tratamento do feed: erro, loading, reload ao voltar */}
                 {post.videoUrl && (
-                  <Box sx={{ mb: 1.5, mx: { xs: -1.5, sm: -2 } }}>
-                    <Box
-                      component="video"
-                      src={`${post.videoUrl}#t=0.1`}
-                      controls
-                      preload="metadata"
-                      playsInline
-                      sx={{
-                        width: '100%',
-                        aspectRatio: '4/5',
-                        maxHeight: 600,
-                        objectFit: 'contain',
-                        bgcolor: 'black',
-                      }}
-                    />
-                  </Box>
+                  <ProfilePostVideo
+                    videoUrl={post.videoUrl}
+                    videoReloadTrigger={videoReloadTrigger}
+                  />
                 )}
 
                 {/* Link social */}
@@ -1556,10 +1669,30 @@ export default function PerfilComunidadePage() {
 
       {/* Comments modal */}
       {activeCommentsPostId && (
-        <CommentsSection
+        <CommentsSectionMui
           postId={activeCommentsPostId}
           isOpen={!!activeCommentsPostId}
-          onClose={() => setActiveCommentsPostId(null)}
+          onClose={() => {
+            setActiveCommentsPostId(null);
+            setVideoReloadTrigger((t) => t + 1);
+          }}
+          onCommentAdded={() => {
+            if (isOwnProfile) {
+              setProfilePostsFromApi((prev) =>
+                prev.map((p) => (p.id === activeCommentsPostId ? { ...p, comments: (p.comments || 0) + 1 } : p))
+              );
+            } else if (isOtherUserById) {
+              setOtherProfileData((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  posts: prev.posts.map((p) =>
+                    p.id === activeCommentsPostId ? { ...p, comments: (p.comments || 0) + 1 } : p
+                  ),
+                };
+              });
+            }
+          }}
         />
       )}
 
