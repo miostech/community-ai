@@ -167,6 +167,13 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
     const [mentionUsersLoading, setMentionUsersLoading] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ commentId: string; isReply: boolean; parentId?: string } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [editingComment, setEditingComment] = useState<{
+        id: string;
+        isReply: boolean;
+        parentId?: string;
+        content: string;
+    } | null>(null);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const inputWrapperRef = useRef<HTMLDivElement>(null);
@@ -361,6 +368,72 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             alert('Erro ao deletar comentário');
         } finally {
             setIsDeleting(false);
+        }
+    };
+
+    const handleStartEdit = (commentId: string, content: string, isReply: boolean = false, parentId?: string) => {
+        setEditingComment({ id: commentId, isReply, parentId, content });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingComment(null);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingComment || !editingComment.content.trim() || isSavingEdit) return;
+        setIsSavingEdit(true);
+        try {
+            const response = await fetch(
+                `/api/posts/${postId}/comments?commentId=${editingComment.id}`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: editingComment.content.trim() }),
+                }
+            );
+            if (response.ok) {
+                const data = await response.json();
+                const updated = data.comment;
+                if (editingComment.isReply && editingComment.parentId) {
+                    setComments(prev =>
+                        prev.map(comment => {
+                            if (comment._id === editingComment.parentId) {
+                                return {
+                                    ...comment,
+                                    replies: comment.replies?.map(r =>
+                                        r._id === editingComment.id
+                                            ? {
+                                                  ...r,
+                                                  content: updated.content,
+                                                  mentions: updated.mentions,
+                                              }
+                                            : r
+                                    ) || [],
+                                };
+                            }
+                            return comment;
+                        })
+                    );
+                } else {
+                    setComments(prev =>
+                        prev.map(c =>
+                            c._id === editingComment.id
+                                ? { ...c, content: updated.content, mentions: updated.mentions }
+                                : c
+                        )
+                    );
+                }
+                setEditingComment(null);
+                onCommentAdded?.();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao editar comentário');
+            }
+        } catch (error) {
+            console.error('Erro ao editar comentário:', error);
+            alert('Erro ao editar comentário');
+        } finally {
+            setIsSavingEdit(false);
         }
     };
 
@@ -588,12 +661,45 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             <Typography variant="body2" fontWeight={600}>
                                                 {comment.author.name}
                                             </Typography>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{ wordBreak: 'break-word', mt: 0.25 }}
-                                            >
-                                                <CommentContent content={comment.content} mentions={comment.mentions} />
-                                            </Typography>
+                                            {editingComment?.id === comment._id && !editingComment.isReply ? (
+                                                <Box sx={{ mt: 1 }}>
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        multiline
+                                                        minRows={2}
+                                                        value={editingComment.content}
+                                                        onChange={(e) =>
+                                                            setEditingComment(prev =>
+                                                                prev ? { ...prev, content: e.target.value } : null
+                                                            )
+                                                        }
+                                                        placeholder="Editar comentário..."
+                                                        sx={{ '& .MuiInputBase-root': { bgcolor: 'background.paper' } }}
+                                                        autoFocus
+                                                    />
+                                                    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                                        <Button
+                                                            size="small"
+                                                            variant="contained"
+                                                            onClick={handleSaveEdit}
+                                                            disabled={!editingComment.content.trim() || isSavingEdit}
+                                                        >
+                                                            {isSavingEdit ? <CircularProgress size={16} /> : 'Salvar'}
+                                                        </Button>
+                                                        <Button size="small" onClick={handleCancelEdit} disabled={isSavingEdit}>
+                                                            Cancelar
+                                                        </Button>
+                                                    </Stack>
+                                                </Box>
+                                            ) : (
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ wordBreak: 'break-word', mt: 0.25 }}
+                                                >
+                                                    <CommentContent content={comment.content} mentions={comment.mentions} />
+                                                </Typography>
+                                            )}
                                         </Box>
 
                                         <Stack direction="row" spacing={2} sx={{ mt: 0.75, pl: 1.5 }} alignItems="center">
@@ -639,20 +745,38 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 Responder
                                             </Button>
                                             {isMyComment(comment.author.id) && (
-                                                <Button
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => handleDeleteCommentClick(comment._id)}
-                                                    sx={{
-                                                        p: 0,
-                                                        minWidth: 'auto',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        textTransform: 'none',
-                                                    }}
-                                                >
-                                                    Excluir
-                                                </Button>
+                                                <>
+                                                    <Button
+                                                        size="small"
+                                                        onClick={() =>
+                                                            handleStartEdit(comment._id, comment.content, false)
+                                                        }
+                                                        disabled={!!editingComment}
+                                                        sx={{
+                                                            p: 0,
+                                                            minWidth: 'auto',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            textTransform: 'none',
+                                                        }}
+                                                    >
+                                                        Editar
+                                                    </Button>
+                                                    <Button
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => handleDeleteCommentClick(comment._id)}
+                                                        sx={{
+                                                            p: 0,
+                                                            minWidth: 'auto',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            textTransform: 'none',
+                                                        }}
+                                                    >
+                                                        Excluir
+                                                    </Button>
+                                                </>
                                             )}
                                         </Stack>
 
@@ -712,13 +836,55 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                     <Typography variant="caption" fontWeight={600}>
                                                                         {reply.author.name}
                                                                     </Typography>
-                                                                    <Typography
-                                                                        variant="caption"
-                                                                        display="block"
-                                                                        sx={{ wordBreak: 'break-word' }}
-                                                                    >
-                                                                        <CommentContent content={reply.content} mentions={reply.mentions} />
-                                                                    </Typography>
+                                                                    {editingComment?.id === reply._id && editingComment.isReply ? (
+                                                                        <Box sx={{ mt: 0.75 }}>
+                                                                            <TextField
+                                                                                fullWidth
+                                                                                size="small"
+                                                                                multiline
+                                                                                minRows={1}
+                                                                                value={editingComment.content}
+                                                                                onChange={(e) =>
+                                                                                    setEditingComment(prev =>
+                                                                                        prev ? { ...prev, content: e.target.value } : null
+                                                                                    )
+                                                                                }
+                                                                                placeholder="Editar resposta..."
+                                                                                sx={{
+                                                                                    '& .MuiInputBase-root': { bgcolor: 'background.paper' },
+                                                                                    '& .MuiInputBase-input': { fontSize: '0.75rem' },
+                                                                                }}
+                                                                                autoFocus
+                                                                            />
+                                                                            <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    variant="contained"
+                                                                                    onClick={handleSaveEdit}
+                                                                                    disabled={!editingComment.content.trim() || isSavingEdit}
+                                                                                    sx={{ fontSize: '0.6875rem' }}
+                                                                                >
+                                                                                    {isSavingEdit ? <CircularProgress size={14} /> : 'Salvar'}
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    onClick={handleCancelEdit}
+                                                                                    disabled={isSavingEdit}
+                                                                                    sx={{ fontSize: '0.6875rem' }}
+                                                                                >
+                                                                                    Cancelar
+                                                                                </Button>
+                                                                            </Stack>
+                                                                        </Box>
+                                                                    ) : (
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            display="block"
+                                                                            sx={{ wordBreak: 'break-word' }}
+                                                                        >
+                                                                            <CommentContent content={reply.content} mentions={reply.mentions} />
+                                                                        </Typography>
+                                                                    )}
                                                                 </Box>
                                                                 <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center">
                                                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
@@ -750,20 +916,43 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         </Typography>
                                                                     )}
                                                                     {isMyComment(reply.author.id) && (
-                                                                        <Button
-                                                                            size="small"
-                                                                            color="error"
-                                                                            onClick={() => handleDeleteCommentClick(reply._id, true, comment._id)}
-                                                                            sx={{
-                                                                                p: 0,
-                                                                                minWidth: 'auto',
-                                                                                fontSize: '0.6875rem',
-                                                                                fontWeight: 600,
-                                                                                textTransform: 'none',
-                                                                            }}
-                                                                        >
-                                                                            Excluir
-                                                                        </Button>
+                                                                        <>
+                                                                            <Button
+                                                                                size="small"
+                                                                                onClick={() =>
+                                                                                    handleStartEdit(
+                                                                                        reply._id,
+                                                                                        reply.content,
+                                                                                        true,
+                                                                                        comment._id
+                                                                                    )
+                                                                                }
+                                                                                disabled={!!editingComment}
+                                                                                sx={{
+                                                                                    p: 0,
+                                                                                    minWidth: 'auto',
+                                                                                    fontSize: '0.6875rem',
+                                                                                    fontWeight: 600,
+                                                                                    textTransform: 'none',
+                                                                                }}
+                                                                            >
+                                                                                Editar
+                                                                            </Button>
+                                                                            <Button
+                                                                                size="small"
+                                                                                color="error"
+                                                                                onClick={() => handleDeleteCommentClick(reply._id, true, comment._id)}
+                                                                                sx={{
+                                                                                    p: 0,
+                                                                                    minWidth: 'auto',
+                                                                                    fontSize: '0.6875rem',
+                                                                                    fontWeight: 600,
+                                                                                    textTransform: 'none',
+                                                                                }}
+                                                                            >
+                                                                                Excluir
+                                                                            </Button>
+                                                                        </>
                                                                     )}
                                                                 </Stack>
                                                             </Box>

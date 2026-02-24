@@ -374,6 +374,98 @@ export async function POST(
     }
 }
 
+// PATCH - Editar um comentário (apenas o autor)
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ postId: string }> }
+) {
+    try {
+        const session = await auth();
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+        }
+
+        const { postId } = await params;
+        const { searchParams } = new URL(request.url);
+        const commentId = searchParams.get('commentId');
+
+        if (!commentId) {
+            return NextResponse.json({ error: 'ID do comentário é obrigatório' }, { status: 400 });
+        }
+
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
+
+        await connectMongo();
+
+        const account = await Account.findOne({ auth_user_id: authUserId });
+        if (!account) {
+            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return NextResponse.json({ error: 'Comentário não encontrado' }, { status: 404 });
+        }
+
+        if (comment.author_id.toString() !== account._id.toString()) {
+            return NextResponse.json({ error: 'Sem permissão para editar este comentário' }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const { content } = body;
+
+        if (!content?.trim()) {
+            return NextResponse.json(
+                { error: 'Comentário não pode estar vazio' },
+                { status: 400 }
+            );
+        }
+
+        const trimmedContent = content.trim();
+        const mentionHandlesForSave = extractMentionHandles(trimmedContent);
+        const mentionAccounts = mentionHandlesForSave.length > 0
+            ? await resolveHandlesToMentionAccounts(mentionHandlesForSave)
+            : [];
+
+        comment.content = trimmedContent;
+        comment.mention_accounts = mentionAccounts.length > 0 ? mentionAccounts : [];
+        comment.is_edited = true;
+        comment.updated_at = new Date();
+        await comment.save();
+
+        await comment.populate('author_id', 'first_name last_name avatar_url');
+        const author = comment.author_id as any;
+        const mentionsMap: Record<string, string> = {};
+        (comment.mention_accounts || []).forEach((m: { handle: string; account_id: mongoose.Types.ObjectId }) => {
+            mentionsMap[m.handle] = m.account_id.toString();
+        });
+
+        return NextResponse.json({
+            success: true,
+            comment: {
+                _id: comment._id.toString(),
+                author: {
+                    id: author?._id?.toString() || '',
+                    name: author ? `${author.first_name || ''} ${author.last_name || ''}`.trim() : 'Usuário',
+                    avatar_url: author?.avatar_url || null,
+                },
+                content: comment.content,
+                likes_count: comment.likes_count || 0,
+                replies_count: comment.replies_count || 0,
+                created_at: comment.created_at,
+                mentions: mentionsMap,
+            },
+        });
+    } catch (error) {
+        console.error('Erro ao editar comentário:', error);
+        return NextResponse.json(
+            { error: 'Erro interno do servidor' },
+            { status: 500 }
+        );
+    }
+}
+
 // DELETE - Deletar um comentário
 export async function DELETE(
     request: NextRequest,
