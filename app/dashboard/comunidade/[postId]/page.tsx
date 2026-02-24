@@ -8,6 +8,7 @@ import { ImageCarousel } from '@/components/community/ImageCarousel';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { useSession } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
+import { usePosts } from '@/contexts/PostsContext';
 import {
     Box,
     Typography,
@@ -98,7 +99,10 @@ export default function PostDetailPageMui() {
     const router = useRouter();
     const { data: session } = useSession();
     const { account } = useAccount();
+    const { posts } = usePosts();
     const postId = params.postId as string;
+
+    const postFromFeed = posts.find((p) => p.id === postId) as Post | undefined;
 
     const [post, setPost] = useState<Post | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -112,9 +116,9 @@ export default function PostDetailPageMui() {
         if (searchParams.get('openComments') === '1' && postId) setIsCommentsOpen(true);
     }, [searchParams, postId]);
 
-    const fetchPost = useCallback(async () => {
+    const fetchPost = useCallback(async (skipLoadingState = false) => {
         try {
-            setIsLoading(true);
+            if (!skipLoadingState) setIsLoading(true);
             const response = await fetch(`/api/posts/${postId}`);
             if (!response.ok) {
                 if (response.status === 404) throw new Error('Post não encontrado');
@@ -127,19 +131,19 @@ export default function PostDetailPageMui() {
             console.error('Erro ao buscar post:', err);
             setError(err instanceof Error ? err.message : 'Erro ao carregar post');
         } finally {
-            setIsLoading(false);
+            if (!skipLoadingState) setIsLoading(false);
         }
     }, [postId]);
 
     useEffect(() => {
         if (postId) {
-            fetchPost();
+            fetchPost(!!postFromFeed);
         }
-    }, [postId, fetchPost]);
+    }, [postId, fetchPost, postFromFeed]);
 
     const handleLike = async () => {
-        if (!post || !session?.user) return;
-        const newLiked = !post.liked;
+        if (!displayPost || !session?.user) return;
+        const newLiked = !displayPost.liked;
         setPost((prev) =>
             prev ? { ...prev, liked: newLiked, likes_count: newLiked ? prev.likes_count + 1 : prev.likes_count - 1 } : null
         );
@@ -154,14 +158,14 @@ export default function PostDetailPageMui() {
     };
 
     const handleDoubleTap = () => {
-        if (!post?.liked) handleLike();
+        if (!displayPost?.liked) handleLike();
         setShowHeartAnimation(true);
         setTimeout(() => setShowHeartAnimation(false), 800);
     };
 
     const handleSave = async () => {
-        if (!post || !session?.user) return;
-        const newSaved = !post.saved;
+        if (!displayPost || !session?.user) return;
+        const newSaved = !displayPost.saved;
         setPost((prev) => (prev ? { ...prev, saved: newSaved } : null));
         try {
             await fetch(`/api/posts/${postId}/save`, { method: newSaved ? 'POST' : 'DELETE' });
@@ -175,7 +179,7 @@ export default function PostDetailPageMui() {
         setPost((prev) => (prev ? { ...prev, comments_count: prev.comments_count + 1 } : null));
     };
 
-    const isMyPost = () => account?.id === post?.author.id;
+    const isMyPost = () => account?.id === displayPost?.author.id;
 
     const handleDeletePost = async () => {
         if (!confirm('Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.')) return;
@@ -197,7 +201,9 @@ export default function PostDetailPageMui() {
         }
     };
 
-    if (isLoading) {
+    const displayPost = post ?? postFromFeed;
+
+    if (isLoading && !postFromFeed) {
         return (
             <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CircularProgress />
@@ -205,7 +211,7 @@ export default function PostDetailPageMui() {
         );
     }
 
-    if (error || !post) {
+    if (error || !displayPost) {
         return (
             <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4 }}>
                 <Typography color="error" sx={{ mb: 2 }}>{error || 'Post não encontrado'}</Typography>
@@ -251,40 +257,40 @@ export default function PostDetailPageMui() {
                 <Paper elevation={0} sx={{ borderRadius: 0, borderBottom: 1, borderColor: 'divider' }}>
                     {/* Author */}
                     <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Link href={`/dashboard/comunidade/perfil/${post.author.id}`} style={{ textDecoration: 'none' }}>
+                        <Link href={`/dashboard/comunidade/perfil/${displayPost.author.id}`} style={{ textDecoration: 'none' }}>
                             <Stack direction="row" spacing={1.5} alignItems="center">
-                                <Avatar src={post.author.avatar_url} sx={{ width: 44, height: 44 }}>
-                                    {post.author.name.charAt(0)}
+                                <Avatar src={displayPost.author.avatar_url} sx={{ width: 44, height: 44 }}>
+                                    {displayPost.author.name.charAt(0)}
                                 </Avatar>
                                 <Box>
-                                    <Typography fontWeight={600} color="text.primary">{post.author.name}</Typography>
-                                    <Typography variant="caption" color="text.secondary">{formatDate(post.created_at)}</Typography>
+                                    <Typography fontWeight={600} color="text.primary">{displayPost.author.name}</Typography>
+                                    <Typography variant="caption" color="text.secondary">{formatDate(displayPost.created_at)}</Typography>
                                 </Box>
                             </Stack>
                         </Link>
-                        {post.is_pinned ? (
+                        {displayPost.is_pinned ? (
                             <IconButton size="small" sx={{ color: 'text.secondary' }} aria-label="Post fixado">
                                 <PushPinIcon sx={{ fontSize: 20 }} />
                             </IconButton>
                         ) : (
-                            <Chip label={categoryLabels[post.category] || 'Geral'} size="small" variant="outlined" />
+                            <Chip label={categoryLabels[displayPost.category] || 'Geral'} size="small" variant="outlined" />
                         )}
                     </Box>
 
                     {/* Content */}
-                    {post.content && (
+                    {displayPost.content && (
                         <Box sx={{ px: 2, pb: 2 }}>
-                            <Typography sx={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{post.content}</Typography>
+                            <Typography sx={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{displayPost.content}</Typography>
                         </Box>
                     )}
 
                     {/* Images */}
-                    {post.images && post.images.length > 0 && (
+                    {displayPost.images && displayPost.images.length > 0 && (
                         <Box sx={{ position: 'relative' }} onDoubleClick={handleDoubleTap}>
-                            {post.images.length > 1 ? (
-                                <ImageCarousel images={post.images} />
+                            {displayPost.images.length > 1 ? (
+                                <ImageCarousel images={displayPost.images} />
                             ) : (
-                                <Box component="img" src={post.images[0]} alt="Post" sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', bgcolor: 'action.hover' }} />
+                                <Box component="img" src={displayPost.images[0]} alt="Post" sx={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', bgcolor: 'action.hover' }} />
                             )}
                             {showHeartAnimation && (
                                 <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
@@ -295,18 +301,18 @@ export default function PostDetailPageMui() {
                     )}
 
                     {/* Video */}
-                    {post.video_url && (
+                    {displayPost.video_url && (
                         // <Box sx={{ position: 'relative' }} onDoubleClick={handleDoubleTap}>
-                        //     <video src={post.video_url} controls style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', backgroundColor: 'black' }} playsInline />
+                        //     <video src={displayPost.video_url} controls style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', backgroundColor: 'black' }} playsInline />
                         // </Box>
                         <Box
                             sx={{ mx: 0, cursor: 'pointer' }}
                         >
                             <Box
                                 component="video"
-                                src={`${post.video_url}#t=0.1`}
+                                src={`${displayPost.video_url}#t=0.1`}
                                 controls
-                                preload="metadata"
+                                preload="auto"
                                 playsInline
                                 // onLoadedMetadata={handleVideoMetadata}
                                 onClick={(e) => e.stopPropagation()}
@@ -322,12 +328,12 @@ export default function PostDetailPageMui() {
                     )}
 
                     {/* Social Link */}
-                    {post.link_instagram_post && (
+                    {displayPost.link_instagram_post && (
                         <Box sx={{ px: 2, pb: 2 }}>
-                            <Button href={post.link_instagram_post} target="_blank" rel="noopener" startIcon={<OpenInNewIcon />} size="small" color="primary">
-                                {post.link_instagram_post.includes('instagram.com') ? 'Ver no Instagram' :
-                                    post.link_instagram_post.includes('tiktok.com') ? 'Ver no TikTok' :
-                                        post.link_instagram_post.includes('x.com') || post.link_instagram_post.includes('twitter.com') ? 'Ver no X' : 'Ver post original'}
+                            <Button href={displayPost.link_instagram_post} target="_blank" rel="noopener" startIcon={<OpenInNewIcon />} size="small" color="primary">
+                                {displayPost.link_instagram_post.includes('instagram.com') ? 'Ver no Instagram' :
+                                    displayPost.link_instagram_post.includes('tiktok.com') ? 'Ver no TikTok' :
+                                        displayPost.link_instagram_post.includes('x.com') || displayPost.link_instagram_post.includes('twitter.com') ? 'Ver no X' : 'Ver post original'}
                             </Button>
                         </Box>
                     )}
@@ -335,8 +341,8 @@ export default function PostDetailPageMui() {
                     {/* Actions */}
                     <Box sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Stack direction="row" spacing={2}>
-                            <Button onClick={handleLike} startIcon={post.liked ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />} color={post.liked ? 'error' : 'inherit'} size="small">
-                                {post.likes_count}
+                            <Button onClick={handleLike} startIcon={displayPost.liked ? <FavoriteIcon color="error" /> : <FavoriteBorderIcon />} color={displayPost.liked ? 'error' : 'inherit'} size="small">
+                                {displayPost.likes_count}
                             </Button>
                             <Button
                                 startIcon={<CommentIcon />}
@@ -344,11 +350,11 @@ export default function PostDetailPageMui() {
                                 size="small"
                                 onClick={() => setIsCommentsOpen(true)}
                             >
-                                {post.comments_count}
+                                {displayPost.comments_count}
                             </Button>
                         </Stack>
                         <IconButton onClick={handleSave} size="small">
-                            {post.saved ? <BookmarkFilledIcon /> : <BookmarkIcon />}
+                            {displayPost.saved ? <BookmarkFilledIcon /> : <BookmarkIcon />}
                         </IconButton>
                     </Box>
                 </Paper>
@@ -368,7 +374,7 @@ export default function PostDetailPageMui() {
                     >
                         <CommentIcon sx={{ mr: 1, color: 'text.secondary' }} />
                         <Typography color="text.primary" fontWeight={500}>
-                            Ver {post.comments_count} comentário{post.comments_count !== 1 ? 's' : ''}
+                            Ver {displayPost.comments_count} comentário{displayPost.comments_count !== 1 ? 's' : ''}
                         </Typography>
                     </Button>
                 </Paper>

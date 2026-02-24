@@ -65,7 +65,6 @@ export default function ComunidadePageMui() {
   const [videoReloadTrigger, setVideoReloadTrigger] = useState(0);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const previousPathnameRef = useRef<string | null>(null);
 
   const navigateToPost = (postId: string) => {
     sessionStorage.setItem('communityScrollPosition', window.scrollY.toString());
@@ -87,16 +86,6 @@ export default function ComunidadePageMui() {
       sessionStorage.removeItem('communityScrollPosition');
     }
   }, [isInitialized]);
-
-  // Recarregar feed ao voltar para a página (ex.: depois de ver perfil de alguém)
-  useEffect(() => {
-    const isOnFeed = pathname === '/dashboard/comunidade';
-    const wasElsewhere = previousPathnameRef.current != null && previousPathnameRef.current !== '/dashboard/comunidade';
-    if (isOnFeed && wasElsewhere && isInitialized) {
-      refreshPosts();
-    }
-    previousPathnameRef.current = pathname;
-  }, [pathname, isInitialized, refreshPosts]);
 
   const handleDoubleTap = (postId: string) => {
     const post = posts.find(p => p.id === postId);
