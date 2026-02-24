@@ -126,11 +126,11 @@ export default function ComunidadePageMui() {
     return account?.id === post.author.id;
   };
 
-  const isAdmin = account?.role === 'admin';
+  const canPinPost = account?.role === 'admin' || account?.role === 'moderator';
 
   const handlePinToggle = async (postId: string) => {
     const post = posts.find((p) => p.id === postId);
-    if (!post || !isAdmin) return;
+    if (!post || !canPinPost) return;
     const newPinned = !post.is_pinned;
     setTogglingPinPostId(postId);
     try {
@@ -414,7 +414,7 @@ export default function ComunidadePageMui() {
                 showHeartAnimation={showHeartAnimation === post.id}
                 isDeleting={deletingPostId === post.id}
                 authorHasStories={authorIdsWithUnseenStories.has(post.author.id)}
-                isAdmin={isAdmin}
+                isAdmin={canPinPost}
                 onPinToggle={() => handlePinToggle(post.id)}
                 isTogglingPin={togglingPinPostId === post.id}
                 videoReloadTrigger={videoReloadTrigger}

@@ -99,7 +99,7 @@ export async function GET(
     }
 }
 
-// PATCH - Atualizar post (admin: fixar/desfixar)
+// PATCH - Atualizar post (admin ou moderator: fixar/desfixar)
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ postId: string }> }
@@ -120,8 +120,10 @@ export async function PATCH(
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        if ((account as { role?: string }).role !== 'admin') {
-            return NextResponse.json({ error: 'Apenas administradores podem fixar ou desfixar posts' }, { status: 403 });
+        const role = (account as { role?: string }).role;
+        const canPin = role === 'admin' || role === 'moderator';
+        if (!canPin) {
+            return NextResponse.json({ error: 'Apenas administradores e moderadores podem fixar ou desfixar posts' }, { status: 403 });
         }
 
         const post = await Post.findById(postId);
