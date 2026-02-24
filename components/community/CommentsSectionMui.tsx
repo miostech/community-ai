@@ -156,6 +156,7 @@ interface MentionUser {
 }
 
 export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: CommentsSectionMuiProps) {
+    const router = useRouter();
     const { account } = useAccount();
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -441,6 +442,10 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         return account?.id === authorId;
     };
 
+    const goToProfile = (userId: string) => {
+        router.push(`/dashboard/comunidade/perfil/${userId}`);
+    };
+
     const addEmoji = (emoji: string) => {
         setCommentText(prev => prev + emoji);
         inputRef.current?.focus();
@@ -637,17 +642,33 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                             <Box key={comment._id}>
                                 {/* Comentário principal */}
                                 <Stack direction="row" spacing={1.5}>
-                                    <Avatar
-                                        src={comment.author.avatar_url}
+                                    <Box
+                                        component="button"
+                                        type="button"
+                                        onClick={() => goToProfile(comment.author.id)}
                                         sx={{
-                                            width: 36,
-                                            height: 36,
-                                            background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                            fontSize: '0.875rem',
+                                            p: 0,
+                                            m: 0,
+                                            border: 'none',
+                                            background: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignSelf: 'flex-start',
                                         }}
                                     >
-                                        {comment.author.name.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                        <Avatar
+                                            src={comment.author.avatar_url}
+                                            sx={{
+                                                width: 36,
+                                                height: 36,
+                                                background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
+                                                fontSize: '0.875rem',
+                                                '&:hover': { opacity: 0.9 },
+                                            }}
+                                        >
+                                            {comment.author.name.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                    </Box>
 
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
                                         <Box
@@ -658,7 +679,22 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 py: 1.5,
                                             }}
                                         >
-                                            <Typography variant="body2" fontWeight={600}>
+                                            <Typography
+                                                component="button"
+                                                type="button"
+                                                variant="body2"
+                                                fontWeight={600}
+                                                onClick={() => goToProfile(comment.author.id)}
+                                                sx={{
+                                                    p: 0,
+                                                    m: 0,
+                                                    border: 'none',
+                                                    background: 'none',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    '&:hover': { textDecoration: 'underline' },
+                                                }}
+                                            >
                                                 {comment.author.name}
                                             </Typography>
                                             {editingComment?.id === comment._id && !editingComment.isReply ? (
@@ -812,17 +848,33 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 <Stack spacing={1.5} sx={{ mt: 1.5, pl: 1 }}>
                                                     {comment.replies.map((reply) => (
                                                         <Stack key={reply._id} direction="row" spacing={1}>
-                                                            <Avatar
-                                                                src={reply.author.avatar_url}
+                                                            <Box
+                                                                component="button"
+                                                                type="button"
+                                                                onClick={() => goToProfile(reply.author.id)}
                                                                 sx={{
-                                                                    width: 28,
-                                                                    height: 28,
-                                                                    background: 'linear-gradient(135deg, #4ade80 0%, #3b82f6 100%)',
-                                                                    fontSize: '0.75rem',
+                                                                    p: 0,
+                                                                    m: 0,
+                                                                    border: 'none',
+                                                                    background: 'none',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignSelf: 'flex-start',
                                                                 }}
                                                             >
-                                                                {reply.author.name.charAt(0).toUpperCase()}
-                                                            </Avatar>
+                                                                <Avatar
+                                                                    src={reply.author.avatar_url}
+                                                                    sx={{
+                                                                        width: 28,
+                                                                        height: 28,
+                                                                        background: 'linear-gradient(135deg, #4ade80 0%, #3b82f6 100%)',
+                                                                        fontSize: '0.75rem',
+                                                                        '&:hover': { opacity: 0.9 },
+                                                                    }}
+                                                                >
+                                                                    {reply.author.name.charAt(0).toUpperCase()}
+                                                                </Avatar>
+                                                            </Box>
 
                                                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                                                 <Box
@@ -833,7 +885,23 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                         py: 1,
                                                                     }}
                                                                 >
-                                                                    <Typography variant="caption" fontWeight={600}>
+                                                                    <Typography
+                                                                        component="button"
+                                                                        type="button"
+                                                                        variant="caption"
+                                                                        fontWeight={600}
+                                                                        onClick={() => goToProfile(reply.author.id)}
+                                                                        sx={{
+                                                                            p: 0,
+                                                                            m: 0,
+                                                                            border: 'none',
+                                                                            background: 'none',
+                                                                            cursor: 'pointer',
+                                                                            textAlign: 'left',
+                                                                            display: 'block',
+                                                                            '&:hover': { textDecoration: 'underline' },
+                                                                        }}
+                                                                    >
                                                                         {reply.author.name}
                                                                     </Typography>
                                                                     {editingComment?.id === reply._id && editingComment.isReply ? (
