@@ -37,17 +37,15 @@ export async function POST(request: NextRequest) {
         } catch {
             return NextResponse.json({ error: 'Corpo da requisição inválido' }, { status: 400 });
         }
-        const {
-            content,
-            images,
-            video_url,
-            link_instagram_post,
-            link_tiktok_post,
-            link_youtube_post,
-            category,
-            tags,
-            visibility,
-        } = body;
+        const content = typeof body.content === 'string' ? body.content : '';
+        const images = Array.isArray(body.images) ? body.images : [];
+        const video_url = typeof body.video_url === 'string' ? body.video_url : undefined;
+        const link_instagram_post = typeof body.link_instagram_post === 'string' ? body.link_instagram_post : undefined;
+        const link_tiktok_post = typeof body.link_tiktok_post === 'string' ? body.link_tiktok_post : undefined;
+        const link_youtube_post = typeof body.link_youtube_post === 'string' ? body.link_youtube_post : undefined;
+        const category = body.category;
+        const tags = Array.isArray(body.tags) ? body.tags : [];
+        const visibility = body.visibility;
 
         // Categoria é obrigatória — normalizar para aceitar com acento ou maiúsculas (ex: "Atualização", "Suporte")
         const validCategories = ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'];
