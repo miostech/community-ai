@@ -508,10 +508,10 @@ export default function PerfilPage() {
                   label="Email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
                   placeholder="seu@email.com"
                   fullWidth
                   size="small"
+                  disabled
                 />
               </Stack>
             </Box>
