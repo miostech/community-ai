@@ -339,8 +339,10 @@ export default function CriarPostPageMui() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Erro ao publicar post');
+        const data = await response.json().catch(() => ({}));
+        const msg = data?.error || 'Erro ao publicar post';
+        const details = data?.details;
+        throw new Error(details ? `${msg}: ${details}` : msg);
       }
 
       const data = await response.json();

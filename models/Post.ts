@@ -199,4 +199,13 @@ PostSchema.pre('save', function () {
     }
 });
 
+// Em desenvolvimento, se o modelo em cache tiver enum de category desatualizado (sem atualizacao/suporte), recompilar
+if (process.env.NODE_ENV === 'development' && mongoose.models.Post) {
+    const path = mongoose.models.Post.schema.path('category') as { enumValues?: string[] };
+    const cachedEnum = path?.enumValues;
+    if (!cachedEnum || !cachedEnum.includes('atualizacao')) {
+        delete (mongoose.models as Record<string, mongoose.Model<unknown>>).Post;
+    }
+}
+
 export default mongoose.models.Post || mongoose.model<IPost>('Post', PostSchema);

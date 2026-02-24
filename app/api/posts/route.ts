@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Post from '@/models/Post';
@@ -8,6 +9,8 @@ import SavedPost from '@/models/SavedPost';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const isDev = process.env.NODE_ENV === 'development';
 
 // POST - Criar um novo post
 export async function POST(request: NextRequest) {
@@ -28,7 +31,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        const body = await request.json();
+        let body: Record<string, unknown>;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json({ error: 'Corpo da requisição inválido' }, { status: 400 });
+        }
         const {
             content,
             images,
@@ -41,15 +49,18 @@ export async function POST(request: NextRequest) {
             visibility,
         } = body;
 
-        // Categoria é obrigatória
+        // Categoria é obrigatória — normalizar para aceitar com acento ou maiúsculas (ex: "Atualização", "Suporte")
         const validCategories = ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'];
-        if (!category || typeof category !== 'string' || !validCategories.includes(category.trim())) {
+        const normalizeCategory = (s: string) =>
+            s.trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        const rawCategory = typeof category === 'string' ? category : '';
+        const categoryValue = rawCategory ? normalizeCategory(rawCategory) : '';
+        if (!categoryValue || !validCategories.includes(categoryValue)) {
             return NextResponse.json(
                 { error: 'O tipo de post é obrigatório. Escolha uma categoria (Ideia, Resultado, Dúvida, Roteiro, Geral, Atualização ou Suporte).' },
                 { status: 400 }
             );
         }
-        const categoryValue = category.trim();
 
         // Apenas admin, moderator e criador podem publicar com categoria "atualização"
         const accRole = (account as { role?: string }).role;
@@ -77,7 +88,10 @@ export async function POST(request: NextRequest) {
             media_type = 'image';
         }
 
-        const accountId = (account as { _id: unknown })._id;
+        const rawAccountId = (account as { _id: unknown })._id;
+        const accountId = rawAccountId instanceof mongoose.Types.ObjectId
+            ? rawAccountId
+            : new mongoose.Types.ObjectId(String(rawAccountId));
         const post = new Post({
             author_id: accountId,
             content: content?.trim() || '',
@@ -129,7 +143,15 @@ export async function POST(request: NextRequest) {
         }, { status: 201 });
     } catch (error) {
         console.error('Erro ao criar post:', error);
-        return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+        const message = error instanceof Error ? error.message : 'Erro interno do servidor';
+        const details = error instanceof Error && error.cause ? String(error.cause) : undefined;
+        return NextResponse.json(
+            {
+                error: isDev ? message : 'Erro interno do servidor',
+                ...(isDev && details && { details }),
+            },
+            { status: 500 }
+        );
     }
 }
 
