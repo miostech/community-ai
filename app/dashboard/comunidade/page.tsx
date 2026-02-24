@@ -342,7 +342,7 @@ export default function ComunidadePageMui() {
                 '&:hover': { color: 'text.primary', textDecoration: 'underline' },
               }}
             >
-              Top do Ranking
+              Top Ranking
             </Typography>
             <StoriesMui users={storyUsers} />
           </Box>
