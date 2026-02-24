@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation';
 
 export interface NotificationItem {
   id: string;

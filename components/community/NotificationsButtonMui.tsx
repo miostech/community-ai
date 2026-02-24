@@ -21,9 +21,10 @@ import {
     ChatBubble as CommentIcon,
     Reply as ReplyIcon,
     AlternateEmail as MentionIcon,
+    Gavel as ModerationIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation';
 
 export interface NotificationItem {
     id: string;
@@ -74,6 +75,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'começou a seguir você';
         case 'mention':
             return 'mencionou você';
+        case 'moderation':
+            return 'comentário aguardando sua aprovação';
         default:
             return 'interagiu';
     }
@@ -89,6 +92,8 @@ function getNotificationIcon(type: NotificationType) {
             return <ReplyIcon sx={{ fontSize: 14, color: 'success.main' }} />;
         case 'mention':
             return <MentionIcon sx={{ fontSize: 14, color: 'info.main' }} />;
+        case 'moderation':
+            return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
         default:
             return null;
     }
@@ -201,7 +206,7 @@ export function NotificationsButtonMui() {
                         <MenuItem
                             key={n.id}
                             component={Link}
-                            href={n.post_id ? `/dashboard/comunidade/${n.post_id}` : '#'}
+                            href={n.post_id ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}` : '#'}
                             onClick={handleClose}
                             sx={{
                                 py: 1.5,

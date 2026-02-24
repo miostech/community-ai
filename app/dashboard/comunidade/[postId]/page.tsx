@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
@@ -105,6 +105,10 @@ export default function PostDetailPageMui() {
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [isDeletingPost, setIsDeletingPost] = useState(false);
     const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+    const searchParams = useSearchParams();
+    useEffect(() => {
+        if (searchParams.get('openComments') === '1' && postId) setIsCommentsOpen(true);
+    }, [searchParams, postId]);
 
     const fetchPost = useCallback(async () => {
         try {

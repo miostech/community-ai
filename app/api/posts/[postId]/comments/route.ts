@@ -353,6 +353,24 @@ export async function POST(
             }
         }
 
+        // Comentário pendente de moderação: notificar todos os moderadores
+        if (needsModeration) {
+            const moderators = await Account.find({ role: { $in: ['moderator', 'admin'] } })
+                .select('_id')
+                .lean();
+            for (const mod of moderators) {
+                const modId = (mod as { _id: mongoose.Types.ObjectId })._id;
+                await createNotification({
+                    recipientId: modId,
+                    actorId: account._id,
+                    type: 'moderation',
+                    postId: postId,
+                    commentId: comment._id,
+                    contentPreview: trimmedContent.slice(0, 100),
+                });
+            }
+        }
+
         // Popular author para retornar
         await comment.populate('author_id', 'first_name last_name avatar_url');
 
