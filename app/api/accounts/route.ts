@@ -158,6 +158,7 @@ export async function GET() {
                 background_url: acc.background_url,
                 plan: acc.plan,
                 code_invite: acc.code_invite,
+                role: acc.role || 'user',
             },
             subscription: {
                 status: subscriptionStatus,

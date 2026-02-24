@@ -23,6 +23,7 @@ export interface Post {
   created_at: string;
   liked?: boolean;
   saved?: boolean;
+  is_pinned?: boolean;
 }
 
 interface PostsContextType {

@@ -61,6 +61,7 @@ export default function ComunidadePageMui() {
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [togglingPinPostId, setTogglingPinPostId] = useState<string | null>(null);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const previousPathnameRef = useRef<string | null>(null);
@@ -133,6 +134,33 @@ export default function ComunidadePageMui() {
 
   const isMyPost = (post: Post) => {
     return account?.id === post.author.id;
+  };
+
+  const isAdmin = account?.role === 'admin';
+
+  const handlePinToggle = async (postId: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post || !isAdmin) return;
+    const newPinned = !post.is_pinned;
+    setTogglingPinPostId(postId);
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_pinned: newPinned }),
+      });
+      if (res.ok) {
+        updatePost(postId, { is_pinned: newPinned });
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Não foi possível atualizar o post');
+      }
+    } catch (e) {
+      console.error('Erro ao fixar/desfixar post:', e);
+      alert('Erro ao atualizar o post');
+    } finally {
+      setTogglingPinPostId(null);
+    }
   };
 
   // Intersection Observer para lazy loading
@@ -388,6 +416,9 @@ export default function ComunidadePageMui() {
                 showHeartAnimation={showHeartAnimation === post.id}
                 isDeleting={deletingPostId === post.id}
                 authorHasStories={authorIdsWithUnseenStories.has(post.author.id)}
+                isAdmin={isAdmin}
+                onPinToggle={() => handlePinToggle(post.id)}
+                isTogglingPin={togglingPinPostId === post.id}
               />
             ))
           )}

@@ -41,6 +41,7 @@ export async function GET(
             video_url: post.video_url || null,
             link_instagram_post: post.link_instagram_post || null,
             category: post.category || 'geral',
+            is_pinned: !!post.is_pinned,
             likes_count: post.likes_count || 0,
             comments_count: post.comments_count || 0,
             created_at: post.created_at || post.published_at || new Date(),
@@ -75,6 +76,58 @@ export async function GET(
         return NextResponse.json({ post: formattedPost });
     } catch (error) {
         console.error('Erro ao buscar post:', error);
+        return NextResponse.json(
+            { error: 'Erro interno do servidor' },
+            { status: 500 }
+        );
+    }
+}
+
+// PATCH - Atualizar post (admin: fixar/desfixar)
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ postId: string }> }
+) {
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+        }
+
+        const { postId } = await params;
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
+
+        await connectMongo();
+
+        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id role').lean();
+        if (!account) {
+            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        if ((account as { role?: string }).role !== 'admin') {
+            return NextResponse.json({ error: 'Apenas administradores podem fixar ou desfixar posts' }, { status: 403 });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
+        }
+
+        const body = await request.json();
+        const is_pinned = body.is_pinned === true;
+
+        post.is_pinned = is_pinned;
+        await post.save();
+
+        return NextResponse.json({
+            success: true,
+            post: {
+                id: post._id.toString(),
+                is_pinned: post.is_pinned,
+            },
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar post:', error);
         return NextResponse.json(
             { error: 'Erro interno do servidor' },
             { status: 500 }

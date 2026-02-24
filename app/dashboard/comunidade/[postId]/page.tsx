@@ -35,6 +35,7 @@ import {
     BookmarkBorder as BookmarkIcon,
     Bookmark as BookmarkFilledIcon,
     OpenInNew as OpenInNewIcon,
+    PushPin as PushPinIcon,
 } from '@mui/icons-material';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
@@ -58,6 +59,7 @@ interface Post {
     created_at: string;
     liked?: boolean;
     saved?: boolean;
+    is_pinned?: boolean;
 }
 
 const categoryLabels: Record<PostCategory, string> = {
@@ -260,7 +262,13 @@ export default function PostDetailPageMui() {
                                 </Box>
                             </Stack>
                         </Link>
-                        <Chip label={categoryLabels[post.category] || 'Geral'} size="small" variant="outlined" />
+                        {post.is_pinned ? (
+                            <IconButton size="small" sx={{ color: 'text.secondary' }} aria-label="Post fixado">
+                                <PushPinIcon sx={{ fontSize: 20 }} />
+                            </IconButton>
+                        ) : (
+                            <Chip label={categoryLabels[post.category] || 'Geral'} size="small" variant="outlined" />
+                        )}
                     </Box>
 
                     {/* Content */}

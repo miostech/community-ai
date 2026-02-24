@@ -28,6 +28,7 @@ import {
     MoreVert as MoreVertIcon,
     Delete as DeleteIcon,
     OpenInNew as OpenInNewIcon,
+    PushPin as PushPinIcon,
 } from '@mui/icons-material';
 import { ImageCarousel } from './ImageCarousel';
 import { Post } from '@/contexts/PostsContext';
@@ -67,6 +68,10 @@ interface PostCardMuiProps {
     isDeleting?: boolean;
     /** Quando true, exibe a borda colorida de stories no avatar do autor */
     authorHasStories?: boolean;
+    /** Admin pode fixar/desfixar qualquer post */
+    isAdmin?: boolean;
+    onPinToggle?: () => void;
+    isTogglingPin?: boolean;
 }
 
 export function PostCardMui({
@@ -81,6 +86,9 @@ export function PostCardMui({
     onDoubleTap,
     isDeleting,
     authorHasStories = false,
+    isAdmin = false,
+    onPinToggle,
+    isTogglingPin = false,
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [isVerticalVideo, setIsVerticalVideo] = useState(false);
@@ -172,16 +180,22 @@ export function PostCardMui({
                 }
                 action={
                     <Stack direction="row" spacing={0.5} alignItems="center">
-                        <Chip
-                            label={categoryLabels[post.category] || 'Geral'}
-                            size="small"
-                            sx={{
-                                height: 24,
-                                fontSize: '0.625rem',
-                                fontWeight: 500,
-                            }}
-                        />
-                        {isMyPost && (
+                        {post.is_pinned ? (
+                            <IconButton size="small" sx={{ color: 'text.secondary' }} aria-label="Post fixado">
+                                <PushPinIcon sx={{ fontSize: 20 }} />
+                            </IconButton>
+                        ) : (
+                            <Chip
+                                label={categoryLabels[post.category] || 'Geral'}
+                                size="small"
+                                sx={{
+                                    height: 24,
+                                    fontSize: '0.625rem',
+                                    fontWeight: 500,
+                                }}
+                            />
+                        )}
+                        {(isMyPost || isAdmin) && (
                             <>
                                 <IconButton size="small" onClick={handleMenuOpen}>
                                     <MoreVertIcon fontSize="small" />
@@ -193,19 +207,41 @@ export function PostCardMui({
                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                 >
-                                    <MenuItem onClick={handleDelete} disabled={isDeleting}>
-                                        <ListItemIcon>
-                                            {isDeleting ? (
-                                                <CircularProgress size={20} />
-                                            ) : (
-                                                <DeleteIcon fontSize="small" color="error" />
-                                            )}
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={isDeleting ? 'Excluindo...' : 'Excluir post'}
-                                            primaryTypographyProps={{ color: 'error' }}
-                                        />
-                                    </MenuItem>
+                                    {isAdmin && onPinToggle && (
+                                        <MenuItem
+                                            onClick={() => {
+                                                handleMenuClose();
+                                                onPinToggle();
+                                            }}
+                                            disabled={isTogglingPin}
+                                        >
+                                            <ListItemIcon>
+                                                {isTogglingPin ? (
+                                                    <CircularProgress size={20} />
+                                                ) : (
+                                                    <PushPinIcon fontSize="small" />
+                                                )}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={isTogglingPin ? 'Salvando...' : post.is_pinned ? 'Desfixar post' : 'Fixar post'}
+                                            />
+                                        </MenuItem>
+                                    )}
+                                    {isMyPost && (
+                                        <MenuItem onClick={handleDelete} disabled={isDeleting}>
+                                            <ListItemIcon>
+                                                {isDeleting ? (
+                                                    <CircularProgress size={20} />
+                                                ) : (
+                                                    <DeleteIcon fontSize="small" color="error" />
+                                                )}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={isDeleting ? 'Excluindo...' : 'Excluir post'}
+                                                primaryTypographyProps={{ color: 'error' }}
+                                            />
+                                        </MenuItem>
+                                    )}
                                 </Menu>
                             </>
                         )}
