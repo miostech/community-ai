@@ -182,9 +182,17 @@ export default function ComunidadePageMui() {
     return () => observer.disconnect();
   }, [hasMore, isLoadingMore, isLoading, loadMorePosts, showSavedOnly]);
 
-  const displayedPosts = showSavedOnly
-    ? posts.filter(post => post.saved === true)
-    : posts;
+  const displayedPosts = React.useMemo(() => {
+    const list = showSavedOnly
+      ? posts.filter(post => post.saved === true)
+      : posts;
+    const seen = new Set<string>();
+    return list.filter(post => {
+      if (seen.has(post.id)) return false;
+      seen.add(post.id);
+      return true;
+    });
+  }, [showSavedOnly, posts]);
 
   /** Mesma lógica do ranking de stories: borda colorida só quando há stories não vistos (some depois de ver). */
   const STORIES_SEEN_KEY = 'stories_seen_';

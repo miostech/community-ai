@@ -84,7 +84,11 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
       if (refresh || pageNum === 1) {
         setPosts(data.posts);
       } else {
-        setPosts(prev => [...prev, ...data.posts]);
+        setPosts(prev => {
+          const prevIds = new Set(prev.map(p => p.id));
+          const newPosts = (data.posts as Post[]).filter(p => !prevIds.has(p.id));
+          return [...prev, ...newPosts];
+        });
       }
 
       setHasMore(data.pagination.hasMore);
