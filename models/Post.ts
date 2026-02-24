@@ -20,7 +20,7 @@ export interface IPost extends Document {
     link_youtube_post?: string;
 
     // Organização
-    category: 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
+    category: 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
     media_type: 'text' | 'image' | 'video';
     tags: string[];
     is_pinned: boolean;
@@ -114,7 +114,7 @@ const PostSchema = new Schema<IPost>(
         // Organização
         category: {
             type: String,
-            enum: ['ideia', 'resultado', 'duvida', 'roteiro', 'geral'],
+            enum: ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'],
             default: 'geral',
             index: true,
         },

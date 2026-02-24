@@ -34,7 +34,7 @@ import {
 import { ImageCarousel } from './ImageCarousel';
 import { Post } from '@/contexts/PostsContext';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
 
 const categoryLabels: Record<PostCategory, string> = {
     ideia: 'Ideia',
@@ -42,6 +42,8 @@ const categoryLabels: Record<PostCategory, string> = {
     duvida: 'Dúvida',
     roteiro: 'Roteiro',
     geral: 'Geral',
+    atualizacao: 'Atualização',
+    suporte: 'Suporte',
 };
 
 function formatTimeAgo(dateString: string): string {

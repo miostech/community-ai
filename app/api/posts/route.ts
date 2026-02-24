@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
 
         await connectMongo();
 
-        // Buscar o account do usuário
-        const account = await Account.findOne({ auth_user_id: authUserId });
+        // Buscar o account do usuário (com role para validar categoria atualização)
+        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id first_name last_name avatar_url role').lean();
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
@@ -41,6 +41,26 @@ export async function POST(request: NextRequest) {
             visibility,
         } = body;
 
+        // Categoria é obrigatória
+        const validCategories = ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'];
+        if (!category || typeof category !== 'string' || !validCategories.includes(category.trim())) {
+            return NextResponse.json(
+                { error: 'O tipo de post é obrigatório. Escolha uma categoria (Ideia, Resultado, Dúvida, Roteiro, Geral, Atualização ou Suporte).' },
+                { status: 400 }
+            );
+        }
+        const categoryValue = category.trim();
+
+        // Apenas admin, moderator e criador podem publicar com categoria "atualização"
+        const accRole = (account as { role?: string }).role;
+        const canUseAtualizacao = accRole === 'admin' || accRole === 'moderator' || accRole === 'criador';
+        if (categoryValue === 'atualizacao' && !canUseAtualizacao) {
+            return NextResponse.json(
+                { error: 'Apenas administradores, moderadores e criadores podem publicar atualizações' },
+                { status: 403 }
+            );
+        }
+
         // Validação básica
         if (!content?.trim() && (!images || images.length === 0) && !video_url?.trim()) {
             return NextResponse.json(
@@ -57,15 +77,16 @@ export async function POST(request: NextRequest) {
             media_type = 'image';
         }
 
+        const accountId = (account as { _id: unknown })._id;
         const post = new Post({
-            author_id: account._id,
+            author_id: accountId,
             content: content?.trim() || '',
             images: images || [],
             video_url: video_url?.trim() || undefined,
             link_instagram_post: link_instagram_post?.trim() || undefined,
             link_tiktok_post: link_tiktok_post?.trim() || undefined,
             link_youtube_post: link_youtube_post?.trim() || undefined,
-            category: category || 'geral',
+            category: categoryValue,
             media_type,
             tags: tags || [],
             visibility: visibility || 'members',
@@ -76,16 +97,18 @@ export async function POST(request: NextRequest) {
         await post.save();
 
         // Popular author para retornar dados completos
-        await post.populate('author_id', 'first_name last_name avatar_url');
+        await post.populate('author_id', 'first_name last_name avatar_url role');
 
+        const authorPop = post.author_id as { _id: { toString: () => string }; first_name?: string; last_name?: string; avatar_url?: string; role?: string };
         return NextResponse.json({
             success: true,
             post: {
                 id: post._id.toString(),
                 author: {
-                    id: account._id.toString(),
-                    name: `${account.first_name} ${account.last_name}`.trim(),
-                    avatar_url: account.avatar_url,
+                    id: authorPop?._id?.toString() ?? (account as { _id: { toString: () => string } })._id.toString(),
+                    name: authorPop ? `${authorPop.first_name || ''} ${authorPop.last_name || ''}`.trim() : `${(account as { first_name?: string; last_name?: string }).first_name || ''} ${(account as { first_name?: string; last_name?: string }).last_name || ''}`.trim(),
+                    avatar_url: authorPop?.avatar_url ?? (account as { avatar_url?: string }).avatar_url,
+                    role: authorPop?.role,
                 },
                 content: post.content,
                 images: post.images,
@@ -129,8 +152,10 @@ export async function GET(request: NextRequest) {
 
         await connectMongo();
 
-        // Buscar account do usuário atual para verificar likes
-        const currentAccount = await Account.findOne({ auth_user_id: authUserId });
+        // Buscar account do usuário atual (com role para restringir categoria atualização)
+        const currentAccount = await Account.findOne({ auth_user_id: authUserId }).select('_id role').lean();
+        const userRole = (currentAccount as { role?: string } | null)?.role;
+        const canSeeAtualizacao = userRole === 'admin' || userRole === 'moderator' || userRole === 'criador';
 
         // Construir query
         const query: Record<string, unknown> = {
@@ -139,6 +164,18 @@ export async function GET(request: NextRequest) {
 
         if (category && category !== 'all') {
             query.category = category;
+        }
+
+        // Usuários sem role privilegiado não veem posts da categoria "atualização"
+        if (!canSeeAtualizacao) {
+            if (category === 'atualizacao') {
+                return NextResponse.json({
+                    success: true,
+                    posts: [],
+                    pagination: { page: 1, limit, total: 0, totalPages: 0, hasMore: false },
+                });
+            }
+            query.category = query.category || { $ne: 'atualizacao' };
         }
 
         if (authorId) {

@@ -64,7 +64,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 
-type PostType = 'idea' | 'script' | 'question' | 'result' | 'general';
+type PostType = 'idea' | 'script' | 'question' | 'result' | 'general' | 'update' | 'support';
 
 /** Perfil exibido: pode ser usuário conhecido (stories) ou qualquer autor do feed */
 type ProfileDisplay = CommunityUser | {
@@ -91,6 +91,8 @@ const postTypeLabels: Record<PostType, string> = {
   question: 'Dúvida',
   result: 'Resultado',
   general: 'Geral',
+  update: 'Atualização',
+  support: 'Suporte',
 };
 
 const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
@@ -99,6 +101,8 @@ const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'su
   question: 'warning',
   result: 'success',
   general: 'default',
+  update: 'info',
+  support: 'primary',
 };
 
 /** Mapeia categoria da API para tipo do perfil */
@@ -108,6 +112,8 @@ const categoryToType: Record<string, PostType> = {
   duvida: 'question',
   roteiro: 'script',
   geral: 'general',
+  atualizacao: 'update',
+  suporte: 'support',
 };
 
 /** Tipo unificado para posts exibidos no perfil */

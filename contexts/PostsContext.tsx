@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
 
 export interface PostAuthor {
   id: string;

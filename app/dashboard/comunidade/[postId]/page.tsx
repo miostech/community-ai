@@ -39,7 +39,7 @@ import {
     PushPin as PushPinIcon,
 } from '@mui/icons-material';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
 
 interface PostAuthor {
     id: string;
@@ -69,6 +69,8 @@ const categoryLabels: Record<PostCategory, string> = {
     duvida: 'Dúvida',
     roteiro: 'Roteiro',
     geral: 'Geral',
+    atualizacao: 'Atualização',
+    suporte: 'Suporte',
 };
 
 function formatTimeAgo(dateString: string): string {

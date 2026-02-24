@@ -27,6 +27,21 @@ export async function GET(
             return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
         }
 
+        // Posts da categoria "atualização" só podem ser vistos por admin, moderator e criador
+        if ((post as { category?: string }).category === 'atualizacao') {
+            const session = await auth();
+            if (!session?.user?.id) {
+                return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
+            }
+            const authUserId = (session.user as { id?: string; auth_user_id?: string }).auth_user_id || session.user.id;
+            const account = await Account.findOne({ auth_user_id: authUserId }).select('role').lean();
+            const role = (account as { role?: string } | null)?.role;
+            const canSee = role === 'admin' || role === 'moderator' || role === 'criador';
+            if (!canSee) {
+                return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
+            }
+        }
+
         // Formatar post para resposta
         const author = post.author_id as any;
         const formattedPost = {

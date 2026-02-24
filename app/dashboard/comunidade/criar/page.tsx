@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from '@/contexts/AccountContext';
 import { usePosts } from '@/contexts/PostsContext';
@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { MultiImageUpload } from '@/components/community/MultiImageUpload';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
 
 interface UploadedImage {
   url: string;
@@ -61,6 +61,8 @@ const categoryLabels: Record<PostCategory, string> = {
   duvida: 'Dúvida',
   roteiro: 'Roteiro',
   geral: 'Geral',
+  atualizacao: 'Atualização',
+  suporte: 'Suporte',
 };
 
 export default function CriarPostPageMui() {
@@ -74,11 +76,11 @@ export default function CriarPostPageMui() {
   const [error, setError] = useState<string | null>(null);
 
   const [newPost, setNewPost] = useState<{
-    category: PostCategory;
+    category: PostCategory | null;
     content: string;
     link_instagram_post: string;
   }>({
-    category: 'geral',
+    category: null,
     content: '',
     link_instagram_post: '',
   });
@@ -86,6 +88,15 @@ export default function CriarPostPageMui() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [activeMediaTab, setActiveMediaTab] = useState(0);
   const [uploadedVideo, setUploadedVideo] = useState<UploadedVideo | null>(null);
+
+  const canUseAtualizacao = account?.role === 'admin' || account?.role === 'moderator' || account?.role === 'criador';
+
+  // Se categoria for "atualização" e o usuário não tiver permissão, limpar seleção
+  useEffect(() => {
+    if (newPost.category === 'atualizacao' && !canUseAtualizacao) {
+      setNewPost((prev) => ({ ...prev, category: null }));
+    }
+  }, [canUseAtualizacao, newPost.category]);
 
   // Upload imediato ao selecionar imagens
   const handleImagesSelect = async (files: File[]) => {
@@ -291,6 +302,11 @@ export default function CriarPostPageMui() {
     const validImages = uploadedImages.filter((img) => img.url && !img.isUploading && !img.error);
     const videoUrl = uploadedVideo?.url;
 
+    if (!newPost.category) {
+      setError('Escolha o tipo de post');
+      return;
+    }
+
     if (!newPost.content.trim() && validImages.length === 0 && !videoUrl) {
       setError('Adicione conteúdo, imagem ou vídeo');
       return;
@@ -318,7 +334,7 @@ export default function CriarPostPageMui() {
           images: imageUrls,
           video_url: finalVideoUrl,
           link_instagram_post: newPost.link_instagram_post || undefined,
-          category: newPost.category,
+          category: newPost.category!,
         }),
       });
 
@@ -342,7 +358,7 @@ export default function CriarPostPageMui() {
           images: imageUrls,
           video_url: finalVideoUrl || undefined,
           link_instagram_post: newPost.link_instagram_post || undefined,
-          category: newPost.category,
+          category: newPost.category!,
           likes_count: 0,
           comments_count: 0,
           created_at: new Date().toISOString(),
@@ -409,7 +425,10 @@ export default function CriarPostPageMui() {
               Tipo de post
             </Typography>
             <Stack direction="row" flexWrap="wrap" gap={1}>
-              {(['ideia', 'resultado', 'duvida', 'roteiro', 'geral'] as PostCategory[]).map((cat) => (
+              {((['ideia', 'resultado', 'duvida', 'roteiro', 'geral'] as PostCategory[]).concat(
+                (account?.role === 'admin' || account?.role === 'moderator' || account?.role === 'criador') ? ['atualizacao'] : [],
+                ['suporte']
+              )).map((cat) => (
                 <Chip
                   key={cat}
                   label={categoryLabels[cat]}
@@ -432,6 +451,11 @@ export default function CriarPostPageMui() {
                 />
               ))}
             </Stack>
+            {!newPost.category && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Selecione o tipo de post antes de publicar
+              </Typography>
+            )}
           </Box>
 
           {/* Conteúdo */}
