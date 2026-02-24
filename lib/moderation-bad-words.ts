@@ -55,6 +55,11 @@ const BAD_WORDS: string[] = [
     'mentiroso',
     'golpista',
     'golpe',
+    'puta',
+    'rouba marido',
+    'vagabunda',
+    'amante',
+    
 
     
 ];
