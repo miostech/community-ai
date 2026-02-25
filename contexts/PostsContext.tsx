@@ -51,7 +51,7 @@ interface PostsContextType {
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
 
-const POSTS_PER_PAGE = 10;
+const POSTS_PER_PAGE = 2;
 
 export function PostsProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([]);
