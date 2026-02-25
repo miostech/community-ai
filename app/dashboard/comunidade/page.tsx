@@ -445,10 +445,7 @@ export default function ComunidadePageMui() {
           <CommentsSectionMui
             postId={activeCommentsPostId}
             isOpen={!!activeCommentsPostId}
-            onClose={() => {
-              setActiveCommentsPostId(null);
-              setVideoReloadTrigger((t) => t + 1);
-            }}
+            onClose={() => setActiveCommentsPostId(null)}
             onCommentAdded={() => {
               updatePost(activeCommentsPostId, {
                 comments_count: (posts.find(p => p.id === activeCommentsPostId)?.comments_count || 0) + 1

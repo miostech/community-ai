@@ -1724,10 +1724,7 @@ export default function PerfilComunidadePage() {
         <CommentsSectionMui
           postId={activeCommentsPostId}
           isOpen={!!activeCommentsPostId}
-          onClose={() => {
-            setActiveCommentsPostId(null);
-            setVideoReloadTrigger((t) => t + 1);
-          }}
+          onClose={() => setActiveCommentsPostId(null)}
           onCommentAdded={() => {
             if (isOwnProfile) {
               setProfilePostsFromApi((prev) =>
