@@ -37,35 +37,54 @@ export async function GET() {
             .select('_id first_name last_name avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
             .lean();
 
-        // Buscar estatísticas de interação para todos os usuários de uma vez
+        // Buscar estatísticas de interação (sem auto-curtida, sem auto-comentário, só likes em posts)
 
-        // 1. Likes dados por cada usuário
+        // 1. Likes dados: só em posts, excluir quando o autor do post é o próprio usuário
         const likesGivenAgg = await Like.aggregate([
-            { $match: { user_id: { $in: accountIds } } },
-            { $group: { _id: '$user_id', count: { $sum: 1 } } }
+            { $match: { user_id: { $in: accountIds }, target_type: 'post' } },
+            { $lookup: { from: 'posts', localField: 'target_id', foreignField: '_id', as: 'postDoc' } },
+            { $unwind: '$postDoc' },
+            { $match: { $expr: { $ne: ['$postDoc.author_id', '$user_id'] } } },
+            { $group: { _id: '$user_id', count: { $sum: 1 } } },
         ]);
         const likesGivenMap = new Map<string, number>();
-        likesGivenAgg.forEach((item: any) => {
+        likesGivenAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
             likesGivenMap.set(item._id.toString(), item.count);
         });
 
-        // 2. Total de posts por usuário
-        const postsCountAgg = await Post.aggregate([
-            { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true } } },
-            { $group: { _id: '$author_id', count: { $sum: 1 }, totalLikes: { $sum: '$likes_count' } } }
+        // 2. Likes recebidos: só likes em posts cujo autor é o usuário e quem curtiu é outro
+        const likesReceivedAgg = await Like.aggregate([
+            { $match: { target_type: 'post' } },
+            { $lookup: { from: 'posts', localField: 'target_id', foreignField: '_id', as: 'postDoc' } },
+            { $unwind: '$postDoc' },
+            { $match: { $expr: { $ne: ['$user_id', '$postDoc.author_id'] }, 'postDoc.author_id': { $in: accountIds }, 'postDoc.is_deleted': { $ne: true } } },
+            { $group: { _id: '$postDoc.author_id', count: { $sum: 1 } } },
         ]);
-        const postsMap = new Map<string, { count: number; totalLikes: number }>();
-        postsCountAgg.forEach((item: any) => {
-            postsMap.set(item._id.toString(), { count: item.count, totalLikes: item.totalLikes || 0 });
+        const likesReceivedMap = new Map<string, number>();
+        likesReceivedAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            likesReceivedMap.set(item._id.toString(), item.count);
         });
 
-        // 3. Total de comentários por usuário
+        // 3. Total de posts por usuário (só count; likes recebidos vêm de likesReceivedMap)
+        const postsCountAgg = await Post.aggregate([
+            { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true } } },
+            { $group: { _id: '$author_id', count: { $sum: 1 } } },
+        ]);
+        const postsMap = new Map<string, { count: number }>();
+        postsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            postsMap.set(item._id.toString(), { count: item.count });
+        });
+
+        // 4. Comentários: só em posts de outros (excluir quando autor do comentário = autor do post)
         const commentsCountAgg = await Comment.aggregate([
             { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true } } },
-            { $group: { _id: '$author_id', count: { $sum: 1 } } }
+            { $lookup: { from: 'posts', localField: 'post_id', foreignField: '_id', as: 'postDoc' } },
+            { $unwind: '$postDoc' },
+            { $match: { $expr: { $ne: ['$author_id', '$postDoc.author_id'] } } },
+            { $group: { _id: '$author_id', count: { $sum: 1 } } },
         ]);
         const commentsMap = new Map<string, number>();
-        commentsCountAgg.forEach((item: any) => {
+        commentsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
             commentsMap.set(item._id.toString(), item.count);
         });
 
@@ -84,11 +103,12 @@ export async function GET() {
 
             // Calcular score de interação
             const likesGiven = likesGivenMap.get(accountIdStr) || 0;
-            const postStats = postsMap.get(accountIdStr) || { count: 0, totalLikes: 0 };
+            const likesReceived = likesReceivedMap.get(accountIdStr) || 0;
+            const postStats = postsMap.get(accountIdStr) || { count: 0 };
             const commentsCount = commentsMap.get(accountIdStr) || 0;
 
-            // Score = likes dados + likes recebidos nos posts + total de posts + total de comentários
-            const interactionScore = likesGiven + postStats.totalLikes + (postStats.count * 2) + commentsCount;
+            // Score = likes dados + likes recebidos (só de outros) + total de posts * 2 + comentários (só em posts de outros)
+            const interactionScore = likesGiven + likesReceived + (postStats.count * 2) + commentsCount;
 
             const latestStoryAt = latestStoryAtMap.get(accountIdStr);
 
@@ -101,7 +121,7 @@ export async function GET() {
                 latestStoryAt: latestStoryAt ? new Date(latestStoryAt).getTime() : undefined,
                 stats: {
                     likesGiven,
-                    likesReceived: postStats.totalLikes,
+                    likesReceived,
                     postsCount: postStats.count,
                     commentsCount,
                 },

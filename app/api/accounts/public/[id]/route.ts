@@ -61,25 +61,46 @@ export async function GET(
       }
     }
 
-    // Buscar estatísticas de interação
-    const [likesGivenResult, postsResult, commentsResult] = await Promise.all([
-      // Likes dados pelo usuário
-      Like.countDocuments({ user_id: accountId }),
-      // Posts e likes recebidos
+    // Buscar estatísticas de interação (mesma regra da stories: sem auto-curtida, sem auto-comentário, só likes em posts)
+    const [likesGivenResult, likesReceivedResult, postsCountResult, commentsResult] = await Promise.all([
+      // Likes dados: só em posts, excluir auto-curtida
+      Like.aggregate([
+        { $match: { user_id: accountId, target_type: 'post' } },
+        { $lookup: { from: 'posts', localField: 'target_id', foreignField: '_id', as: 'postDoc' } },
+        { $unwind: '$postDoc' },
+        { $match: { $expr: { $ne: ['$postDoc.author_id', '$user_id'] } } },
+        { $count: 'total' },
+      ]),
+      // Likes recebidos: só de outros (em posts do usuário)
+      Like.aggregate([
+        { $match: { target_type: 'post' } },
+        { $lookup: { from: 'posts', localField: 'target_id', foreignField: '_id', as: 'postDoc' } },
+        { $unwind: '$postDoc' },
+        { $match: { $expr: { $ne: ['$user_id', '$postDoc.author_id'] }, 'postDoc.author_id': accountId, 'postDoc.is_deleted': { $ne: true } } },
+        { $count: 'total' },
+      ]),
+      // Total de posts
       Post.aggregate([
         { $match: { author_id: accountId, is_deleted: { $ne: true } } },
-        { $group: { _id: null, count: { $sum: 1 }, totalLikes: { $sum: '$likes_count' } } }
+        { $count: 'total' },
       ]),
-      // Comentários feitos
-      Comment.countDocuments({ author_id: accountId, is_deleted: { $ne: true } }),
+      // Comentários: só em posts de outros
+      Comment.aggregate([
+        { $match: { author_id: accountId, is_deleted: { $ne: true } } },
+        { $lookup: { from: 'posts', localField: 'post_id', foreignField: '_id', as: 'postDoc' } },
+        { $unwind: '$postDoc' },
+        { $match: { $expr: { $ne: ['$author_id', '$postDoc.author_id'] } } },
+        { $count: 'total' },
+      ]),
     ]);
 
-    const likesGiven = likesGivenResult || 0;
-    const postStats = postsResult[0] || { count: 0, totalLikes: 0 };
-    const commentsCount = commentsResult || 0;
+    const likesGiven = likesGivenResult[0]?.total ?? 0;
+    const likesReceived = likesReceivedResult[0]?.total ?? 0;
+    const postsCount = postsCountResult[0]?.total ?? 0;
+    const commentsCount = commentsResult[0]?.total ?? 0;
 
-    // Score = likes dados + likes recebidos nos posts + total de posts * 2 + total de comentários
-    const interactionCount = likesGiven + (postStats.totalLikes || 0) + (postStats.count * 2) + commentsCount;
+    // Score = likes dados + likes recebidos (só de outros) + total de posts * 2 + comentários (só em posts de outros)
+    const interactionCount = likesGiven + likesReceived + (postsCount * 2) + commentsCount;
 
     const acc = account as {
       first_name?: string;
@@ -107,8 +128,8 @@ export async function GET(
         interactionCount,
         stats: {
           likesGiven,
-          likesReceived: postStats.totalLikes || 0,
-          postsCount: postStats.count || 0,
+          likesReceived,
+          postsCount,
           commentsCount,
         },
         courseIds,
