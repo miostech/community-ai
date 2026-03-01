@@ -204,11 +204,12 @@ export default function TrendsPage() {
         minHeight: '100vh',
       }}
     >
-      {/* AppBar Fixo */}
+      {/* AppBar Fixo - apenas desktop */}
       <AppBar
         position="fixed"
         sx={{
-          width: { xs: '100%', md: 'calc(100% - 256px)' },
+          display: { xs: 'none', md: 'block' },
+          width: { md: 'calc(100% - 256px)' },
         }}
       >
         <Box sx={{ maxWidth: 672, mx: 'auto', width: '100%' }}>
@@ -233,10 +234,28 @@ export default function TrendsPage() {
         </Box>
       </AppBar>
 
-      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+      <Toolbar sx={{ minHeight: { xs: 0, md: 64 } }} />
 
-      {/* Descrição */}
-      <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+      {/* Título + Descrição */}
+      <Stack spacing={0.5} sx={{ display: { xs: 'flex', md: 'none' }, px: 2, pt: 1, pb: 1 }}>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.5rem' } }}
+        >
+          Top Trends
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+          Pesquisas em alta no Google no Brasil. Use para se inspirar e criar conteúdo em alta.
+        </Typography>
+        {data?.regionLabel && (
+          <Typography variant="caption" color="text.disabled">
+            Região: {data.regionLabel} · Últimas 24 horas
+          </Typography>
+        )}
+      </Stack>
+
+      {/* Descrição - desktop */}
+      <Box sx={{ display: { xs: 'none', md: 'block' }, px: 2, pt: 2, pb: 1 }}>
         <Typography variant="body2" color="text.secondary">
           Pesquisas em alta no Google no Brasil. Use para se inspirar e criar conteúdo em alta.
         </Typography>

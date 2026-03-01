@@ -99,7 +99,8 @@ export default function CursosPage() {
         <AppBar
           position="fixed"
           sx={{
-            width: { xs: '100%', md: 'calc(100% - 256px)' },
+            display: { xs: 'none', md: 'block' },
+            width: { md: 'calc(100% - 256px)' },
           }}
         >
           <Box sx={{ maxWidth: 1152, mx: 'auto', width: '100%' }}>
@@ -123,8 +124,14 @@ export default function CursosPage() {
             </Toolbar>
           </Box>
         </AppBar>
-        <Toolbar />
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
+        <Toolbar sx={{ display: { xs: 'none', md: 'flex' } }} />
+        <Typography
+          variant="h5"
+          sx={{ display: { xs: 'block', md: 'none' }, fontWeight: 700, fontSize: '1.15rem', px: 2, pt: 1 }}
+        >
+          Cursos
+        </Typography>
+        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ pt: { xs: 2, md: 0 } }}>
           {[1, 2, 3].map((i) => (
             <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={i}>
               <Card sx={{ borderRadius: 3 }}>
@@ -144,11 +151,12 @@ export default function CursosPage() {
 
   return (
     <Box sx={{ maxWidth: 1152, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
-      {/* AppBar Fixo */}
+      {/* AppBar Fixo - apenas desktop */}
       <AppBar
         position="fixed"
         sx={{
-          width: { xs: '100%', md: 'calc(100% - 256px)' },
+          display: { xs: 'none', md: 'block' },
+          width: { md: 'calc(100% - 256px)' },
         }}
       >
         <Box sx={{ maxWidth: 1152, mx: 'auto', width: '100%' }}>
@@ -173,7 +181,15 @@ export default function CursosPage() {
         </Box>
       </AppBar>
 
-      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+      <Toolbar sx={{ display: { xs: 'none', md: 'flex' }, minHeight: 64 }} />
+
+      {/* Título mobile */}
+      <Typography
+        variant="h5"
+        sx={{ display: { xs: 'block', md: 'none' }, fontWeight: 700, fontSize: '1.15rem', px: 2, pt: 1 }}
+      >
+        Cursos
+      </Typography>
 
       {/* Descrição */}
       <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, pb: { xs: 3, sm: 4 }, textAlign: 'center' }}>

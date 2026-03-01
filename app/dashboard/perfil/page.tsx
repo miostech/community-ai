@@ -315,7 +315,8 @@ export default function PerfilPage() {
         <AppBar
           position="fixed"
           sx={{
-            width: { xs: '100%', md: 'calc(100% - 256px)' },
+            display: { xs: 'none', md: 'block' },
+            width: { md: 'calc(100% - 256px)' },
           }}
         >
           <Box sx={{ maxWidth: 896, mx: 'auto', width: '100%' }}>
@@ -339,8 +340,14 @@ export default function PerfilPage() {
             </Toolbar>
           </Box>
         </AppBar>
-        <Toolbar />
-        <Box sx={{ px: { xs: 2, sm: 3 } }}>
+        <Toolbar sx={{ display: { xs: 'none', md: 'flex' } }} />
+        <Typography
+          variant="h5"
+          sx={{ display: { xs: 'block', md: 'none' }, fontWeight: 700, fontSize: '1.15rem', px: 2, pt: 1 }}
+        >
+          Meu Perfil
+        </Typography>
+        <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, sm: 0 } }}>
           <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress />
           </Paper>
@@ -362,11 +369,12 @@ export default function PerfilPage() {
 
   return (
     <Box sx={{ maxWidth: 896, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
-      {/* AppBar Fixo */}
+      {/* AppBar Fixo - apenas desktop */}
       <AppBar
         position="fixed"
         sx={{
-          width: { xs: '100%', md: 'calc(100% - 256px)' },
+          display: { xs: 'none', md: 'block' },
+          width: { md: 'calc(100% - 256px)' },
         }}
       >
         <Box sx={{ maxWidth: 896, mx: 'auto', width: '100%' }}>
@@ -392,7 +400,15 @@ export default function PerfilPage() {
         </Box>
       </AppBar>
 
-      <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: '72px', sm: '80px' } }}>
+      {/* Título mobile */}
+      <Typography
+        variant="h5"
+        sx={{ display: { xs: 'block', md: 'none' }, fontWeight: 700, fontSize: '1.15rem', px: 2, pt: 1 }}
+      >
+        Meu Perfil
+      </Typography>
+
+      <Box sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, md: '80px' } }}>
         {!formData.phone.trim() && (
           <Alert
             severity="warning"
