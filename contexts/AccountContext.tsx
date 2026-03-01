@@ -23,11 +23,16 @@ export interface Account {
     plan: 'free' | 'pro' | 'enterprise';
     code_invite: string | null;
     role?: 'user' | 'moderator' | 'admin' | 'criador';
+    /** ISO date em que o usuário solicitou o cancelamento da assinatura. */
+    request_cancel_at: string | null;
 }
 
 export interface Subscription {
     status: 'active' | 'expired' | 'inactive';
     expires_at: string | null;
+    order_status: string | null;
+    /** Status bruto da assinatura (payment.subscription.status), ex.: cancelled, cancelado, active */
+    subscription_status: string | null;
     product_name: string | null;
     last_payment_at: string | null;
     payment_method: string | null;

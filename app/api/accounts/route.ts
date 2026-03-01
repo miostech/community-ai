@@ -100,11 +100,13 @@ export async function GET() {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        // Busca o último pagamento aprovado do usuário
+        // Busca o último pagamento/evento relevante (inclui subscription_canceled para mostrar info de cancelamento)
         const email = (account as any).email || session.user.email;
         const lastPayment = await AccountPayment.findOne({
             email: email?.toLowerCase().trim(),
-            webhook_event_type: { $in: ['order_approved', 'paid', 'subscription_renewed'] }
+            webhook_event_type: {
+                $in: ['order_approved', 'paid', 'subscription_renewed', 'subscription_canceled'],
+            },
         }).sort({ createdAt: -1 }).lean();
 
         // Determina o status da assinatura
@@ -114,20 +116,22 @@ export async function GET() {
         if (lastPayment) {
             const payment = lastPayment as any;
 
+            // Reembolso: perde acesso imediato
+            if (payment.order_status === 'refunded') {
+                subscriptionStatus = 'inactive';
+                subscriptionExpiresAt = null;
+            }
             // Se tem dados de assinatura com próximo pagamento
-            if (payment.subscription?.next_payment) {
+            else if (payment.subscription?.next_payment) {
                 subscriptionExpiresAt = new Date(payment.subscription.next_payment);
                 subscriptionStatus = subscriptionExpiresAt > new Date() ? 'active' : 'expired';
             }
             // Se é uma compra única aprovada (sem subscription), considera ativo
-            // Produtos do tipo "payment" ou "membership" são compras únicas
             else if (
                 payment.order_status === 'paid' &&
                 ['order_approved', 'paid'].includes(payment.webhook_event_type)
             ) {
-                // Compra única - ativo enquanto não houver reembolso
                 subscriptionStatus = 'active';
-                // Para compras únicas, não tem data de expiração
                 subscriptionExpiresAt = null;
             }
         }
@@ -159,10 +163,15 @@ export async function GET() {
                 plan: acc.plan,
                 code_invite: acc.code_invite,
                 role: acc.role || 'user',
+                request_cancel_at: (acc.request_cancel_at as Date | undefined)
+                    ? new Date(acc.request_cancel_at as Date).toISOString()
+                    : null,
             },
             subscription: {
                 status: subscriptionStatus,
                 expires_at: subscriptionExpiresAt,
+                order_status: payment?.order_status ?? null,
+                subscription_status: payment?.subscription?.status ?? null,
                 product_name: payment?.product_name || null,
                 last_payment_at: payment?.createdAt || null,
                 payment_method: payment?.payment_method || null,

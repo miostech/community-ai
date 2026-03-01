@@ -22,6 +22,10 @@ import {
   InputAdornment,
   Divider,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -56,7 +60,7 @@ interface FormData {
 
 export default function PerfilPage() {
   const { data: session } = useSession();
-  const { account, isLoading: accountLoading, refreshAccount, setAccountFromResponse } = useAccount();
+  const { account, subscription, isLoading: accountLoading, refreshAccount, setAccountFromResponse } = useAccount();
   const { courseIds: myCourseIds, loading: coursesLoading } = useCourses();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [formData, setFormData] = useState<FormData>({
@@ -76,6 +80,8 @@ export default function PerfilPage() {
   const [isSyncingInstagramAvatar, setIsSyncingInstagramAvatar] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [cancelSubscriptionModalOpen, setCancelSubscriptionModalOpen] = useState(false);
+  const [isRequestingCancel, setIsRequestingCancel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /** Botão "Usar foto do Instagram" só aparece uma vez por dia (24h desde o último uso). */
@@ -796,6 +802,65 @@ export default function PerfilPage() {
           </Stack>
         </Paper>
 
+        {/* Cancelar assinatura */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Cancelar assinatura
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Solicitar o fim da renovação automática da assinatura.
+              </Typography>
+            </Box>
+            {account?.request_cancel_at ||
+            (subscription?.subscription_status &&
+              ['cancelled', 'canceled', 'cancelado'].includes(
+                subscription.subscription_status.toLowerCase()
+              )) ? (
+              <Typography variant="body2" color="text.secondary">
+                {account?.request_cancel_at ? (
+                  <>
+                    Cancelamento solicitado em{' '}
+                    {new Date(account.request_cancel_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                    .
+                  </>
+                ) : (
+                  <>Sua assinatura está cancelada.</>
+                )}
+                {subscription?.order_status !== 'refunded' && subscription?.expires_at && (
+                  <>
+                    {' '}
+                    Você terá acesso até{' '}
+                    {new Date(subscription.expires_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                    .
+                  </>
+                )}
+              </Typography>
+            ) : (
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setCancelSubscriptionModalOpen(true)}
+                fullWidth
+                sx={{ width: { sm: 'auto' }, alignSelf: 'flex-start' }}
+              >
+                Cancelar assinatura
+              </Button>
+            )}
+          </Stack>
+        </Paper>
+
         {/* Sair da conta */}
         <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
           <Stack
@@ -824,6 +889,54 @@ export default function PerfilPage() {
             </Button>
           </Stack>
         </Paper>
+
+        <Dialog
+          open={cancelSubscriptionModalOpen}
+          onClose={() => !isRequestingCancel && setCancelSubscriptionModalOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Cancelar assinatura</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" paragraph>
+              Ao cancelar, não ocorrerão novas cobranças automáticas desse produto.
+            </Typography>
+            <Typography variant="body1">
+              É importante lembrar que o cancelamento da assinatura não implica o reembolso dos
+              valores já pagos em cobranças anteriores.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setCancelSubscriptionModalOpen(false)}
+              disabled={isRequestingCancel}
+            >
+              Voltar
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={async () => {
+                setIsRequestingCancel(true);
+                try {
+                  const res = await fetch('/api/accounts/request-cancel', { method: 'POST' });
+                  if (!res.ok) throw new Error('Erro ao registrar cancelamento');
+                  await refreshAccount();
+                  setCancelSubscriptionModalOpen(false);
+                  setSuccessMessage('Pedido de cancelamento registrado.');
+                } catch {
+                  setError('Não foi possível registrar o pedido de cancelamento. Tente novamente.');
+                } finally {
+                  setIsRequestingCancel(false);
+                }
+              }}
+              disabled={isRequestingCancel}
+            >
+              Cancelar assinatura
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         <Snackbar
           open={Boolean(successMessage)}

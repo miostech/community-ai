@@ -33,6 +33,8 @@ export interface Account {
     followers_at_signup?: number | null;
     /** Papel na comunidade: moderador pode aprovar/ocultar comentários e deletar qualquer comentário; criador é exibido com badge */
     role?: 'user' | 'moderator' | 'admin' | 'criador';
+    /** Data em que o usuário solicitou o cancelamento da assinatura (apenas registro; cancelamento efetivo é externo). */
+    request_cancel_at?: Date;
     created_at: Date;
     updated_at: Date;
 }
@@ -69,6 +71,7 @@ const AccountSchema = new Schema(
         /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura */
         followers_at_signup: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
+        request_cancel_at: { type: Date },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
