@@ -215,6 +215,14 @@ export async function PATCH(request: NextRequest) {
             'primary_social_link',
             'avatar_url',
             'background_url',
+            'birth_date',
+            'gender',
+            'category',
+            'niches',
+            'address_country',
+            'address_state',
+            'address_city',
+            'link_media_kit',
         ];
 
         // Filtrar apenas campos permitidos
@@ -279,6 +287,14 @@ export async function PATCH(request: NextRequest) {
             avatar_url: account.avatar_url,
             background_url: account.background_url,
             plan: account.plan,
+            birth_date: (account as any).birth_date ?? null,
+            gender: (account as any).gender ?? null,
+            category: (account as any).category ?? null,
+            niches: (account as any).niches ?? [],
+            address_country: (account as any).address_country ?? null,
+            address_state: (account as any).address_state ?? null,
+            address_city: (account as any).address_city ?? null,
+            link_media_kit: (account as any).link_media_kit ?? null,
         };
 
         return NextResponse.json({

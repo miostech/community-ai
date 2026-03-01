@@ -35,6 +35,10 @@ import {
     ExpandMore,
     EmojiEvents as EmojiEventsIcon,
     InstallDesktop as InstallDesktopIcon,
+    Work as WorkIcon,
+    Storefront as StorefrontIcon,
+    Assignment as AssignmentIcon,
+    Badge as BadgeIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
@@ -89,6 +93,29 @@ const navItems: NavItem[] = [
         label: 'Top Trends',
         href: '/dashboard/trends',
         icon: <TrendingUpIcon />,
+    },
+    {
+        label: 'Trabalhos',
+        href: '/dashboard/trabalhos',
+        exactMatch: true,
+        icon: <WorkIcon />,
+        children: [
+            {
+                label: 'Vitrine de Campanhas',
+                href: '/dashboard/trabalhos/vitrine',
+                icon: <StorefrontIcon fontSize="small" />,
+            },
+            {
+                label: 'Minhas Campanhas',
+                href: '/dashboard/trabalhos/minhas-campanhas',
+                icon: <AssignmentIcon fontSize="small" />,
+            },
+            {
+                label: 'Mídia Kit',
+                href: '/dashboard/trabalhos/midia-kit',
+                icon: <BadgeIcon fontSize="small" />,
+            },
+        ],
     },
     {
         label: 'Cursos',

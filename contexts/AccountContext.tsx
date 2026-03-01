@@ -32,6 +32,14 @@ export interface Account {
     geo_lat?: number | null;
     geo_lon?: number | null;
     geo_updated_at?: string | null;
+    birth_date?: string | null;
+    gender?: 'masculino' | 'feminino' | 'nao_binario' | 'prefiro_nao_dizer' | null;
+    category?: 'ugc' | 'influencer' | 'ambos' | null;
+    niches?: string[];
+    address_country?: string | null;
+    address_state?: string | null;
+    address_city?: string | null;
+    link_media_kit?: string | null;
 }
 
 export interface Subscription {
@@ -57,6 +65,7 @@ interface AccountContextType {
     hasPhone: boolean;
     fullName: string;
     isSubscriptionActive: boolean;
+    isMidiaKitComplete: boolean;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -184,6 +193,16 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const hasPhone = Boolean(account?.phone && account.phone.trim() !== '');
     const fullName = account ? `${account.first_name} ${account.last_name}`.trim() : '';
     const isSubscriptionActive = subscription?.status === 'active';
+    const isMidiaKitComplete = Boolean(
+        account?.birth_date &&
+        account?.gender &&
+        account?.category &&
+        account?.niches && account.niches.length > 0 &&
+        account?.address_country?.trim() &&
+        account?.link_instagram?.trim() &&
+        account?.link_tiktok?.trim() &&
+        account?.link_media_kit?.trim()
+    );
 
     return (
         <AccountContext.Provider
@@ -198,6 +217,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
                 hasPhone,
                 fullName,
                 isSubscriptionActive,
+                isMidiaKitComplete,
             }}
         >
             {children}

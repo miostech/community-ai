@@ -46,6 +46,15 @@ export interface Account {
     cached_course_ids?: string[];
     /** Quando o cache de cursos foi atualizado pela última vez. */
     cached_course_ids_at?: Date | null;
+    /** Mídia Kit — dados do perfil para marcas */
+    birth_date?: Date;
+    gender?: 'masculino' | 'feminino' | 'nao_binario' | 'prefiro_nao_dizer';
+    category?: 'ugc' | 'influencer' | 'ambos';
+    niches?: string[];
+    address_country?: string;
+    address_state?: string;
+    address_city?: string;
+    link_media_kit?: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -91,6 +100,14 @@ const AccountSchema = new Schema(
         geo_updated_at: { type: Date },
         cached_course_ids: { type: [String], default: [] },
         cached_course_ids_at: { type: Date, default: null },
+        birth_date: { type: Date },
+        gender: { type: String, enum: ['masculino', 'feminino', 'nao_binario', 'prefiro_nao_dizer'], trim: true },
+        category: { type: String, enum: ['ugc', 'influencer', 'ambos'], trim: true },
+        niches: { type: [String], default: [] },
+        address_country: { type: String, trim: true },
+        address_state: { type: String, trim: true },
+        address_city: { type: String, trim: true },
+        link_media_kit: { type: String, trim: true },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

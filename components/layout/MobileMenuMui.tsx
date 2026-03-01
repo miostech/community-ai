@@ -15,6 +15,7 @@ import {
     Add as AddIcon,
     MenuBook as MenuBookIcon,
     Settings as SettingsIcon,
+    Work as WorkIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -40,9 +41,9 @@ const bottomNavItems: NavItem[] = [
         icon: <AddIcon />,
     },
     {
-        label: 'Cursos',
-        href: '/dashboard/cursos',
-        icon: <MenuBookIcon />,
+        label: 'Trabalhos',
+        href: '/dashboard/trabalhos',
+        icon: <WorkIcon />,
     },
     {
         label: 'Perfil',
