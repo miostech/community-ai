@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import { getTotalFollowers } from '@/lib/social-stats';
+import mongoose from 'mongoose';
 import Account from '@/models/Account';
 import AccountPayment from '@/models/AccountPayment';
 
@@ -171,7 +172,7 @@ export async function GET() {
         const isFoundingMember = await checkFoundingMember(email);
         if ((acc.is_founding_member ?? false) !== isFoundingMember) {
             Account.updateOne(
-                { _id: acc._id },
+                { _id: acc._id as mongoose.Types.ObjectId },
                 { $set: { is_founding_member: isFoundingMember } }
             ).catch(() => {});
         }
