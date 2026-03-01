@@ -132,12 +132,28 @@ export async function GET() {
 
         // Busca o último pagamento/evento relevante (inclui subscription_canceled para mostrar info de cancelamento)
         const email = (account as any).email || session.user.email;
+        const emailNorm = email?.toLowerCase().trim();
         const lastPayment = await AccountPayment.findOne({
-            email: email?.toLowerCase().trim(),
+            email: emailNorm,
             webhook_event_type: {
                 $in: ['order_approved', 'paid', 'subscription_renewed', 'subscription_canceled'],
             },
         }).sort({ createdAt: -1 }).lean();
+
+        // Data do primeiro pagamento aprovado (para liberar Trabalhos após 7 dias)
+        // Para assinaturas usa subscription.start_date; senão usa createdAt do pedido
+        const firstPaidPayment = await AccountPayment.findOne({
+            email: emailNorm,
+            order_status: 'paid',
+        }).sort({ createdAt: 1 }).lean();
+        const firstPaidRaw = firstPaidPayment as any;
+        const firstPaidAt = firstPaidRaw
+            ? (firstPaidRaw.subscription?.start_date
+                ? new Date(firstPaidRaw.subscription.start_date).toISOString()
+                : firstPaidRaw.createdAt
+                    ? new Date(firstPaidRaw.createdAt).toISOString()
+                    : null)
+            : null;
 
         // Determina o status da assinatura
         let subscriptionStatus: 'active' | 'expired' | 'inactive' = 'inactive';
@@ -222,6 +238,7 @@ export async function GET() {
                 product_name: payment?.product_name || null,
                 last_payment_at: payment?.createdAt || null,
                 payment_method: payment?.payment_method || null,
+                first_paid_at: firstPaidAt,
             },
         });
     } catch (error) {

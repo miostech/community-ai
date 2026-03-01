@@ -52,6 +52,8 @@ export interface Subscription {
     product_name: string | null;
     last_payment_at: string | null;
     payment_method: string | null;
+    /** Data do primeiro pagamento aprovado (ISO). Trabalhos libera 7 dias após essa data. */
+    first_paid_at: string | null;
 }
 
 interface AccountContextType {
@@ -67,6 +69,10 @@ interface AccountContextType {
     fullName: string;
     isSubscriptionActive: boolean;
     isMidiaKitComplete: boolean;
+    /** Data/hora em que a sessão Trabalhos será liberada (7 dias após first_paid_at). null = já liberado ou sem compra. */
+    trabalhosUnlockAt: Date | null;
+    /** true se o usuário já pode acessar Trabalhos (7 dias após a primeira compra). */
+    canAccessTrabalhos: boolean;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -194,6 +200,18 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const hasPhone = Boolean(account?.phone && account.phone.trim() !== '');
     const fullName = account ? `${account.first_name} ${account.last_name}`.trim() : '';
     const isSubscriptionActive = subscription?.status === 'active';
+
+    const TRABALHOS_UNLOCK_DAYS = 7;
+    const firstPaidAt = subscription?.first_paid_at ?? null;
+    const trabalhosUnlockAt: Date | null = firstPaidAt
+        ? (() => {
+            const d = new Date(firstPaidAt);
+            d.setDate(d.getDate() + TRABALHOS_UNLOCK_DAYS);
+            return d;
+        })()
+        : null;
+    const canAccessTrabalhos = trabalhosUnlockAt === null || Date.now() >= trabalhosUnlockAt.getTime();
+
     const isMidiaKitComplete = Boolean(
         account?.birth_date &&
         account?.gender &&
@@ -219,6 +237,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
                 fullName,
                 isSubscriptionActive,
                 isMidiaKitComplete,
+                trabalhosUnlockAt,
+                canAccessTrabalhos,
             }}
         >
             {children}
