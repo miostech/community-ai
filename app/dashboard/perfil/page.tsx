@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useAccount } from '@/contexts/AccountContext';
@@ -109,6 +109,50 @@ export default function PerfilPage() {
     }
   }, [account, accountLoading]);
 
+  const phoneAutoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasPhoneChanged = useRef(false);
+
+  const autoSavePhone = useCallback(async (data: FormData) => {
+    if (!data.phone.trim()) return;
+    try {
+      const response = await fetch('/api/accounts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (response.ok) {
+        await refreshAccount();
+      }
+    } catch {
+      // silently fail — user can still save manually
+    }
+  }, [refreshAccount]);
+
+  useEffect(() => {
+    if (!account) return;
+
+    const savedPhone = account.phone || '';
+    const savedCountryCode = account.phone_country_code || '+55';
+    const phoneChanged = formData.phone !== savedPhone || formData.phone_country_code !== savedCountryCode;
+
+    if (!phoneChanged) {
+      hasPhoneChanged.current = false;
+      return;
+    }
+
+    hasPhoneChanged.current = true;
+
+    if (phoneAutoSaveTimer.current) clearTimeout(phoneAutoSaveTimer.current);
+    phoneAutoSaveTimer.current = setTimeout(() => {
+      if (hasPhoneChanged.current && formData.phone.trim()) {
+        autoSavePhone(formData);
+      }
+    }, 1500);
+
+    return () => {
+      if (phoneAutoSaveTimer.current) clearTimeout(phoneAutoSaveTimer.current);
+    };
+  }, [formData.phone, formData.phone_country_code, account, autoSavePhone, formData]);
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -704,8 +748,37 @@ export default function PerfilPage() {
           </Stack>
         </Paper>
 
-        {/* Meus cursos */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+        {/* Meus cursos — mobile: botão para página de cursos */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2, display: { xs: 'block', sm: 'none' } }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Cursos
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Desbloqueie ainda mais sua criação de conteúdo, com nossos cursos exclusivos.
+              </Typography>
+            </Box>
+            <Button
+              component={Link}
+              href="/dashboard/cursos"
+              variant="outlined"
+              // startIcon={<SchoolIcon />}
+              fullWidth
+              sx={{ width: { sm: 'auto' } }}
+            >
+              Ver cursos
+            </Button>
+          </Stack>
+        </Paper>
+
+        {/* Meus cursos — desktop: lista completa */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2, display: { xs: 'none', sm: 'block' } }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
             Cursos
           </Typography>
@@ -755,7 +828,6 @@ export default function PerfilPage() {
                       <Button
                         size="small"
                         variant="outlined"
-                        // endIcon={<ShoppingCartIcon />}
                         href={curso.kiwifyUrl}
                         target="_blank"
                         rel="noopener noreferrer"
