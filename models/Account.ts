@@ -35,6 +35,10 @@ export interface Account {
     role?: 'user' | 'moderator' | 'admin' | 'criador';
     /** Data em que o usuário solicitou o cancelamento da assinatura (apenas registro; cancelamento efetivo é externo). */
     request_cancel_at?: Date;
+    /** Slugs canônicos dos cursos comprados (cache atualizado via check-subscriptions). */
+    cached_course_ids?: string[];
+    /** Quando o cache de cursos foi atualizado pela última vez. */
+    cached_course_ids_at?: Date | null;
     created_at: Date;
     updated_at: Date;
 }
@@ -72,6 +76,8 @@ const AccountSchema = new Schema(
         followers_at_signup: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
         request_cancel_at: { type: Date },
+        cached_course_ids: { type: [String], default: [] },
+        cached_course_ids_at: { type: Date, default: null },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

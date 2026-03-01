@@ -335,8 +335,7 @@ export default function PerfilComunidadePage() {
       setOwnFollowersAtSignup(null);
       return;
     }
-    // skipCourses=true → rota não chama Kiwify (cursos já vêm do CoursesContext)
-    fetch(`/api/accounts/public/${encodeURIComponent(account.id)}?skipCourses=true`)
+    fetch(`/api/accounts/public/${encodeURIComponent(account.id)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.profile?.interactionCount != null) {
@@ -438,7 +437,7 @@ export default function PerfilComunidadePage() {
     });
 
     Promise.all([
-      fetch(`/api/accounts/public/${encodeURIComponent(identifier)}?skipCourses=true`).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/accounts/public/${encodeURIComponent(identifier)}`).then((r) => (r.ok ? r.json() : null)),
       fetch(`/api/posts?author_id=${encodeURIComponent(identifier)}&limit=50`).then((r) => (r.ok ? r.json() : null)),
     ])
       .then(([profileRes, postsRes]) => {
@@ -466,49 +465,6 @@ export default function PerfilComunidadePage() {
       .finally(() => { if (!cancelled) setOtherProfileLoading(false); });
 
     return () => { cancelled = true; };
-  }, [identifier, isOwnProfile]);
-
-  // Carregar cursos de outro usuário em segundo plano (evita bloquear render inicial)
-  useEffect(() => {
-    if (!identifier || !isAccountId(identifier) || isOwnProfile) return;
-    let cancelled = false;
-
-    fetch(`/api/accounts/public/${encodeURIComponent(identifier)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((profileRes) => {
-        if (cancelled) return;
-        const profile = profileRes?.profile;
-        if (!profile) return;
-        setOtherProfileData((prev) => {
-          if (!prev) return prev;
-          const nextName = profile?.name?.trim() || prev.profileUser.name;
-          const prevCreatedAt = 'created_at' in prev.profileUser ? prev.profileUser.created_at : null;
-          const prevFollowersAtSignup = 'followers_at_signup' in prev.profileUser ? prev.profileUser.followers_at_signup : null;
-          const prevCourseIds = 'courseIds' in prev.profileUser ? prev.profileUser.courseIds : undefined;
-          const nextProfile: ProfileDisplay = {
-            ...prev.profileUser,
-            name: nextName,
-            avatar: profile?.avatar_url ?? prev.profileUser.avatar,
-            initials: getInitialsFromName(nextName),
-            interactionCount: profile?.interactionCount ?? prev.profileUser.interactionCount,
-            instagramProfile: profile?.link_instagram?.trim() || prev.profileUser.instagramProfile,
-            tiktokProfile: profile?.link_tiktok?.trim() || prev.profileUser.tiktokProfile,
-            youtubeProfile: profile?.link_youtube?.trim() || prev.profileUser.youtubeProfile,
-            created_at: profile?.created_at ?? prevCreatedAt,
-            followers_at_signup: profile?.followers_at_signup ?? prevFollowersAtSignup,
-            courseIds: Array.isArray(profile?.courseIds)
-              ? profile.courseIds
-              : prevCourseIds,
-            role: profile?.role ?? ('role' in prev.profileUser ? prev.profileUser.role : undefined),
-          };
-          return { ...prev, profileUser: nextProfile };
-        });
-      })
-      .catch(() => { });
-
-    return () => {
-      cancelled = true;
-    };
   }, [identifier, isOwnProfile]);
 
   const isOtherUserById = isAccountId(identifier) && !isOwnProfile;
