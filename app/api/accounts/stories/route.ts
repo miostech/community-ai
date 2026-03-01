@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectMongo } from '@/lib/mongoose';
 import AccountModel from '@/models/Account';
+import AccountPayment from '@/models/AccountPayment';
 import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
@@ -34,7 +35,7 @@ export async function GET() {
         const accountIds = Array.from(topIds).map((id) => new mongoose.Types.ObjectId(id));
 
         const accounts = await AccountModel.find({ _id: { $in: accountIds } })
-            .select('_id first_name last_name avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
+            .select('_id first_name last_name email avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
             .lean();
 
         // Buscar estatísticas de interação (sem auto-curtida, sem auto-comentário, só likes em posts)
@@ -88,6 +89,28 @@ export async function GET() {
             commentsMap.set(item._id.toString(), item.count);
         });
 
+        // Verificar quais contas têm o último pagamento com status "refunded" (busca por email, pois o webhook não preenche account_id)
+        const accountEmails = accounts
+            .map((a) => (a as any).email?.toLowerCase?.().trim())
+            .filter(Boolean) as string[];
+
+        const refundedAgg = await AccountPayment.aggregate([
+            { $match: { email: { $in: accountEmails } } },
+            { $sort: { createdAt: -1 } },
+            { $group: { _id: '$email', lastStatus: { $first: '$order_status' } } },
+            { $match: { lastStatus: 'refunded' } },
+        ]);
+        const refundedEmails = new Set<string>(
+            refundedAgg.map((r: { _id: string }) => r._id)
+        );
+        const refundedAccountIds = new Set<string>();
+        accounts.forEach((a) => {
+            const email = (a as any).email?.toLowerCase?.().trim();
+            if (email && refundedEmails.has(email)) {
+                refundedAccountIds.add(a._id.toString());
+            }
+        });
+
         // Transformar para o formato esperado pelo Stories
         const storyUsers = accounts.map((account) => {
             const fullName = account.last_name
@@ -108,7 +131,10 @@ export async function GET() {
             const commentsCount = commentsMap.get(accountIdStr) || 0;
 
             // Score = likes dados + likes recebidos (só de outros) + total de posts * 2 + comentários (só em posts de outros)
-            const interactionScore = likesGiven + likesReceived + (postStats.count * 2) + commentsCount;
+            // Se o último pagamento foi reembolsado, perde todos os pontos
+            const interactionScore = refundedAccountIds.has(accountIdStr)
+                ? 0
+                : likesGiven + likesReceived + (postStats.count * 2) + commentsCount;
 
             const latestStoryAt = latestStoryAtMap.get(accountIdStr);
 

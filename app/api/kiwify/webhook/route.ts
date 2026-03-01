@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { connectMongo } from '@/lib/mongoose';
 import AccountPayment from '@/models/AccountPayment';
+import Account from '@/models/Account';
 
 // Token secreto para validar webhooks do Kiwify (configurar no .env)
 const KIWIFY_WEBHOOK_TOKEN = process.env.KIWIFY_WEBHOOK_TOKEN || '';
@@ -251,6 +252,13 @@ export async function POST(request: NextRequest) {
         if (shouldSaveRecord) {
             await savePaymentRecord(payload, email || 'unknown@webhook.local', customer, product);
             console.log(`✅ Registro salvo para evento: ${eventType}, email: ${email || 'N/A'}`);
+
+            if (email && ['paid', 'order_approved'].includes(eventType)) {
+                Account.updateOne(
+                    { email },
+                    { $set: { cached_course_ids: [], cached_course_ids_at: null } }
+                ).catch(() => {});
+            }
         } else {
             console.log(`ℹ️ Evento não salvo: ${eventType}`);
         }

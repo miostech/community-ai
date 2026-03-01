@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSubscriptionsByEmail, listKiwifyProducts } from '@/lib/kiwify';
+import { auth } from '@/lib/auth';
+import { connectMongo } from '@/lib/mongoose';
+import Account from '@/models/Account';
+import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,6 +20,23 @@ export async function POST(request: NextRequest) {
     }
 
     const { courseIds, customerName } = await getSubscriptionsByEmail(email);
+
+    // Converter rawIds para slugs canônicos e persistir no MongoDB como cache
+    const slugIds = CURSOS
+      .filter((curso) => courseIdsIncludeCourse(courseIds, curso))
+      .map((curso) => curso.id);
+
+    const session = await auth();
+    if (session?.user?.auth_user_id) {
+      connectMongo()
+        .then(() =>
+          Account.updateOne(
+            { auth_user_id: session.user.auth_user_id },
+            { $set: { cached_course_ids: slugIds, cached_course_ids_at: new Date() } }
+          )
+        )
+        .catch(() => {});
+    }
 
     const body: { courseIds: string[]; customerName?: string; _debug?: Record<string, unknown> } = {
       courseIds,

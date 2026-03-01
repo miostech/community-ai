@@ -28,35 +28,35 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    // skipCourses=true: próprio perfil já busca via check-subscriptions no client
-    const skipCourses = request.nextUrl.searchParams.get('skipCourses') === 'true';
-
     await connectMongo();
 
     const accountId = new mongoose.Types.ObjectId(id);
 
     const account = await Account.findById(accountId)
-      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at followers_at_signup role')
+      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at followers_at_signup role cached_course_ids cached_course_ids_at')
       .lean();
 
     if (!account) {
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
-    // Cursos que a pessoa tem acesso (Kiwify) — só para perfis de outros usuários.
-    // Converte para slugs canônicos (mesma lógica da página /cursos com courseIdsIncludeCourse)
-    // para que getCourseLabel funcione corretamente na exibição.
-    let courseIds: string[] = [];
-    if (!skipCourses) {
-      const email = (account as { email?: string }).email?.trim();
+    const acc2 = account as { cached_course_ids?: string[]; cached_course_ids_at?: Date | null; email?: string };
+    let courseIds: string[] = acc2.cached_course_ids ?? [];
+
+    if (!acc2.cached_course_ids_at) {
+      const email = acc2.email?.trim();
       if (email) {
         try {
           const { courseIds: rawIds } = await getSubscriptionsByEmail(email);
           courseIds = CURSOS
             .filter((curso) => courseIdsIncludeCourse(rawIds ?? [], curso))
             .map((curso) => curso.id);
+          Account.updateOne(
+            { _id: accountId },
+            { $set: { cached_course_ids: courseIds, cached_course_ids_at: new Date() } }
+          ).catch(() => {});
         } catch {
-          // ignora erro Kiwify; perfil segue sem cursos
+          // Kiwify indisponível; segue sem cursos
         }
       }
     }
