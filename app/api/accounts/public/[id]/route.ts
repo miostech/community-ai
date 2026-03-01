@@ -33,7 +33,7 @@ export async function GET(
     const accountId = new mongoose.Types.ObjectId(id);
 
     const account = await Account.findById(accountId)
-      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at followers_at_signup role cached_course_ids cached_course_ids_at')
+      .select('first_name last_name email avatar_url link_instagram link_tiktok link_youtube created_at followers_at_signup role is_founding_member cached_course_ids cached_course_ids_at')
       .lean();
 
     if (!account) {
@@ -112,6 +112,7 @@ export async function GET(
       created_at?: Date | string;
       followers_at_signup?: number | null;
       role?: 'user' | 'moderator' | 'admin' | 'criador';
+      is_founding_member?: boolean;
     };
 
     return NextResponse.json({
@@ -125,6 +126,7 @@ export async function GET(
         created_at: acc.created_at ?? null,
         followers_at_signup: acc.followers_at_signup ?? null,
         role: acc.role,
+        is_founding_member: acc.is_founding_member === true,
         interactionCount,
         stats: {
           likesGiven,

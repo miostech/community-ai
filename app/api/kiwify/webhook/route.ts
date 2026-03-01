@@ -259,6 +259,13 @@ export async function POST(request: NextRequest) {
                     { $set: { cached_course_ids: [], cached_course_ids_at: null } }
                 ).catch(() => {});
             }
+
+            if (email && ['order_refunded', 'refunded', 'chargeback', 'subscription_canceled'].includes(eventType)) {
+                Account.updateOne(
+                    { email, is_founding_member: true },
+                    { $set: { is_founding_member: false } }
+                ).catch(() => {});
+            }
         } else {
             console.log(`ℹ️ Evento não salvo: ${eventType}`);
         }

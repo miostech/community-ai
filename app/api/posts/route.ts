@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         await connectMongo();
 
         // Buscar o account do usuário (com role para validar categoria atualização)
-        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id first_name last_name avatar_url role').lean();
+        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id first_name last_name avatar_url role is_founding_member').lean();
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
@@ -109,9 +109,9 @@ export async function POST(request: NextRequest) {
         await post.save();
 
         // Popular author para retornar dados completos
-        await post.populate('author_id', 'first_name last_name avatar_url role');
+        await post.populate('author_id', 'first_name last_name avatar_url role is_founding_member');
 
-        const authorPop = post.author_id as { _id: { toString: () => string }; first_name?: string; last_name?: string; avatar_url?: string; role?: string };
+        const authorPop = post.author_id as { _id: { toString: () => string }; first_name?: string; last_name?: string; avatar_url?: string; role?: string; is_founding_member?: boolean };
         return NextResponse.json({
             success: true,
             post: {
@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
                     name: authorPop ? `${authorPop.first_name || ''} ${authorPop.last_name || ''}`.trim() : `${(account as { first_name?: string; last_name?: string }).first_name || ''} ${(account as { first_name?: string; last_name?: string }).last_name || ''}`.trim(),
                     avatar_url: authorPop?.avatar_url ?? (account as { avatar_url?: string }).avatar_url,
                     role: authorPop?.role,
+                    is_founding_member: authorPop?.is_founding_member === true,
                 },
                 content: post.content,
                 images: post.images,
@@ -210,7 +211,7 @@ export async function GET(request: NextRequest) {
                 .sort({ is_pinned: -1, created_at: -1 })
                 .skip(skip)
                 .limit(limit)
-                .populate('author_id', 'first_name last_name avatar_url link_instagram link_tiktok link_youtube role')
+                .populate('author_id', 'first_name last_name avatar_url link_instagram link_tiktok link_youtube role is_founding_member')
                 .lean(),
             Post.countDocuments(query),
         ]);
@@ -248,6 +249,7 @@ export async function GET(request: NextRequest) {
                 link_tiktok: post.author_id?.link_tiktok,
                 link_youtube: post.author_id?.link_youtube,
                 role: post.author_id?.role,
+                is_founding_member: post.author_id?.is_founding_member === true,
             },
             content: post.content,
             images: post.images,

@@ -351,6 +351,19 @@ export function PostCardMui({
                                 </Box>
                             </Tooltip>
                         )}
+                        {post.author.is_founding_member && (
+                            <Tooltip title="Membro Fundador" arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                <Box
+                                    component="span"
+                                    tabIndex={0}
+                                    role="img"
+                                    aria-label="Membro Fundador"
+                                    sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
+                                >
+                                    <Box component="img" src="/moderador.png" alt="" sx={{ width: 16, height: 16, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                </Box>
+                            </Tooltip>
+                        )}
                     </Stack>
                 }
                 subheader={

@@ -33,6 +33,8 @@ export interface Account {
     followers_at_signup?: number | null;
     /** Papel na comunidade: moderador pode aprovar/ocultar comentários e deletar qualquer comentário; criador é exibido com badge */
     role?: 'user' | 'moderator' | 'admin' | 'criador';
+    /** Membro fundador: assinou entre 23/02/2026 e 08/03/2026, sem cancelamento nem reembolso */
+    is_founding_member?: boolean;
     /** Data em que o usuário solicitou o cancelamento da assinatura (apenas registro; cancelamento efetivo é externo). */
     request_cancel_at?: Date;
     /** Geolocalização por IP (atualizada ao entrar na comunidade, no máx. a cada 24h) */
@@ -91,6 +93,7 @@ const AccountSchema = new Schema(
         /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura */
         followers_at_signup: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
+        is_founding_member: { type: Boolean, default: false },
         request_cancel_at: { type: Date },
         geo_country: { type: String, trim: true },
         geo_region: { type: String, trim: true },

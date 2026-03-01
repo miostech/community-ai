@@ -9,6 +9,35 @@ import AccountPayment from '@/models/AccountPayment';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const FOUNDING_START = new Date('2026-02-23T00:00:00.000Z');
+const FOUNDING_END = new Date('2026-03-09T00:00:00.000Z');
+
+async function checkFoundingMember(email: string): Promise<boolean> {
+    if (!email?.trim()) return false;
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const paidInPeriod = await AccountPayment.findOne({
+        email: normalizedEmail,
+        order_status: 'paid',
+        kiwify_created_at: { $gte: FOUNDING_START, $lt: FOUNDING_END },
+    }).lean();
+    if (!paidInPeriod) return false;
+
+    const hasRefund = await AccountPayment.findOne({
+        email: normalizedEmail,
+        order_status: { $in: ['refunded', 'chargeback'] },
+    }).lean();
+    if (hasRefund) return false;
+
+    const hasCancelled = await AccountPayment.findOne({
+        email: normalizedEmail,
+        'subscription.status': { $in: ['cancelled', 'cancelado', 'canceled'] },
+    }).lean();
+    if (hasCancelled) return false;
+
+    return true;
+}
+
 function toDate(value: unknown): Date | undefined {
     if (!value) return undefined;
     const d = new Date(value as string);
@@ -139,6 +168,14 @@ export async function GET() {
         const acc = account as unknown as { _id: unknown; used_instagram_avatar?: boolean; instagram_avatar_used_at?: Date | string; [k: string]: unknown };
         const payment = lastPayment as any;
 
+        const isFoundingMember = await checkFoundingMember(email);
+        if ((acc.is_founding_member ?? false) !== isFoundingMember) {
+            Account.updateOne(
+                { _id: acc._id },
+                { $set: { is_founding_member: isFoundingMember } }
+            ).catch(() => {});
+        }
+
         return NextResponse.json({
             success: true,
             account: {
@@ -163,6 +200,7 @@ export async function GET() {
                 plan: acc.plan,
                 code_invite: acc.code_invite,
                 role: acc.role || 'user',
+                is_founding_member: isFoundingMember,
                 request_cancel_at: (acc.request_cancel_at as Date | undefined)
                     ? new Date(acc.request_cancel_at as Date).toISOString()
                     : null,

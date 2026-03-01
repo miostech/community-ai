@@ -45,6 +45,7 @@ interface CommentAuthor {
     name: string;
     avatar_url?: string;
     role?: 'user' | 'moderator' | 'admin' | 'criador';
+    is_founding_member?: boolean;
 }
 
 interface Reply {
@@ -818,6 +819,13 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                         </Box>
                                                     </Tooltip>
                                                 )}
+                                                {comment.author.is_founding_member && (
+                                                    <Tooltip title="Membro Fundador" arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                                        <Box component="span" tabIndex={0} role="img" aria-label="Membro Fundador" sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}>
+                                                            <Box component="img" src="/moderador.png" alt="" sx={{ width: 14, height: 14, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                                        </Box>
+                                                    </Tooltip>
+                                                )}
                                             </Stack>
                                             {editingComment?.id === comment._id && !editingComment.isReply ? (
                                                 <Box sx={{ mt: 1 }}>
@@ -1107,6 +1115,13 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                                         alt=""
                                                                                         sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }}
                                                                                 />
+                                                                                </Box>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                        {reply.author.is_founding_member && (
+                                                                            <Tooltip title="Membro Fundador" arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                                                                <Box component="span" tabIndex={0} role="img" aria-label="Membro Fundador" sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}>
+                                                                                    <Box component="img" src="/moderador.png" alt="" sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }} />
                                                                                 </Box>
                                                                             </Tooltip>
                                                                         )}

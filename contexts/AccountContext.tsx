@@ -23,6 +23,7 @@ export interface Account {
     plan: 'free' | 'pro' | 'enterprise';
     code_invite: string | null;
     role?: 'user' | 'moderator' | 'admin' | 'criador';
+    is_founding_member?: boolean;
     /** ISO date em que o usuário solicitou o cancelamento da assinatura. */
     request_cancel_at: string | null;
     /** Geolocalização por IP (atualizada ao entrar na comunidade, no máx. a cada 24h) */

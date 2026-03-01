@@ -79,6 +79,7 @@ type ProfileDisplay = CommunityUser | {
   followers_at_signup?: number | null;
   courseIds?: string[];
   role?: 'user' | 'moderator' | 'admin' | 'criador';
+  is_founding_member?: boolean;
 };
 
 
@@ -457,6 +458,7 @@ export default function PerfilComunidadePage() {
           followers_at_signup: profile?.followers_at_signup ?? null,
           courseIds: Array.isArray(profile?.courseIds) ? profile.courseIds : undefined,
           role: profile?.role,
+          is_founding_member: profile?.is_founding_member === true,
         };
         const mappedPosts = posts.map(mapApiPostToProfilePost);
         setOtherProfileData({ profileUser, posts: mappedPosts });
@@ -496,6 +498,7 @@ export default function PerfilComunidadePage() {
         followers_at_signup: ownFollowersAtSignup,
         courseIds: ownCourseIds.length > 0 ? ownCourseIds : undefined,
         role: account?.role,
+        is_founding_member: account?.is_founding_member === true,
       };
     }
     return resolvedFromList;
@@ -1117,6 +1120,37 @@ export default function PerfilComunidadePage() {
                             ? '/coroa.png'
                             : '/verificado.png'
                       }
+                      alt=""
+                      sx={{ width: 20, height: 20, verticalAlign: 'middle', pointerEvents: 'none' }}
+                    />
+                  </Box>
+                </Tooltip>
+              )}
+              {'is_founding_member' in profileUser && profileUser.is_founding_member && (
+                <Tooltip
+                  title="Membro Fundador"
+                  arrow
+                  placement="top"
+                  enterDelay={300}
+                  leaveDelay={0}
+                  enterTouchDelay={0}
+                >
+                  <Box
+                    component="span"
+                    tabIndex={0}
+                    role="img"
+                    aria-label="Membro Fundador"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      cursor: 'help',
+                      outline: 'none',
+                      '&:focus-visible': { opacity: 0.9 },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/moderador.png"
                       alt=""
                       sx={{ width: 20, height: 20, verticalAlign: 'middle', pointerEvents: 'none' }}
                     />

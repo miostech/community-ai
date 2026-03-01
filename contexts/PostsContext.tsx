@@ -9,6 +9,7 @@ export interface PostAuthor {
   name: string;
   avatar_url?: string;
   role?: 'user' | 'moderator' | 'admin' | 'criador';
+  is_founding_member?: boolean;
 }
 
 export interface Post {
