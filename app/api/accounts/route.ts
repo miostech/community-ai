@@ -166,6 +166,14 @@ export async function GET() {
                 request_cancel_at: (acc.request_cancel_at as Date | undefined)
                     ? new Date(acc.request_cancel_at as Date).toISOString()
                     : null,
+                geo_country: acc.geo_country ?? null,
+                geo_region: acc.geo_region ?? null,
+                geo_city: acc.geo_city ?? null,
+                geo_lat: acc.geo_lat ?? null,
+                geo_lon: acc.geo_lon ?? null,
+                geo_updated_at: (acc.geo_updated_at as Date | undefined)
+                    ? new Date(acc.geo_updated_at as Date).toISOString()
+                    : null,
             },
             subscription: {
                 status: subscriptionStatus,

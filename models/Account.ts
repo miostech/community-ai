@@ -35,6 +35,13 @@ export interface Account {
     role?: 'user' | 'moderator' | 'admin' | 'criador';
     /** Data em que o usuário solicitou o cancelamento da assinatura (apenas registro; cancelamento efetivo é externo). */
     request_cancel_at?: Date;
+    /** Geolocalização por IP (atualizada ao entrar na comunidade, no máx. a cada 24h) */
+    geo_country?: string;
+    geo_region?: string;
+    geo_city?: string;
+    geo_lat?: number;
+    geo_lon?: number;
+    geo_updated_at?: Date;
     created_at: Date;
     updated_at: Date;
 }
@@ -72,6 +79,12 @@ const AccountSchema = new Schema(
         followers_at_signup: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
         request_cancel_at: { type: Date },
+        geo_country: { type: String, trim: true },
+        geo_region: { type: String, trim: true },
+        geo_city: { type: String, trim: true },
+        geo_lat: { type: Number },
+        geo_lon: { type: Number },
+        geo_updated_at: { type: Date },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

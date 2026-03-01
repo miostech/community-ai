@@ -25,6 +25,13 @@ export interface Account {
     role?: 'user' | 'moderator' | 'admin' | 'criador';
     /** ISO date em que o usuário solicitou o cancelamento da assinatura. */
     request_cancel_at: string | null;
+    /** Geolocalização por IP (atualizada ao entrar na comunidade, no máx. a cada 24h) */
+    geo_country?: string | null;
+    geo_region?: string | null;
+    geo_city?: string | null;
+    geo_lat?: number | null;
+    geo_lon?: number | null;
+    geo_updated_at?: string | null;
 }
 
 export interface Subscription {

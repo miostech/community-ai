@@ -78,6 +78,10 @@ export default function ComunidadePageMui() {
   }, [isInitialized, fetchPosts]);
 
   useEffect(() => {
+    fetch('/api/accounts/geo', { method: 'POST' }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const savedScrollPosition = sessionStorage.getItem('communityScrollPosition');
     if (savedScrollPosition && isInitialized) {
       setTimeout(() => {
