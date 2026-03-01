@@ -802,65 +802,6 @@ export default function PerfilPage() {
           </Stack>
         </Paper>
 
-        {/* Cancelar assinatura */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={600}>
-                Cancelar assinatura
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Solicitar o fim da renovação automática da assinatura.
-              </Typography>
-            </Box>
-            {account?.request_cancel_at ||
-            (subscription?.subscription_status &&
-              ['cancelled', 'canceled', 'cancelado'].includes(
-                subscription.subscription_status.toLowerCase()
-              )) ? (
-              <Typography variant="body2" color="text.secondary">
-                {account?.request_cancel_at ? (
-                  <>
-                    Cancelamento solicitado em{' '}
-                    {new Date(account.request_cancel_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                    .
-                  </>
-                ) : (
-                  <>Sua assinatura está cancelada.</>
-                )}
-                {subscription?.order_status !== 'refunded' && subscription?.expires_at && (
-                  <>
-                    {' '}
-                    Você terá acesso até{' '}
-                    {new Date(subscription.expires_at).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                    .
-                  </>
-                )}
-              </Typography>
-            ) : (
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => setCancelSubscriptionModalOpen(true)}
-                fullWidth
-                sx={{ width: { sm: 'auto' }, alignSelf: 'flex-start' }}
-              >
-                Cancelar assinatura
-              </Button>
-            )}
-          </Stack>
-        </Paper>
-
         {/* Sair da conta */}
         <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
           <Stack
@@ -889,6 +830,62 @@ export default function PerfilPage() {
             </Button>
           </Stack>
         </Paper>
+
+        {/* Cancelar assinatura */}
+        <Box sx={{ mt: 3, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
+          {account?.request_cancel_at ||
+          (subscription?.subscription_status &&
+            ['cancelled', 'canceled', 'cancelado'].includes(
+              subscription.subscription_status.toLowerCase()
+            )) ? (
+            <Typography variant="caption" color="text.disabled">
+              {account?.request_cancel_at ? (
+                <>
+                  Cancelamento da assinatura solicitado em{' '}
+                  {new Date(account.request_cancel_at).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                  .
+                </>
+              ) : (
+                <>Sua assinatura está cancelada.</>
+              )}
+              {subscription?.order_status !== 'refunded' && subscription?.expires_at && (
+                <>
+                  {' '}
+                  Você terá acesso até{' '}
+                  {new Date(subscription.expires_at).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                  .
+                </>
+              )}
+            </Typography>
+          ) : (
+            <Button
+              variant="text"
+              color="inherit"
+              size="small"
+              onClick={() => setCancelSubscriptionModalOpen(true)}
+              sx={{
+                color: 'text.disabled',
+                textTransform: 'none',
+                fontSize: '0.8rem',
+                p: 0,
+                minWidth: 'auto',
+                '&:hover': { color: 'error.main', backgroundColor: 'transparent' },
+              }}
+            >
+              Gerenciar assinatura
+            </Button>
+          )}
+        </Box>
 
         <Dialog
           open={cancelSubscriptionModalOpen}
