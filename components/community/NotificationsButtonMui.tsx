@@ -24,7 +24,7 @@ import {
     Gavel as ModerationIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request';
 
 export interface NotificationItem {
     id: string;
@@ -77,6 +77,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'mencionou você';
         case 'moderation':
             return 'comentário aguardando sua aprovação';
+        case 'subscription_cancel_request':
+            return 'solicitou o cancelamento da assinatura';
         default:
             return 'interagiu';
     }
@@ -93,6 +95,8 @@ function getNotificationIcon(type: NotificationType) {
         case 'mention':
             return <MentionIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         case 'moderation':
+            return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
+        case 'subscription_cancel_request':
             return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
         default:
             return null;
@@ -206,7 +210,13 @@ export function NotificationsButtonMui() {
                         <MenuItem
                             key={n.id}
                             component={Link}
-                            href={n.post_id ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}` : '#'}
+                            href={
+                                n.type === 'subscription_cancel_request'
+                                    ? `/dashboard/comunidade/perfil/${n.actor.id}`
+                                    : n.post_id
+                                        ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
+                                        : '#'
+                            }
                             onClick={handleClose}
                             sx={{
                                 py: 1.5,

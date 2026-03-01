@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
+import { createNotification } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,6 +29,25 @@ export async function POST() {
 
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        const actorId = account._id as mongoose.Types.ObjectId;
+        const moderatorAccounts = await Account.find({
+            role: { $in: ['moderator', 'admin'] },
+            _id: { $ne: actorId },
+        })
+            .select('_id')
+            .lean();
+
+        const contentPreview = 'Solicitou o cancelamento da assinatura';
+        for (const mod of moderatorAccounts) {
+            const recipientId = mod._id as mongoose.Types.ObjectId;
+            await createNotification({
+                recipientId,
+                actorId,
+                type: 'subscription_cancel_request',
+                contentPreview,
+            });
         }
 
         const request_cancel_at = account.request_cancel_at
