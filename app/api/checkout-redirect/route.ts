@@ -6,6 +6,8 @@ const PLAN_URLS: Record<string, string> = {
     'dome-mensal': 'https://pay.kiwify.com.br/KV5Y885',
     'dome-semestral': 'https://pay.kiwify.com.br/fd3eJFq',
     'dome-anual': 'https://pay.kiwify.com.br/iLSMfoH',
+    'promo-mensal': 'https://pay.kiwify.com.br/CneNNFc',
+    'promo-semestral': 'https://pay.kiwify.com.br/tuxuXlK',
 };
 
 export async function GET(request: NextRequest) {
