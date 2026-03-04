@@ -52,6 +52,7 @@ export interface Subscription {
     product_name: string | null;
     last_payment_at: string | null;
     payment_method: string | null;
+    plan_frequency: string | null;
     /** Data do primeiro pagamento aprovado (ISO). Trabalhos libera 7 dias após essa data. */
     first_paid_at: string | null;
 }

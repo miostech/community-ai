@@ -238,6 +238,7 @@ export async function GET() {
                 product_name: payment?.product_name || null,
                 last_payment_at: payment?.createdAt || null,
                 payment_method: payment?.payment_method || null,
+                plan_frequency: payment?.subscription?.plan_frequency || null,
                 first_paid_at: firstPaidAt,
             },
         });

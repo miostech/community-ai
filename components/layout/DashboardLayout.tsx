@@ -18,6 +18,7 @@ import { AddToDesktopProvider } from '@/contexts/AddToDesktopContext';
 import { MuiProvider } from '@/components/providers/MuiProvider';
 import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
 import { Phone as PhoneIcon } from '@mui/icons-material';
+import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -90,6 +91,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     pt: isComunidadePage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
                   }}
                 >
+                  {!isComunidadePage && <UpgradeBanner />}
                   {isComunidadePage ? (
                     children
                   ) : (

@@ -31,6 +31,7 @@ import { DomeLogo } from '@/components/ui/DomeLogo';
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { useAccount } from '@/contexts/AccountContext';
+import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
 
 export default function ComunidadePageMui() {
   const router = useRouter();
@@ -320,6 +321,9 @@ export default function ComunidadePageMui() {
             Atualizando feed...
           </Box>
         )}
+
+        {/* Banner de upgrade */}
+        <UpgradeBanner />
 
         {/* Stories (Ranking) */}
         {storyUsers.length > 0 && (
