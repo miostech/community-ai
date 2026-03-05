@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Box,
@@ -94,6 +94,42 @@ const APP_STATUS_CONFIG: Record<string, { label: string; color: 'default' | 'suc
     cancelled: { label: 'Cancelada', color: 'default' },
 };
 
+interface SocialStatsForScore {
+    instagram?: {
+        followers: number | null;
+        avg_likes: number | null;
+        avg_comments: number | null;
+    } | null;
+    tiktok?: {
+        followers: number | null;
+        hearts: number | null;
+        posts_count: number | null;
+    } | null;
+}
+
+function calcIgEngagementScore(socialStats: SocialStatsForScore | null): number | null {
+    const ig = socialStats?.instagram;
+    if (!ig || !ig.followers || ig.followers <= 0) return null;
+    if (ig.avg_likes == null && ig.avg_comments == null) return null;
+    const rate = (((ig.avg_likes ?? 0) + (ig.avg_comments ?? 0)) / ig.followers) * 100;
+    return Math.min(Math.round((rate / 6) * 100), 100);
+}
+
+function calcTtEngagementScore(socialStats: SocialStatsForScore | null): number | null {
+    const tt = socialStats?.tiktok;
+    if (!tt || !tt.followers || tt.followers <= 0 || tt.hearts == null || !tt.posts_count || tt.posts_count <= 0) return null;
+    const avgHeartsPerPost = tt.hearts / tt.posts_count;
+    const rate = (avgHeartsPerPost / tt.followers) * 100;
+    return Math.min(Math.round((rate / 10) * 100), 100);
+}
+
+function getEngagementLevel(score: number): { label: string; color: 'error' | 'warning' | 'info' | 'success' } {
+    if (score <= 30) return { label: 'Baixo', color: 'error' };
+    if (score <= 60) return { label: 'Médio', color: 'warning' };
+    if (score <= 80) return { label: 'Bom', color: 'info' };
+    return { label: 'Excelente', color: 'success' };
+}
+
 function getVideoEmbedUrl(url: string): string | null {
     if (!url) return null;
     try {
@@ -115,7 +151,10 @@ function getVideoEmbedUrl(url: string): string | null {
 export default function CreatorPortfolioPage() {
     const theme = useTheme();
     const params = useParams();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const accountId = params.accountId as string;
+    const campaignId = searchParams.get('campaignId');
 
     const [creator, setCreator] = useState<Creator | null>(null);
     const [applications, setApplications] = useState<ApplicationEntry[]>([]);
@@ -152,6 +191,18 @@ export default function CreatorPortfolioPage() {
         fetchCreator();
         fetchSocialStats();
     }, [accountId]);
+
+    useEffect(() => {
+        if (!creator) return;
+        const name = `${creator.first_name} ${creator.last_name}`.trim();
+        const handle = creator.link_instagram
+            ? `@${creator.link_instagram.replace('@', '')}`
+            : creator.link_tiktok
+            ? `@${creator.link_tiktok.replace('@', '')}`
+            : null;
+        document.title = handle ? `${name} (${handle}) — Admin` : `${name} — Admin`;
+        return () => { document.title = 'Admin — Dome'; };
+    }, [creator]);
 
     async function fetchCreator() {
         setLoading(true);
@@ -212,18 +263,77 @@ export default function CreatorPortfolioPage() {
     return (
         <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
-                <Button
-                    onClick={() => window.history.back()}
-                    startIcon={<ArrowBackIcon />}
-                    size="small"
-                    sx={{ textTransform: 'none', fontWeight: 600 }}
-                >
-                    Voltar
-                </Button>
+                {campaignId ? (
+                    <Button
+                        component={Link}
+                        href={`/dashboard/admin/campanhas/${campaignId}/candidaturas`}
+                        startIcon={<ArrowBackIcon />}
+                        size="small"
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                        Voltar às candidaturas
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={() => router.back()}
+                        startIcon={<ArrowBackIcon />}
+                        size="small"
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                        Voltar
+                    </Button>
+                )}
+                <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.75rem' }}>
+                    /
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                    {fullName}
+                </Typography>
+                {(creator.link_instagram || creator.link_tiktok) && (
+                    <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.72rem' }}>
+                        @{(creator.link_instagram || creator.link_tiktok || '').replace('@', '')}
+                    </Typography>
+                )}
             </Stack>
 
             {/* Header do creator */}
-            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider', mb: 3 }}>
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider', mb: 3, position: 'relative' }}>
+                {(() => {
+                    const igScore = calcIgEngagementScore(socialStats);
+                    const ttScore = calcTtEngagementScore(socialStats);
+                    const scores = [igScore, ttScore].filter((s): s is number => s !== null);
+                    if (scores.length === 0) return null;
+                    const combined = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                    const { color, label } = getEngagementLevel(combined);
+                    return (
+                        <Box
+                            title={`Engajamento geral: ${combined}/100`}
+                            sx={{
+                                position: 'absolute',
+                                top: 16,
+                                right: 16,
+                                width: 56,
+                                height: 56,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: (t) => t.palette[color].main,
+                                boxShadow: (t) => `0 0 0 4px ${alpha(t.palette[color].main, 0.2)}`,
+                                cursor: 'default',
+                                zIndex: 1,
+                            }}
+                        >
+                            <Typography sx={{ fontSize: '1rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>
+                                {combined}
+                            </Typography>
+                            <Typography sx={{ fontSize: '0.5rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1, mt: 0.25, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                {label}
+                            </Typography>
+                        </Box>
+                    );
+                })()}
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ xs: 'center', sm: 'flex-start' }}>
                     <Avatar
                         src={creator.avatar_url}
@@ -357,16 +467,75 @@ export default function CreatorPortfolioPage() {
                             </Typography>
                         </Grid>
                     )}
-                    {/* {creator.followers_at_signup && (
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
-                                Seguidores no cadastro
+                    {(() => {
+                        const igScore = calcIgEngagementScore(socialStats);
+                        const ttScore = calcTtEngagementScore(socialStats);
+                        if (igScore === null && ttScore === null) return null;
+                        return (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.75 }}>
+                                    Engajamento
+                                </Typography>
+                                <Stack direction="row" spacing={1.5} flexWrap="wrap">
+                                    {igScore !== null && (() => {
+                                        const level = getEngagementLevel(igScore);
+                                        return (
+                                            <Stack direction="row" alignItems="center" spacing={0.75}>
+                                                <Box sx={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #ec4899, #7c3aed)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <InstagramIcon sx={{ fontSize: 13, color: 'white' }} />
+                                                </Box>
+                                                <Chip
+                                                    label={`${igScore}/100`}
+                                                    color={level.color}
+                                                    size="small"
+                                                    sx={{ fontWeight: 800, fontSize: '0.72rem', height: 20 }}
+                                                />
+                                                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: `${level.color}.main` }}>
+                                                    {level.label}
+                                                </Typography>
+                                            </Stack>
+                                        );
+                                    })()}
+                                    {ttScore !== null && (() => {
+                                        const level = getEngagementLevel(ttScore);
+                                        return (
+                                            <Stack direction="row" alignItems="center" spacing={0.75}>
+                                                <Box sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: '#010101', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <svg width="12" height="12" fill="white" viewBox="0 0 24 24">
+                                                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a4.85 4.85 0 0 0 3.77 4.22v-3.29a4.85 4.85 0 0 1-1-.4z" />
+                                                    </svg>
+                                                </Box>
+                                                <Chip
+                                                    label={`${ttScore}/100`}
+                                                    color={level.color}
+                                                    size="small"
+                                                    sx={{ fontWeight: 800, fontSize: '0.72rem', height: 20 }}
+                                                />
+                                                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', color: `${level.color}.main` }}>
+                                                    {level.label}
+                                                </Typography>
+                                            </Stack>
+                                        );
+                                    })()}
+                                </Stack>
+                            </Grid>
+                        );
+                    })()}
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
+                            Campanhas na Dome
+                        </Typography>
+                        <Stack direction="row" alignItems="baseline" spacing={0.75}>
+                            <Typography variant="body2" sx={{ fontWeight: 800, fontSize: '1.15rem', lineHeight: 1 }}>
+                                {applications.filter(a => ['completed', 'approved'].includes(a.status)).length}
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                                {creator.followers_at_signup.toLocaleString('pt-BR')}
-                            </Typography>
-                        </Grid>
-                    )} */}
+                            {applications.length > 0 && (
+                                <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.68rem' }}>
+                                    de {applications.length} candidatura{applications.length !== 1 ? 's' : ''}
+                                </Typography>
+                            )}
+                        </Stack>
+                    </Grid>
                 </Grid>
 
                 {creator.niches && creator.niches.length > 0 && (

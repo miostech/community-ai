@@ -279,7 +279,7 @@ export default function CandidaturasPage() {
                                                     {app.is_customer && (
                                                         <Chip
                                                             icon={<IsCustomerIcon sx={{ fontSize: '0.8rem !important' }} />}
-                                                            label="Já é cliente"
+                                                            label="Já é cliente da marca"
                                                             size="small"
                                                             color="primary"
                                                             variant="outlined"
@@ -351,7 +351,7 @@ export default function CandidaturasPage() {
                                                 <IconButton
                                                     size="small"
                                                     component={Link}
-                                                    href={`/dashboard/admin/criadores/${creator._id}`}
+                                                    href={`/dashboard/admin/criadores/${creator._id}?campaignId=${campaignId}`}
                                                     target="_blank"
                                                 >
                                                     <OpenProfileIcon fontSize="small" />

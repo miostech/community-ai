@@ -479,6 +479,7 @@ export default function VitrineCampanhasPage() {
   const [searchText, setSearchText] = useState('');
   const [filterNiche, setFilterNiche] = useState('all');
   const [filterType, setFilterType] = useState('all');
+  const [filterCompensation, setFilterCompensation] = useState<'all' | 'paid' | 'product' | 'affiliate'>('all');
 
   // Campaign detail dialog
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -532,9 +533,11 @@ export default function VitrineCampanhasPage() {
         c.description.toLowerCase().includes(searchText.toLowerCase());
       const matchNiche = filterNiche === 'all' || c.niches.includes(filterNiche);
       const matchType = filterType === 'all' || c.content_type === filterType;
-      return matchSearch && matchNiche && matchType;
+      const matchCompensation =
+        filterCompensation === 'all' || getCompensationType(c) === filterCompensation;
+      return matchSearch && matchNiche && matchType && matchCompensation;
     });
-  }, [campaigns, searchText, filterNiche, filterType]);
+  }, [campaigns, searchText, filterNiche, filterType, filterCompensation]);
 
   function openDetailDialog(campaign: Campaign) {
     setSelectedCampaign(campaign);
@@ -589,43 +592,52 @@ export default function VitrineCampanhasPage() {
           </Typography>
         </Box>
 
-        {/* Legenda de compensação */}
+        {/* Filtro por tipo de compensação — clicável */}
         <Stack direction="row" spacing={1} flexWrap="wrap">
-          {legendItems.map((item) => (
-            <Tooltip key={item.key} title={item.label}>
-              <Stack
-                direction="row"
-                alignItems="center"
-                spacing={0.5}
-                sx={{
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 6,
-                  border: 1,
-                  borderColor: 'divider',
-                  cursor: 'default',
-                }}
-              >
-                <Box
+          {legendItems.map((item) => {
+            const isSelected = filterCompensation === item.key;
+            return (
+              <Tooltip key={item.key} title={isSelected ? 'Clique para mostrar todas' : item.label}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.5}
+                  onClick={() => setFilterCompensation(isSelected ? 'all' : item.key)}
                   sx={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    background: item.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    px: 1.25,
+                    py: 0.6,
+                    borderRadius: 6,
+                    border: 1,
+                    borderColor: isSelected ? 'transparent' : 'divider',
+                    cursor: 'pointer',
+                    bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.12) : 'transparent',
+                    transition: 'background 0.15s, border-color 0.15s',
+                    '&:hover': {
+                      bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.18) : alpha(theme.palette.action.hover, 0.04),
+                    },
                   }}
                 >
-                  {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: '11px !important', color: 'white' } })}
-                </Box>
-                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 500 }}>
-                  {item.key === 'paid' ? 'Pago' : item.key === 'product' ? 'Produto' : 'Afiliado'}
-                </Typography>
-              </Stack>
-            </Tooltip>
-          ))}
+                  <Box
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: item.gradient,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: '11px !important', color: 'white' } })}
+                  </Box>
+                  <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: isSelected ? 700 : 500 }}>
+                    {item.key === 'paid' ? 'Pago' : item.key === 'product' ? 'Produto' : 'Afiliado'}
+                  </Typography>
+                </Stack>
+              </Tooltip>
+            );
+          })}
         </Stack>
       </Stack>
 

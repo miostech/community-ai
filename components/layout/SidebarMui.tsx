@@ -129,7 +129,7 @@ const navItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
     {
-        label: 'Moderação',
+        label: 'Campanhas',
         href: '/dashboard/admin',
         exactMatch: true,
         icon: <AdminIcon />,
@@ -141,9 +141,14 @@ const adminNavItems: NavItem[] = [
                 exactMatch: true,
             },
             {
-                label: 'Campanhas',
+                label: 'Gerenciar Campanhas',
                 href: '/dashboard/admin/campanhas',
                 icon: <CampaignIcon fontSize="small" />,
+            },
+            {
+                label: 'Candidaturas',
+                href: '/dashboard/admin/campanhas',
+                icon: <AssignmentIcon fontSize="small" />,
             },
         ],
     },
