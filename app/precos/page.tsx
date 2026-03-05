@@ -16,7 +16,10 @@ export default function PrecosPage() {
       <Header />
 
       <section className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-12 sm:pb-20 md:pt-40 md:pb-32">
-        <PricingPlans />
+        <PricingPlans
+          title="Para Criadores de Conteúdo"
+          subtitle="Faça parte da comunidade, crie conteúdo com estratégia e se inscreva em campanhas de marcas para fechar parcerias e publicidades."
+        />
       </section>
     </div>
   );

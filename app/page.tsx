@@ -63,11 +63,11 @@ const TikTokIcon = () => (
 
 const recursos = [
   {
-    icon: <LightbulbIcon />,
-    color: 'primary' as const,
-    bgColor: 'primary.main',
-    title: 'Ideias Estruturadas',
-    description: 'Receba ideias de como melhorar seu conteúdo, ganhar engajamento e conversão pra você se tornar um criador de conteúdo de sucesso.',
+    icon: <CampaignIcon />,
+    color: 'info' as const,
+    bgColor: '#2563eb',
+    title: 'Campanhas de Publicidade',
+    description: 'Se inscreva em campanhas de marcas, feche parcerias e publicidades e monetize seu conteúdo com as oportunidades que combinam com seu perfil.',
   },
   {
     icon: <ChatIcon />,
@@ -293,8 +293,7 @@ export default function Home() {
                 fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
               }}
             >
-              Método do Zero ao Milhão
-            </Typography>
+              Agência de Criação de Conteúdo            </Typography>
           </Stack>
 
           {/* Headline */}

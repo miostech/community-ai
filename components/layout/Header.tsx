@@ -28,12 +28,6 @@ export function Header() {
               Início
             </Link>
             <Link 
-              href={isHomePage ? "#criadores" : "/#criadores"} 
-              className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
-            >
-              Criadores
-            </Link>
-            <Link 
               href={isHomePage ? "#recursos" : "/#recursos"} 
               className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
             >
@@ -46,7 +40,7 @@ export function Header() {
               Para Marcas
             </Link>
             <Link href="/precos" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium">
-              Preços
+              Para Criadores
             </Link>
           </nav>
 
@@ -58,7 +52,7 @@ export function Header() {
             </Link>
             <Link href="/precos">
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white border-0 text-xs sm:text-sm px-3 sm:px-4">
-                Começar Agora
+                Cadastrar-se
               </Button>
             </Link>
           </div>
