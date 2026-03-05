@@ -9,12 +9,12 @@ import {
     Stack,
     Badge,
 } from '@mui/material';
-import { LocalFireDepartment as ThumbUpIcon, EmojiEvents as TrophyIcon } from '@mui/icons-material';
+import { EmojiEvents as TrophyIcon, AutoAwesome as StoriesIcon } from '@mui/icons-material';
 
 const STORIES_SEEN_KEY = 'stories_seen_';
 /** Tamanho total da área do avatar (com borda = avatar + padding dos 2 anéis). Todos os itens usam esse tamanho para alinhar. */
-const AVATAR_AREA_SX = { width: { xs: 74, sm: 82 }, height: { xs: 74, sm: 82 } };
-const AVATAR_SIZE = { xs: 64, sm: 72 };
+const AVATAR_AREA_SX = { width: { xs: 56, sm: 62 }, height: { xs: 56, sm: 62 } };
+const AVATAR_SIZE = { xs: 48, sm: 54 };
 
 interface StoryUser {
     id: string;
@@ -66,7 +66,8 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
         if (!aUnseen && bUnseen) return 1;
         return (b.latestStoryAt ?? 0) - (a.latestStoryAt ?? 0);
     });
-    const displayUsers = first ? [first, ...sortedStoryPosters] : sortedStoryPosters;
+
+    const hasStories = sortedStoryPosters.length > 0;
 
     return (
         <Box
@@ -81,15 +82,64 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
         >
             <Stack
                 direction="row"
-                spacing={2}
+                spacing={0}
+                alignItems="flex-start"
                 sx={{
                     px: 2,
-                    py: 1.5,
+                    py: 0.5,
                     minWidth: 'min-content',
                 }}
             >
-                {displayUsers.map((user, index) => {
-                        const isFirst = index === 0;
+                {/* #1 Ranking */}
+                {first && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: hasStories ? 1 : 0 }}>
+                        <Typography
+                            variant="caption"
+                            component="a"
+                            href="/dashboard/comunidade/ranking"
+                            onClick={(e: React.MouseEvent) => { e.stopPropagation(); }}
+                            sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5, textDecoration: 'none', cursor: 'pointer', '&:hover': { color: 'text.primary' } }}
+                        >
+                            1º Ranking
+                        </Typography>
+                        {renderUser(first, true, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories)}
+                    </Box>
+                )}
+
+                {/* Divisor */}
+                {first && hasStories && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', mx: 1 }}>
+                        <Box sx={{ width: '1px', flex: 1, bgcolor: 'divider', opacity: 0.5 }} />
+                    </Box>
+                )}
+
+                {/* Stories */}
+                {hasStories && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5, pl: 0.5 }}>
+                            <StoriesIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
+                            <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                Stories
+                            </Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={1.5}>
+                            {sortedStoryPosters.map((user) => renderUser(user, false, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories))}
+                        </Stack>
+                    </Box>
+                )}
+            </Stack>
+        </Box>
+    );
+}
+
+function renderUser(
+    user: StoryUser,
+    isFirst: boolean,
+    handleStoryClick: (user: StoryUser) => void,
+    pressedStory: string | null,
+    setPressedStory: (id: string | null) => void,
+    hasUnseenStories: (user: StoryUser) => boolean,
+) {
                         const firstHasStories = isFirst && user.latestStoryAt != null;
                         const showRing = firstHasStories || (!isFirst && hasUnseenStories(user));
                         return (
@@ -104,7 +154,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 flexShrink: 0,
-                                minWidth: '80px',
+                                minWidth: '64px',
                                 background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
@@ -150,7 +200,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                                     isFirst ? (
                                                         <TrophyIcon
                                                             sx={{
-                                                                fontSize: 18,
+                                                                fontSize: 14,
                                                                 color: '#fff',
                                                                 filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
                                                             }}
@@ -163,8 +213,8 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                                         background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
                                                         color: 'inherit',
                                                         p: 0.25,
-                                                        minWidth: 22,
-                                                        height: 22,
+                                                        minWidth: 18,
+                                                        height: 18,
                                                         borderRadius: '50%',
                                                         border: 'none',
                                                         boxShadow: '0 0 8px rgba(251, 191, 36, 0.4)',
@@ -178,7 +228,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                                         width: AVATAR_SIZE,
                                                         height: AVATAR_SIZE,
                                                         background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                                        fontSize: '1.125rem',
+                                                        fontSize: '0.85rem',
                                                         fontWeight: 'bold',
                                                         boxShadow: 1,
                                                     }}
@@ -195,7 +245,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                             badgeContent={
                                                 <TrophyIcon
                                                     sx={{
-                                                        fontSize: 18,
+                                                        fontSize: 14,
                                                         color: '#fff',
                                                         filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.3))',
                                                     }}
@@ -207,8 +257,8 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                                     background: 'linear-gradient(135deg, #f59e0b 0%, #eab308 50%, #d97706 100%)',
                                                     color: 'inherit',
                                                     p: 0.25,
-                                                    minWidth: 22,
-                                                    height: 22,
+                                                    minWidth: 18,
+                                                    height: 18,
                                                     borderRadius: '50%',
                                                     border: 'none',
                                                     boxShadow: '0 0 8px rgba(251, 191, 36, 0.4)',
@@ -222,7 +272,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                                     width: AVATAR_SIZE,
                                                     height: AVATAR_SIZE,
                                                     background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                                    fontSize: '1.125rem',
+                                                    fontSize: '0.85rem',
                                                     fontWeight: 'bold',
                                                     boxShadow: 1,
                                                 }}
@@ -238,7 +288,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                                 width: AVATAR_SIZE,
                                                 height: AVATAR_SIZE,
                                                 background: 'linear-gradient(135deg, #60a5fa 0%, #a855f7 100%)',
-                                                fontSize: '1.125rem',
+                                                fontSize: '0.85rem',
                                                 fontWeight: 'bold',
                                                 boxShadow: 1,
                                             }}
@@ -252,10 +302,11 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                             <Typography
                                 variant="caption"
                                 sx={{
-                                    mt: 1,
+                                    mt: 0.5,
                                     fontWeight: 500,
+                                    fontSize: '0.675rem',
                                     color: 'text.primary',
-                                    maxWidth: 64,
+                                    maxWidth: 58,
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
@@ -265,21 +316,6 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                 {user.name.split(' ')[0]}
                             </Typography>
 
-                            {isFirst && (
-                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
-                                    <ThumbUpIcon sx={{ fontSize: 12, color: 'purple' }} />
-                                    <Typography
-                                        variant="caption"
-                                        sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}
-                                    >
-                                        {user.interactionCount}
-                                    </Typography>
-                                </Stack>
-                            )}
                         </Box>
                         );
-                })}
-            </Stack>
-        </Box>
-    );
 }

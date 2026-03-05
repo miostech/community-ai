@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Typography,
@@ -9,40 +10,21 @@ import {
   Paper,
   CircularProgress,
   Stack,
+  IconButton,
   useTheme,
-  useMediaQuery,
 } from '@mui/material';
-import { EmojiEvents as TrophyIcon, Leaderboard as LeaderboardIcon } from '@mui/icons-material';
+import { EmojiEvents as TrophyIcon, Leaderboard as LeaderboardIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useStories } from '@/contexts/StoriesContext';
 import { useAccount } from '@/contexts/AccountContext';
 
 export default function RankingPage() {
+  const router = useRouter();
   const { users, isLoading, error } = useStories();
   const { account } = useAccount();
   const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
   const userPosition = account?.id ? users.findIndex((u) => u.id === account.id) + 1 : 0;
   const userInRanking = account?.id && userPosition > 0;
-
-  if (!isDesktop) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          p: 2,
-          textAlign: 'center',
-        }}
-      >
-        <Typography color="text.secondary">
-          O ranking está disponível apenas na versão desktop. Abra no computador para ver.
-        </Typography>
-      </Box>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -70,13 +52,21 @@ export default function RankingPage() {
         mx: 'auto',
         py: 3,
         px: 2,
+        pb: { xs: 10, md: 3 },
       }}
     >
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 3 }}>
         <LeaderboardIcon sx={{ fontSize: 28, color: 'primary.main' }} />
-        <Typography variant="h5" fontWeight={700}>
+        <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
           Ranking da Comunidade
         </Typography>
+        <IconButton
+          onClick={() => router.back()}
+          sx={{ display: { xs: 'flex', md: 'none' } }}
+          aria-label="Fechar"
+        >
+          <CloseIcon />
+        </IconButton>
       </Stack>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

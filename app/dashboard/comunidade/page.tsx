@@ -359,20 +359,6 @@ export default function ComunidadePageMui() {
               bgcolor: 'background.paper',
             }}
           >
-            <Typography
-              component={Link}
-              href="/dashboard/comunidade/ranking"
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                display: 'none',
-                mb: 0.5,
-                textDecoration: 'none',
-                '&:hover': { color: 'text.primary', textDecoration: 'underline' },
-              }}
-            >
-              Top Ranking
-            </Typography>
             <StoriesMui users={storyUsers} onStoryOpen={handleStoryOpen} key={storiesSeenVersion} />
           </Box>
         )}
