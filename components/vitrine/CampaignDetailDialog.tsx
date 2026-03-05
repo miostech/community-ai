@@ -275,7 +275,8 @@ export default function CampaignDetailDialog({
   onApplied,
 }: CampaignDetailDialogProps) {
   const theme = useTheme();
-  const [step, setStep] = useState<'detail' | 'apply'>('detail');
+  const [step, setStep] = useState<'detail' | 'guide' | 'terms' | 'apply'>('detail');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [pitch, setPitch] = useState('');
   const [contentProposal, setContentProposal] = useState('');
   const [isCustomer, setIsCustomer] = useState(false);
@@ -288,12 +289,27 @@ export default function CampaignDetailDialog({
     onClose();
     setTimeout(() => {
       setStep('detail');
+      setTermsAccepted(false);
       setPitch('');
       setContentProposal('');
       setIsCustomer(false);
       setApplyError('');
       setApplySuccess('');
     }, 300);
+  }
+
+  function handleBack() {
+    if (step === 'guide') setStep('detail');
+    else if (step === 'terms') setStep('guide');
+    else if (step === 'apply') setStep('terms');
+  }
+
+  function openGuide() {
+    setStep('guide');
+  }
+
+  function openTerms() {
+    setStep('terms');
   }
 
   function openApply() {
@@ -761,16 +777,184 @@ export default function CampaignDetailDialog({
               )}
             </Grid>
           </Grid>
+        ) : step === 'guide' ? (
+          /* ── Guide step ───────────────────────────────────── */
+          <Box sx={{ p: { xs: 2.5, sm: 4 }, maxWidth: 580, mx: 'auto' }}>
+            <Typography variant="h5" sx={{ fontWeight: 900, mb: 1, fontSize: { xs: '1.2rem', sm: '1.4rem' }, letterSpacing: '-0.01em' }}>
+              Guia de participação
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3.5, lineHeight: 1.7, fontSize: '0.9rem' }}>
+              Agora que você vai se candidatar a uma campanha, veja os próximos passos para ter uma participação incrível!
+            </Typography>
+
+            <Stack spacing={2.5}>
+              {[
+                {
+                  num: '1',
+                  title: 'Leia o briefing com atenção.',
+                  desc: 'Leia cuidadosamente o briefing que a marca preparou para entender exatamente o que ela espera do conteúdo.',
+                  color: '#6366f1',
+                  bg: '#eef2ff',
+                },
+                {
+                  num: '2',
+                  title: 'Envie seu pitch.',
+                  desc: 'Escreva uma mensagem apresentando quem você é, o seu nicho e por que você é a pessoa ideal para essa campanha.',
+                  color: '#ec4899',
+                  bg: '#fdf2f8',
+                },
+                {
+                  num: '3',
+                  title: 'Aguarde a aprovação da marca.',
+                  desc: 'Após enviar sua candidatura, a marca irá analisar o seu perfil e entrar em contato caso você seja selecionado(a).',
+                  color: '#f59e0b',
+                  bg: '#fffbeb',
+                },
+                {
+                  num: '4',
+                  title: 'Produza e entregue o conteúdo.',
+                  desc: 'Sendo aprovado(a), produza o conteúdo conforme o briefing e envie no prazo combinado. Publique com as hashtags e menções solicitadas.',
+                  color: '#10b981',
+                  bg: '#ecfdf5',
+                },
+              ].map((s) => (
+                <Stack key={s.num} direction="row" spacing={2} alignItems="flex-start">
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      bgcolor: s.bg,
+                      border: '2px solid',
+                      borderColor: s.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 900, fontSize: '0.85rem', color: s.color }}>
+                      {s.num}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.3, fontSize: '0.9rem' }}>
+                      Passo {s.num} — {s.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.83rem', lineHeight: 1.65 }}>
+                      {s.desc}
+                    </Typography>
+                  </Box>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        ) : step === 'terms' ? (
+          /* ── Terms step ───────────────────────────────────── */
+          <Box sx={{ p: { xs: 2.5, sm: 4 }, maxWidth: 620, mx: 'auto' }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, mb: 2, fontSize: { xs: '1.1rem', sm: '1.25rem' }, letterSpacing: '-0.01em' }}>
+              Permissões, regras e boas práticas
+            </Typography>
+
+            <Stack spacing={1.25} sx={{ mb: 3 }}>
+              {[
+                'Responda sempre à marca com rapidez.',
+                'Crie conteúdo de acordo com o que é solicitado no briefing (você pode criar conteúdo diferente se a marca der permissão ou se for conteúdo extra).',
+                'Dê o seu melhor e use a sua criatividade para criar conteúdo que faça a diferença.',
+                'Não utilize marcas concorrentes no conteúdo.',
+                'Sempre envie o conteúdo para a campanha pela plataforma.',
+                'Submeta os conteúdos para aprovação pela plataforma antes de publicá-los.',
+                'Cumpra os prazos de entrega e publicação; caso haja imprevistos, avise a marca com antecedência.',
+                'Certifique-se de que a logo/marca esteja sempre visível nos conteúdos.',
+                'Marque sempre a marca em todos os conteúdos, assim como todas as # solicitadas no briefing.',
+                'Publique os conteúdos após aprovação e mantenha-os públicos por pelo menos 3 meses.',
+                'Não faça publicidade de outras marcas concorrentes nos dias anteriores e posteriores à sua publicação.',
+              ].map((rule, i) => (
+                <Stack key={i} direction="row" spacing={1.5} alignItems="flex-start">
+                  <Box
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      bgcolor: alpha('#6366f1', 0.1),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      mt: 0.1,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: '0.65rem', fontWeight: 800, color: '#6366f1', lineHeight: 1 }}>
+                      {i + 1}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', lineHeight: 1.65 }}>
+                    {rule}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+
+            {/* Consentimentos */}
+            <Box
+              sx={{
+                p: 2,
+                mb: 3,
+                borderRadius: 2,
+                bgcolor: alpha('#f59e0b', 0.06),
+                border: '1px solid',
+                borderColor: alpha('#f59e0b', 0.25),
+              }}
+            >
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.83rem', lineHeight: 1.7 }}>
+                Ao aceitar, você autoriza o compartilhamento das suas métricas privadas com a marca e, quando necessário, o compartilhamento do seu endereço para recebimento de produtos.
+              </Typography>
+            </Box>
+
+            {/* Checkbox de aceite */}
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1.5}
+              onClick={() => setTermsAccepted((v) => !v)}
+              sx={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              <Box
+                sx={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 0.75,
+                  border: '2px solid',
+                  borderColor: termsAccepted ? '#6366f1' : 'divider',
+                  bgcolor: termsAccepted ? '#6366f1' : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  transition: 'all 0.15s',
+                }}
+              >
+                {termsAccepted && (
+                  <Typography component="span" sx={{ color: 'white', fontSize: '0.72rem', fontWeight: 900, lineHeight: 1 }}>
+                    ✓
+                  </Typography>
+                )}
+              </Box>
+              <Typography variant="body2" sx={{ fontSize: '0.88rem', fontWeight: 500 }}>
+                Li e aceito as regras e boas práticas
+              </Typography>
+            </Stack>
+          </Box>
         ) : (
           /* ── Apply step ───────────────────────────────────── */
           <Box sx={{ p: { xs: 2.5, sm: 3 }, maxWidth: 540, mx: 'auto' }}>
             <Button
               startIcon={<ArrowBackIcon />}
               size="small"
-              onClick={() => setStep('detail')}
+              onClick={handleBack}
               sx={{ textTransform: 'none', fontWeight: 600, mb: 2.5, px: 0 }}
             >
-              Ver detalhes da campanha
+              Voltar ao guia
             </Button>
 
             <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5, fontSize: '1.05rem' }}>
@@ -876,7 +1060,7 @@ export default function CampaignDetailDialog({
             ) : (
               <Button
                 variant="contained"
-                onClick={openApply}
+                onClick={openGuide}
                 disabled={isFull}
                 sx={{
                   textTransform: 'none',
@@ -898,10 +1082,74 @@ export default function CampaignDetailDialog({
               </Button>
             )}
           </>
+        ) : step === 'guide' ? (
+          <>
+            <Button
+              onClick={handleBack}
+              size="small"
+              sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 500 }}
+            >
+              Voltar
+            </Button>
+            <Box sx={{ flex: 1 }} />
+            <Button
+              variant="contained"
+              onClick={openTerms}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontSize: '0.88rem',
+                background: 'linear-gradient(135deg, #ec4899 0%, #9333ea 100%)',
+                boxShadow: '0 2px 12px rgba(147,51,234,0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #db2777 0%, #7c3aed 100%)',
+                  boxShadow: '0 4px 16px rgba(147,51,234,0.4)',
+                },
+              }}
+            >
+              Entendi, continuar
+            </Button>
+          </>
+        ) : step === 'terms' ? (
+          <>
+            <Button
+              onClick={handleBack}
+              size="small"
+              sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 500 }}
+            >
+              Voltar
+            </Button>
+            <Box sx={{ flex: 1 }} />
+            <Button
+              variant="contained"
+              onClick={openApply}
+              disabled={!termsAccepted}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontSize: '0.88rem',
+                background: 'linear-gradient(135deg, #ec4899 0%, #9333ea 100%)',
+                boxShadow: '0 2px 12px rgba(147,51,234,0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #db2777 0%, #7c3aed 100%)',
+                  boxShadow: '0 4px 16px rgba(147,51,234,0.4)',
+                },
+                '&.Mui-disabled': { background: alpha('#000', 0.1), boxShadow: 'none' },
+              }}
+            >
+              Aceitar e continuar
+            </Button>
+          </>
         ) : (
           <>
             <Button
-              onClick={() => setStep('detail')}
+              onClick={handleBack}
               disabled={applying}
               size="small"
               sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 500 }}

@@ -25,6 +25,12 @@ import {
     OpenInNew as OpenInNewIcon,
     Badge as BadgeIcon,
     Star as StarIcon,
+    Article as PostIcon,
+    ChatBubble as CommentIcon,
+    Favorite as LikeIcon,
+    People as PeopleIcon,
+    BarChart as BarChartIcon,
+    Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 interface Creator {
@@ -113,12 +119,38 @@ export default function CreatorPortfolioPage() {
 
     const [creator, setCreator] = useState<Creator | null>(null);
     const [applications, setApplications] = useState<ApplicationEntry[]>([]);
+    const [stats, setStats] = useState({ posts_count: 0, comments_count: 0, likes_received: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    interface SocialStats {
+        instagram: {
+            username?: string;
+            followers: number | null;
+            following: number | null;
+            posts_count: number | null;
+            is_verified: boolean;
+            avg_likes: number | null;
+            avg_comments: number | null;
+            recent_posts_sample: number;
+        } | null;
+        tiktok: {
+            username?: string;
+            followers: number | null;
+            following: number | null;
+            posts_count: number | null;
+            hearts: number | null;
+            is_verified: boolean;
+        } | null;
+    }
+    const [socialStats, setSocialStats] = useState<SocialStats | null>(null);
+    const [socialLoading, setSocialLoading] = useState(false);
+    const [socialError, setSocialError] = useState('');
 
     useEffect(() => {
         if (!accountId) return;
         fetchCreator();
+        fetchSocialStats();
     }, [accountId]);
 
     async function fetchCreator() {
@@ -129,6 +161,7 @@ export default function CreatorPortfolioPage() {
             if (res.ok) {
                 setCreator(data.creator);
                 setApplications(data.applications || []);
+                setStats(data.stats || { posts_count: 0, comments_count: 0, likes_received: 0 });
             } else {
                 setError(data.error || 'Erro ao buscar creator.');
             }
@@ -136,6 +169,24 @@ export default function CreatorPortfolioPage() {
             setError('Erro ao conectar com o servidor.');
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function fetchSocialStats() {
+        setSocialLoading(true);
+        setSocialError('');
+        try {
+            const res = await fetch(`/api/admin/creators/${accountId}/social-stats`);
+            const data = await res.json();
+            if (res.ok) {
+                setSocialStats(data);
+            } else {
+                setSocialError(data.error || 'Erro ao buscar métricas sociais.');
+            }
+        } catch {
+            setSocialError('Erro ao conectar com o servidor.');
+        } finally {
+            setSocialLoading(false);
         }
     }
 
@@ -306,7 +357,7 @@ export default function CreatorPortfolioPage() {
                             </Typography>
                         </Grid>
                     )}
-                    {creator.followers_at_signup && (
+                    {/* {creator.followers_at_signup && (
                         <Grid size={{ xs: 6, sm: 3 }}>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
                                 Seguidores no cadastro
@@ -315,15 +366,7 @@ export default function CreatorPortfolioPage() {
                                 {creator.followers_at_signup.toLocaleString('pt-BR')}
                             </Typography>
                         </Grid>
-                    )}
-                    {creator.plan && (
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
-                                Plano
-                            </Typography>
-                            <Chip label={creator.plan} size="small" color={creator.plan === 'pro' ? 'primary' : 'default'} sx={{ fontSize: '0.7rem', fontWeight: 600, height: 20 }} />
-                        </Grid>
-                    )}
+                    )} */}
                 </Grid>
 
                 {creator.niches && creator.niches.length > 0 && (
@@ -339,6 +382,162 @@ export default function CreatorPortfolioPage() {
                     </Box>
                 )}
             </Paper>
+
+            {/* Métricas das Redes Sociais via SearchAPI */}
+            {(creator.link_instagram || creator.link_tiktok) && (
+                <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider', mb: 3 }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <BarChartIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                Métricas das Redes Sociais
+                            </Typography>
+                            {/* <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.68rem' }}>
+                                via SearchAPI
+                            </Typography> */}
+                        </Stack>
+                        <Button
+                            size="small"
+                            startIcon={socialLoading ? <CircularProgress size={13} color="inherit" /> : <RefreshIcon sx={{ fontSize: 15 }} />}
+                            onClick={fetchSocialStats}
+                            disabled={socialLoading}
+                            sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}
+                        >
+                            Atualizar
+                        </Button>
+                    </Stack>
+
+                    {socialError && (
+                        <Alert severity="warning" sx={{ mb: 2, borderRadius: 2, fontSize: '0.8rem' }}>{socialError}</Alert>
+                    )}
+
+                    {/* Skeleton enquanto carrega */}
+                    {socialLoading && !socialStats && (
+                        <Grid container spacing={2}>
+                            {[creator.link_instagram, creator.link_tiktok].filter(Boolean).map((_, idx) => (
+                                <Grid key={idx} size={{ xs: 12, sm: 6 }}>
+                                    <Box sx={{ p: 2, borderRadius: 2.5, border: '1px solid', borderColor: 'divider' }}>
+                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                                            <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: 'action.hover' }} />
+                                            <Box sx={{ width: 80, height: 14, borderRadius: 1, bgcolor: 'action.hover' }} />
+                                        </Stack>
+                                        <Grid container spacing={1.5}>
+                                            {[1, 2, 3, 4].map((i) => (
+                                                <Grid key={i} size={{ xs: 6 }}>
+                                                    <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: 'action.hover', height: 52 }} />
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+
+                    {/* Dados carregados */}
+                    {socialStats && (
+                        <Grid container spacing={2}>
+                            {/* Instagram */}
+                            {socialStats.instagram && (
+                                <Grid size={{ xs: 12, sm: socialStats.tiktok ? 6 : 12 }}>
+                                    <Box sx={{ p: 2, borderRadius: 2.5, border: '1px solid', borderColor: alpha('#e1306c', 0.2), bgcolor: alpha('#e1306c', 0.03) }}>
+                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                                            <Box sx={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #f97316, #ec4899, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <InstagramIcon sx={{ fontSize: 16, color: 'white' }} />
+                                            </Box>
+                                            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Instagram</Typography>
+                                            {socialStats.instagram.is_verified && (
+                                                <Chip label="Verificado" size="small" color="primary" sx={{ fontSize: '0.6rem', height: 18 }} />
+                                            )}
+                                            {creator.link_instagram && (
+                                                <Typography component="a" href={`https://instagram.com/${creator.link_instagram.replace('@','')}`} target="_blank" variant="caption" sx={{ color: 'text.disabled', textDecoration: 'none', '&:hover': { color: 'primary.main' }, ml: 'auto !important' }}>
+                                                    @{creator.link_instagram.replace('@','')}
+                                                </Typography>
+                                            )}
+                                        </Stack>
+                                        <Grid container spacing={1}>
+                                            {[
+                                                { label: 'Seguidores', value: socialStats.instagram.followers, color: '#e1306c' },
+                                                { label: 'Seguindo', value: socialStats.instagram.following, color: '#9333ea' },
+                                                { label: 'Posts', value: socialStats.instagram.posts_count, color: '#6366f1' },
+                                                { label: 'Média likes', value: socialStats.instagram.avg_likes, color: '#ec4899', sub: socialStats.instagram.recent_posts_sample > 0 ? `últimos ${socialStats.instagram.recent_posts_sample}` : null },
+                                                { label: 'Média comentários', value: socialStats.instagram.avg_comments, color: '#0ea5e9' },
+                                            ].map((m) => (
+                                                <Grid key={m.label} size={{ xs: 6, sm: 4 }}>
+                                                    <Box sx={{ p: 1.25, borderRadius: 1.5, bgcolor: alpha(m.color, 0.07), border: '1px solid', borderColor: alpha(m.color, 0.18), textAlign: 'center' }}>
+                                                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: m.color, mb: 0.25 }}>
+                                                            {m.label}
+                                                        </Typography>
+                                                        <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, color: 'text.primary' }}>
+                                                            {m.value != null ? m.value.toLocaleString('pt-BR') : '—'}
+                                                        </Typography>
+                                                        {m.sub && <Typography sx={{ fontSize: '0.57rem', color: 'text.disabled', mt: 0.25 }}>{m.sub}</Typography>}
+                                                    </Box>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    </Box>
+                                </Grid>
+                            )}
+
+                            {/* TikTok */}
+                            {socialStats.tiktok && (
+                                <Grid size={{ xs: 12, sm: socialStats.instagram ? 6 : 12 }}>
+                                    <Box sx={{ p: 2, borderRadius: 2.5, border: '1px solid', borderColor: alpha('#ee1d52', 0.2), bgcolor: alpha('#010101', 0.03) }}>
+                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                                            <Box sx={{ width: 28, height: 28, borderRadius: '50%', bgcolor: '#010101', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <svg width="14" height="14" fill="white" viewBox="0 0 24 24">
+                                                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a4.85 4.85 0 0 0 3.77 4.22v-3.29a4.85 4.85 0 0 1-1-.4z" />
+                                                </svg>
+                                            </Box>
+                                            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem' }}>TikTok</Typography>
+                                            {socialStats.tiktok.is_verified && (
+                                                <Chip label="Verificado" size="small" color="primary" sx={{ fontSize: '0.6rem', height: 18 }} />
+                                            )}
+                                            {creator.link_tiktok && (
+                                                <Typography component="a" href={`https://tiktok.com/@${creator.link_tiktok.replace('@','')}`} target="_blank" variant="caption" sx={{ color: 'text.disabled', textDecoration: 'none', '&:hover': { color: 'primary.main' }, ml: 'auto !important' }}>
+                                                    @{creator.link_tiktok.replace('@','')}
+                                                </Typography>
+                                            )}
+                                        </Stack>
+                                        <Grid container spacing={1}>
+                                            {[
+                                                { label: 'Seguidores', value: socialStats.tiktok.followers, color: '#ee1d52' },
+                                                { label: 'Seguindo', value: socialStats.tiktok.following, color: '#9333ea' },
+                                                { label: 'Vídeos', value: socialStats.tiktok.posts_count, color: '#6366f1' },
+                                                { label: 'Total de likes', value: socialStats.tiktok.hearts, color: '#ec4899', sub: 'hearts acumulados' },
+                                            ].map((m) => (
+                                                <Grid key={m.label} size={{ xs: 6 }}>
+                                                    <Box sx={{ p: 1.25, borderRadius: 1.5, bgcolor: alpha(m.color, 0.07), border: '1px solid', borderColor: alpha(m.color, 0.18), textAlign: 'center' }}>
+                                                        <Typography sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: m.color, mb: 0.25 }}>
+                                                            {m.label}
+                                                        </Typography>
+                                                        <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1, color: 'text.primary' }}>
+                                                            {m.value != null ? m.value.toLocaleString('pt-BR') : '—'}
+                                                        </Typography>
+                                                        {m.sub && <Typography sx={{ fontSize: '0.57rem', color: 'text.disabled', mt: 0.25 }}>{m.sub}</Typography>}
+                                                    </Box>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    </Box>
+                                </Grid>
+                            )}
+
+                            {/* Nenhuma rede retornou dados */}
+                            {!socialStats.instagram && !socialStats.tiktok && (
+                                <Grid size={{ xs: 12 }}>
+                                    <Box sx={{ py: 3, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
+                                        <Typography variant="body2" color="text.disabled" sx={{ fontSize: '0.82rem' }}>
+                                            Não foi possível obter dados públicos para este creator.
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            )}
+                        </Grid>
+                    )}
+                </Paper>
+            )}
 
             {/* Portfólio de vídeos */}
             {creator.portfolio_videos && creator.portfolio_videos.length > 0 && (
@@ -357,8 +556,8 @@ export default function CreatorPortfolioPage() {
                                             overflow: 'hidden',
                                             border: 1,
                                             borderColor: 'divider',
-                                            aspectRatio: '16/9',
-                                            bgcolor: 'action.hover',
+                                            aspectRatio: '9/16',
+                                            bgcolor: 'black',
                                             position: 'relative',
                                         }}
                                     >
@@ -372,19 +571,37 @@ export default function CreatorPortfolioPage() {
                                                 allowFullScreen
                                             />
                                         ) : (
-                                            <Stack alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
-                                                <Button
-                                                    href={url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    endIcon={<OpenInNewIcon />}
-                                                    size="small"
-                                                    sx={{ textTransform: 'none', fontWeight: 600 }}
-                                                >
-                                                    Ver vídeo {i + 1}
-                                                </Button>
-                                            </Stack>
+                                            <Box
+                                                component="video"
+                                                src={url}
+                                                controls
+                                                playsInline
+                                                preload="metadata"
+                                                sx={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                }}
+                                            />
                                         )}
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 6,
+                                                left: 6,
+                                                bgcolor: 'rgba(0,0,0,0.55)',
+                                                backdropFilter: 'blur(4px)',
+                                                borderRadius: 1,
+                                                px: 0.75,
+                                                py: 0.25,
+                                            }}
+                                        >
+                                            <Typography sx={{ fontSize: '0.65rem', color: 'white', fontWeight: 700 }}>
+                                                Vídeo {i + 1}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 </Grid>
                             );
@@ -392,7 +609,6 @@ export default function CreatorPortfolioPage() {
                     </Grid>
                 </Paper>
             )}
-
             {/* Histórico de candidaturas */}
             <Paper elevation={0} sx={{ borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
                 <Box sx={{ px: { xs: 2, sm: 3 }, py: 2, borderBottom: 1, borderColor: 'divider' }}>

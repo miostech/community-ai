@@ -4,6 +4,8 @@ import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
 import Campaign from '@/models/Campaign';
 import CampaignApplication from '@/models/CampaignApplication';
+import Post from '@/models/Post';
+import Comment from '@/models/Comment';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
@@ -48,6 +50,17 @@ export async function GET(
             return NextResponse.json({ error: 'Creator não encontrado' }, { status: 404 });
         }
 
+        // Buscar métricas de interação na Dome
+        const [postsCount, commentsCount, likesReceivedAgg] = await Promise.all([
+            Post.countDocuments({ author_id: accountId }),
+            Comment.countDocuments({ author_id: accountId }),
+            Post.aggregate([
+                { $match: { author_id: new mongoose.Types.ObjectId(accountId) } },
+                { $group: { _id: null, total: { $sum: '$likes_count' } } },
+            ]),
+        ]);
+        const likesReceived = likesReceivedAgg[0]?.total ?? 0;
+
         // Buscar histórico de candidaturas do creator
         const applications = await CampaignApplication.find({ creator_account_id: accountId })
             .sort({ created_at: -1 })
@@ -83,6 +96,11 @@ export async function GET(
             success: true,
             creator: account,
             applications: enrichedApplications,
+            stats: {
+                posts_count: postsCount,
+                comments_count: commentsCount,
+                likes_received: likesReceived,
+            },
         });
     } catch (error) {
         console.error('Erro ao buscar creator:', error);
