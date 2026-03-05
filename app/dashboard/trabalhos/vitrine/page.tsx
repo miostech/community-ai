@@ -67,6 +67,7 @@ interface Campaign {
     max_age?: number;
     min_followers?: number;
     max_followers?: number;
+    countries?: string[];
   };
 }
 
@@ -78,6 +79,67 @@ function getCompensationType(campaign: Campaign): CompensationType {
   if (campaign.includes_product) return 'product';
   if (campaign.content_usage === 'anuncios' || campaign.content_usage === 'ambos') return 'affiliate';
   return 'free';
+}
+
+function normalizeCountry(s: string | undefined): string {
+  return (s || '').trim().toLowerCase().normalize('NFD').replace(/\u0300/g, '');
+}
+
+function getCreatorAge(birthDateIso: string | undefined): number | null {
+  if (!birthDateIso) return null;
+  const birth = new Date(birthDateIso);
+  if (Number.isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+export type IneligibleReasons = string[];
+
+export function getCampaignEligibility(
+  campaign: Campaign,
+  creator: { address_country?: string | null; birth_date?: string | null; followers_at_signup?: number | null }
+): { eligible: boolean; reasons: IneligibleReasons } {
+  const reasons: string[] = [];
+
+  const countries = campaign.filters?.countries;
+  if (countries && countries.length > 0) {
+    const creatorCountry = normalizeCountry(creator.address_country);
+    if (!creatorCountry) {
+      reasons.push('Campanha disponível apenas para: ' + countries.join(', '));
+    } else {
+      const match = countries.some((c) => normalizeCountry(c) === creatorCountry);
+      if (!match) reasons.push('Campanha disponível apenas para: ' + countries.join(', '));
+    }
+  }
+
+  const minAge = campaign.filters?.min_age;
+  const maxAge = campaign.filters?.max_age;
+  if (minAge != null || maxAge != null) {
+    const age = getCreatorAge(creator.birth_date ?? undefined);
+    if (age === null) {
+      reasons.push('Idade fora do perfil da campanha (informe sua data de nascimento no portfólio).');
+    } else {
+      if (minAge != null && age < minAge) reasons.push(`Idade mínima da campanha: ${minAge} anos.`);
+      if (maxAge != null && age > maxAge) reasons.push(`Idade máxima da campanha: ${maxAge} anos.`);
+    }
+  }
+
+  const minFollowers = campaign.filters?.min_followers;
+  const maxFollowers = campaign.filters?.max_followers;
+  if (minFollowers != null || maxFollowers != null) {
+    const followers = creator.followers_at_signup ?? 0;
+    if (minFollowers != null && followers < minFollowers) {
+      reasons.push(`Mínimo de seguidores: ${minFollowers.toLocaleString('pt-BR')}.`);
+    }
+    if (maxFollowers != null && followers > maxFollowers) {
+      reasons.push(`Máximo de seguidores: ${maxFollowers.toLocaleString('pt-BR')}.`);
+    }
+  }
+
+  return { eligible: reasons.length === 0, reasons };
 }
 
 const COMPENSATION_CONFIG: Record<CompensationType, {
@@ -183,12 +245,15 @@ function CampaignCard({
   hasApplied,
   isMidiaKitComplete,
   onApply,
+  ineligibleReasons,
 }: {
   campaign: Campaign;
   hasApplied: boolean;
   isMidiaKitComplete: boolean;
   onApply: (c: Campaign) => void;
+  ineligibleReasons: IneligibleReasons;
 }) {
+  const isIneligible = ineligibleReasons.length > 0;
   const theme = useTheme();
   const compensation = getCompensationType(campaign);
   const compCfg = COMPENSATION_CONFIG[compensation];
@@ -276,6 +341,21 @@ function CampaignCard({
 
       {/* Card content */}
       <Box sx={{ p: { xs: 2, sm: 2.5 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {isIneligible && (
+          <Alert
+            severity="warning"
+            sx={{
+              mb: 1.5,
+              py: 0.5,
+              px: 1,
+              '& .MuiAlert-message': { fontSize: '0.75rem' },
+            }}
+          >
+            {ineligibleReasons.length === 1
+              ? ineligibleReasons[0]
+              : 'Você não atende aos requisitos: ' + ineligibleReasons.join(' ')}
+          </Alert>
+        )}
         {/* Brand row */}
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5, pr: 5 }}>
           <Avatar
@@ -423,6 +503,23 @@ function CampaignCard({
           >
             Candidatura enviada
           </Button>
+        ) : isIneligible ? (
+          <Button
+            fullWidth
+            variant="outlined"
+            disabled
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: 2,
+              fontSize: { xs: '0.8rem', sm: '0.85rem' },
+              py: 1,
+              borderColor: 'warning.main',
+              color: 'warning.dark',
+            }}
+          >
+            Inelegível
+          </Button>
         ) : (
           <Tooltip
             title={
@@ -469,7 +566,12 @@ function CampaignCard({
 
 export default function VitrineCampanhasPage() {
   const theme = useTheme();
-  const { isMidiaKitComplete } = useAccount();
+  const { account, isMidiaKitComplete } = useAccount();
+  const creatorForEligibility = {
+    address_country: account?.address_country ?? null,
+    birth_date: account?.birth_date ?? null,
+    followers_at_signup: account?.followers_at_signup ?? null,
+  };
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -704,6 +806,7 @@ export default function VitrineCampanhasPage() {
                 hasApplied={appliedIds.has(campaign._id)}
                 isMidiaKitComplete={isMidiaKitComplete}
                 onApply={openDetailDialog}
+                ineligibleReasons={getCampaignEligibility(campaign, creatorForEligibility).reasons}
               />
             </Grid>
           ))}
@@ -717,6 +820,7 @@ export default function VitrineCampanhasPage() {
         hasApplied={selectedCampaign ? appliedIds.has(selectedCampaign._id) : false}
         onClose={() => setDetailDialogOpen(false)}
         onApplied={(id) => setAppliedIds((prev) => new Set([...prev, id]))}
+        ineligibleReasons={selectedCampaign ? getCampaignEligibility(selectedCampaign, creatorForEligibility).reasons : []}
       />
     </Box>
   );

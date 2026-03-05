@@ -37,8 +37,12 @@ export interface ICampaign extends Document {
     /** Vagas já preenchidas (desnormalizado) */
     slots_filled: number;
 
-    /** Valor oferecido por creator (em centavos BRL) */
+    /** Valor oferecido por creator (em centavos BRL) — usado quando payment_type é per_post */
     budget_per_creator?: number;
+    /** Tipo de pagamento em campanhas pagas: por post fixo ou por visualizações */
+    payment_type?: 'per_post' | 'per_views';
+    /** Valor pago a cada 1.000 visualizações (em centavos BRL) — usado quando payment_type é per_views */
+    budget_per_1000_views?: number;
     /** Inclui produto grátis */
     includes_product: boolean;
     product_description?: string;
@@ -107,6 +111,8 @@ const CampaignSchema = new Schema<ICampaign>(
         slots_filled: { type: Number, default: 0, min: 0 },
 
         budget_per_creator: { type: Number },
+        payment_type: { type: String, enum: ['per_post', 'per_views'], trim: true },
+        budget_per_1000_views: { type: Number },
         includes_product: { type: Boolean, default: false },
         product_description: { type: String, trim: true },
 

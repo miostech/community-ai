@@ -108,6 +108,8 @@ export async function POST(request: NextRequest) {
             filters: body.filters || {},
             slots: body.slots,
             budget_per_creator: body.budget_per_creator,
+            payment_type: body.payment_type || undefined,
+            budget_per_1000_views: body.budget_per_1000_views,
             includes_product: body.includes_product || false,
             product_description: body.product_description,
             deliverables: body.deliverables || [],

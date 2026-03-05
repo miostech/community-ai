@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Box,
@@ -45,7 +45,9 @@ export interface CampaignFormData {
     niches: string[];
     slots: number;
     compensation_type: CompensationType;
+    paid_payment_type: 'per_post' | 'per_views';
     budget_per_creator: string;
+    budget_per_1000_views: string;
     includes_product: boolean;
     product_description: string;
     affiliate_commission: string;
@@ -61,6 +63,7 @@ export interface CampaignFormData {
         max_age: string;
         min_followers: string;
         max_followers: string;
+        countries: string;
     };
 }
 
@@ -78,7 +81,9 @@ const EMPTY_FORM: CampaignFormData = {
     niches: [],
     slots: 1,
     compensation_type: 'paid',
+    paid_payment_type: 'per_post',
     budget_per_creator: '',
+    budget_per_1000_views: '',
     includes_product: false,
     product_description: '',
     affiliate_commission: '',
@@ -94,6 +99,7 @@ const EMPTY_FORM: CampaignFormData = {
         max_age: '',
         min_followers: '',
         max_followers: '',
+        countries: 'all',
     },
 };
 
@@ -133,6 +139,31 @@ const NICHE_SUGGESTIONS = [
     'Educação', 'Saúde', 'Esportes', 'Sustentabilidade', 'Arte', 'Música',
 ];
 
+const DELIVERABLE_TYPES = ['Reels', 'Stories', 'Foto', 'TikTok'] as const;
+
+function parseDeliverables(deliverables: string[]): { quantities: Record<string, number>; other: string[] } {
+    const quantities: Record<string, number> = { Reels: 0, Stories: 0, Foto: 0, TikTok: 0 };
+    const other: string[] = [];
+    for (const d of deliverables || []) {
+        const m = d.trim().match(/^(\d+)\s+(.+)$/);
+        const rest = m ? m[2].trim() : '';
+        const num = m ? parseInt(m[1], 10) : 0;
+        if (m && DELIVERABLE_TYPES.includes(rest as any) && !Number.isNaN(num) && num >= 0) {
+            quantities[rest] = num;
+        } else if (d.trim()) {
+            other.push(d.trim());
+        }
+    }
+    return { quantities, other };
+}
+
+function buildDeliverablesFromQuantities(quantities: Record<string, number>, other: string[]): string[] {
+    const fromQty = (DELIVERABLE_TYPES as unknown as string[])
+        .filter((t) => (quantities[t] ?? 0) > 0)
+        .map((t) => `${quantities[t]} ${t}`);
+    return [...fromQty, ...other];
+}
+
 interface Props {
     initialData?: Partial<CampaignFormData>;
     campaignId?: string;
@@ -144,10 +175,23 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
     const theme = useTheme();
     const [form, setForm] = useState<CampaignFormData>({ ...EMPTY_FORM, ...initialData });
     const [nicheInput, setNicheInput] = useState('');
-    const [deliverableInput, setDeliverableInput] = useState('');
+    const [deliverableQuantities, setDeliverableQuantities] = useState<Record<string, number>>(() =>
+        parseDeliverables(initialData?.deliverables ?? []).quantities
+    );
+    const [deliverablesOther, setDeliverablesOther] = useState<string[]>(() =>
+        parseDeliverables(initialData?.deliverables ?? []).other
+    );
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    useEffect(() => {
+        if (initialData?.deliverables?.length) {
+            const { quantities, other } = parseDeliverables(initialData.deliverables);
+            setDeliverableQuantities(quantities);
+            setDeliverablesOther(other);
+        }
+    }, [initialData?.deliverables?.length]);
 
     function setField<K extends keyof CampaignFormData>(key: K, value: CampaignFormData[K]) {
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -169,16 +213,13 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
         setField('niches', form.niches.filter((n) => n !== niche));
     }
 
-    function addDeliverable() {
-        const trimmed = deliverableInput.trim();
-        if (trimmed && !form.deliverables.includes(trimmed)) {
-            setField('deliverables', [...form.deliverables, trimmed]);
-        }
-        setDeliverableInput('');
+    function setDeliverableQuantity(type: string, value: number) {
+        const n = Math.max(0, Math.floor(Number(value)) || 0);
+        setDeliverableQuantities((prev) => ({ ...prev, [type]: n }));
     }
 
-    function removeDeliverable(d: string) {
-        setField('deliverables', form.deliverables.filter((x) => x !== d));
+    function removeOtherDeliverable(item: string) {
+        setDeliverablesOther((prev) => prev.filter((x) => x !== item));
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -187,15 +228,37 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
         setError('');
         setSuccess('');
 
-        // Map compensation_type to model fields
         const isPaid = form.compensation_type === 'paid';
+        if (isPaid && form.paid_payment_type === 'per_post' && !form.budget_per_creator?.trim()) {
+            setError('Informe o valor por creator para campanha paga por post.');
+            setLoading(false);
+            return;
+        }
+        if (isPaid && form.paid_payment_type === 'per_views' && !form.budget_per_1000_views?.trim()) {
+            setError('Informe o valor a cada 1.000 visualizações para campanha paga por visualizações.');
+            setLoading(false);
+            return;
+        }
+
+        const builtDeliverables = buildDeliverablesFromQuantities(deliverableQuantities, deliverablesOther);
+        if (builtDeliverables.length === 0) {
+            setError('Informe pelo menos uma entrega esperada (quantidade maior que zero em Reels, Stories, Foto ou TikTok).');
+            setLoading(false);
+            return;
+        }
+
+        // Map compensation_type to model fields
         const isProduct = form.compensation_type === 'product';
         const isAffiliate = form.compensation_type === 'affiliate';
+        const isPaidPerPost = isPaid && form.paid_payment_type === 'per_post';
+        const isPaidPerViews = isPaid && form.paid_payment_type === 'per_views';
 
         const payload = {
             ...form,
             slots: Number(form.slots),
-            budget_per_creator: isPaid && form.budget_per_creator ? Number(form.budget_per_creator) * 100 : undefined,
+            budget_per_creator: isPaidPerPost && form.budget_per_creator ? Number(form.budget_per_creator) * 100 : isPaidPerViews ? 0 : undefined,
+            payment_type: isPaid ? form.paid_payment_type : undefined,
+            budget_per_1000_views: isPaidPerViews && form.budget_per_1000_views ? Number(form.budget_per_1000_views) * 100 : undefined,
             includes_product: isProduct,
             product_description: isProduct ? form.product_description : undefined,
             // Store affiliate info in product_description field with a prefix when type is affiliate
@@ -212,10 +275,12 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                 max_age: form.filters.max_age ? Number(form.filters.max_age) : undefined,
                 min_followers: form.filters.min_followers ? Number(form.filters.min_followers) : undefined,
                 max_followers: form.filters.max_followers ? Number(form.filters.max_followers) : undefined,
+                countries: form.filters.countries && form.filters.countries !== 'all' ? [form.filters.countries] : [],
             },
             application_deadline: form.application_deadline || undefined,
             content_deadline: form.content_deadline || undefined,
             start_date: form.start_date || undefined,
+            deliverables: builtDeliverables,
         };
 
         try {
@@ -475,7 +540,7 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                                                     flexShrink: 0,
                                                 }}
                                             >
-                                                {React.cloneElement(opt.icon as React.ReactElement, { sx: { fontSize: 18 } })}
+                                                {React.cloneElement(opt.icon as React.ReactElement, { sx: { fontSize: 18 } } as Record<string, unknown>)}
                                             </Box>
                                             <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>
                                                 {opt.label}
@@ -513,21 +578,77 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                             />
                         </Grid>
 
-                        {/* Campos condicionais por tipo */}
+                        {/* Campos condicionais por tipo — campanha paga */}
                         {form.compensation_type === 'paid' && (
-                            <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField
-                                    label="Valor por creator (R$) *"
-                                    type="number"
-                                    value={form.budget_per_creator}
-                                    onChange={(e) => setField('budget_per_creator', e.target.value)}
-                                    fullWidth
-                                    size="small"
-                                    InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
-                                    placeholder="0,00"
-                                    helperText="Valor bruto que cada creator receberá"
-                                />
-                            </Grid>
+                            <>
+                                <Grid size={{ xs: 12 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Forma de pagamento</Typography>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                                        <Box
+                                            onClick={() => setField('paid_payment_type', 'per_post')}
+                                            sx={{
+                                                px: 2,
+                                                py: 1.25,
+                                                borderRadius: 2,
+                                                border: 2,
+                                                borderColor: form.paid_payment_type === 'per_post' ? 'primary.main' : 'divider',
+                                                bgcolor: form.paid_payment_type === 'per_post' ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                                            }}
+                                        >
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Por post</Typography>
+                                            <Typography variant="caption" color="text.secondary">Valor fixo por creator</Typography>
+                                        </Box>
+                                        <Box
+                                            onClick={() => setField('paid_payment_type', 'per_views')}
+                                            sx={{
+                                                px: 2,
+                                                py: 1.25,
+                                                borderRadius: 2,
+                                                border: 2,
+                                                borderColor: form.paid_payment_type === 'per_views' ? 'primary.main' : 'divider',
+                                                bgcolor: form.paid_payment_type === 'per_views' ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
+                                                cursor: 'pointer',
+                                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                                            }}
+                                        >
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Por visualizações</Typography>
+                                            <Typography variant="caption" color="text.secondary">Valor a cada 1.000 visualizações</Typography>
+                                        </Box>
+                                    </Stack>
+                                </Grid>
+                                {form.paid_payment_type === 'per_post' && (
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <TextField
+                                            label="Valor por creator (R$) *"
+                                            type="number"
+                                            value={form.budget_per_creator}
+                                            onChange={(e) => setField('budget_per_creator', e.target.value)}
+                                            fullWidth
+                                            size="small"
+                                            InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                                            placeholder="0,00"
+                                            helperText="Valor bruto que cada creator receberá por post"
+                                        />
+                                    </Grid>
+                                )}
+                                {form.paid_payment_type === 'per_views' && (
+                                    <Grid size={{ xs: 12, sm: 6 }}>
+                                        <TextField
+                                            label="Valor a cada 1.000 visualizações (R$) *"
+                                            type="number"
+                                            value={form.budget_per_1000_views}
+                                            onChange={(e) => setField('budget_per_1000_views', e.target.value)}
+                                            fullWidth
+                                            size="small"
+                                            InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                                            placeholder="0,00"
+                                            helperText="Valor pago a cada mil visualizações do conteúdo"
+                                        />
+                                    </Grid>
+                                )}
+                            </>
                         )}
 
                         {form.compensation_type === 'product' && (
@@ -579,36 +700,65 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
 
                 {/* Entregas */}
                 <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Entregas esperadas</Typography>
-                    <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-                        <TextField
-                            size="small"
-                            placeholder="Ex: 1 vídeo UGC de 30s, 3 stories..."
-                            value={deliverableInput}
-                            onChange={(e) => setDeliverableInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addDeliverable();
-                                }
-                            }}
-                            sx={{ flex: 1 }}
-                        />
-                        <Button variant="outlined" size="small" onClick={addDeliverable} startIcon={<AddIcon />}>
-                            Add
-                        </Button>
-                    </Stack>
-                    <Stack direction="row" flexWrap="wrap" gap={0.75}>
-                        {form.deliverables.map((d) => (
-                            <Chip key={d} label={d} size="small" onDelete={() => removeDeliverable(d)} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>Entregas esperadas *</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.82rem' }}>
+                        Informe a quantidade de cada tipo de conteúdo que o creator deve entregar. Pelo menos uma opção deve ter quantidade maior que zero.
+                    </Typography>
+                    <Grid container spacing={2}>
+                        {DELIVERABLE_TYPES.map((type) => (
+                            <Grid size={{ xs: 6, sm: 3 }} key={type}>
+                                <TextField
+                                    label={type}
+                                    type="number"
+                                    value={deliverableQuantities[type] ?? 0}
+                                    onChange={(e) => setDeliverableQuantity(type, Number(e.target.value) || 0)}
+                                    fullWidth
+                                    size="small"
+                                    inputProps={{ min: 0, step: 1 }}
+                                    placeholder="0"
+                                />
+                            </Grid>
                         ))}
-                    </Stack>
+                    </Grid>
+                    {deliverablesOther.length > 0 && (
+                        <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mt: 2 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ width: '100%', mb: 0.5 }}>Outros (editados anteriormente)</Typography>
+                            {deliverablesOther.map((d) => (
+                                <Chip key={d} label={d} size="small" onDelete={() => removeOtherDeliverable(d)} />
+                            ))}
+                        </Stack>
+                    )}
                 </Paper>
 
                 {/* Filtros de creators */}
                 <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, border: 1, borderColor: 'divider' }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Filtros de creators</Typography>
                     <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>País</InputLabel>
+                                <Select
+                                    value={form.filters.countries}
+                                    label="País"
+                                    onChange={(e) => setFilter('countries', e.target.value)}
+                                >
+                                    <MenuItem value="all">Todos os países</MenuItem>
+                                    <MenuItem value="Brasil">Brasil</MenuItem>
+                                    <MenuItem value="Portugal">Portugal</MenuItem>
+                                    <MenuItem value="Estados Unidos">Estados Unidos</MenuItem>
+                                    <MenuItem value="Espanha">Espanha</MenuItem>
+                                    <MenuItem value="México">México</MenuItem>
+                                    <MenuItem value="Argentina">Argentina</MenuItem>
+                                    <MenuItem value="Colômbia">Colômbia</MenuItem>
+                                    <MenuItem value="Chile">Chile</MenuItem>
+                                    <MenuItem value="Reino Unido">Reino Unido</MenuItem>
+                                    <MenuItem value="França">França</MenuItem>
+                                    <MenuItem value="Alemanha">Alemanha</MenuItem>
+                                    <MenuItem value="Itália">Itália</MenuItem>
+                                    <MenuItem value="Outro">Outro</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Gênero</InputLabel>

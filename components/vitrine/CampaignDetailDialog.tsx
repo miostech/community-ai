@@ -65,6 +65,7 @@ export interface CampaignDetail {
     max_age?: number;
     min_followers?: number;
     max_followers?: number;
+    countries?: string[];
   };
 }
 
@@ -266,6 +267,8 @@ interface CampaignDetailDialogProps {
   hasApplied: boolean;
   onClose: () => void;
   onApplied: (campaignId: string) => void;
+  /** Motivos pelos quais o creator não pode se candidatar (país, idade, seguidores, etc.) */
+  ineligibleReasons?: string[];
 }
 
 export default function CampaignDetailDialog({
@@ -274,7 +277,9 @@ export default function CampaignDetailDialog({
   hasApplied,
   onClose,
   onApplied,
+  ineligibleReasons = [],
 }: CampaignDetailDialogProps) {
+  const isIneligible = ineligibleReasons.length > 0;
   const theme = useTheme();
   const [step, setStep] = useState<'detail' | 'guide' | 'terms' | 'apply'>('detail');
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -502,6 +507,24 @@ export default function CampaignDetailDialog({
 
       {/* ── Scrollable Body ─────────────────────────────────── */}
       <DialogContent sx={{ p: 0, overflow: 'auto', flex: 1 }}>
+        {isIneligible && (
+          <Alert
+            severity="warning"
+            sx={{
+              m: { xs: 2, sm: 3 },
+              mb: 0,
+              borderRadius: 2,
+            }}
+          >
+            {ineligibleReasons.length === 1 ? (
+              <>{ineligibleReasons[0]} Você não pode se candidatar.</>
+            ) : (
+              <>
+                Você não atende aos requisitos desta campanha: {ineligibleReasons.join(' ')} Você não pode se candidatar.
+              </>
+            )}
+          </Alert>
+        )}
         {step === 'detail' ? (
           <Grid container sx={{ minHeight: '100%' }}>
 
@@ -1088,6 +1111,25 @@ export default function CampaignDetailDialog({
                 }}
               >
                 Candidatura enviada
+              </Button>
+            ) : isIneligible ? (
+              <Button
+                variant="outlined"
+                disabled
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  fontSize: '0.88rem',
+                  width: { xs: '100%', sm: 'auto' },
+                  minHeight: { xs: 44, sm: 36 },
+                  borderColor: 'warning.main',
+                  color: 'warning.dark',
+                }}
+              >
+                Inelegível (país)
               </Button>
             ) : (
               <Button

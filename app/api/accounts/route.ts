@@ -226,6 +226,9 @@ export async function GET() {
                 address_city: account.address_city ?? null,
                 link_media_kit: account.link_media_kit ?? null,
                 portfolio_videos: account.portfolio_videos ?? [],
+                payment_pix_key: account.payment_pix_key ?? null,
+                payment_revolut_account: account.payment_revolut_account ?? null,
+                followers_at_signup: account.followers_at_signup ?? null,
             },
             subscription: {
                 status: subscriptionStatus,
@@ -262,6 +265,7 @@ export async function PATCH(request: NextRequest) {
             'avatar_url', 'background_url', 'birth_date', 'gender', 'category',
             'niches', 'address_country', 'address_state', 'address_city',
             'link_media_kit', 'portfolio_videos',
+            'payment_pix_key', 'payment_revolut_account',
         ];
 
         const updateData: Record<string, unknown> = {};
@@ -329,6 +333,9 @@ export async function PATCH(request: NextRequest) {
             address_city: acc.address_city ?? null,
             link_media_kit: acc.link_media_kit ?? null,
             portfolio_videos: acc.portfolio_videos ?? [],
+            payment_pix_key: acc.payment_pix_key ?? null,
+            payment_revolut_account: acc.payment_revolut_account ?? null,
+            followers_at_signup: acc.followers_at_signup ?? null,
         };
 
         return NextResponse.json({

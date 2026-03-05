@@ -291,7 +291,7 @@ export default function CandidaturasPage() {
                                                     {app.is_customer && (
                                                         <Chip
                                                             icon={<IsCustomerIcon sx={{ fontSize: '0.8rem !important' }} />}
-                                                            label="Cliente"
+                                                            label="Cliente da marca"
                                                             size="small"
                                                             color="primary"
                                                             variant="outlined"

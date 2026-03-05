@@ -40,6 +40,8 @@ interface CampaignData {
     slots: number;
     slots_filled: number;
     budget_per_creator?: number;
+    payment_type?: 'per_post' | 'per_views';
+    budget_per_1000_views?: number;
     includes_product: boolean;
     product_description?: string;
     deliverables: string[];
@@ -54,6 +56,7 @@ interface CampaignData {
         max_age?: number;
         min_followers?: number;
         max_followers?: number;
+        countries?: string[];
     };
 }
 
@@ -182,7 +185,9 @@ export default function EditCampanhaPage() {
         niches: campaign.niches || [],
         slots: campaign.slots,
         compensation_type: compensationType,
+        paid_payment_type: campaign.payment_type === 'per_views' ? 'per_views' : 'per_post',
         budget_per_creator: campaign.budget_per_creator ? String(campaign.budget_per_creator / 100) : '',
+        budget_per_1000_views: campaign.budget_per_1000_views ? String(campaign.budget_per_1000_views / 100) : '',
         includes_product: campaign.includes_product,
         product_description: compensationType === 'product' ? (campaign.product_description || '') : '',
         affiliate_commission: affiliateCommission,
@@ -198,6 +203,7 @@ export default function EditCampanhaPage() {
             max_age: campaign.filters?.max_age ? String(campaign.filters.max_age) : '',
             min_followers: campaign.filters?.min_followers ? String(campaign.filters.min_followers) : '',
             max_followers: campaign.filters?.max_followers ? String(campaign.filters.max_followers) : '',
+            countries: campaign.filters?.countries?.[0] ?? 'all',
         },
     };
 

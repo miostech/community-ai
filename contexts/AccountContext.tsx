@@ -42,6 +42,12 @@ export interface Account {
     address_city?: string | null;
     link_media_kit?: string | null;
     portfolio_videos?: string[];
+    /** Chave PIX para recebimento de pagamentos de campanhas pagas */
+    payment_pix_key?: string | null;
+    /** Conta Revolut para recebimento de pagamentos de campanhas pagas */
+    payment_revolut_account?: string | null;
+    /** Total de seguidores (soma das redes) no cadastro */
+    followers_at_signup?: number | null;
 }
 
 export interface Subscription {

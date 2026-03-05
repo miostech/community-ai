@@ -147,7 +147,7 @@ const adminNavItems: NavItem[] = [
             },
             {
                 label: 'Candidaturas',
-                href: '/dashboard/admin/campanhas',
+                href: '/dashboard/admin/candidaturas',
                 icon: <AssignmentIcon fontSize="small" />,
             },
         ],
@@ -265,7 +265,7 @@ export function SidebarMui() {
                                     : pathname === child.href || pathname?.startsWith(child.href + '/');
 
                                 return (
-                                    <ListItem key={child.href} disablePadding sx={{ px: 1, py: 0.25 }}>
+                                    <ListItem key={child.label} disablePadding sx={{ px: 1, py: 0.25 }}>
                                         <ListItemButton
                                             component={Link}
                                             href={child.href}

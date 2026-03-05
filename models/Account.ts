@@ -59,6 +59,10 @@ export interface Account {
     link_media_kit?: string;
     /** URLs dos vídeos do portfólio público (até 3) */
     portfolio_videos?: string[];
+    /** Chave PIX para recebimento de pagamentos de campanhas pagas (Brasil) */
+    payment_pix_key?: string;
+    /** Conta Revolut (e-mail ou identificador) para recebimento de pagamentos de campanhas pagas */
+    payment_revolut_account?: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -114,6 +118,8 @@ const AccountSchema = new Schema(
         address_city: { type: String, trim: true },
         link_media_kit: { type: String, trim: true },
         portfolio_videos: { type: [String], default: [] },
+        payment_pix_key: { type: String, trim: true },
+        payment_revolut_account: { type: String, trim: true },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

@@ -28,6 +28,7 @@ import {
   Videocam as VideocamIcon,
   Close as CloseIcon,
   CloudUpload as CloudUploadIcon,
+  AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
 import { TrabalhosTabs } from '@/components/trabalhos/TrabalhosTabs';
 
@@ -75,6 +76,8 @@ interface FormData {
   address_city: string;
   link_instagram: string;
   link_tiktok: string;
+  payment_pix_key: string;
+  payment_revolut_account: string;
 }
 
 interface VideoSlot {
@@ -154,6 +157,8 @@ export default function PortfolioPage() {
     address_city: '',
     link_instagram: '',
     link_tiktok: '',
+    payment_pix_key: '',
+    payment_revolut_account: '',
   });
   const [videoSlots, setVideoSlots] = useState<VideoSlot[]>(
     Array.from({ length: MAX_PORTFOLIO_VIDEOS }, () => ({ url: null, uploading: false, progress: 0 }))
@@ -177,6 +182,8 @@ export default function PortfolioPage() {
       address_city: account.address_city || '',
       link_instagram: account.link_instagram || '',
       link_tiktok: account.link_tiktok || '',
+      payment_pix_key: (account as { payment_pix_key?: string }).payment_pix_key || '',
+      payment_revolut_account: (account as { payment_revolut_account?: string }).payment_revolut_account || '',
     });
 
     setVideoSlots(
@@ -590,6 +597,39 @@ export default function PortfolioPage() {
                   ),
                 },
               }}
+            />
+          </Stack>
+        </Paper>
+
+        {/* Recebimento de pagamentos */}
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider' }}>
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1 }}>
+            <MoneyIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+            <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+              Recebimento de pagamentos
+            </Typography>
+          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block', fontSize: '0.75rem' }}>
+            Informe onde você deseja receber os pagamentos das campanhas pagas. Pode ser sua chave PIX (Brasil) ou sua conta Revolut.
+          </Typography>
+          <Stack spacing={2}>
+            <TextField
+              label="Chave PIX"
+              value={formData.payment_pix_key}
+              onChange={(e) => handleChange('payment_pix_key', e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="CPF, e-mail, telefone ou chave aleatória"
+              helperText="Para receber em reais (Brasil)"
+            />
+            <TextField
+              label="Conta Revolut"
+              value={formData.payment_revolut_account}
+              onChange={(e) => handleChange('payment_revolut_account', e.target.value)}
+              fullWidth
+              size="small"
+              placeholder="E-mail ou @ do Revolut"
+              helperText="Para receber em outras moedas / internacional"
             />
           </Stack>
         </Paper>
