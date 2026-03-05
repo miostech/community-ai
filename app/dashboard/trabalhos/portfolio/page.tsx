@@ -21,6 +21,10 @@ import {
   IconButton,
   Checkbox,
   FormControlLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -160,7 +164,7 @@ function getBlockingFields(data: FormData): string[] {
 
 export default function PortfolioPage() {
   const theme = useTheme();
-  const { account, updateAccount, isLoading: accountLoading } = useAccount();
+  const { account, updateAccount, refreshAccount, isLoading: accountLoading } = useAccount();
   const [formData, setFormData] = useState<FormData>({
     birth_date: '',
     gender: '',
@@ -186,6 +190,9 @@ export default function PortfolioPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [termsDeclinedMessage, setTermsDeclinedMessage] = useState<string | null>(null);
+  const [isAcceptingTerms, setIsAcceptingTerms] = useState(false);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -374,6 +381,41 @@ export default function PortfolioPage() {
     }
   };
 
+  /** Primeira vez que salva: exige aceite dos termos. Depois salva direto. */
+  const handleSaveClick = () => {
+    if (account?.portfolio_terms_accepted_at) {
+      handleSave();
+    } else {
+      setTermsModalOpen(true);
+    }
+  };
+
+  const handleAcceptTerms = async () => {
+    setIsAcceptingTerms(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/portfolio/terms/accept', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Erro ao aceitar termos');
+      }
+      setTermsModalOpen(false);
+      await refreshAccount();
+      await handleSave();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao aceitar termos. Tente novamente.');
+    } finally {
+      setIsAcceptingTerms(false);
+    }
+  };
+
+  const handleDeclineTerms = () => {
+    setTermsModalOpen(false);
+    setTermsDeclinedMessage(
+      'Os dados não foram salvos. Sem aceitar os termos, você não poderá participar de campanhas.'
+    );
+  };
+
   const videoCount = videoSlots.filter((s) => s.url).length;
   const completion = getCompletionPercentage(formData, videoCount);
   const missingFields = getMissingFields(formData, videoCount);
@@ -426,7 +468,7 @@ export default function PortfolioPage() {
               <WarningIcon sx={{ fontSize: 18, color: 'warning.main' }} />
             )}
             <Typography variant="subtitle2" fontWeight={600} sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
-              {isComplete ? 'Perfil completo!' : 'Perfil incompleto'}
+              {isComplete ? 'Dados obrigatórios completos!' : 'Dados obrigatórios incompletos'}
             </Typography>
           </Stack>
           <Typography variant="caption" fontWeight={600} color="text.secondary">
@@ -902,7 +944,7 @@ export default function PortfolioPage() {
         <Button
           variant="contained"
           size="large"
-          onClick={handleSave}
+          onClick={handleSaveClick}
           disabled={isSaving || isAnyUploading}
           startIcon={isSaving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
           sx={{
@@ -935,6 +977,64 @@ export default function PortfolioPage() {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      <Snackbar
+        open={!!termsDeclinedMessage}
+        autoHideDuration={6000}
+        onClose={() => setTermsDeclinedMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setTermsDeclinedMessage(null)}
+          severity="warning"
+          sx={{ borderRadius: 2 }}
+        >
+          {termsDeclinedMessage}
+        </Alert>
+      </Snackbar>
+
+      <Dialog
+        open={termsModalOpen}
+        onClose={() => !isAcceptingTerms && setTermsModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, border: 1, borderColor: 'divider' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+          Termos de uso e privacidade
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+            Ao salvar seu portfólio, você declara que leu e aceita compartilhar suas informações
+            pessoais com a Dome para fins de cadastro e divulgação do seu perfil criador.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+            Parte dessas informações (como nome, redes sociais, nicho e, quando aplicável,
+            endereço para entrega) poderá ser repassada às marcas nas campanhas em que você se
+            candidatar. O tratamento dos dados está em conformidade com a Lei Geral de Proteção
+            de Dados (LGPD).
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 0, gap: 1 }}>
+          <Button
+            onClick={handleDeclineTerms}
+            disabled={isAcceptingTerms}
+            color="inherit"
+            sx={{ textTransform: 'none' }}
+          >
+            Não aceito
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAcceptTerms}
+            disabled={isAcceptingTerms}
+            startIcon={isAcceptingTerms ? <CircularProgress size={18} color="inherit" /> : null}
+            sx={{ textTransform: 'none', borderRadius: 2 }}
+          >
+            {isAcceptingTerms ? 'Salvando...' : 'Aceito'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -71,6 +71,12 @@ export interface Account {
     payment_pix_key?: string;
     /** Conta Revolut (e-mail ou identificador) para recebimento de pagamentos de campanhas pagas */
     payment_revolut_account?: string;
+    /** Aceite dos termos do portfólio (LGPD): data/hora em que aceitou; preenchido apenas pelo endpoint de aceite */
+    portfolio_terms_accepted_at?: Date | null;
+    portfolio_terms_accepted_ip?: string | null;
+    portfolio_terms_accepted_country?: string | null;
+    portfolio_terms_accepted_region?: string | null;
+    portfolio_terms_accepted_city?: string | null;
     created_at: Date;
     updated_at: Date;
 }
@@ -134,6 +140,11 @@ const AccountSchema = new Schema(
         portfolio_videos: { type: [String], default: [] },
         payment_pix_key: { type: String, trim: true },
         payment_revolut_account: { type: String, trim: true },
+        portfolio_terms_accepted_at: { type: Date },
+        portfolio_terms_accepted_ip: { type: String, trim: true },
+        portfolio_terms_accepted_country: { type: String, trim: true },
+        portfolio_terms_accepted_region: { type: String, trim: true },
+        portfolio_terms_accepted_city: { type: String, trim: true },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

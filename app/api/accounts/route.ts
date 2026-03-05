@@ -230,6 +230,9 @@ export async function GET() {
                 address_number: account.address_number ?? null,
                 address_complement: account.address_complement ?? null,
                 address_neighborhood: account.address_neighborhood ?? null,
+                portfolio_terms_accepted_at: account.portfolio_terms_accepted_at
+                    ? new Date(account.portfolio_terms_accepted_at).toISOString()
+                    : null,
                 link_media_kit: account.link_media_kit ?? null,
                 portfolio_videos: account.portfolio_videos ?? [],
                 payment_pix_key: account.payment_pix_key ?? null,

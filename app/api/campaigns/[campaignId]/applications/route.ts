@@ -86,6 +86,14 @@ export async function POST(
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
+        const acc = account as { portfolio_terms_accepted_at?: Date | null };
+        if (!acc.portfolio_terms_accepted_at) {
+            return NextResponse.json(
+                { error: 'É necessário aceitar os termos do portfólio (termos de uso e privacidade) para participar de campanhas. Salve seu portfólio e aceite os termos na primeira vez.' },
+                { status: 403 }
+            );
+        }
+
         if (!isMidiaKitComplete(account as unknown as Record<string, unknown>)) {
             return NextResponse.json(
                 { error: 'Complete seu Portfólio antes de se candidatar a campanhas.' },

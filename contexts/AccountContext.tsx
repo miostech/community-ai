@@ -46,6 +46,8 @@ export interface Account {
     address_number?: string | null;
     address_complement?: string | null;
     address_neighborhood?: string | null;
+    /** ISO date em que aceitou os termos do portfólio (LGPD). null = nunca aceitou. */
+    portfolio_terms_accepted_at?: string | null;
     link_media_kit?: string | null;
     portfolio_videos?: string[];
     /** Chave PIX para recebimento de pagamentos de campanhas pagas */
