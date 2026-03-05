@@ -19,6 +19,8 @@ import {
   useTheme,
   LinearProgress,
   IconButton,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -74,6 +76,12 @@ interface FormData {
   address_country: string;
   address_state: string;
   address_city: string;
+  interest_product_campaigns: boolean;
+  address_zip: string;
+  address_street: string;
+  address_number: string;
+  address_complement: string;
+  address_neighborhood: string;
   link_instagram: string;
   link_tiktok: string;
   payment_pix_key: string;
@@ -141,6 +149,12 @@ function getBlockingFields(data: FormData): string[] {
       missing.push(field.label);
     }
   }
+  if (data.interest_product_campaigns) {
+    if (!data.address_zip?.trim()) missing.push('CEP (entrega de produtos)');
+    if (!data.address_street?.trim()) missing.push('Rua (entrega de produtos)');
+    if (!data.address_number?.trim()) missing.push('Número (entrega de produtos)');
+    if (!data.address_neighborhood?.trim()) missing.push('Bairro (entrega de produtos)');
+  }
   return missing;
 }
 
@@ -155,6 +169,12 @@ export default function PortfolioPage() {
     address_country: '',
     address_state: '',
     address_city: '',
+    interest_product_campaigns: false,
+    address_zip: '',
+    address_street: '',
+    address_number: '',
+    address_complement: '',
+    address_neighborhood: '',
     link_instagram: '',
     link_tiktok: '',
     payment_pix_key: '',
@@ -180,6 +200,12 @@ export default function PortfolioPage() {
       address_country: account.address_country || '',
       address_state: account.address_state || '',
       address_city: account.address_city || '',
+      interest_product_campaigns: !!(account as { interest_product_campaigns?: boolean }).interest_product_campaigns,
+      address_zip: (account as { address_zip?: string }).address_zip || '',
+      address_street: (account as { address_street?: string }).address_street || '',
+      address_number: (account as { address_number?: string }).address_number || '',
+      address_complement: (account as { address_complement?: string }).address_complement || '',
+      address_neighborhood: (account as { address_neighborhood?: string }).address_neighborhood || '',
       link_instagram: account.link_instagram || '',
       link_tiktok: account.link_tiktok || '',
       payment_pix_key: (account as { payment_pix_key?: string }).payment_pix_key || '',
@@ -196,7 +222,7 @@ export default function PortfolioPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account.id]);
 
-  const handleChange = (field: keyof FormData, value: string | string[]) => {
+  const handleChange = (field: keyof FormData, value: string | string[] | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -525,7 +551,7 @@ export default function PortfolioPage() {
           </Stack>
         </Paper>
 
-        {/* Endereço */}
+        {/* Localização */}
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider' }}>
           <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
             Localização
@@ -557,6 +583,67 @@ export default function PortfolioPage() {
                 placeholder="Ex: São Paulo"
               />
             </Stack>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.interest_product_campaigns}
+                  onChange={(e) => handleChange('interest_product_campaigns', e.target.checked)}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label="Tenho interesse em campanhas de produtos?"
+              sx={{ alignItems: 'flex-start', mt: 0.5 }}
+            />
+            {formData.interest_product_campaigns && (
+              <Stack spacing={2} sx={{ pl: 3.5, borderLeft: 2, borderColor: 'divider' }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  Endereço completo para entrega de produtos *
+                </Typography>
+                <TextField
+                  label="CEP *"
+                  value={formData.address_zip}
+                  onChange={(e) => handleChange('address_zip', e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="00000-000"
+                />
+                <TextField
+                  label="Rua / Logradouro *"
+                  value={formData.address_street}
+                  onChange={(e) => handleChange('address_street', e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="Nome da rua"
+                />
+                <Stack direction="row" spacing={1.5}>
+                  <TextField
+                    label="Número *"
+                    value={formData.address_number}
+                    onChange={(e) => handleChange('address_number', e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="Nº"
+                  />
+                  <TextField
+                    label="Complemento"
+                    value={formData.address_complement}
+                    onChange={(e) => handleChange('address_complement', e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="Apto, bloco..."
+                  />
+                </Stack>
+                <TextField
+                  label="Bairro *"
+                  value={formData.address_neighborhood}
+                  onChange={(e) => handleChange('address_neighborhood', e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="Bairro"
+                />
+              </Stack>
+            )}
           </Stack>
         </Paper>
 

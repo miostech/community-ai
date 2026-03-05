@@ -56,6 +56,14 @@ export interface Account {
     address_country?: string;
     address_state?: string;
     address_city?: string;
+    /** Interesse em campanhas com entrega de produtos; quando true, endereço completo é usado para envio */
+    interest_product_campaigns?: boolean;
+    /** Endereço completo para entrega de produtos (quando interest_product_campaigns) */
+    address_zip?: string;
+    address_street?: string;
+    address_number?: string;
+    address_complement?: string;
+    address_neighborhood?: string;
     link_media_kit?: string;
     /** URLs dos vídeos do portfólio público (até 3) */
     portfolio_videos?: string[];
@@ -116,6 +124,12 @@ const AccountSchema = new Schema(
         address_country: { type: String, trim: true },
         address_state: { type: String, trim: true },
         address_city: { type: String, trim: true },
+        interest_product_campaigns: { type: Boolean, default: false },
+        address_zip: { type: String, trim: true },
+        address_street: { type: String, trim: true },
+        address_number: { type: String, trim: true },
+        address_complement: { type: String, trim: true },
+        address_neighborhood: { type: String, trim: true },
         link_media_kit: { type: String, trim: true },
         portfolio_videos: { type: [String], default: [] },
         payment_pix_key: { type: String, trim: true },

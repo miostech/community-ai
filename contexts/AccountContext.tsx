@@ -40,6 +40,12 @@ export interface Account {
     address_country?: string | null;
     address_state?: string | null;
     address_city?: string | null;
+    interest_product_campaigns?: boolean;
+    address_zip?: string | null;
+    address_street?: string | null;
+    address_number?: string | null;
+    address_complement?: string | null;
+    address_neighborhood?: string | null;
     link_media_kit?: string | null;
     portfolio_videos?: string[];
     /** Chave PIX para recebimento de pagamentos de campanhas pagas */
