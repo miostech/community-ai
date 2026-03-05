@@ -19,7 +19,7 @@ export const CURSOS = [
   {
     id: 'AQDrLac' as const,
     label: 'Método Influência MILIONÁRIA',
-    kiwifyUrl: 'https://pay.kiwify.com.br/AQDrLac?afid=10z1btuv',
+    kiwifyUrl: 'https://pay.kiwify.com.br/CI4y7F9?afid=4CdbYeMc',
     kiwifyProductIds: [
       'b28b7a90-b4cf-11ef-9456-6daddced3267',
       '6683aa80-bb2e-11f0-a386-7f084bbfb234',
@@ -32,7 +32,7 @@ export const CURSOS = [
   {
     id: 'YIUXqzV' as const,
     label: 'Roteiro Viral',
-    kiwifyUrl: 'https://pay.kiwify.com.br/YIUXqzV?afid=kq3Wqjlq',
+    kiwifyUrl: 'https://pay.kiwify.com.br/nE7UcTb?afid=zBMHmx7w',
     kiwifyProductIds: [
       '080a7190-ae0f-11f0-84ca-83ece070bd1d',
       'YIUXqzV',
@@ -42,7 +42,7 @@ export const CURSOS = [
   {
     id: '96dk0GP' as const,
     label: 'Hackeando Passagens Aéreas',
-    kiwifyUrl: 'https://pay.kiwify.com.br/96dk0GP?afid=rXWOYDG7',
+    kiwifyUrl: 'https://pay.kiwify.com.br/xgD0BzD?afid=W77jsH1i',
     kiwifyProductIds: [
       'c6547980-bb2e-11f0-8751-cd4e443e2330',
       '97204820-d3e9-11ee-b35b-a7756e800fa3',

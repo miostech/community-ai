@@ -227,7 +227,7 @@ export default function PortfolioPage() {
       }))
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [account.id]);
+  }, [account?.id]);
 
   const handleChange = (field: keyof FormData, value: string | string[] | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
