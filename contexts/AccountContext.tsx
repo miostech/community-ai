@@ -95,11 +95,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchAccount = useCallback(async () => {
-        console.log('🟡 fetchAccount chamado - status:', status, 'session:', session?.user);
+    const sessionUserId = (session?.user as any)?.auth_user_id || session?.user?.id || null;
 
-        if (status !== 'authenticated' || !session?.user) {
-            console.log('🔴 Não autenticado ou sem session.user');
+    const fetchAccount = useCallback(async () => {
+        if (status !== 'authenticated' || !sessionUserId) {
             setIsLoading(false);
             return;
         }
@@ -108,14 +107,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(true);
             setError(null);
 
-            console.log('🟢 Buscando /api/accounts...');
             const response = await fetch('/api/accounts');
-            console.log('🟢 Response status:', response.status);
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    // Conta não encontrada - pode ser um novo usuário
-                    console.log('🟠 Conta não encontrada (404)');
                     setAccount(null);
                     return;
                 }
@@ -123,8 +118,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             }
 
             const data = await response.json();
-            console.log('🟢 Dados recebidos da API:', data);
-            setAccount(data.account);
+            setAccount((prev) => prev ? { ...prev, ...data.account } : data.account);
             setSubscription(data.subscription || null);
         } catch (err) {
             console.error('🔴 Erro ao carregar conta:', err);
@@ -132,7 +126,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [session, status]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sessionUserId, status]);
 
     // Carregar conta quando a sessão estiver autenticada
     useEffect(() => {
@@ -151,13 +146,6 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
         const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
         const isDashboardRoute = pathname?.startsWith('/dashboard');
-
-        console.log('🔍 Verificando subscription:', {
-            status: subscription?.status,
-            isPublicRoute,
-            isDashboardRoute,
-            pathname,
-        });
 
         // Só redireciona se status for explicitamente 'inactive' ou 'expired'
         const isInactive = subscription?.status === 'inactive' || subscription?.status === 'expired';
@@ -192,7 +180,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             }
 
             const data = await response.json();
-            setAccount(data.account);
+            // Merge the API response with the current account to avoid losing fields
+            // that the PATCH endpoint does not return (e.g. role, geo_*, is_founding_member)
+            setAccount((prev) => prev ? { ...prev, ...data.account } : data.account);
             return true;
         } catch (err) {
             console.error('Erro ao atualizar conta:', err);

@@ -12,8 +12,6 @@ import {
     Select,
     FormControl,
     InputLabel,
-    FormControlLabel,
-    Checkbox,
     Button,
     Chip,
     CircularProgress,
@@ -21,8 +19,17 @@ import {
     Divider,
     Grid,
     InputAdornment,
+    alpha,
+    useTheme,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import {
+    Add as AddIcon,
+    AttachMoney as MoneyIcon,
+    ShoppingBag as ProductIcon,
+    Link as AffiliateIcon,
+} from '@mui/icons-material';
+
+export type CompensationType = 'paid' | 'product' | 'affiliate';
 
 export interface CampaignFormData {
     brand_name: string;
@@ -37,9 +44,12 @@ export interface CampaignFormData {
     category: string;
     niches: string[];
     slots: number;
+    compensation_type: CompensationType;
     budget_per_creator: string;
     includes_product: boolean;
     product_description: string;
+    affiliate_commission: string;
+    affiliate_link: string;
     deliverables: string[];
     application_deadline: string;
     content_deadline: string;
@@ -67,9 +77,12 @@ const EMPTY_FORM: CampaignFormData = {
     category: '',
     niches: [],
     slots: 1,
+    compensation_type: 'paid',
     budget_per_creator: '',
     includes_product: false,
     product_description: '',
+    affiliate_commission: '',
+    affiliate_link: '',
     deliverables: [],
     application_deadline: '',
     content_deadline: '',
@@ -83,6 +96,36 @@ const EMPTY_FORM: CampaignFormData = {
         max_followers: '',
     },
 };
+
+const COMPENSATION_OPTIONS: {
+    value: CompensationType;
+    label: string;
+    sublabel: string;
+    icon: React.ReactNode;
+    gradient: string;
+}[] = [
+    {
+        value: 'paid',
+        label: 'Campanha paga',
+        sublabel: 'O creator recebe um valor fixo em dinheiro',
+        icon: <MoneyIcon />,
+        gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+    },
+    {
+        value: 'product',
+        label: 'Campanha de produto',
+        sublabel: 'O creator recebe produto(s) ou serviço gratuitamente',
+        icon: <ProductIcon />,
+        gradient: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+    },
+    {
+        value: 'affiliate',
+        label: 'Campanha de afiliação',
+        sublabel: 'O creator divulga com link e recebe comissão por vendas',
+        icon: <AffiliateIcon />,
+        gradient: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
+    },
+];
 
 const NICHE_SUGGESTIONS = [
     'Beleza', 'Moda', 'Fitness', 'Alimentação', 'Viagem', 'Tecnologia',
@@ -98,6 +141,7 @@ interface Props {
 
 export function CampaignForm({ initialData, campaignId, mode }: Props) {
     const router = useRouter();
+    const theme = useTheme();
     const [form, setForm] = useState<CampaignFormData>({ ...EMPTY_FORM, ...initialData });
     const [nicheInput, setNicheInput] = useState('');
     const [deliverableInput, setDeliverableInput] = useState('');
@@ -143,10 +187,25 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
         setError('');
         setSuccess('');
 
+        // Map compensation_type to model fields
+        const isPaid = form.compensation_type === 'paid';
+        const isProduct = form.compensation_type === 'product';
+        const isAffiliate = form.compensation_type === 'affiliate';
+
         const payload = {
             ...form,
             slots: Number(form.slots),
-            budget_per_creator: form.budget_per_creator ? Number(form.budget_per_creator) * 100 : undefined,
+            budget_per_creator: isPaid && form.budget_per_creator ? Number(form.budget_per_creator) * 100 : undefined,
+            includes_product: isProduct,
+            product_description: isProduct ? form.product_description : undefined,
+            // Store affiliate info in product_description field with a prefix when type is affiliate
+            ...(isAffiliate && {
+                product_description: [
+                    form.affiliate_commission ? `Comissão: ${form.affiliate_commission}%` : '',
+                    form.affiliate_link ? `Link: ${form.affiliate_link}` : '',
+                ].filter(Boolean).join(' | ') || undefined,
+            }),
+            content_usage: isAffiliate ? 'ambos' : form.content_usage,
             filters: {
                 gender: form.filters.gender || undefined,
                 min_age: form.filters.min_age ? Number(form.filters.min_age) : undefined,
@@ -373,9 +432,72 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                     </Stack>
                 </Paper>
 
-                {/* Vagas e pagamento */}
+                {/* Tipo de compensação */}
                 <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>Vagas e pagamento</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>Tipo de compensação *</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.82rem' }}>
+                        Defina como os creators serão recompensados por essa campanha.
+                    </Typography>
+
+                    <Grid container spacing={1.5} sx={{ mb: 3 }}>
+                        {COMPENSATION_OPTIONS.map((opt) => {
+                            const selected = form.compensation_type === opt.value;
+                            return (
+                                <Grid size={{ xs: 12, sm: 4 }} key={opt.value}>
+                                    <Box
+                                        onClick={() => setField('compensation_type', opt.value)}
+                                        sx={{
+                                            p: { xs: 1.5, sm: 2 },
+                                            borderRadius: 2.5,
+                                            border: 2,
+                                            borderColor: selected ? 'transparent' : 'divider',
+                                            cursor: 'pointer',
+                                            background: selected ? opt.gradient : 'transparent',
+                                            color: selected ? 'white' : 'text.primary',
+                                            transition: 'all 0.15s',
+                                            '&:hover': {
+                                                borderColor: selected ? 'transparent' : 'primary.main',
+                                                bgcolor: selected ? undefined : alpha(theme.palette.primary.main, 0.04),
+                                            },
+                                        }}
+                                    >
+                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.75 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: 1.5,
+                                                    bgcolor: selected ? 'rgba(255,255,255,0.25)' : alpha(theme.palette.primary.main, 0.1),
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: selected ? 'white' : 'primary.main',
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {React.cloneElement(opt.icon as React.ReactElement, { sx: { fontSize: 18 } })}
+                                            </Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>
+                                                {opt.label}
+                                            </Typography>
+                                        </Stack>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontSize: '0.7rem',
+                                                lineHeight: 1.4,
+                                                color: selected ? 'rgba(255,255,255,0.85)' : 'text.secondary',
+                                            }}
+                                        >
+                                            {opt.sublabel}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            );
+                        })}
+                    </Grid>
+
+                    {/* Vagas — sempre visível */}
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField
@@ -387,44 +509,70 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                                 required
                                 size="small"
                                 inputProps={{ min: 1 }}
+                                helperText="Quantos creators serão selecionados para essa campanha"
                             />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField
-                                label="Valor por creator (R$)"
-                                type="number"
-                                value={form.budget_per_creator}
-                                onChange={(e) => setField('budget_per_creator', e.target.value)}
-                                fullWidth
-                                size="small"
-                                InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
-                                placeholder="0,00"
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12 }}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={form.includes_product}
-                                        onChange={(e) => setField('includes_product', e.target.checked)}
-                                        size="small"
-                                    />
-                                }
-                                label="Inclui produto/serviço gratuito"
-                            />
-                        </Grid>
-                        {form.includes_product && (
+
+                        {/* Campos condicionais por tipo */}
+                        {form.compensation_type === 'paid' && (
+                            <Grid size={{ xs: 12, sm: 6 }}>
+                                <TextField
+                                    label="Valor por creator (R$) *"
+                                    type="number"
+                                    value={form.budget_per_creator}
+                                    onChange={(e) => setField('budget_per_creator', e.target.value)}
+                                    fullWidth
+                                    size="small"
+                                    InputProps={{ startAdornment: <InputAdornment position="start">R$</InputAdornment> }}
+                                    placeholder="0,00"
+                                    helperText="Valor bruto que cada creator receberá"
+                                />
+                            </Grid>
+                        )}
+
+                        {form.compensation_type === 'product' && (
                             <Grid size={{ xs: 12 }}>
                                 <TextField
-                                    label="Descrição do produto"
+                                    label="Descrição do produto / serviço *"
                                     value={form.product_description}
                                     onChange={(e) => setField('product_description', e.target.value)}
                                     fullWidth
                                     size="small"
                                     multiline
                                     rows={2}
+                                    placeholder="Ex: Kit skincare completo (sérum + hidratante + protetor solar), valor aprox. R$ 250"
+                                    helperText="Descreva o que o creator receberá e, se possível, o valor estimado"
                                 />
                             </Grid>
+                        )}
+
+                        {form.compensation_type === 'affiliate' && (
+                            <>
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                        label="Comissão por venda (%)"
+                                        type="number"
+                                        value={form.affiliate_commission}
+                                        onChange={(e) => setField('affiliate_commission', e.target.value)}
+                                        fullWidth
+                                        size="small"
+                                        InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                                        placeholder="10"
+                                        helperText="Percentual de comissão por cada venda gerada"
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 6 }}>
+                                    <TextField
+                                        label="Link de afiliação / plataforma"
+                                        value={form.affiliate_link}
+                                        onChange={(e) => setField('affiliate_link', e.target.value)}
+                                        fullWidth
+                                        size="small"
+                                        placeholder="https://hotmart.com/... ou hotmart, kiwify, eduzz..."
+                                        helperText="URL base ou nome da plataforma de afiliação"
+                                    />
+                                </Grid>
+                            </>
                         )}
                     </Grid>
                 </Paper>

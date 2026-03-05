@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
             { auth_user_id },
             { $set: payload },
             {
-                new: true,
+                returnDocument: 'after',
                 upsert: true,
                 runValidators: true,
                 setDefaultsOnInsert: true,
@@ -120,18 +120,16 @@ export async function GET() {
 
         await connectMongo();
 
-        // Usar auth_user_id se disponível, senão usar id
         const authUserId = (session.user as any).auth_user_id || session.user.id;
-        console.log('🔍 Buscando conta com auth_user_id:', authUserId);
 
-        const account = await Account.findOne({ auth_user_id: authUserId }).lean();
+        // Use native MongoDB driver to avoid any Mongoose schema cache issues
+        const account = await Account.collection.findOne({ auth_user_id: authUserId }) as Record<string, any> | null;
 
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        // Busca o último pagamento/evento relevante (inclui subscription_canceled para mostrar info de cancelamento)
-        const email = (account as any).email || session.user.email;
+        const email = account.email || session.user.email;
         const emailNorm = email?.toLowerCase().trim();
         const lastPayment = await AccountPayment.findOne({
             email: emailNorm,
@@ -140,8 +138,6 @@ export async function GET() {
             },
         }).sort({ createdAt: -1 }).lean();
 
-        // Data do primeiro pagamento aprovado (para liberar Trabalhos após 7 dias)
-        // Para assinaturas usa subscription.start_date; senão usa createdAt do pedido
         const firstPaidPayment = await AccountPayment.findOne({
             email: emailNorm,
             order_status: 'paid',
@@ -155,25 +151,18 @@ export async function GET() {
                     : null)
             : null;
 
-        // Determina o status da assinatura
         let subscriptionStatus: 'active' | 'expired' | 'inactive' = 'inactive';
         let subscriptionExpiresAt: Date | null = null;
 
         if (lastPayment) {
             const payment = lastPayment as any;
-
-            // Reembolso: perde acesso imediato
             if (payment.order_status === 'refunded') {
                 subscriptionStatus = 'inactive';
                 subscriptionExpiresAt = null;
-            }
-            // Se tem dados de assinatura com próximo pagamento
-            else if (payment.subscription?.next_payment) {
+            } else if (payment.subscription?.next_payment) {
                 subscriptionExpiresAt = new Date(payment.subscription.next_payment);
                 subscriptionStatus = subscriptionExpiresAt > new Date() ? 'active' : 'expired';
-            }
-            // Se é uma compra única aprovada (sem subscription), considera ativo
-            else if (
+            } else if (
                 payment.order_status === 'paid' &&
                 ['order_approved', 'paid'].includes(payment.webhook_event_type)
             ) {
@@ -182,13 +171,12 @@ export async function GET() {
             }
         }
 
-        const acc = account as unknown as { _id: unknown; used_instagram_avatar?: boolean; instagram_avatar_used_at?: Date | string; [k: string]: unknown };
         const payment = lastPayment as any;
 
         const isFoundingMember = await checkFoundingMember(email);
-        if ((acc.is_founding_member ?? false) !== isFoundingMember) {
-            Account.updateOne(
-                { _id: acc._id as mongoose.Types.ObjectId },
+        if ((account.is_founding_member ?? false) !== isFoundingMember) {
+            Account.collection.updateOne(
+                { _id: account._id },
                 { $set: { is_founding_member: isFoundingMember } }
             ).catch(() => {});
         }
@@ -196,39 +184,48 @@ export async function GET() {
         return NextResponse.json({
             success: true,
             account: {
-                id: acc._id?.toString?.() ?? String(acc._id),
-                first_name: acc.first_name,
-                last_name: acc.last_name,
-                email: acc.email || session.user.email,
-                phone: acc.phone,
-                phone_country_code: acc.phone_country_code || '+55',
-                link_instagram: acc.link_instagram,
-                link_tiktok: acc.link_tiktok,
-                link_youtube: acc.link_youtube,
-                primary_social_link: acc.primary_social_link,
-                avatar_url: acc.avatar_url || session.user.image,
-                used_instagram_avatar: acc.used_instagram_avatar === true,
-                instagram_avatar_used_at: acc.instagram_avatar_used_at
-                    ? (typeof acc.instagram_avatar_used_at === 'string'
-                        ? acc.instagram_avatar_used_at
-                        : new Date(acc.instagram_avatar_used_at as Date).toISOString())
+                id: account._id?.toString?.() ?? String(account._id),
+                first_name: account.first_name,
+                last_name: account.last_name,
+                email: account.email || session.user.email,
+                phone: account.phone,
+                phone_country_code: account.phone_country_code || '+55',
+                link_instagram: account.link_instagram,
+                link_tiktok: account.link_tiktok,
+                link_youtube: account.link_youtube,
+                primary_social_link: account.primary_social_link,
+                avatar_url: account.avatar_url || session.user.image,
+                used_instagram_avatar: account.used_instagram_avatar === true,
+                instagram_avatar_used_at: account.instagram_avatar_used_at
+                    ? new Date(account.instagram_avatar_used_at).toISOString()
                     : null,
-                background_url: acc.background_url,
-                plan: acc.plan,
-                code_invite: acc.code_invite,
-                role: acc.role || 'user',
+                background_url: account.background_url,
+                plan: account.plan,
+                code_invite: account.code_invite,
+                role: account.role || 'user',
                 is_founding_member: isFoundingMember,
-                request_cancel_at: (acc.request_cancel_at as Date | undefined)
-                    ? new Date(acc.request_cancel_at as Date).toISOString()
+                request_cancel_at: account.request_cancel_at
+                    ? new Date(account.request_cancel_at).toISOString()
                     : null,
-                geo_country: acc.geo_country ?? null,
-                geo_region: acc.geo_region ?? null,
-                geo_city: acc.geo_city ?? null,
-                geo_lat: acc.geo_lat ?? null,
-                geo_lon: acc.geo_lon ?? null,
-                geo_updated_at: (acc.geo_updated_at as Date | undefined)
-                    ? new Date(acc.geo_updated_at as Date).toISOString()
+                geo_country: account.geo_country ?? null,
+                geo_region: account.geo_region ?? null,
+                geo_city: account.geo_city ?? null,
+                geo_lat: account.geo_lat ?? null,
+                geo_lon: account.geo_lon ?? null,
+                geo_updated_at: account.geo_updated_at
+                    ? new Date(account.geo_updated_at).toISOString()
                     : null,
+                birth_date: account.birth_date
+                    ? new Date(account.birth_date).toISOString()
+                    : null,
+                gender: account.gender ?? null,
+                category: account.category ?? null,
+                niches: account.niches ?? [],
+                address_country: account.address_country ?? null,
+                address_state: account.address_state ?? null,
+                address_city: account.address_city ?? null,
+                link_media_kit: account.link_media_kit ?? null,
+                portfolio_videos: account.portfolio_videos ?? [],
             },
             subscription: {
                 status: subscriptionStatus,
@@ -259,31 +256,14 @@ export async function PATCH(request: NextRequest) {
 
         const body = await request.json();
 
-        // Campos permitidos para atualização
         const allowedFields = [
-            'first_name',
-            'last_name',
-            'email',
-            'phone',
-            'phone_country_code',
-            'link_instagram',
-            'link_tiktok',
-            'link_youtube',
-            'primary_social_link',
-            'avatar_url',
-            'background_url',
-            'birth_date',
-            'gender',
-            'category',
-            'niches',
-            'address_country',
-            'address_state',
-            'address_city',
-            'link_media_kit',
-            'portfolio_videos',
+            'first_name', 'last_name', 'email', 'phone', 'phone_country_code',
+            'link_instagram', 'link_tiktok', 'link_youtube', 'primary_social_link',
+            'avatar_url', 'background_url', 'birth_date', 'gender', 'category',
+            'niches', 'address_country', 'address_state', 'address_city',
+            'link_media_kit', 'portfolio_videos',
         ];
 
-        // Filtrar apenas campos permitidos
         const updateData: Record<string, unknown> = {};
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
@@ -297,63 +277,58 @@ export async function PATCH(request: NextRequest) {
 
         await connectMongo();
 
-        // Usar auth_user_id se disponível, senão usar id
         const authUserId = (session.user as any).auth_user_id || session.user.id;
 
-        const account = await Account.findOneAndUpdate(
+        // Use native MongoDB driver directly to avoid any Mongoose schema/cache issues
+        const col = Account.collection;
+        const acc = await col.findOneAndUpdate(
             { auth_user_id: authUserId },
             { $set: updateData },
-            { new: true, runValidators: true }
-        );
+            { returnDocument: 'after' }
+        ) as Record<string, any> | null;
 
-        if (!account) {
+        if (!acc) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        // Registrar seguidores no “cadastro” (primeira vez que temos redes) para monitorar crescimento e premiações
-        const accWithSignup = account as { followers_at_signup?: number | null };
-        const hasLinks = !!(account.link_instagram?.trim() || account.link_tiktok?.trim() || account.link_youtube?.trim());
-        if (hasLinks && (accWithSignup.followers_at_signup === undefined || accWithSignup.followers_at_signup === null)) {
+        // Registrar seguidores no "cadastro" (primeira vez que temos redes)
+        const hasLinks = !!(acc.link_instagram?.trim() || acc.link_tiktok?.trim() || acc.link_youtube?.trim());
+        if (hasLinks && (acc.followers_at_signup === undefined || acc.followers_at_signup === null)) {
             try {
                 const total = await getTotalFollowers({
-                    instagram: account.link_instagram,
-                    tiktok: account.link_tiktok,
-                    youtube: account.link_youtube,
+                    instagram: acc.link_instagram,
+                    tiktok: acc.link_tiktok,
+                    youtube: acc.link_youtube,
                 });
-                await Account.updateOne(
-                    { _id: account._id },
-                    { $set: { followers_at_signup: total } }
-                );
+                await col.updateOne({ _id: acc._id }, { $set: { followers_at_signup: total } });
             } catch (e) {
                 console.error('Erro ao registrar followers_at_signup:', e);
             }
         }
 
-        // Garantir que a resposta inclua os valores que acabamos de salvar (evita perda se o modelo estiver em cache sem o campo)
-        const accountData = account.toObject ? account.toObject() : { ...account };
         const responseAccount = {
-            id: (accountData as any).id ?? (account as any)._id?.toString?.(),
-            first_name: account.first_name,
-            last_name: account.last_name,
-            email: account.email,
-            phone: account.phone,
-            phone_country_code: account.phone_country_code,
-            link_instagram: updateData.link_instagram !== undefined ? updateData.link_instagram : (accountData as any).link_instagram ?? account.link_instagram,
-            link_tiktok: updateData.link_tiktok !== undefined ? updateData.link_tiktok : (accountData as any).link_tiktok ?? account.link_tiktok,
-            link_youtube: updateData.link_youtube !== undefined ? updateData.link_youtube : (accountData as any).link_youtube ?? account.link_youtube,
-            primary_social_link: account.primary_social_link,
-            avatar_url: account.avatar_url,
-            background_url: account.background_url,
-            plan: account.plan,
-            birth_date: (account as any).birth_date ?? null,
-            gender: (account as any).gender ?? null,
-            category: (account as any).category ?? null,
-            niches: (account as any).niches ?? [],
-            address_country: (account as any).address_country ?? null,
-            address_state: (account as any).address_state ?? null,
-            address_city: (account as any).address_city ?? null,
-            link_media_kit: (account as any).link_media_kit ?? null,
-            portfolio_videos: (account as any).portfolio_videos ?? [],
+            id: acc._id?.toString?.() ?? String(acc._id),
+            first_name: acc.first_name,
+            last_name: acc.last_name,
+            email: acc.email,
+            phone: acc.phone,
+            phone_country_code: acc.phone_country_code,
+            link_instagram: acc.link_instagram ?? null,
+            link_tiktok: acc.link_tiktok ?? null,
+            link_youtube: acc.link_youtube ?? null,
+            primary_social_link: acc.primary_social_link ?? null,
+            avatar_url: acc.avatar_url ?? null,
+            background_url: acc.background_url ?? null,
+            plan: acc.plan,
+            birth_date: acc.birth_date ? new Date(acc.birth_date).toISOString() : null,
+            gender: acc.gender ?? null,
+            category: acc.category ?? null,
+            niches: acc.niches ?? [],
+            address_country: acc.address_country ?? null,
+            address_state: acc.address_state ?? null,
+            address_city: acc.address_city ?? null,
+            link_media_kit: acc.link_media_kit ?? null,
+            portfolio_videos: acc.portfolio_videos ?? [],
         };
 
         return NextResponse.json({

@@ -21,30 +21,28 @@ import {
   Select,
   FormControl,
   InputLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Divider,
-  LinearProgress,
   Tooltip,
 } from '@mui/material';
 import {
   Badge as BadgeIcon,
-  CalendarToday as CalendarIcon,
-  Group as GroupIcon,
   AttachMoney as MoneyIcon,
-  Inventory as ProductIcon,
+  ShoppingBag as ProductIcon,
+  Link as AffiliateIcon,
+  Instagram as InstagramIcon,
+  MusicNote as TikTokIcon,
+  YouTube as YouTubeIcon,
   CheckCircle as AppliedIcon,
-  Send as SendIcon,
+  AccessTime as ClockIcon,
 } from '@mui/icons-material';
 import { TrabalhosTabs } from '@/components/trabalhos/TrabalhosTabs';
+import CampaignDetailDialog from '@/components/vitrine/CampaignDetailDialog';
 
 interface Campaign {
   _id: string;
   brand_name: string;
   brand_logo?: string;
   brand_instagram?: string;
+  brand_website?: string;
   title: string;
   description: string;
   briefing: string;
@@ -60,8 +58,54 @@ interface Campaign {
   deliverables: string[];
   application_deadline?: string;
   content_deadline?: string;
+  start_date?: string;
   applications_count: number;
+  images?: string[];
+  filters?: {
+    gender?: string;
+    min_age?: number;
+    max_age?: number;
+    min_followers?: number;
+    max_followers?: number;
+  };
 }
+
+// Tipo de compensação derivado dos campos da campanha
+type CompensationType = 'paid' | 'product' | 'affiliate' | 'free';
+
+function getCompensationType(campaign: Campaign): CompensationType {
+  if (campaign.budget_per_creator && campaign.budget_per_creator > 0) return 'paid';
+  if (campaign.includes_product) return 'product';
+  if (campaign.content_usage === 'anuncios' || campaign.content_usage === 'ambos') return 'affiliate';
+  return 'free';
+}
+
+const COMPENSATION_CONFIG: Record<CompensationType, {
+  icon: React.ReactNode;
+  label: string;
+  gradient: string;
+}> = {
+  paid: {
+    icon: <MoneyIcon sx={{ fontSize: 22, color: 'white' }} />,
+    label: 'Pagamento em dinheiro',
+    gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+  },
+  product: {
+    icon: <ProductIcon sx={{ fontSize: 20, color: 'white' }} />,
+    label: 'Pagamento em produto',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+  },
+  affiliate: {
+    icon: <AffiliateIcon sx={{ fontSize: 20, color: 'white' }} />,
+    label: 'Afiliação / comissão',
+    gradient: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
+  },
+  free: {
+    icon: <MoneyIcon sx={{ fontSize: 20, color: 'white' }} />,
+    label: 'Permuta / UGC',
+    gradient: 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+  },
+};
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   ugc: 'UGC',
@@ -72,15 +116,355 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   outro: 'Outro',
 };
 
-function formatDeadline(dateStr?: string): string | null {
+// Retorna quantos dias faltam para o deadline
+function daysUntil(dateStr?: string): number | null {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const diff = new Date(dateStr).getTime() - Date.now();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return days;
 }
 
 function formatBudget(cents?: number): string | null {
   if (!cents) return null;
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// Botão de rede social estilizado como na referência
+function SocialButton({ type, handle }: { type: 'instagram' | 'tiktok' | 'youtube'; handle: string }) {
+  const configs = {
+    instagram: {
+      label: 'Instagram',
+      gradient: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #7c3aed 100%)',
+      icon: <InstagramIcon sx={{ fontSize: 18 }} />,
+      href: `https://instagram.com/${handle.replace('@', '')}`,
+    },
+    tiktok: {
+      label: 'TikTok',
+      gradient: 'linear-gradient(135deg, #0f0f0f 0%, #ee1d52 100%)',
+      icon: <TikTokIcon sx={{ fontSize: 18 }} />,
+      href: `https://tiktok.com/@${handle.replace('@', '')}`,
+    },
+    youtube: {
+      label: 'YouTube',
+      gradient: 'linear-gradient(135deg, #ff0000 0%, #cc0000 100%)',
+      icon: <YouTubeIcon sx={{ fontSize: 18 }} />,
+      href: handle,
+    },
+  };
+  const cfg = configs[type];
+  return (
+    <Button
+      href={cfg.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      startIcon={cfg.icon}
+      size="small"
+      sx={{
+        background: cfg.gradient,
+        color: 'white',
+        textTransform: 'none',
+        fontWeight: 700,
+        borderRadius: 6,
+        fontSize: '0.78rem',
+        px: 1.5,
+        py: 0.5,
+        minWidth: 0,
+        '&:hover': { opacity: 0.9, background: cfg.gradient },
+      }}
+    >
+      {cfg.label}
+    </Button>
+  );
+}
+
+// Card individual de campanha
+function CampaignCard({
+  campaign,
+  hasApplied,
+  isMidiaKitComplete,
+  onApply,
+}: {
+  campaign: Campaign;
+  hasApplied: boolean;
+  isMidiaKitComplete: boolean;
+  onApply: (c: Campaign) => void;
+}) {
+  const theme = useTheme();
+  const compensation = getCompensationType(campaign);
+  const compCfg = COMPENSATION_CONFIG[compensation];
+  const slotsLeft = campaign.slots - campaign.slots_filled;
+  const isFull = slotsLeft <= 0;
+  const days = daysUntil(campaign.application_deadline);
+  const budget = formatBudget(campaign.budget_per_creator);
+
+  // Detectar rede social principal
+  const socialType: 'instagram' | 'tiktok' | null =
+    campaign.content_type === 'tiktok'
+      ? 'tiktok'
+      : campaign.brand_instagram
+      ? 'instagram'
+      : null;
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: 1,
+        borderColor: 'divider',
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'box-shadow 0.15s, transform 0.15s',
+        '&:hover': { boxShadow: 4, transform: 'translateY(-2px)' },
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Ribbon de compensação — triângulo no canto superior direito */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: 64,
+          height: 64,
+          overflow: 'hidden',
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      >
+        <Tooltip title={compCfg.label} placement="left">
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: 0,
+              height: 0,
+              borderStyle: 'solid',
+              borderWidth: '0 64px 64px 0',
+              borderColor: 'transparent',
+              // Hack: use a square rotated element on top to create the filled triangle
+              '&::after': {
+                content: '""',
+                display: 'none',
+              },
+            }}
+          />
+          {/* Filled triangle using clip-path */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: 64,
+              height: 64,
+              background: compCfg.gradient,
+              clipPath: 'polygon(100% 0, 0 0, 100% 100%)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-end',
+              pt: 0.75,
+              pr: 0.75,
+              pointerEvents: 'auto',
+            }}
+          >
+            {compCfg.icon}
+          </Box>
+        </Tooltip>
+      </Box>
+
+      {/* Card content */}
+      <Box sx={{ p: { xs: 2, sm: 2.5 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Brand row */}
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5, pr: 5 }}>
+          <Avatar
+            src={campaign.brand_logo}
+            sx={{
+              width: 36,
+              height: 36,
+              flexShrink: 0,
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              color: 'primary.main',
+              fontSize: 14,
+              fontWeight: 700,
+            }}
+          >
+            {campaign.brand_name.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.875rem' }, lineHeight: 1.2 }}
+            >
+              {campaign.brand_name}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+              {CONTENT_TYPE_LABELS[campaign.content_type] || campaign.content_type}
+            </Typography>
+          </Box>
+        </Stack>
+
+        {/* Title */}
+        <Typography
+          variant="subtitle1"
+          sx={{
+            fontWeight: 700,
+            mb: 1,
+            fontSize: { xs: '0.9rem', sm: '1rem' },
+            lineHeight: 1.35,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          {campaign.title}
+        </Typography>
+
+        {/* Description */}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{
+            mb: 1.5,
+            fontSize: { xs: '0.75rem', sm: '0.8rem' },
+            lineHeight: 1.55,
+            display: '-webkit-box',
+            WebkitLineClamp: 4,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            flex: 1,
+          }}
+        >
+          {campaign.description}
+        </Typography>
+
+        {/* Niches */}
+        {campaign.niches.length > 0 && (
+          <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mb: 1.5 }}>
+            {campaign.niches.slice(0, 3).map((n) => (
+              <Chip
+                key={n}
+                label={n}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: '0.63rem', height: 18, borderRadius: 1 }}
+              />
+            ))}
+            {campaign.niches.length > 3 && (
+              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center', fontSize: '0.65rem' }}>
+                +{campaign.niches.length - 3}
+              </Typography>
+            )}
+          </Stack>
+        )}
+
+        {/* Social button */}
+        {socialType && campaign.brand_instagram && (
+          <Box sx={{ mb: 1.5 }}>
+            <SocialButton type={socialType} handle={campaign.brand_instagram} />
+          </Box>
+        )}
+
+        {/* Budget badge */}
+        {budget && (
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1 }}>
+            <MoneyIcon sx={{ fontSize: 14, color: 'success.main' }} />
+            <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.main', fontSize: '0.78rem' }}>
+              {budget} por creator
+            </Typography>
+          </Stack>
+        )}
+
+        {/* Deadline */}
+        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.25 }}>
+          <ClockIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+            Prazo para candidaturas
+          </Typography>
+        </Stack>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 800,
+            fontSize: { xs: '1rem', sm: '1.1rem' },
+            color: days !== null && days <= 3 ? 'error.main' : 'warning.main',
+            mb: 2,
+            lineHeight: 1.2,
+          }}
+        >
+          {days === null
+            ? 'Aberto'
+            : days <= 0
+            ? 'Encerrado'
+            : days === 1
+            ? '1 dia'
+            : `${days} dias`}
+        </Typography>
+      </Box>
+
+      {/* CTA button — full width, bottom */}
+      <Box sx={{ px: { xs: 2, sm: 2.5 }, pb: { xs: 2, sm: 2.5 } }}>
+        {hasApplied ? (
+          <Button
+            fullWidth
+            variant="outlined"
+            color="success"
+            startIcon={<AppliedIcon />}
+            disabled
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              borderRadius: 2,
+              fontSize: { xs: '0.8rem', sm: '0.85rem' },
+              py: 1,
+            }}
+          >
+            Candidatura enviada
+          </Button>
+        ) : (
+          <Tooltip
+            title={
+              !isMidiaKitComplete
+                ? 'Complete seu portfólio primeiro'
+                : isFull
+                ? 'Vagas esgotadas'
+                : days !== null && days <= 0
+                ? 'Prazo encerrado'
+                : ''
+            }
+          >
+            <span style={{ display: 'block' }}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => onApply(campaign)}
+                disabled={!isMidiaKitComplete || isFull || (days !== null && days <= 0)}
+                sx={{
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  borderRadius: 2,
+                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                  py: 1.1,
+                  background: 'linear-gradient(135deg, #ec4899 0%, #9333ea 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #db2777 0%, #7c3aed 100%)',
+                  },
+                  '&.Mui-disabled': {
+                    background: alpha('#000', 0.12),
+                  },
+                }}
+              >
+                Ver detalhes da campanha
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+      </Box>
+    </Paper>
+  );
 }
 
 export default function VitrineCampanhasPage() {
@@ -96,15 +480,9 @@ export default function VitrineCampanhasPage() {
   const [filterNiche, setFilterNiche] = useState('all');
   const [filterType, setFilterType] = useState('all');
 
-  // Apply dialog
-  const [applyDialogOpen, setApplyDialogOpen] = useState(false);
+  // Campaign detail dialog
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-  const [pitch, setPitch] = useState('');
-  const [contentProposal, setContentProposal] = useState('');
-  const [isCustomer, setIsCustomer] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const [applyError, setApplyError] = useState('');
-  const [applySuccess, setApplySuccess] = useState('');
 
   useEffect(() => {
     fetchCampaigns();
@@ -141,9 +519,7 @@ export default function VitrineCampanhasPage() {
 
   const allNiches = useMemo(() => {
     const set = new Set<string>();
-    for (const c of campaigns) {
-      for (const n of c.niches) set.add(n);
-    }
+    for (const c of campaigns) for (const n of c.niches) set.add(n);
     return Array.from(set).sort();
   }, [campaigns]);
 
@@ -160,47 +536,20 @@ export default function VitrineCampanhasPage() {
     });
   }, [campaigns, searchText, filterNiche, filterType]);
 
-  function openApplyDialog(campaign: Campaign) {
+  function openDetailDialog(campaign: Campaign) {
     setSelectedCampaign(campaign);
-    setPitch('');
-    setContentProposal('');
-    setIsCustomer(false);
-    setApplyError('');
-    setApplySuccess('');
-    setApplyDialogOpen(true);
+    setDetailDialogOpen(true);
   }
 
-  async function handleApply() {
-    if (!selectedCampaign) return;
-    if (!pitch.trim()) {
-      setApplyError('O campo pitch é obrigatório.');
-      return;
-    }
-    setApplying(true);
-    setApplyError('');
-    try {
-      const res = await fetch(`/api/campaigns/${selectedCampaign._id}/applications`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pitch, content_proposal: contentProposal, is_customer: isCustomer }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setApplySuccess('Candidatura enviada com sucesso!');
-        setAppliedIds((prev) => new Set([...prev, selectedCampaign._id]));
-        setTimeout(() => setApplyDialogOpen(false), 1500);
-      } else {
-        setApplyError(data.error || 'Erro ao enviar candidatura.');
-      }
-    } catch {
-      setApplyError('Erro ao conectar com o servidor.');
-    } finally {
-      setApplying(false);
-    }
-  }
+  // Legenda dos tipos de compensação
+  const legendItems = [
+    { ...COMPENSATION_CONFIG.paid, key: 'paid' },
+    { ...COMPENSATION_CONFIG.product, key: 'product' },
+    { ...COMPENSATION_CONFIG.affiliate, key: 'affiliate' },
+  ] as const;
 
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
+    <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 1, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
       <TrabalhosTabs />
 
       {!isMidiaKitComplete && (
@@ -230,13 +579,54 @@ export default function VitrineCampanhasPage() {
         </Alert>
       )}
 
-      <Stack spacing={0.5} sx={{ mb: { xs: 2, sm: 3 } }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.5rem' } }}>
-          Vitrine de Campanhas
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-          Explore campanhas de marcas e candidate-se.
-        </Typography>
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.5rem' } }}>
+            Vitrine de Campanhas
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+            Explore campanhas de marcas e candidate-se.
+          </Typography>
+        </Box>
+
+        {/* Legenda de compensação */}
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          {legendItems.map((item) => (
+            <Tooltip key={item.key} title={item.label}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 6,
+                  border: 1,
+                  borderColor: 'divider',
+                  cursor: 'default',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: item.gradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: '11px !important', color: 'white' } })}
+                </Box>
+                <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: 500 }}>
+                  {item.key === 'paid' ? 'Pago' : item.key === 'product' ? 'Produto' : 'Afiliado'}
+                </Typography>
+              </Stack>
+            </Tooltip>
+          ))}
+        </Stack>
       </Stack>
 
       {/* Filtros */}
@@ -294,297 +684,28 @@ export default function VitrineCampanhasPage() {
           </Typography>
         </Paper>
       ) : (
-        <Stack spacing={{ xs: 2, sm: 2.5 }}>
-          {filtered.map((campaign) => {
-            const hasApplied = appliedIds.has(campaign._id);
-            const slotsLeft = campaign.slots - campaign.slots_filled;
-            const slotsPercent = Math.min(100, (campaign.slots_filled / campaign.slots) * 100);
-            const isFull = slotsLeft <= 0;
-            const budget = formatBudget(campaign.budget_per_creator);
-            const deadline = formatDeadline(campaign.application_deadline);
-
-            return (
-              <Paper
-                key={campaign._id}
-                elevation={0}
-                sx={{
-                  borderRadius: { xs: 2.5, sm: 3 },
-                  border: 1,
-                  borderColor: 'divider',
-                  overflow: 'hidden',
-                  transition: 'box-shadow 0.15s',
-                  '&:hover': { boxShadow: 3 },
-                }}
-              >
-                {/* Brand header */}
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={1.5}
-                  sx={{
-                    px: { xs: 2, sm: 2.5 },
-                    py: 1.5,
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    bgcolor: alpha(theme.palette.primary.main, 0.03),
-                  }}
-                >
-                  <Avatar
-                    src={campaign.brand_logo}
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      bgcolor: alpha(theme.palette.primary.main, 0.12),
-                      color: 'primary.main',
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {campaign.brand_name.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
-                    {campaign.brand_name}
-                  </Typography>
-                  {campaign.brand_instagram && (
-                    <Typography variant="caption" color="text.secondary">
-                      {campaign.brand_instagram}
-                    </Typography>
-                  )}
-                  <Box sx={{ flex: 1 }} />
-                  <Chip
-                    label={CONTENT_TYPE_LABELS[campaign.content_type] || campaign.content_type}
-                    size="small"
-                    sx={{ fontSize: '0.65rem', fontWeight: 600, height: 20 }}
-                  />
-                </Stack>
-
-                {/* Campaign body */}
-                <Box sx={{ px: { xs: 2, sm: 2.5 }, py: { xs: 2, sm: 2.5 } }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                    {campaign.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6, fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
-                    {campaign.description}
-                  </Typography>
-
-                  {/* Niches */}
-                  {campaign.niches.length > 0 && (
-                    <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mb: 2 }}>
-                      {campaign.niches.map((n) => (
-                        <Chip key={n} label={n} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 20 }} />
-                      ))}
-                    </Stack>
-                  )}
-
-                  {/* Info pills */}
-                  <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                    {budget && (
-                      <Grid size={{ xs: 6, sm: 'auto' }}>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                          <MoneyIcon sx={{ fontSize: 15, color: 'success.main' }} />
-                          <Typography variant="caption" sx={{ fontWeight: 600, color: 'success.main', fontSize: { xs: '0.72rem', sm: '0.78rem' } }}>
-                            {budget}
-                          </Typography>
-                        </Stack>
-                      </Grid>
-                    )}
-                    {campaign.includes_product && (
-                      <Grid size={{ xs: 6, sm: 'auto' }}>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                          <ProductIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.72rem', sm: '0.78rem' } }}>
-                            Produto incluso
-                          </Typography>
-                        </Stack>
-                      </Grid>
-                    )}
-                    {deadline && (
-                      <Grid size={{ xs: 6, sm: 'auto' }}>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                          <CalendarIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.72rem', sm: '0.78rem' } }}>
-                            Candidaturas até {deadline}
-                          </Typography>
-                        </Stack>
-                      </Grid>
-                    )}
-                    <Grid size={{ xs: 6, sm: 'auto' }}>
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <GroupIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.72rem', sm: '0.78rem' } }}>
-                          {slotsLeft > 0 ? `${slotsLeft} vaga${slotsLeft !== 1 ? 's' : ''} disponível${slotsLeft !== 1 ? 'is' : ''}` : 'Vagas esgotadas'}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                  </Grid>
-
-                  {/* Slots progress */}
-                  <Box sx={{ mb: 2 }}>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
-                        {campaign.slots_filled} de {campaign.slots} vagas preenchidas
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
-                        {Math.round(slotsPercent)}%
-                      </Typography>
-                    </Stack>
-                    <LinearProgress
-                      variant="determinate"
-                      value={slotsPercent}
-                      sx={{
-                        height: 4,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        '& .MuiLinearProgress-bar': {
-                          borderRadius: 2,
-                          background: isFull
-                            ? theme.palette.error.main
-                            : `linear-gradient(90deg, ${theme.palette.primary.main}, #9333ea)`,
-                        },
-                      }}
-                    />
-                  </Box>
-
-                  {/* Deliverables */}
-                  {campaign.deliverables.length > 0 && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.75, textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em', color: 'text.secondary' }}>
-                        Entregas esperadas
-                      </Typography>
-                      <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                        {campaign.deliverables.map((d) => (
-                          <Chip key={d} label={d} size="small" sx={{ fontSize: '0.68rem', height: 20, bgcolor: alpha(theme.palette.primary.main, 0.07) }} />
-                        ))}
-                      </Stack>
-                    </Box>
-                  )}
-
-                  <Divider sx={{ mb: 2 }} />
-
-                  {/* CTA */}
-                  <Stack direction="row" justifyContent="flex-end">
-                    {hasApplied ? (
-                      <Chip
-                        icon={<AppliedIcon sx={{ fontSize: '1rem !important' }} />}
-                        label="Candidatura enviada"
-                        color="success"
-                        variant="outlined"
-                        sx={{ fontWeight: 600, fontSize: '0.78rem' }}
-                      />
-                    ) : (
-                      <Tooltip title={!isMidiaKitComplete ? 'Complete seu portfólio primeiro' : isFull ? 'Vagas esgotadas' : ''}>
-                        <span>
-                          <Button
-                            variant="contained"
-                            startIcon={<SendIcon />}
-                            onClick={() => openApplyDialog(campaign)}
-                            disabled={!isMidiaKitComplete || isFull}
-                            sx={{
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              borderRadius: 2,
-                              background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                              fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                            }}
-                          >
-                            Candidatar-se
-                          </Button>
-                        </span>
-                      </Tooltip>
-                    )}
-                  </Stack>
-                </Box>
-              </Paper>
-            );
-          })}
-        </Stack>
+        <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+          {filtered.map((campaign) => (
+            <Grid size={{ xs: 6, sm: 6, md: 4 }} key={campaign._id}>
+              <CampaignCard
+                campaign={campaign}
+                hasApplied={appliedIds.has(campaign._id)}
+                isMidiaKitComplete={isMidiaKitComplete}
+                onApply={openDetailDialog}
+              />
+            </Grid>
+          ))}
+        </Grid>
       )}
 
-      {/* Apply dialog */}
-      <Dialog open={applyDialogOpen} onClose={() => !applying && setApplyDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          Candidatura: {selectedCampaign?.title}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-            Conta para a marca por que você é a escolha ideal para essa campanha.
-          </Typography>
-
-          {applyError && <Alert severity="error" sx={{ mb: 2 }}>{applyError}</Alert>}
-          {applySuccess && <Alert severity="success" sx={{ mb: 2 }}>{applySuccess}</Alert>}
-
-          <Stack spacing={2}>
-            <TextField
-              label="Pitch *"
-              value={pitch}
-              onChange={(e) => setPitch(e.target.value)}
-              fullWidth
-              multiline
-              rows={4}
-              size="small"
-              placeholder="Ex: Sou criadora de conteúdo de beleza há 3 anos, já usei produtos similares e tenho uma audiência engajada que se identifica com esse nicho..."
-              helperText="Apresente-se e explique por que você é a creator certa para essa campanha."
-            />
-            <TextField
-              label="Proposta de conteúdo (opcional)"
-              value={contentProposal}
-              onChange={(e) => setContentProposal(e.target.value)}
-              fullWidth
-              multiline
-              rows={3}
-              size="small"
-              placeholder="Ex: Eu faria um vídeo mostrando a rotina de skincare com o produto, com legenda e áudio em trend..."
-              helperText="Descreva brevemente como você criaria o conteúdo."
-            />
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              onClick={() => setIsCustomer(!isCustomer)}
-              sx={{ cursor: 'pointer', userSelect: 'none' }}
-            >
-              <Box
-                sx={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 0.75,
-                  border: 2,
-                  borderColor: isCustomer ? 'primary.main' : 'divider',
-                  bgcolor: isCustomer ? 'primary.main' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  transition: 'all 0.15s',
-                }}
-              >
-                {isCustomer && <Box component="span" sx={{ color: 'white', fontSize: 13, lineHeight: 1 }}>✓</Box>}
-              </Box>
-              <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                Já sou cliente / já usei o produto desta marca
-              </Typography>
-            </Stack>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={() => setApplyDialogOpen(false)} disabled={applying} sx={{ textTransform: 'none' }}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleApply}
-            variant="contained"
-            disabled={applying || !!applySuccess}
-            startIcon={applying ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 600,
-              background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-            }}
-          >
-            Enviar candidatura
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Campaign detail + apply dialog */}
+      <CampaignDetailDialog
+        campaign={selectedCampaign}
+        open={detailDialogOpen}
+        hasApplied={selectedCampaign ? appliedIds.has(selectedCampaign._id) : false}
+        onClose={() => setDetailDialogOpen(false)}
+        onApplied={(id) => setAppliedIds((prev) => new Set([...prev, id]))}
+      />
     </Box>
   );
 }

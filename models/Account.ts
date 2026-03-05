@@ -122,6 +122,6 @@ const AccountSchema = new Schema(
 );
 
 const AccountModel: Model<Account> =
-    mongoose.models.Account ?? mongoose.model<Account>('Account', AccountSchema);
+    (mongoose.models.Account as Model<Account>) ?? mongoose.model<Account>('Account', AccountSchema);
 
 export default AccountModel;

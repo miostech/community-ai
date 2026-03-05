@@ -34,6 +34,7 @@ import { TrabalhosTabs } from '@/components/trabalhos/TrabalhosTabs';
 const MAX_PORTFOLIO_VIDEOS = 3;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/mov'];
+const ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.qt'];
 
 const GENDER_OPTIONS = [
   { value: 'masculino', label: 'Masculino' },
@@ -126,6 +127,20 @@ function getMissingFields(data: FormData, videoCount: number): string[] {
   return missing;
 }
 
+// Fields that block saving (videos are optional for saving, required only for full completion)
+function getBlockingFields(data: FormData): string[] {
+  const missing: string[] = [];
+  for (const field of REQUIRED_FIELDS) {
+    const value = data[field.key];
+    if (field.key === 'niches') {
+      if (!Array.isArray(value) || value.length === 0) missing.push(field.label);
+    } else if (!value || (typeof value === 'string' && !value.trim())) {
+      missing.push(field.label);
+    }
+  }
+  return missing;
+}
+
 export default function PortfolioPage() {
   const theme = useTheme();
   const { account, updateAccount, isLoading: accountLoading } = useAccount();
@@ -149,31 +164,30 @@ export default function PortfolioPage() {
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (account) {
-      setFormData({
-        birth_date: account.birth_date
-          ? new Date(account.birth_date).toISOString().split('T')[0]
-          : '',
-        gender: account.gender || '',
-        category: account.category || '',
-        niches: account.niches || [],
-        address_country: account.address_country || '',
-        address_state: account.address_state || '',
-        address_city: account.address_city || '',
-        link_instagram: account.link_instagram || '',
-        link_tiktok: account.link_tiktok || '',
-      });
+    if (!account) return;
+    setFormData({
+      birth_date: account.birth_date
+        ? new Date(account.birth_date).toISOString().split('T')[0]
+        : '',
+      gender: account.gender || '',
+      category: account.category || '',
+      niches: account.niches || [],
+      address_country: account.address_country || '',
+      address_state: account.address_state || '',
+      address_city: account.address_city || '',
+      link_instagram: account.link_instagram || '',
+      link_tiktok: account.link_tiktok || '',
+    });
 
-      const existingVideos = account.portfolio_videos || [];
-      setVideoSlots(
-        Array.from({ length: MAX_PORTFOLIO_VIDEOS }, (_, i) => ({
-          url: existingVideos[i] || null,
-          uploading: false,
-          progress: 0,
-        }))
-      );
-    }
-  }, [account]);
+    setVideoSlots(
+      Array.from({ length: MAX_PORTFOLIO_VIDEOS }, (_, i) => ({
+        url: account.portfolio_videos?.[i] || null,
+        uploading: false,
+        progress: 0,
+      }))
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account.id]);
 
   const handleChange = (field: keyof FormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -186,14 +200,16 @@ export default function PortfolioPage() {
       return next;
     });
 
+    // Normalize empty MIME type (e.g. iOS Safari .mov files)
+    const resolvedContentType = file.type || 'video/quicktime';
+
     try {
-      const sasRes = await fetch('/api/posts/media/sas', {
+      const sasRes = await fetch('/api/portfolio/media/sas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'video',
           fileName: file.name,
-          contentType: file.type,
+          contentType: resolvedContentType,
           fileSize: file.size,
         }),
       });
@@ -226,7 +242,7 @@ export default function PortfolioPage() {
         xhr.addEventListener('error', () => reject(new Error('Erro de rede no upload')));
         xhr.open('PUT', sasUrl);
         xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
-        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.setRequestHeader('Content-Type', resolvedContentType);
         xhr.send(file);
       });
 
@@ -253,7 +269,10 @@ export default function PortfolioPage() {
 
     if (e.target) e.target.value = '';
 
-    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+    // Some browsers (especially iOS Safari) may return an empty MIME type for .mov files
+    const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
+    const typeOk = ALLOWED_VIDEO_TYPES.includes(file.type) || (!file.type && ALLOWED_VIDEO_EXTENSIONS.includes(ext));
+    if (!typeOk) {
       setError('Formato não suportado. Use MP4, WebM ou MOV.');
       return;
     }
@@ -281,10 +300,10 @@ export default function PortfolioPage() {
     });
 
     try {
-      await fetch('/api/posts/media', {
+      await fetch('/api/portfolio/media', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: videoUrl, type: 'video' }),
+        body: JSON.stringify({ url: videoUrl }),
       });
     } catch {
       // best-effort cleanup
@@ -293,9 +312,9 @@ export default function PortfolioPage() {
 
   const handleSave = async () => {
     const videoUrls = videoSlots.filter((s) => s.url).map((s) => s.url as string);
-    const missing = getMissingFields(formData, videoUrls.length);
-    if (missing.length > 0) {
-      setError(`Preencha os campos obrigatórios: ${missing.join(', ')}`);
+    const blocking = getBlockingFields(formData);
+    if (blocking.length > 0) {
+      setError(`Preencha os campos obrigatórios: ${blocking.join(', ')}`);
       return;
     }
 
@@ -314,7 +333,8 @@ export default function PortfolioPage() {
       } else {
         setError('Erro ao salvar. Tente novamente.');
       }
-    } catch {
+    } catch (err) {
+      console.error('🔴 handleSave catch:', err);
       setError('Erro ao salvar. Tente novamente.');
     } finally {
       setIsSaving(false);
@@ -577,10 +597,10 @@ export default function PortfolioPage() {
         {/* Vídeos do Portfólio */}
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider' }}>
           <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-            Vídeos do Portfólio *
+            Vídeos do Portfólio
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block', fontSize: '0.7rem' }}>
-            Envie {MAX_PORTFOLIO_VIDEOS} vídeos que mostrem seu trabalho. Eles ficarão visíveis para as marcas. (MP4, WebM ou MOV — máx. 100MB cada)
+            Envie até {MAX_PORTFOLIO_VIDEOS} vídeos que mostrem seu trabalho. Você pode salvar e adicionar os outros depois. Os {MAX_PORTFOLIO_VIDEOS} vídeos são necessários para o perfil ficar completo. (MP4, WebM ou MOV — máx. 100MB cada)
           </Typography>
 
           <Box

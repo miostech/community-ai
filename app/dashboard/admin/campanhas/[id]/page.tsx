@@ -22,7 +22,7 @@ import {
     CheckCircle as CompleteIcon,
     Cancel as CancelIcon,
 } from '@mui/icons-material';
-import { CampaignForm, CampaignFormData } from '@/components/admin/CampaignForm';
+import { CampaignForm, CampaignFormData, CompensationType } from '@/components/admin/CampaignForm';
 
 interface CampaignData {
     _id: string;
@@ -150,6 +150,24 @@ export default function EditCampanhaPage() {
 
     const cfg = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.draft;
 
+    // Derive compensation type from stored model fields
+    const compensationType: CompensationType =
+        campaign.budget_per_creator && campaign.budget_per_creator > 0
+            ? 'paid'
+            : campaign.includes_product
+            ? 'product'
+            : 'affiliate';
+
+    // Parse affiliate fields from product_description if affiliate
+    let affiliateCommission = '';
+    let affiliateLink = '';
+    if (compensationType === 'affiliate' && campaign.product_description) {
+        const commMatch = campaign.product_description.match(/Comissão:\s*([\d.]+)%/);
+        const linkMatch = campaign.product_description.match(/Link:\s*(.+)/);
+        if (commMatch) affiliateCommission = commMatch[1];
+        if (linkMatch) affiliateLink = linkMatch[1];
+    }
+
     const initialData: Partial<CampaignFormData> = {
         brand_name: campaign.brand_name,
         brand_logo: campaign.brand_logo || '',
@@ -163,9 +181,12 @@ export default function EditCampanhaPage() {
         category: campaign.category || '',
         niches: campaign.niches || [],
         slots: campaign.slots,
+        compensation_type: compensationType,
         budget_per_creator: campaign.budget_per_creator ? String(campaign.budget_per_creator / 100) : '',
         includes_product: campaign.includes_product,
-        product_description: campaign.product_description || '',
+        product_description: compensationType === 'product' ? (campaign.product_description || '') : '',
+        affiliate_commission: affiliateCommission,
+        affiliate_link: affiliateLink,
         deliverables: campaign.deliverables || [],
         application_deadline: toDateInput(campaign.application_deadline),
         content_deadline: toDateInput(campaign.content_deadline),
