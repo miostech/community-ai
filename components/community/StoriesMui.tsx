@@ -101,21 +101,21 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                             onClick={(e: React.MouseEvent) => { e.stopPropagation(); }}
                             sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5, textDecoration: 'none', cursor: 'pointer', '&:hover': { color: 'text.primary' } }}
                         >
-                            {first.rankingWins > 0 ? `1º · ${first.rankingWins}x` : '1º Ranking'}
+                            {first.rankingWins > 0 ? `1º · ${first.rankingWins}x` : 'Ranking'}
                         </Typography>
                         {renderUser(first, true, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories)}
                     </Box>
                 )}
 
                 {/* Divisor */}
-                {first && hasStories && (
+                {first && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch', mx: 1 }}>
                         <Box sx={{ width: '1px', flex: 1, bgcolor: 'divider', opacity: 0.5 }} />
                     </Box>
                 )}
 
                 {/* Stories */}
-                {hasStories && (
+                {first && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5, pl: 0.5 }}>
                             <StoriesIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
@@ -123,9 +123,15 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                 Stories
                             </Typography>
                         </Stack>
-                        <Stack direction="row" spacing={1.5}>
-                            {sortedStoryPosters.map((user) => renderUser(user, false, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories))}
-                        </Stack>
+                        {hasStories ? (
+                            <Stack direction="row" spacing={1.5}>
+                                {sortedStoryPosters.map((user) => renderUser(user, false, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories))}
+                            </Stack>
+                        ) : (
+                            <Typography variant="caption" sx={{ pl: 0.5, fontSize: 11, color: 'text.secondary' }}>
+                               Nenhum story no momento. Seja o primeiro a publicar e se destaque!
+                            </Typography>
+                        )}
                     </Box>
                 )}
             </Stack>
