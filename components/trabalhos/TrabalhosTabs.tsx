@@ -13,7 +13,7 @@ import {
 const tabs = [
   { label: 'Vitrine', href: '/dashboard/trabalhos/vitrine', icon: <StorefrontIcon /> },
   { label: 'Minhas Campanhas', href: '/dashboard/trabalhos/minhas-campanhas', icon: <AssignmentIcon /> },
-  { label: 'Mídia Kit', href: '/dashboard/trabalhos/midia-kit', icon: <BadgeIcon /> },
+  { label: 'Portfólio', href: '/dashboard/trabalhos/portfolio', icon: <BadgeIcon /> },
 ];
 
 export function TrabalhosTabs() {

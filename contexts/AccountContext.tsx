@@ -41,6 +41,7 @@ export interface Account {
     address_state?: string | null;
     address_city?: string | null;
     link_media_kit?: string | null;
+    portfolio_videos?: string[];
 }
 
 export interface Subscription {
@@ -223,7 +224,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         account?.address_country?.trim() &&
         account?.link_instagram?.trim() &&
         account?.link_tiktok?.trim() &&
-        account?.link_media_kit?.trim()
+        account?.portfolio_videos && account.portfolio_videos.length >= 3
     );
 
     return (

@@ -17,7 +17,7 @@ function isMidiaKitComplete(account: Record<string, unknown>): boolean {
         (account.address_country as string)?.trim() &&
         (account.link_instagram as string)?.trim() &&
         (account.link_tiktok as string)?.trim() &&
-        (account.link_media_kit as string)?.trim()
+        Array.isArray(account.portfolio_videos) && (account.portfolio_videos as string[]).length >= 3
     );
 }
 
@@ -88,7 +88,7 @@ export async function POST(
 
         if (!isMidiaKitComplete(account as unknown as Record<string, unknown>)) {
             return NextResponse.json(
-                { error: 'Complete seu Mídia Kit antes de se candidatar a campanhas.' },
+                { error: 'Complete seu Portfólio antes de se candidatar a campanhas.' },
                 { status: 400 }
             );
         }

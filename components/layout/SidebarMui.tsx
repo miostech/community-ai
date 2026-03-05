@@ -111,8 +111,8 @@ const navItems: NavItem[] = [
                 icon: <AssignmentIcon fontSize="small" />,
             },
             {
-                label: 'Mídia Kit',
-                href: '/dashboard/trabalhos/midia-kit',
+                label: 'Portfólio',
+                href: '/dashboard/trabalhos/portfolio',
                 icon: <BadgeIcon fontSize="small" />,
             },
         ],

@@ -35,7 +35,7 @@ export default function VitrineCampanhasPage() {
           action={
             <Button
               component={Link}
-              href="/dashboard/trabalhos/midia-kit"
+              href="/dashboard/trabalhos/portfolio"
               color="inherit"
               size="small"
               sx={{ textTransform: 'none', fontWeight: 600, fontSize: { xs: '0.72rem', sm: '0.8rem' }, whiteSpace: 'nowrap' }}
@@ -51,7 +51,7 @@ export default function VitrineCampanhasPage() {
             '& .MuiAlert-message': { flex: 1 },
           }}
         >
-          Complete seu Mídia Kit para poder se candidatar a campanhas.
+          Complete seu Portfólio para poder se candidatar a campanhas.
         </Alert>
       )}
 

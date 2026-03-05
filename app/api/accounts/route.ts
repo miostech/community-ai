@@ -280,6 +280,7 @@ export async function PATCH(request: NextRequest) {
             'address_state',
             'address_city',
             'link_media_kit',
+            'portfolio_videos',
         ];
 
         // Filtrar apenas campos permitidos
@@ -352,6 +353,7 @@ export async function PATCH(request: NextRequest) {
             address_state: (account as any).address_state ?? null,
             address_city: (account as any).address_city ?? null,
             link_media_kit: (account as any).link_media_kit ?? null,
+            portfolio_videos: (account as any).portfolio_videos ?? [],
         };
 
         return NextResponse.json({

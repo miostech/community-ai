@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAccount } from '@/contexts/AccountContext';
 import {
   Box,
@@ -18,15 +18,22 @@ import {
   alpha,
   useTheme,
   LinearProgress,
+  IconButton,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   CheckCircle as CheckCircleIcon,
   WarningAmber as WarningIcon,
   Instagram as InstagramIcon,
-  Link as LinkIcon,
+  Videocam as VideocamIcon,
+  Close as CloseIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { TrabalhosTabs } from '@/components/trabalhos/TrabalhosTabs';
+
+const MAX_PORTFOLIO_VIDEOS = 3;
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/mov'];
 
 const GENDER_OPTIONS = [
   { value: 'masculino', label: 'Masculino' },
@@ -42,44 +49,13 @@ const CATEGORY_OPTIONS = [
 ];
 
 const NICHE_OPTIONS = [
-  'Skincare',
-  'Maquiagem',
-  'Cabelos',
-  'Moda feminina',
-  'Moda masculina',
-  'Streetwear',
-  'Luxo',
-  'Sustentabilidade',
-  'Receitas',
-  'Alimentação saudável',
-  'Treino',
-  'Yoga',
-  'Corrida',
-  'Crossfit',
-  'Fotografia',
-  'Vlog',
-  'Podcast',
-  'Dança',
-  'DIY',
-  'Organização',
-  'Produtividade',
-  'Marketing digital',
-  'Empreendedorismo',
-  'Investimentos',
-  'Cripto',
-  'Reviews',
-  'Unboxing',
-  'ASMR',
-  'Comédia',
-  'Família',
-  'Bebês',
-  'Cachorros',
-  'Gatos',
-  'Viagem nacional',
-  'Viagem internacional',
-  'Carros',
-  'Motos',
-  'Outro',
+  'Skincare', 'Maquiagem', 'Cabelos', 'Moda feminina', 'Moda masculina',
+  'Streetwear', 'Luxo', 'Sustentabilidade', 'Receitas', 'Alimentação saudável',
+  'Treino', 'Yoga', 'Corrida', 'Crossfit', 'Fotografia', 'Vlog', 'Podcast',
+  'Dança', 'DIY', 'Organização', 'Produtividade', 'Marketing digital',
+  'Empreendedorismo', 'Investimentos', 'Cripto', 'Reviews', 'Unboxing',
+  'ASMR', 'Comédia', 'Família', 'Bebês', 'Cachorros', 'Gatos',
+  'Viagem nacional', 'Viagem internacional', 'Carros', 'Motos', 'Outro',
 ];
 
 const TikTokIcon = () => (
@@ -98,7 +74,12 @@ interface FormData {
   address_city: string;
   link_instagram: string;
   link_tiktok: string;
-  link_media_kit: string;
+}
+
+interface VideoSlot {
+  url: string | null;
+  uploading: boolean;
+  progress: number;
 }
 
 const REQUIRED_FIELDS: { key: keyof FormData; label: string }[] = [
@@ -109,12 +90,11 @@ const REQUIRED_FIELDS: { key: keyof FormData; label: string }[] = [
   { key: 'address_country', label: 'País' },
   { key: 'link_instagram', label: 'Instagram' },
   { key: 'link_tiktok', label: 'TikTok' },
-  { key: 'link_media_kit', label: 'Link do mídia kit' },
 ];
 
-function getCompletionPercentage(data: FormData): number {
+function getCompletionPercentage(data: FormData, videoCount: number): number {
   let filled = 0;
-  const total = REQUIRED_FIELDS.length;
+  const total = REQUIRED_FIELDS.length + 1; // +1 for videos
 
   for (const field of REQUIRED_FIELDS) {
     const value = data[field.key];
@@ -125,10 +105,12 @@ function getCompletionPercentage(data: FormData): number {
     }
   }
 
+  if (videoCount >= MAX_PORTFOLIO_VIDEOS) filled++;
+
   return Math.round((filled / total) * 100);
 }
 
-function getMissingFields(data: FormData): string[] {
+function getMissingFields(data: FormData, videoCount: number): string[] {
   const missing: string[] = [];
   for (const field of REQUIRED_FIELDS) {
     const value = data[field.key];
@@ -138,10 +120,13 @@ function getMissingFields(data: FormData): string[] {
       missing.push(field.label);
     }
   }
+  if (videoCount < MAX_PORTFOLIO_VIDEOS) {
+    missing.push(`Vídeos do portfólio (${videoCount}/${MAX_PORTFOLIO_VIDEOS})`);
+  }
   return missing;
 }
 
-export default function MidiaKitPage() {
+export default function PortfolioPage() {
   const theme = useTheme();
   const { account, updateAccount, isLoading: accountLoading } = useAccount();
   const [formData, setFormData] = useState<FormData>({
@@ -154,11 +139,14 @@ export default function MidiaKitPage() {
     address_city: '',
     link_instagram: '',
     link_tiktok: '',
-    link_media_kit: '',
   });
+  const [videoSlots, setVideoSlots] = useState<VideoSlot[]>(
+    Array.from({ length: MAX_PORTFOLIO_VIDEOS }, () => ({ url: null, uploading: false, progress: 0 }))
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (account) {
@@ -174,8 +162,16 @@ export default function MidiaKitPage() {
         address_city: account.address_city || '',
         link_instagram: account.link_instagram || '',
         link_tiktok: account.link_tiktok || '',
-        link_media_kit: account.link_media_kit || '',
       });
+
+      const existingVideos = account.portfolio_videos || [];
+      setVideoSlots(
+        Array.from({ length: MAX_PORTFOLIO_VIDEOS }, (_, i) => ({
+          url: existingVideos[i] || null,
+          uploading: false,
+          progress: 0,
+        }))
+      );
     }
   }, [account]);
 
@@ -183,8 +179,121 @@ export default function MidiaKitPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const uploadVideo = useCallback(async (file: File, slotIndex: number) => {
+    setVideoSlots((prev) => {
+      const next = [...prev];
+      next[slotIndex] = { url: null, uploading: true, progress: 0 };
+      return next;
+    });
+
+    try {
+      const sasRes = await fetch('/api/posts/media/sas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'video',
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+        }),
+      });
+
+      if (!sasRes.ok) {
+        const data = await sasRes.json();
+        throw new Error(data.error || 'Erro ao preparar upload');
+      }
+
+      const { sasUrl, finalUrl } = await sasRes.json();
+
+      const xhr = new XMLHttpRequest();
+      await new Promise<void>((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setVideoSlots((prev) => {
+              const next = [...prev];
+              next[slotIndex] = { ...next[slotIndex], progress: pct };
+              return next;
+            });
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error('Falha no upload'));
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Erro de rede no upload')));
+        xhr.open('PUT', sasUrl);
+        xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+      });
+
+      setVideoSlots((prev) => {
+        const next = [...prev];
+        next[slotIndex] = { url: finalUrl, uploading: false, progress: 100 };
+        return next;
+      });
+
+      return finalUrl;
+    } catch (err) {
+      setVideoSlots((prev) => {
+        const next = [...prev];
+        next[slotIndex] = { url: null, uploading: false, progress: 0 };
+        return next;
+      });
+      throw err;
+    }
+  }, []);
+
+  const handleVideoSelect = async (slotIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (e.target) e.target.value = '';
+
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      setError('Formato não suportado. Use MP4, WebM ou MOV.');
+      return;
+    }
+
+    if (file.size > MAX_VIDEO_SIZE) {
+      setError('Vídeo muito grande. Máximo 100MB.');
+      return;
+    }
+
+    try {
+      await uploadVideo(file, slotIndex);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar vídeo');
+    }
+  };
+
+  const handleRemoveVideo = async (slotIndex: number) => {
+    const videoUrl = videoSlots[slotIndex].url;
+    if (!videoUrl) return;
+
+    setVideoSlots((prev) => {
+      const next = [...prev];
+      next[slotIndex] = { url: null, uploading: false, progress: 0 };
+      return next;
+    });
+
+    try {
+      await fetch('/api/posts/media', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: videoUrl, type: 'video' }),
+      });
+    } catch {
+      // best-effort cleanup
+    }
+  };
+
   const handleSave = async () => {
-    const missing = getMissingFields(formData);
+    const videoUrls = videoSlots.filter((s) => s.url).map((s) => s.url as string);
+    const missing = getMissingFields(formData, videoUrls.length);
     if (missing.length > 0) {
       setError(`Preencha os campos obrigatórios: ${missing.join(', ')}`);
       return;
@@ -197,10 +306,11 @@ export default function MidiaKitPage() {
       const payload: Record<string, unknown> = {
         ...formData,
         birth_date: formData.birth_date ? new Date(formData.birth_date).toISOString() : null,
+        portfolio_videos: videoUrls,
       };
       const success = await updateAccount(payload as any);
       if (success) {
-        setSuccessMessage('Mídia Kit salvo com sucesso!');
+        setSuccessMessage('Portfólio salvo com sucesso!');
       } else {
         setError('Erro ao salvar. Tente novamente.');
       }
@@ -211,9 +321,11 @@ export default function MidiaKitPage() {
     }
   };
 
-  const completion = getCompletionPercentage(formData);
-  const missingFields = getMissingFields(formData);
+  const videoCount = videoSlots.filter((s) => s.url).length;
+  const completion = getCompletionPercentage(formData, videoCount);
+  const missingFields = getMissingFields(formData, videoCount);
   const isComplete = missingFields.length === 0;
+  const isAnyUploading = videoSlots.some((s) => s.uploading);
 
   if (accountLoading) {
     return (
@@ -232,7 +344,7 @@ export default function MidiaKitPage() {
           variant="h5"
           sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.5rem' } }}
         >
-          Mídia Kit
+          Portfólio
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
           Preencha seu perfil para que as marcas possam te encontrar.
@@ -462,28 +574,181 @@ export default function MidiaKitPage() {
           </Stack>
         </Paper>
 
-        {/* Mídia Kit Link */}
+        {/* Vídeos do Portfólio */}
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider' }}>
           <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-            Link do Mídia Kit *
+            Vídeos do Portfólio *
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block', fontSize: '0.7rem' }}>
-            Cole o link do seu mídia kit (PDF, Canva, Google Drive, etc).
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block', fontSize: '0.7rem' }}>
+            Envie {MAX_PORTFOLIO_VIDEOS} vídeos que mostrem seu trabalho. Eles ficarão visíveis para as marcas. (MP4, WebM ou MOV — máx. 100MB cada)
           </Typography>
-          <TextField
-            value={formData.link_media_kit}
-            onChange={(e) => handleChange('link_media_kit', e.target.value)}
-            fullWidth
-            size="small"
-            placeholder="https://..."
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <LinkIcon sx={{ mr: 1, color: 'text.disabled', fontSize: 20 }} />
-                ),
-              },
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: { xs: 1, sm: 1.5 },
             }}
-          />
+          >
+            {videoSlots.map((slot, index) => (
+              <Box
+                key={index}
+                sx={{
+                  position: 'relative',
+                  aspectRatio: '9/16',
+                  borderRadius: { xs: 2, sm: 2.5 },
+                  overflow: 'hidden',
+                  bgcolor: theme.palette.mode === 'dark' ? alpha('#fff', 0.04) : 'grey.50',
+                  border: '2px dashed',
+                  borderColor: slot.url ? 'transparent' : 'divider',
+                  transition: 'all 0.2s',
+                  ...(!slot.url && !slot.uploading && {
+                    cursor: 'pointer',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.08)
+                        : alpha(theme.palette.primary.main, 0.04),
+                    },
+                  }),
+                }}
+                onClick={() => {
+                  if (!slot.url && !slot.uploading) {
+                    fileInputRefs.current[index]?.click();
+                  }
+                }}
+              >
+                {slot.url ? (
+                  <>
+                    <Box
+                      component="video"
+                      src={slot.url}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {})}
+                      onMouseLeave={(e) => {
+                        const v = e.currentTarget as HTMLVideoElement;
+                        v.pause();
+                        v.currentTime = 0;
+                      }}
+                    />
+
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 6,
+                        left: 6,
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        bgcolor: alpha('#000', 0.6),
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        backdropFilter: 'blur(4px)',
+                      }}
+                    >
+                      {index + 1}
+                    </Box>
+
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveVideo(index);
+                      }}
+                      size="small"
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        bgcolor: alpha('#000', 0.6),
+                        color: 'white',
+                        width: 26,
+                        height: 26,
+                        backdropFilter: 'blur(4px)',
+                        '&:hover': { bgcolor: 'error.main' },
+                      }}
+                    >
+                      <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </>
+                ) : slot.uploading ? (
+                  <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    spacing={1}
+                    sx={{ height: '100%', px: 1 }}
+                  >
+                    <CircularProgress size={28} />
+                    <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.7rem' }}>
+                      {slot.progress}%
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={slot.progress}
+                      sx={{
+                        width: '80%',
+                        height: 3,
+                        borderRadius: 2,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      }}
+                    />
+                  </Stack>
+                ) : (
+                  <Stack
+                    alignItems="center"
+                    justifyContent="center"
+                    spacing={0.5}
+                    sx={{ height: '100%' }}
+                  >
+                    <Box
+                      sx={{
+                        width: { xs: 36, sm: 44 },
+                        height: { xs: 36, sm: 44 },
+                        borderRadius: '50%',
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <CloudUploadIcon sx={{ fontSize: { xs: 18, sm: 22 }, color: 'primary.main' }} />
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontWeight={600}
+                      sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' }, textAlign: 'center', px: 0.5 }}
+                    >
+                      Vídeo {index + 1}
+                    </Typography>
+                  </Stack>
+                )}
+
+                <input
+                  ref={(el) => { fileInputRefs.current[index] = el; }}
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/mov"
+                  onChange={(e) => handleVideoSelect(index, e)}
+                  style={{ display: 'none' }}
+                />
+              </Box>
+            ))}
+          </Box>
+
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block', textAlign: 'center', fontSize: '0.68rem' }}>
+            {videoCount} de {MAX_PORTFOLIO_VIDEOS} vídeos enviados
+            {videoCount > 0 && ' • Passe o mouse para pré-visualizar'}
+          </Typography>
         </Paper>
 
         {/* Botão Salvar */}
@@ -491,7 +756,7 @@ export default function MidiaKitPage() {
           variant="contained"
           size="large"
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || isAnyUploading}
           startIcon={isSaving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
           sx={{
             py: { xs: 1.2, sm: 1.5 },
@@ -505,7 +770,7 @@ export default function MidiaKitPage() {
             },
           }}
         >
-          {isSaving ? 'Salvando...' : 'Salvar Mídia Kit'}
+          {isSaving ? 'Salvando...' : 'Salvar Portfólio'}
         </Button>
       </Stack>
 

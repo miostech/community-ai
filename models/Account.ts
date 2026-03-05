@@ -48,7 +48,7 @@ export interface Account {
     cached_course_ids?: string[];
     /** Quando o cache de cursos foi atualizado pela última vez. */
     cached_course_ids_at?: Date | null;
-    /** Mídia Kit — dados do perfil para marcas */
+    /** Portfólio — dados do perfil para marcas */
     birth_date?: Date;
     gender?: 'masculino' | 'feminino' | 'nao_binario' | 'prefiro_nao_dizer';
     category?: 'ugc' | 'influencer' | 'ambos';
@@ -57,6 +57,8 @@ export interface Account {
     address_state?: string;
     address_city?: string;
     link_media_kit?: string;
+    /** URLs dos vídeos do portfólio público (até 3) */
+    portfolio_videos?: string[];
     created_at: Date;
     updated_at: Date;
 }
@@ -111,6 +113,7 @@ const AccountSchema = new Schema(
         address_state: { type: String, trim: true },
         address_city: { type: String, trim: true },
         link_media_kit: { type: String, trim: true },
+        portfolio_videos: { type: [String], default: [] },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
