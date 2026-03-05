@@ -39,6 +39,9 @@ import {
     Storefront as StorefrontIcon,
     Assignment as AssignmentIcon,
     Badge as BadgeIcon,
+    AdminPanelSettings as AdminIcon,
+    Campaign as CampaignIcon,
+    Dashboard as DashboardIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
@@ -124,6 +127,28 @@ const navItems: NavItem[] = [
     },
 ];
 
+const adminNavItems: NavItem[] = [
+    {
+        label: 'Moderação',
+        href: '/dashboard/admin',
+        exactMatch: true,
+        icon: <AdminIcon />,
+        children: [
+            {
+                label: 'Painel',
+                href: '/dashboard/admin',
+                icon: <DashboardIcon fontSize="small" />,
+                exactMatch: true,
+            },
+            {
+                label: 'Campanhas',
+                href: '/dashboard/admin/campanhas',
+                icon: <CampaignIcon fontSize="small" />,
+            },
+        ],
+    },
+];
+
 export function SidebarMui() {
     const pathname = usePathname();
     const { account, fullName } = useAccount();
@@ -153,6 +178,133 @@ export function SidebarMui() {
     const getInitials = (name: string) => {
         return name.charAt(0).toUpperCase();
     };
+
+    const isModeratorOrAdmin = account?.role === 'moderator' || account?.role === 'admin';
+
+    function renderNavItem(item: NavItem) {
+        const isActive = item.exactMatch
+            ? pathname === item.href
+            : pathname === item.href || pathname?.startsWith(item.href + '/');
+
+        const hasChildren = item.children && item.children.length > 0;
+        const isItemSelected = !hasChildren && isActive;
+        const submenuOpen = openSubmenus[item.label] ?? isChildActive(item) ?? false;
+
+        return (
+            <React.Fragment key={item.href}>
+                <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
+                    <ListItemButton
+                        component={Link}
+                        href={item.href}
+                        selected={isItemSelected}
+                        onClick={() => {
+                            if (hasChildren && !submenuOpen) {
+                                openSubmenu(item.label);
+                            }
+                        }}
+                        sx={{
+                            borderRadius: 2,
+                            '&.Mui-selected': {
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                color: 'white',
+                                '& .MuiListItemIcon-root': {
+                                    color: 'white',
+                                },
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                                },
+                            },
+                        }}
+                    >
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 40,
+                                color: isItemSelected ? 'white' : 'text.secondary',
+                            }}
+                        >
+                            {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                            primary={item.label}
+                            primaryTypographyProps={{
+                                fontSize: 14,
+                                fontWeight: isItemSelected ? 600 : 500,
+                            }}
+                        />
+                        {hasChildren && (
+                            <IconButton
+                                size="small"
+                                edge="end"
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    toggleSubmenu(item.label);
+                                }}
+                            >
+                                {submenuOpen ? (
+                                    <ExpandLess sx={{ color: 'text.secondary' }} />
+                                ) : (
+                                    <ExpandMore sx={{ color: 'text.secondary' }} />
+                                )}
+                            </IconButton>
+                        )}
+                    </ListItemButton>
+                </ListItem>
+
+                {hasChildren && (
+                    <Collapse in={submenuOpen} timeout="auto" unmountOnExit>
+                        <List disablePadding>
+                            {item.children!.map((child) => {
+                                const isChildItemActive = child.exactMatch
+                                    ? pathname === child.href
+                                    : pathname === child.href || pathname?.startsWith(child.href + '/');
+
+                                return (
+                                    <ListItem key={child.href} disablePadding sx={{ px: 1, py: 0.25 }}>
+                                        <ListItemButton
+                                            component={Link}
+                                            href={child.href}
+                                            selected={isChildItemActive}
+                                            sx={{
+                                                borderRadius: 2,
+                                                pl: 6,
+                                                '&.Mui-selected': {
+                                                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                                    color: 'white',
+                                                    '& .MuiListItemIcon-root': {
+                                                        color: 'white',
+                                                    },
+                                                    '&:hover': {
+                                                        background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                                                    },
+                                                },
+                                            }}
+                                        >
+                                            <ListItemIcon
+                                                sx={{
+                                                    minWidth: 32,
+                                                    color: isChildItemActive ? 'white' : 'text.secondary',
+                                                }}
+                                            >
+                                                {child.icon}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={child.label}
+                                                primaryTypographyProps={{
+                                                    fontSize: 13,
+                                                    fontWeight: isChildItemActive ? 600 : 400,
+                                                }}
+                                            />
+                                        </ListItemButton>
+                                    </ListItem>
+                                );
+                            })}
+                        </List>
+                    </Collapse>
+                )}
+            </React.Fragment>
+        );
+    }
 
     return (
         <Drawer
@@ -196,131 +348,15 @@ export function SidebarMui() {
                         if (item.href === '/dashboard/chat/historico') return isChatLaunched();
                         return true;
                     })
-                    .map((item) => {
-                        const isActive = item.exactMatch
-                            ? pathname === item.href
-                            : pathname === item.href || pathname?.startsWith(item.href + '/');
+                    .map((item) => renderNavItem(item))}
 
-                        const hasChildren = item.children && item.children.length > 0;
-                        const isItemSelected = !hasChildren && isActive;
-                        const submenuOpen = openSubmenus[item.label] ?? isChildActive(item) ?? false;
-
-                        return (
-                            <React.Fragment key={item.href}>
-                                <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
-                                    <ListItemButton
-                                        component={Link}
-                                        href={item.href}
-                                        selected={isItemSelected}
-                                        onClick={() => {
-                                            if (hasChildren && !submenuOpen) {
-                                                openSubmenu(item.label);
-                                            }
-                                        }}
-                                        sx={{
-                                            borderRadius: 2,
-                                            '&.Mui-selected': {
-                                                background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                                                color: 'white',
-                                                '& .MuiListItemIcon-root': {
-                                                    color: 'white',
-                                                },
-                                                '&:hover': {
-                                                    background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                                                },
-                                            },
-                                        }}
-                                    >
-                                        <ListItemIcon
-                                            sx={{
-                                                minWidth: 40,
-                                                color: isItemSelected ? 'white' : 'text.secondary',
-                                            }}
-                                        >
-                                            {item.icon}
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={item.label}
-                                            primaryTypographyProps={{
-                                                fontSize: 14,
-                                                fontWeight: isItemSelected ? 600 : 500,
-                                            }}
-                                        />
-                                        {hasChildren && (
-                                            <IconButton
-                                                size="small"
-                                                edge="end"
-                                                onClick={(event) => {
-                                                    event.preventDefault();
-                                                    event.stopPropagation();
-                                                    toggleSubmenu(item.label);
-                                                }}
-                                            >
-                                                {submenuOpen ? (
-                                                    <ExpandLess sx={{ color: 'text.secondary' }} />
-                                                ) : (
-                                                    <ExpandMore sx={{ color: 'text.secondary' }} />
-                                                )}
-                                            </IconButton>
-                                        )}
-                                    </ListItemButton>
-                                </ListItem>
-
-                                {/* Submenu */}
-                                {hasChildren && (
-                                    <Collapse in={submenuOpen} timeout="auto" unmountOnExit>
-                                        <List disablePadding>
-                                            {item.children!.map((child) => {
-                                                const isChildItemActive = child.exactMatch
-                                                    ? pathname === child.href
-                                                    : pathname === child.href || pathname?.startsWith(child.href + '/');
-
-                                                return (
-                                                    <ListItem key={child.href} disablePadding sx={{ px: 1, py: 0.25 }}>
-                                                        <ListItemButton
-                                                            component={Link}
-                                                            href={child.href}
-                                                            selected={isChildItemActive}
-                                                            sx={{
-                                                                borderRadius: 2,
-                                                                pl: 6,
-                                                                '&.Mui-selected': {
-                                                                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                                                                    color: 'white',
-                                                                    '& .MuiListItemIcon-root': {
-                                                                        color: 'white',
-                                                                    },
-                                                                    '&:hover': {
-                                                                        background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                                                                    },
-                                                                },
-                                                            }}
-                                                        >
-                                                            <ListItemIcon
-                                                                sx={{
-                                                                    minWidth: 32,
-                                                                    color: isChildItemActive ? 'white' : 'text.secondary',
-                                                                }}
-                                                            >
-                                                                {child.icon}
-                                                            </ListItemIcon>
-                                                            <ListItemText
-                                                                primary={child.label}
-                                                                primaryTypographyProps={{
-                                                                    fontSize: 13,
-                                                                    fontWeight: isChildItemActive ? 600 : 400,
-                                                                }}
-                                                            />
-                                                        </ListItemButton>
-                                                    </ListItem>
-                                                );
-                                            })}
-                                        </List>
-                                    </Collapse>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
+                {/* Admin/Moderador section */}
+                {isModeratorOrAdmin && (
+                    <>
+                        <Divider sx={{ mx: 2, my: 1 }} />
+                        {adminNavItems.map((item) => renderNavItem(item))}
+                    </>
+                )}
 
                 <ListItem disablePadding sx={{ px: 1, py: 0.25 }}>
                     <ListItemButton

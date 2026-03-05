@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
+import Account from '@/models/Account';
 import Campaign from '@/models/Campaign';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET - Listar campanhas ativas (para a vitrine de creators)
+// GET - Listar campanhas ativas (para a vitrine de creators) ou todas (para admin/moderador)
 export async function GET(request: NextRequest) {
     try {
         const session = await auth();
@@ -18,12 +19,29 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
         const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
-        const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')));
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')));
         const category = searchParams.get('category');
         const niche = searchParams.get('niche');
+        const isAdminView = searchParams.get('admin') === 'true';
+        const statusFilter = searchParams.get('status');
         const skip = (page - 1) * limit;
 
-        const filter: Record<string, unknown> = { status: 'active' };
+        let filter: Record<string, unknown> = { status: 'active' };
+
+        if (isAdminView) {
+            const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+            const account = await Account.findOne({ auth_user_id: authUserId }).select('role').lean();
+            const role = (account as { role?: string } | null)?.role;
+
+            if (!account || !['moderator', 'admin'].includes(role || '')) {
+                return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+            }
+
+            filter = {};
+            if (statusFilter && statusFilter !== 'all') {
+                filter.status = statusFilter;
+            }
+        }
 
         if (category) filter.category = category;
         if (niche) filter.niches = niche;

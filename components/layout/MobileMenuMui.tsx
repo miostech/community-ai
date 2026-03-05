@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAccount } from '@/contexts/AccountContext';
 import {
     BottomNavigation,
     BottomNavigationAction,
@@ -13,9 +14,9 @@ import {
     Home as HomeIcon,
     TrendingUp as TrendingUpIcon,
     Add as AddIcon,
-    MenuBook as MenuBookIcon,
     Settings as SettingsIcon,
     Work as WorkIcon,
+    AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -54,6 +55,8 @@ const bottomNavItems: NavItem[] = [
 
 export function MobileMenuMui() {
     const pathname = usePathname();
+    const { account } = useAccount();
+    const isModeratorOrAdmin = account?.role === 'moderator' || account?.role === 'admin';
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     // Observar se há modal aberto
@@ -179,6 +182,17 @@ export function MobileMenuMui() {
                         />
                     );
                 })}
+                {isModeratorOrAdmin && (
+                    <BottomNavigationAction
+                        component={Link}
+                        href="/dashboard/admin"
+                        icon={<AdminIcon />}
+                        sx={{
+                            opacity: pathname?.startsWith('/dashboard/admin') ? 1 : 0.6,
+                            color: pathname?.startsWith('/dashboard/admin') ? 'primary.main' : undefined,
+                        }}
+                    />
+                )}
             </BottomNavigation>
         </Paper>
     );
