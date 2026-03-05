@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment';
 
 export interface INotification extends Document {
     _id: mongoose.Types.ObjectId;
@@ -9,6 +9,7 @@ export interface INotification extends Document {
     type: NotificationType;
     post_id?: mongoose.Types.ObjectId; // Post relacionado (se houver)
     comment_id?: mongoose.Types.ObjectId; // Comentário relacionado (se houver)
+    story_id?: mongoose.Types.ObjectId; // Story relacionado (se houver)
     content_preview?: string; // Preview do conteúdo (comentário, post, etc)
     is_read: boolean;
     created_at: Date;
@@ -30,7 +31,7 @@ const NotificationSchema = new Schema<INotification>(
         },
         type: {
             type: String,
-            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request'],
+            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment'],
             required: true,
         },
         post_id: {
@@ -41,6 +42,11 @@ const NotificationSchema = new Schema<INotification>(
         comment_id: {
             type: Schema.Types.ObjectId,
             ref: 'Comment',
+            default: null,
+        },
+        story_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'Story',
             default: null,
         },
         content_preview: {

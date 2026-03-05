@@ -30,14 +30,20 @@ interface StoryUser {
 
 interface StoriesProps {
     users: StoryUser[];
+    /** Quando definido, ao clicar num usuário com stories, chama essa callback em vez de navegar ao perfil. */
+    onStoryOpen?: (userId: string, userName: string) => void;
 }
 
-export function StoriesMui({ users }: StoriesProps) {
+export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
     const router = useRouter();
     const [pressedStory, setPressedStory] = useState<string | null>(null);
 
     const handleStoryClick = (user: StoryUser) => {
-        router.push(`/dashboard/comunidade/perfil/${user.id}`);
+        if (onStoryOpen && user.latestStoryAt != null) {
+            onStoryOpen(user.id, user.name);
+        } else {
+            router.push(`/dashboard/comunidade/perfil/${user.id}`);
+        }
     };
 
     const hasUnseenStories = (user: StoryUser) => {
@@ -53,7 +59,14 @@ export function StoriesMui({ users }: StoriesProps) {
 
     const first = users[0];
     const storyPosters = users.slice(1).filter((u) => u.latestStoryAt != null);
-    const displayUsers = first ? [first, ...storyPosters] : storyPosters;
+    const sortedStoryPosters = [...storyPosters].sort((a, b) => {
+        const aUnseen = hasUnseenStories(a);
+        const bUnseen = hasUnseenStories(b);
+        if (aUnseen && !bUnseen) return -1;
+        if (!aUnseen && bUnseen) return 1;
+        return (b.latestStoryAt ?? 0) - (a.latestStoryAt ?? 0);
+    });
+    const displayUsers = first ? [first, ...sortedStoryPosters] : sortedStoryPosters;
 
     return (
         <Box

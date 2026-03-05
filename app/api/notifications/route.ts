@@ -4,13 +4,14 @@ import { connectMongo } from '@/lib/mongoose';
 import Notification from '@/models/Notification';
 import Account from '@/models/Account';
 import Comment from '@/models/Comment';
+import StoryModel from '@/models/Story';
 import { markNotificationsAsRead, countUnreadNotifications } from '@/lib/notifications';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment';
 
 export interface NotificationItem {
   id: string;
@@ -24,6 +25,8 @@ export interface NotificationItem {
   };
   post_id?: string;
   comment_id?: string;
+  story_id?: string;
+  story_owner_id?: string;
   content_preview?: string;
   likes_count?: number;
 }
@@ -96,6 +99,18 @@ export async function GET() {
       commentLikesMap.set(c._id.toString(), c.likes_count || 0);
     });
 
+    // Resolve story owner IDs for story_comment notifications
+    const storyIds = notifications
+      .filter((n) => n.type === 'story_comment' && (n as any).story_id)
+      .map((n) => (n as any).story_id as mongoose.Types.ObjectId);
+    const storyOwnerMap = new Map<string, string>();
+    if (storyIds.length > 0) {
+      const stories = await StoryModel.find({ _id: { $in: storyIds } }).select('_id account_id').lean();
+      stories.forEach((s: any) => {
+        storyOwnerMap.set(s._id.toString(), s.account_id.toString());
+      });
+    }
+
     // Formatar para o frontend
     const formattedNotifications: NotificationItem[] = notifications.map((n) => {
       const actor = n.actor_id as unknown as {
@@ -105,11 +120,13 @@ export async function GET() {
         avatar_url?: string;
       } | null;
 
-      // Buscar likes_count do comentário se for uma notificação de like em comentário
       let likesCount: number | undefined;
       if (n.type === 'like' && n.comment_id) {
         likesCount = commentLikesMap.get(n.comment_id.toString());
       }
+
+      const storyId = (n as any).story_id?.toString();
+      const storyOwnerId = storyId ? (storyOwnerMap.get(storyId) || accountId.toString()) : undefined;
 
       return {
         id: n._id.toString(),
@@ -123,6 +140,8 @@ export async function GET() {
         },
         post_id: n.post_id?.toString(),
         comment_id: n.comment_id?.toString(),
+        story_id: storyId || undefined,
+        story_owner_id: n.type === 'story_comment' ? storyOwnerId : undefined,
         content_preview: n.content_preview || undefined,
         likes_count: likesCount,
       };

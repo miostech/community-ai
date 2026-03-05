@@ -26,6 +26,7 @@ import { PostCardMui } from '@/components/community/PostCardMui';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 import { FloatingChatButtonMui } from '@/components/chat/FloatingChatButtonMui';
+import { StoryViewer, type StoryItem } from '@/components/community/StoryViewer';
 import { DomeLogo } from '@/components/ui/DomeLogo';
 
 import { usePosts, Post } from '@/contexts/PostsContext';
@@ -64,6 +65,28 @@ export default function ComunidadePageMui() {
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [togglingPinPostId, setTogglingPinPostId] = useState<string | null>(null);
   const [videoReloadTrigger, setVideoReloadTrigger] = useState(0);
+
+  // Story viewer inline (abrir direto do feed)
+  const [storiesSeenVersion, setStoriesSeenVersion] = useState(0);
+  const [feedStoryViewerOpen, setFeedStoryViewerOpen] = useState(false);
+  const [feedStories, setFeedStories] = useState<StoryItem[]>([]);
+  const [feedStoryUserName, setFeedStoryUserName] = useState('');
+  const [feedStoryUserId, setFeedStoryUserId] = useState<string | null>(null);
+
+  const handleStoryOpen = async (userId: string, userName: string) => {
+    setFeedStoryUserName(userName);
+    setFeedStoryUserId(userId);
+    setFeedStoryViewerOpen(true);
+    try {
+      const res = await fetch(`/api/accounts/${userId}/stories`);
+      if (res.ok) {
+        const data = await res.json();
+        setFeedStories(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      setFeedStories([]);
+    }
+  };
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -350,7 +373,7 @@ export default function ComunidadePageMui() {
             >
               Top Ranking
             </Typography>
-            <StoriesMui users={storyUsers} />
+            <StoriesMui users={storyUsers} onStoryOpen={handleStoryOpen} key={storiesSeenVersion} />
           </Box>
         )}
 
@@ -461,6 +484,28 @@ export default function ComunidadePageMui() {
             }}
           />
         )}
+
+        {/* Story viewer inline (abre direto do feed) */}
+        <StoryViewer
+          stories={feedStories}
+          userName={feedStoryUserName}
+          open={feedStoryViewerOpen}
+          storyOwnerId={feedStoryUserId}
+          onClose={(opts) => {
+            if (opts?.completedAll && feedStoryUserId) {
+              try {
+                localStorage.setItem(STORIES_SEEN_KEY + feedStoryUserId, String(Date.now()));
+              } catch {}
+            }
+            setFeedStoryViewerOpen(false);
+            setFeedStories([]);
+            setFeedStoryUserId(null);
+            setStoriesSeenVersion((v) => v + 1);
+          }}
+          onStoryViewed={(storyId) => {
+            fetch(`/api/stories/${storyId}/view`, { method: 'POST' }).catch(() => {});
+          }}
+        />
       </Box>
     </Box>
   );

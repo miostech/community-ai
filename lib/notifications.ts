@@ -7,6 +7,7 @@ interface CreateNotificationParams {
     type: NotificationType;
     postId?: mongoose.Types.ObjectId | string | null;
     commentId?: mongoose.Types.ObjectId | string | null;
+    storyId?: mongoose.Types.ObjectId | string | null;
     contentPreview?: string | null;
 }
 
@@ -21,6 +22,7 @@ export async function createNotification({
     type,
     postId,
     commentId,
+    storyId,
     contentPreview,
 }: CreateNotificationParams): Promise<void> {
     try {
@@ -41,6 +43,7 @@ export async function createNotification({
             type,
             post_id: postId ? new mongoose.Types.ObjectId(postId.toString()) : null,
             comment_id: commentId ? new mongoose.Types.ObjectId(commentId.toString()) : null,
+            story_id: storyId ? new mongoose.Types.ObjectId(storyId.toString()) : null,
             content_preview: contentPreview?.slice(0, 150) || null,
             is_read: false,
         };
@@ -56,6 +59,7 @@ export async function createNotification({
                 type: notificationData.type,
                 post_id: notificationData.post_id,
                 comment_id: notificationData.comment_id,
+                story_id: notificationData.story_id,
             },
             {
                 $set: {

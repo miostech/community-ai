@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   IconButton,
@@ -18,8 +18,18 @@ import {
   ListItemText,
   Avatar,
   CircularProgress,
+  InputBase,
+  Badge,
 } from '@mui/material';
-import { Close as CloseIcon, MoreVert as MoreVertIcon, VolumeOff as VolumeOffIcon, VolumeUp as VolumeUpIcon, Visibility as VisibilityIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  MoreVert as MoreVertIcon,
+  VolumeOff as VolumeOffIcon,
+  VolumeUp as VolumeUpIcon,
+  Visibility as VisibilityIcon,
+  ChatBubbleOutline as ChatBubbleIcon,
+  Send as SendIcon,
+} from '@mui/icons-material';
 
 export type StoryViewerInfo = {
   id: string;
@@ -44,6 +54,17 @@ export type StoryItem = {
 
 export type StoryViewerCloseOptions = { completedAll?: boolean };
 
+export type StoryCommentItem = {
+  id: string;
+  content: string;
+  created_at: string;
+  author: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+};
+
 interface StoryViewerProps {
   stories: StoryItem[];
   userName: string;
@@ -59,6 +80,8 @@ interface StoryViewerProps {
   onStoryViewed?: (storyId: string) => void;
   /** Quem e quantas pessoas viram cada story (só no próprio perfil). Chave = storyId. */
   viewsByStory?: ViewsByStory;
+  /** ID da conta do dono do story (para buscar comentários). Se undefined, comentários ficam desabilitados. */
+  storyOwnerId?: string | null;
 }
 
 const STORY_DURATION_MS = 5000;
@@ -93,6 +116,7 @@ export function StoryViewer({
   onDeleteStory,
   onStoryViewed,
   viewsByStory = {},
+  storyOwnerId,
 }: StoryViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
@@ -103,6 +127,15 @@ export function StoryViewer({
   const [isMuted, setIsMuted] = useState(true);
   /** True quando a mídia (imagem ou vídeo) do story atual terminou de carregar — evita tela preta. */
   const [mediaReady, setMediaReady] = useState(false);
+
+  // Comments state
+  const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
+  const [commentsByStory, setCommentsByStory] = useState<Record<string, StoryCommentItem[]>>({});
+  const [commentText, setCommentText] = useState('');
+  const [sendingComment, setSendingComment] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
 
   /** Índice seguro para não renderizar com current indefinido (ex.: lista trocou e currentIndex ficou fora do range). */
   const safeIndex =
@@ -158,8 +191,10 @@ export function StoryViewer({
     else if (currentIndex >= stories.length) setCurrentIndex(Math.max(0, stories.length - 1));
   }, [open, stories.length, currentIndex, onClose]);
 
+  const timerPaused = deleteConfirmOpen || commentsDrawerOpen || inputFocused;
+
   useEffect(() => {
-    if (!open || !current || deleteConfirmOpen) return;
+    if (!open || !current || timerPaused) return;
     if (isVideo) {
       setProgress(0);
       return;
@@ -175,7 +210,7 @@ export function StoryViewer({
       }
     }, 50);
     return () => clearInterval(interval);
-  }, [open, current?.id, isVideo, goNext, deleteConfirmOpen]);
+  }, [open, current?.id, isVideo, goNext, timerPaused]);
 
   const handleDelete = async () => {
     if (!current?.id || !onDeleteStory || deleting) return;
@@ -188,13 +223,71 @@ export function StoryViewer({
     }
   };
 
+  const fetchComments = useCallback(async (storyId: string) => {
+    try {
+      const res = await fetch(`/api/stories/${storyId}/comments`);
+      if (res.ok) {
+        const data = await res.json();
+        setCommentsByStory((prev) => ({ ...prev, [storyId]: data.comments || [] }));
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open || !current?.id) return;
+    if (!commentsByStory[current.id]) {
+      fetchComments(current.id);
+    }
+  }, [open, current?.id, fetchComments, commentsByStory]);
+
+  useEffect(() => {
+    if (commentsDrawerOpen && commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [commentsDrawerOpen, commentsByStory[current?.id ?? '']?.length]);
+
+  const handleSendComment = async () => {
+    const text = commentText.trim();
+    if (!text || !current?.id || sendingComment) return;
+    setSendingComment(true);
+    try {
+      const res = await fetch(`/api/stories/${current.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: text }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.comment) {
+          setCommentsByStory((prev) => ({
+            ...prev,
+            [current.id]: [...(prev[current.id] || []), data.comment],
+          }));
+        }
+        setCommentText('');
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSendingComment(false);
+    }
+  };
+
+  const currentComments = current?.id ? (commentsByStory[current.id] || []) : [];
+  const commentsCount = currentComments.length;
+
   if (!open || stories.length === 0 || !current) return null;
 
   return (
     <Box
       sx={{
         position: 'fixed',
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: { xs: 0, md: '256px' },
         zIndex: 1400,
         bgcolor: 'black',
         display: 'flex',
@@ -403,63 +496,145 @@ export function StoryViewer({
                 transition: 'opacity 0.2s ease-in-out',
               }}
             />
-            <IconButton
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsMuted((m) => !m);
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              size="medium"
-              sx={{
-                position: 'absolute',
-                left: 16,
-                bottom: 'max(24px, env(safe-area-inset-bottom, 0px) + 72px)',
-                zIndex: 20,
-                pointerEvents: 'auto',
-                color: 'white',
-                bgcolor: 'rgba(0,0,0,0.5)',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-              }}
-              aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
-            >
-              {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </IconButton>
+            {/* Mute button moved to bottom bar */}
           </>
         )}
       </Box>
 
-      {/* Botão 3 pontinhos (excluir) - canto inferior direito, acima da tab bar */}
-      {canDelete && (
+      {/* Barra inferior: comentário + ações — no mobile fica acima da tab bar (~60px) */}
+      <Box
+        sx={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: { xs: 'max(60px, calc(env(safe-area-inset-bottom, 0px) + 60px))', md: 0 },
+          zIndex: 15,
+          pointerEvents: 'none',
+        }}
+      >
         <Box
           sx={{
-            position: 'absolute',
-            right: 16,
-            bottom: 'max(24px, env(safe-area-inset-bottom, 0px) + 72px)',
-            zIndex: 15,
             pointerEvents: 'auto',
+            background: 'linear-gradient(to top, rgba(0,0,0,0.65) 70%, transparent)',
+            pt: 2,
+            pb: { xs: 1, md: 2 },
+            px: 1.5,
           }}
         >
-          <IconButton
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteConfirmOpen(true);
-            }}
-            disabled={deleting}
-            size="large"
-            sx={{
-              color: 'white',
-              bgcolor: 'rgba(0,0,0,0.6)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
-              '& .MuiSvgIcon-root': { fontSize: 28 },
-            }}
-            aria-label="Opções do story"
-          >
-            <MoreVertIcon />
-          </IconButton>
+          {/* Input de comentário */}
+          {storyOwnerId && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.75,
+                mb: 0.75,
+              }}
+            >
+              <InputBase
+                inputRef={inputRef}
+                placeholder="Enviar comentário..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendComment();
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  color: 'white',
+                  bgcolor: 'rgba(255,255,255,0.12)',
+                  borderRadius: 5,
+                  px: 1.5,
+                  py: 0.6,
+                  fontSize: '0.8125rem',
+                  '& input::placeholder': { color: 'rgba(255,255,255,0.55)', opacity: 1 },
+                  border: '1px solid rgba(255,255,255,0.15)',
+                }}
+                inputProps={{ maxLength: 500 }}
+              />
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendComment();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                disabled={!commentText.trim() || sendingComment}
+                size="small"
+                sx={{
+                  color: commentText.trim() ? 'white' : 'rgba(255,255,255,0.3)',
+                  flexShrink: 0,
+                  p: 0.75,
+                }}
+                aria-label="Enviar comentário"
+              >
+                {sendingComment ? <CircularProgress size={18} sx={{ color: 'white' }} /> : <SendIcon sx={{ fontSize: 20 }} />}
+              </IconButton>
+            </Box>
+          )}
+
+          {/* Ações: chat, mute, delete */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {storyOwnerId && (
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCommentsDrawerOpen(true);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                size="small"
+                sx={{ color: 'white', p: 0.75 }}
+                aria-label="Ver comentários"
+              >
+                <Badge badgeContent={commentsCount} color="primary" max={99}>
+                  <ChatBubbleIcon sx={{ fontSize: 20 }} />
+                </Badge>
+              </IconButton>
+            )}
+
+            <Box sx={{ flex: 1 }} />
+
+            {isVideo && (
+              <IconButton
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsMuted((m) => !m);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                size="small"
+                sx={{ color: 'white', p: 0.75 }}
+                aria-label={isMuted ? 'Ativar som' : 'Desativar som'}
+              >
+                {isMuted ? <VolumeOffIcon sx={{ fontSize: 20 }} /> : <VolumeUpIcon sx={{ fontSize: 20 }} />}
+              </IconButton>
+            )}
+
+            {canDelete && (
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteConfirmOpen(true);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                disabled={deleting}
+                size="small"
+                sx={{ color: 'white', p: 0.75 }}
+                aria-label="Opções do story"
+              >
+                <MoreVertIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            )}
+          </Box>
         </Box>
-      )}
+      </Box>
 
       {/* Texto sobre a foto/vídeo (posição definida no editor ou barra inferior) */}
       {current.text && (
@@ -476,10 +651,10 @@ export function StoryViewer({
               : {
                   left: 0,
                   right: 0,
-                  bottom: 0,
+                  bottom: storyOwnerId ? { xs: 160, md: 100 } : 0,
                   p: 2,
                   pt: 6,
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent 60%)',
+                  background: storyOwnerId ? 'none' : 'linear-gradient(to top, rgba(0,0,0,0.7), transparent 60%)',
                   display: 'flex',
                   alignItems: 'flex-end',
                   justifyContent: 'center',
@@ -574,6 +749,67 @@ export function StoryViewer({
           ) : (
             <Typography color="text.secondary">Carregando...</Typography>
           )}
+        </Box>
+      </Drawer>
+
+      {/* Drawer: comentários do story */}
+      <Drawer
+        anchor="bottom"
+        open={commentsDrawerOpen}
+        onClose={() => setCommentsDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            maxHeight: '70vh',
+          },
+        }}
+      >
+        <Box sx={{ px: 2, pt: 2, pb: 3, display: 'flex', flexDirection: 'column', maxHeight: '70vh' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6">
+              Comentários{commentsCount > 0 ? ` (${commentsCount})` : ''}
+            </Typography>
+            <IconButton onClick={() => setCommentsDrawerOpen(false)} aria-label="Fechar">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Box sx={{ flex: 1, overflowY: 'auto', mb: 2 }}>
+            {currentComments.length === 0 ? (
+              <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                Nenhum comentário ainda. Seja o primeiro!
+              </Typography>
+            ) : (
+              <List disablePadding>
+                {currentComments.map((c) => (
+                  <ListItem key={c.id} disablePadding sx={{ py: 0.75, alignItems: 'flex-start' }}>
+                    <ListItemAvatar sx={{ minWidth: 44 }}>
+                      <Avatar
+                        src={c.author.avatar_url || undefined}
+                        alt={c.author.name}
+                        sx={{ width: 32, height: 32 }}
+                      >
+                        {c.author.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Typography variant="body2">
+                          <Typography component="span" fontWeight={600} variant="body2">
+                            {c.author.name}
+                          </Typography>{' '}
+                          {c.content}
+                        </Typography>
+                      }
+                      secondary={formatStoryTimeAgo(c.created_at)}
+                      secondaryTypographyProps={{ variant: 'caption' }}
+                    />
+                  </ListItem>
+                ))}
+                <div ref={commentsEndRef} />
+              </List>
+            )}
+          </Box>
         </Box>
       </Drawer>
     </Box>

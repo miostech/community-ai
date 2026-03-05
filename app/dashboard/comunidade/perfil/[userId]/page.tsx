@@ -1774,6 +1774,7 @@ export default function PerfilComunidadePage() {
           setStoryViewerOpen(false);
         }}
         canDelete={isOwnProfile}
+        storyOwnerId={profileAccountId}
         onDeleteStory={
           isOwnProfile && (profileAccountId ?? account?.id)
             ? async (storyId: string) => {

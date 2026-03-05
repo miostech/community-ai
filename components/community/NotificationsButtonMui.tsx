@@ -22,9 +22,10 @@ import {
     Reply as ReplyIcon,
     AlternateEmail as MentionIcon,
     Gavel as ModerationIcon,
+    AutoStories as StoryCommentIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment';
 
 export interface NotificationItem {
     id: string;
@@ -38,8 +39,10 @@ export interface NotificationItem {
     };
     post_id?: string;
     comment_id?: string;
+    story_id?: string;
+    story_owner_id?: string;
     content_preview?: string;
-    likes_count?: number; // Quantidade de likes no comentário/post
+    likes_count?: number;
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -77,6 +80,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'mencionou você';
         case 'moderation':
             return 'comentário aguardando sua aprovação';
+        case 'story_comment':
+            return 'comentou no seu story';
         case 'subscription_cancel_request':
             return 'solicitou o cancelamento da assinatura';
         default:
@@ -96,6 +101,8 @@ function getNotificationIcon(type: NotificationType) {
             return <MentionIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         case 'moderation':
             return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
+        case 'story_comment':
+            return <StoryCommentIcon sx={{ fontSize: 14, color: 'secondary.main' }} />;
         case 'subscription_cancel_request':
             return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
         default:
@@ -213,9 +220,11 @@ export function NotificationsButtonMui() {
                             href={
                                 n.type === 'subscription_cancel_request'
                                     ? `/dashboard/comunidade/perfil/${n.actor.id}`
-                                    : n.post_id
-                                        ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
-                                        : '#'
+                                    : n.type === 'story_comment' && n.story_owner_id
+                                        ? `/dashboard/comunidade/perfil/${n.story_owner_id}`
+                                        : n.post_id
+                                            ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
+                                            : '#'
                             }
                             onClick={handleClose}
                             sx={{
