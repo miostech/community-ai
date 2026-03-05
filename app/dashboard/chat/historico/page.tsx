@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
+import { useAccount } from '@/contexts/AccountContext';
 import { isChatLaunched } from '@/lib/chat-launch';
 
 // MUI imports
@@ -43,6 +44,7 @@ interface ConversationItem {
 
 export default function HistoricoPage() {
   const { user } = useUser();
+  const { canAccessChat } = useAccount();
   const router = useRouter();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,15 +67,14 @@ export default function HistoricoPage() {
     fetchConversations();
   }, [fetchConversations]);
 
-  // Área indisponível até o lançamento do chat — redireciona para o chat
   useEffect(() => {
-    if (!isChatLaunched()) {
+    if (!canAccessChat || !isChatLaunched()) {
       router.replace('/dashboard/chat');
     }
-  }, [router]);
+  }, [router, canAccessChat]);
 
-  if (!isChatLaunched()) {
-    return null; // evita flash da página antes do redirect
+  if (!canAccessChat || !isChatLaunched()) {
+    return null;
   }
 
   const filteredConversations = conversations.filter((conv) =>

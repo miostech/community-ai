@@ -11,8 +11,10 @@ import {
   Stack,
   Paper,
 } from '@mui/material';
-import { RocketLaunch as RocketLaunchIcon } from '@mui/icons-material';
+import { RocketLaunch as RocketLaunchIcon, LockClock as LockClockIcon } from '@mui/icons-material';
 import { CHAT_LAUNCH_DATE } from '@/lib/chat-launch';
+import { useAccount } from '@/contexts/AccountContext';
+import { Countdown } from '@/components/shared/Countdown';
 
 function getTimeLeft() {
   const now = new Date();
@@ -20,22 +22,23 @@ function getTimeLeft() {
     return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   }
   const diff = CHAT_LAUNCH_DATE.getTime() - now.getTime();
-  // dias = dias inteiros; hours = total de horas restantes (sempre decrescente)
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor(diff / (1000 * 60 * 60)), // total de horas (ex.: 16 dias = 384h+)
+    hours: Math.floor(diff / (1000 * 60 * 60)),
     minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
     seconds: Math.floor((diff % (1000 * 60)) / 1000),
   };
 }
 
 function ChatPageContent() {
+  const { isLoading, canAccessChat, chatUnlockAt } = useAccount();
   const [timeLeft, setTimeLeft] = useState(() => getTimeLeft());
 
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft(getTimeLeft()), 1000);
     return () => clearInterval(timer);
   }, []);
+
   const appBar = (
     <AppBar
       position="fixed"
@@ -70,6 +73,71 @@ function ChatPageContent() {
       </Toolbar>
     </AppBar>
   );
+
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '50vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!canAccessChat && chatUnlockAt) {
+    return (
+      <Box sx={{ mt: { xs: '-64px', md: 0 } }}>
+        {appBar}
+        <Box
+          sx={{
+            maxWidth: 560,
+            mx: 'auto',
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 3, sm: 6 },
+            pb: { xs: 8, sm: 6 },
+            minHeight: { xs: 'calc(100vh - 120px)', sm: 'auto' },
+            display: { xs: 'flex', sm: 'block' },
+            alignItems: { xs: 'center', sm: 'stretch' },
+            justifyContent: { xs: 'center', sm: 'flex-start' },
+          }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 2.5, sm: 4 },
+              borderRadius: { xs: 2, sm: 3 },
+              border: 1,
+              borderColor: 'divider',
+              textAlign: 'center',
+              width: '100%',
+            }}
+          >
+            <LockClockIcon sx={{ fontSize: { xs: 44, sm: 56 }, color: 'action.disabled', mb: { xs: 1.5, sm: 2 } }} />
+            <Typography
+              variant="h6"
+              fontWeight={600}
+              sx={{ mb: { xs: 0.75, sm: 1 }, fontSize: { xs: '1rem', sm: 'inherit' } }}
+            >
+              Chat com IA
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.875rem', sm: 'inherit' }, lineHeight: 1.45, px: { xs: 0.5, sm: 0 } }}
+            >
+              Essa funcionalidade será liberada para você depois de 7 dias.
+            </Typography>
+            <Countdown until={chatUnlockAt} />
+          </Paper>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ mt: { xs: '-64px', md: 0 } }}>

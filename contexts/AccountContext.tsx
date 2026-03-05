@@ -75,6 +75,10 @@ interface AccountContextType {
     trabalhosUnlockAt: Date | null;
     /** true se o usuário já pode acessar Trabalhos (7 dias após a primeira compra). */
     canAccessTrabalhos: boolean;
+    /** Data/hora em que o Chat com IA será liberado (7 dias após first_paid_at). null = já liberado ou sem compra. */
+    chatUnlockAt: Date | null;
+    /** true se o usuário já pode acessar o Chat com IA (7 dias após a primeira compra). */
+    canAccessChat: boolean;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -216,6 +220,16 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         : null;
     const canAccessTrabalhos = trabalhosUnlockAt === null || Date.now() >= trabalhosUnlockAt.getTime();
 
+    const CHAT_UNLOCK_DAYS = 7;
+    const chatUnlockAt: Date | null = firstPaidAt
+        ? (() => {
+            const d = new Date(firstPaidAt);
+            d.setDate(d.getDate() + CHAT_UNLOCK_DAYS);
+            return d;
+        })()
+        : null;
+    const canAccessChat = chatUnlockAt === null || Date.now() >= chatUnlockAt.getTime();
+
     const isMidiaKitComplete = Boolean(
         account?.birth_date &&
         account?.gender &&
@@ -243,6 +257,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
                 isMidiaKitComplete,
                 trabalhosUnlockAt,
                 canAccessTrabalhos,
+                chatUnlockAt,
+                canAccessChat,
             }}
         >
             {children}
