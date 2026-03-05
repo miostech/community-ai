@@ -134,6 +134,7 @@ export function StoryViewer({
   const [commentText, setCommentText] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
@@ -190,6 +191,10 @@ export function StoryViewer({
     if (stories.length === 0) onClose();
     else if (currentIndex >= stories.length) setCurrentIndex(Math.max(0, stories.length - 1));
   }, [open, stories.length, currentIndex, onClose]);
+
+  useEffect(() => {
+    return () => { if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current); };
+  }, []);
 
   const timerPaused = deleteConfirmOpen || commentsDrawerOpen || inputFocused;
 
@@ -536,8 +541,13 @@ export function StoryViewer({
                 placeholder="Enviar comentário..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
+                onFocus={() => {
+                  if (blurTimeoutRef.current) { clearTimeout(blurTimeoutRef.current); blurTimeoutRef.current = null; }
+                  setInputFocused(true);
+                }}
+                onBlur={() => {
+                  blurTimeoutRef.current = setTimeout(() => { setInputFocused(false); }, 300);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -554,7 +564,7 @@ export function StoryViewer({
                   borderRadius: 5,
                   px: 1.5,
                   py: 0.6,
-                  fontSize: '0.8125rem',
+                  fontSize: { xs: '1rem', md: '0.8125rem' },
                   '& input::placeholder': { color: 'rgba(255,255,255,0.55)', opacity: 1 },
                   border: '1px solid rgba(255,255,255,0.15)',
                 }}
