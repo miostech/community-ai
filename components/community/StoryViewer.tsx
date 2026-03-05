@@ -29,7 +29,11 @@ import {
   Visibility as VisibilityIcon,
   ChatBubbleOutline as ChatBubbleIcon,
   Send as SendIcon,
+  DeleteOutline as DeleteIcon,
+  FavoriteBorder as FavoriteBorderIcon,
+  Favorite as FavoriteIcon,
 } from '@mui/icons-material';
+import { useAccount } from '@/contexts/AccountContext';
 
 export type StoryViewerInfo = {
   id: string;
@@ -58,6 +62,8 @@ export type StoryCommentItem = {
   id: string;
   content: string;
   created_at: string;
+  likes_count: number;
+  liked: boolean;
   author: {
     id: string;
     name: string;
@@ -118,6 +124,7 @@ export function StoryViewer({
   viewsByStory = {},
   storyOwnerId,
 }: StoryViewerProps) {
+  const { account } = useAccount();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
   const [deleting, setDeleting] = useState(false);
@@ -277,6 +284,46 @@ export function StoryViewer({
       // silently fail
     } finally {
       setSendingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!current?.id) return;
+    try {
+      const res = await fetch(`/api/stories/${current.id}/comments/${commentId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCommentsByStory((prev) => ({
+          ...prev,
+          [current.id]: (prev[current.id] || []).filter((c) => c.id !== commentId),
+        }));
+      }
+    } catch {
+      // silently fail
+    }
+  };
+
+  const handleToggleLike = async (commentId: string, currentlyLiked: boolean) => {
+    if (!current?.id) return;
+    const method = currentlyLiked ? 'DELETE' : 'POST';
+    setCommentsByStory((prev) => ({
+      ...prev,
+      [current.id]: (prev[current.id] || []).map((c) =>
+        c.id === commentId
+          ? { ...c, liked: !currentlyLiked, likes_count: c.likes_count + (currentlyLiked ? -1 : 1) }
+          : c
+      ),
+    }));
+    try {
+      await fetch(`/api/stories/${current.id}/comments/${commentId}/like`, { method });
+    } catch {
+      setCommentsByStory((prev) => ({
+        ...prev,
+        [current.id]: (prev[current.id] || []).map((c) =>
+          c.id === commentId
+            ? { ...c, liked: currentlyLiked, likes_count: c.likes_count + (currentlyLiked ? 1 : -1) }
+            : c
+        ),
+      }));
     }
   };
 
@@ -814,6 +861,31 @@ export function StoryViewer({
                       secondary={formatStoryTimeAgo(c.created_at)}
                       secondaryTypographyProps={{ variant: 'caption' }}
                     />
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 0.5, mt: 0.5, flexShrink: 0 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleToggleLike(c.id, c.liked)}
+                        sx={{ p: 0.25, color: c.liked ? 'error.main' : 'text.secondary' }}
+                        aria-label={c.liked ? 'Descurtir' : 'Curtir'}
+                      >
+                        {c.liked ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
+                      </IconButton>
+                      {c.likes_count > 0 && (
+                        <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1 }}>
+                          {c.likes_count}
+                        </Typography>
+                      )}
+                      {account?.id === c.author.id && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteComment(c.id)}
+                          sx={{ p: 0.25, color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                          aria-label="Apagar comentário"
+                        >
+                          <DeleteIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
+                    </Box>
                   </ListItem>
                 ))}
                 <div ref={commentsEndRef} />

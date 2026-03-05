@@ -15,12 +15,20 @@ export async function GET(
   { params }: { params: Promise<{ storyId: string }> }
 ) {
   try {
+    const session = await auth();
     const { storyId } = await params;
     if (!storyId || !mongoose.Types.ObjectId.isValid(storyId)) {
       return NextResponse.json({ error: 'ID do story inválido' }, { status: 400 });
     }
 
     await connectMongo();
+
+    let currentAccountId: string | null = null;
+    if (session?.user?.id) {
+      const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+      const acc = await Account.findOne({ auth_user_id: authUserId }).select('_id').lean();
+      if (acc) currentAccountId = (acc._id as mongoose.Types.ObjectId).toString();
+    }
 
     const comments = await StoryCommentModel.find({ story_id: new mongoose.Types.ObjectId(storyId) })
       .sort({ created_at: 1 })
@@ -35,10 +43,13 @@ export async function GET(
         last_name?: string;
         avatar_url?: string;
       } | null;
+      const likesArr = c.likes || [];
       return {
         id: c._id.toString(),
         content: c.content,
         created_at: c.created_at.toISOString(),
+        likes_count: likesArr.length,
+        liked: currentAccountId ? likesArr.some((l) => l.toString() === currentAccountId) : false,
         author: {
           id: author?._id?.toString() || '',
           name: author
@@ -123,6 +134,8 @@ export async function POST(
         id: comment._id.toString(),
         content: comment.content,
         created_at: comment.created_at.toISOString(),
+        likes_count: 0,
+        liked: false,
         author: {
           id: acc._id.toString(),
           name: [acc.first_name || '', acc.last_name || ''].join(' ').trim() || 'Alguém',

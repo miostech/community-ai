@@ -5,6 +5,7 @@ export interface StoryCommentDoc {
   story_id: Types.ObjectId;
   author_id: Types.ObjectId;
   content: string;
+  likes: Types.ObjectId[];
   created_at: Date;
 }
 
@@ -13,6 +14,7 @@ const StoryCommentSchema = new Schema<StoryCommentDoc>(
     story_id: { type: Schema.Types.ObjectId, ref: 'Story', required: true, index: true },
     author_id: { type: Schema.Types.ObjectId, ref: 'Account', required: true, index: true },
     content: { type: String, required: true, trim: true, maxlength: 500 },
+    likes: { type: [Schema.Types.ObjectId], default: [] },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: false },
