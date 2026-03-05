@@ -106,7 +106,7 @@ export function getCampaignEligibility(
 
   const countries = campaign.filters?.countries;
   if (countries && countries.length > 0) {
-    const creatorCountry = normalizeCountry(creator.address_country);
+    const creatorCountry = normalizeCountry(creator.address_country ?? undefined);
     if (!creatorCountry) {
       reasons.push('Campanha disponível apenas para: ' + countries.join(', '));
     } else {
@@ -299,42 +299,43 @@ function CampaignCard({
         }}
       >
         <Tooltip title={compCfg.label} placement="left">
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 0,
-              height: 0,
-              borderStyle: 'solid',
-              borderWidth: '0 64px 64px 0',
-              borderColor: 'transparent',
-              // Hack: use a square rotated element on top to create the filled triangle
-              '&::after': {
-                content: '""',
-                display: 'none',
-              },
-            }}
-          />
-          {/* Filled triangle using clip-path */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              width: 64,
-              height: 64,
-              background: compCfg.gradient,
-              clipPath: 'polygon(100% 0, 0 0, 100% 100%)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'flex-end',
-              pt: 0.75,
-              pr: 0.75,
-              pointerEvents: 'auto',
-            }}
-          >
-            {compCfg.icon}
+          <Box sx={{ position: 'absolute', top: 0, right: 0, width: 64, height: 64 }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: 0,
+                height: 0,
+                borderStyle: 'solid',
+                borderWidth: '0 64px 64px 0',
+                borderColor: 'transparent',
+                '&::after': {
+                  content: '""',
+                  display: 'none',
+                },
+              }}
+            />
+            {/* Filled triangle using clip-path */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: 64,
+                height: 64,
+                background: compCfg.gradient,
+                clipPath: 'polygon(100% 0, 0 0, 100% 100%)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'flex-end',
+                pt: 0.75,
+                pr: 0.75,
+                pointerEvents: 'auto',
+              }}
+            >
+              {compCfg.icon}
+            </Box>
           </Box>
         </Tooltip>
       </Box>
@@ -731,7 +732,7 @@ export default function VitrineCampanhasPage() {
                       flexShrink: 0,
                     }}
                   >
-                    {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: '11px !important', color: 'white' } })}
+                    {React.cloneElement(item.icon as React.ReactElement<{ sx?: object }>, { sx: { fontSize: '11px !important', color: 'white' } })}
                   </Box>
                   <Typography variant="caption" sx={{ fontSize: '0.68rem', fontWeight: isSelected ? 700 : 500 }}>
                     {item.key === 'paid' ? 'Pago' : item.key === 'product' ? 'Produto' : 'Afiliado'}

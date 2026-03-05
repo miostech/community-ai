@@ -9,7 +9,13 @@ import ChatMessageModel from '@/models/ChatMessage';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI(): OpenAI {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        throw new Error('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+    }
+    return new OpenAI({ apiKey });
+}
 
 const SYSTEM_PROMPT = `Você é a IA treinada pessoalmente pela Nat (Natália Trombelli) e pelo Luigi (Luigi Andersen) para ajudar criadores de conteúdo.
 
@@ -139,6 +145,7 @@ export async function POST(request: NextRequest) {
         }
 
         // ----- Chamar OpenAI -----
+        const openai = getOpenAI();
         const completion = await openai.chat.completions.create({
             model: conversation.model || 'gpt-4o-mini',
             messages: openaiMessages,

@@ -192,7 +192,6 @@ export default function MinhasCampanhasPage() {
               sx={{
                 borderRadius: 2,
                 border: 1,
-                borderColor: 'divider',
                 p: 2,
                 mb: 3,
                 bgcolor: alpha(theme.palette.success.main, 0.04),
@@ -247,7 +246,7 @@ export default function MinhasCampanhasPage() {
             const isCompleted = app.status === 'completed';
 
             return (
-              <Grid item xs={12} sm={6} key={app._id}>
+              <Grid size={{ xs: 12, sm: 6 }} key={app._id}>
                 <Paper
                   elevation={0}
                   sx={{

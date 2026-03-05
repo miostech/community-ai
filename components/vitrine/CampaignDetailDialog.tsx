@@ -554,7 +554,7 @@ export default function CampaignDetailDialog({
                     borderColor: alpha(compCfg.chipColor, 0.25),
                   }}
                 >
-                  {React.cloneElement(compCfg.icon as React.ReactElement, {
+                  {React.cloneElement(compCfg.icon as React.ReactElement<{ sx?: object }>, {
                     sx: { fontSize: 13, color: compCfg.chipColor },
                   })}
                   <Typography sx={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.07em', color: compCfg.chipColor }}>
