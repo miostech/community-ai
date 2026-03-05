@@ -50,7 +50,7 @@ export function Header() {
             <Link href="/login" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-xs sm:text-sm font-medium py-2 px-1">
               Login
             </Link>
-            <Link href="/precos">
+            <Link href="/cadastro">
               <Button size="sm" className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white border-0 text-xs sm:text-sm px-3 sm:px-4">
                 Cadastrar-se
               </Button>

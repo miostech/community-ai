@@ -20,10 +20,10 @@ export function SocialLoginBox({
     showTerms = true,
 }: SocialLoginBoxProps) {
     return (
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-6 sm:p-8 space-y-4 shadow-lg">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl border border-gray-100 dark:border-slate-700 p-4 sm:p-8 space-y-3 sm:space-y-4 shadow-lg">
             <Button
                 variant="secondary"
-                className="w-full flex items-center justify-center space-x-2"
+                className="w-full flex items-center justify-center space-x-2 min-h-[48px] sm:min-h-0 py-3 sm:py-2"
                 onClick={onGoogleLogin}
                 disabled={isLoading}
                 type="button"
@@ -51,7 +51,7 @@ export function SocialLoginBox({
 
             <Button
                 variant="secondary"
-                className="w-full flex items-center justify-center space-x-2 bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100"
+                className="w-full flex items-center justify-center space-x-2 min-h-[48px] sm:min-h-0 py-3 sm:py-2 bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100"
                 onClick={onAppleLogin}
                 disabled={isLoading}
                 type="button"
