@@ -30,21 +30,21 @@ const themeScript = `
 `;
 
 export const metadata: Metadata = {
-  title: "Dome - Cúpula de criadores de conteúdo",
+  title: "Dome - Agência de Criação de Conteúdo",
   description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
   icons: {
     icon: "/icon.svg",
     apple: "/apple-touch-icon",
   },
   openGraph: {
-    title: "Dome - Cúpula de criadores de conteúdo",
+    title: "Dome - Agência de Criação de Conteúdo",
     description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
     type: "website",
     // opengraph-image.tsx gera a imagem automaticamente (mesmo visual do favicon)
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dome - Cúpula de criadores de conteúdo",
+    title: "Dome - Agência de Criação de Conteúdo",
     description: "A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução. Construa autoridade de forma intencional.",
   },
 };
