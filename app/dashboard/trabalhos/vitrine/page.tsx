@@ -698,7 +698,7 @@ export default function VitrineCampanhasPage() {
       ) : (
         <Grid container spacing={{ xs: 2, sm: 2.5 }}>
           {filtered.map((campaign) => (
-            <Grid size={{ xs: 6, sm: 6, md: 4 }} key={campaign._id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={campaign._id}>
               <CampaignCard
                 campaign={campaign}
                 hasApplied={appliedIds.has(campaign._id)}

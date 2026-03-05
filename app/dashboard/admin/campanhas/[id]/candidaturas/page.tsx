@@ -23,8 +23,7 @@ import {
     DialogActions,
     alpha,
     useTheme,
-    IconButton,
-    Tooltip,
+    useMediaQuery,
 } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
@@ -72,6 +71,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: 'default' | 'success
 
 export default function CandidaturasPage() {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const params = useParams();
     const campaignId = params.id as string;
 
@@ -178,14 +178,19 @@ export default function CandidaturasPage() {
     }, [applications, activeTab]);
 
     return (
-        <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
+        <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 4 }, pb: { xs: 12, sm: 4 } }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 1.5, sm: 3 } }}>
                 <Button
                     component={Link}
                     href={`/dashboard/admin/campanhas/${campaignId}`}
                     startIcon={<ArrowBackIcon />}
                     size="small"
-                    sx={{ textTransform: 'none', fontWeight: 600 }}
+                    sx={{
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        minHeight: { xs: 44, sm: 'auto' },
+                        px: { xs: 1.5, sm: 1 },
+                    }}
                 >
                     Voltar à campanha
                 </Button>
@@ -202,13 +207,20 @@ export default function CandidaturasPage() {
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-            <Paper elevation={0} sx={{ borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
+            <Paper elevation={0} sx={{ borderRadius: { xs: 2, sm: 3 }, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
                 <Tabs
                     value={activeTab}
                     onChange={(_, v) => setActiveTab(v)}
-                    sx={{ borderBottom: 1, borderColor: 'divider', px: 1 }}
+                    sx={{
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        px: { xs: 0, sm: 1 },
+                        minHeight: { xs: 48, sm: 48 },
+                        '& .MuiTab-root': { minHeight: { xs: 48, sm: 48 }, px: { xs: 1.25, sm: 2 }, fontSize: { xs: '0.8rem', sm: '0.875rem' } },
+                    }}
                     variant="scrollable"
                     scrollButtons="auto"
+                    allowScrollButtonsMobile
                 >
                     <Tab
                         label={
@@ -253,15 +265,15 @@ export default function CandidaturasPage() {
                             const isProcessing = processingId === app._id;
 
                             return (
-                                <Box key={app._id} sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.5 } }}>
-                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                <Box key={app._id} sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2.5 } }}>
+                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.5, sm: 2 }}>
                                         {/* Creator info */}
-                                        <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+                                        <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
                                             <Avatar
                                                 src={creator.avatar_url}
                                                 sx={{
-                                                    width: 44,
-                                                    height: 44,
+                                                    width: { xs: 40, sm: 44 },
+                                                    height: { xs: 40, sm: 44 },
                                                     flexShrink: 0,
                                                     bgcolor: alpha(theme.palette.primary.main, 0.12),
                                                     color: 'primary.main',
@@ -271,7 +283,7 @@ export default function CandidaturasPage() {
                                                 {fullName.charAt(0).toUpperCase()}
                                             </Avatar>
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+                                                <Stack direction="row" alignItems="center" spacing={0.75} flexWrap="wrap" sx={{ gap: 0.5 }}>
                                                     <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                                                         {fullName}
                                                     </Typography>
@@ -279,7 +291,7 @@ export default function CandidaturasPage() {
                                                     {app.is_customer && (
                                                         <Chip
                                                             icon={<IsCustomerIcon sx={{ fontSize: '0.8rem !important' }} />}
-                                                            label="Já é cliente da marca"
+                                                            label="Cliente"
                                                             size="small"
                                                             color="primary"
                                                             variant="outlined"
@@ -288,24 +300,24 @@ export default function CandidaturasPage() {
                                                     )}
                                                 </Stack>
 
-                                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }}>
+                                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }} flexWrap="wrap">
                                                     {creator.link_instagram && (
                                                         <Stack direction="row" alignItems="center" spacing={0.25}>
-                                                            <InstagramIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
-                                                            <Typography variant="caption" color="text.secondary">
+                                                            <InstagramIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
+                                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                                                 {creator.link_instagram}
                                                             </Typography>
                                                         </Stack>
                                                     )}
                                                     {creator.address_city && (
-                                                        <Typography variant="caption" color="text.secondary">
+                                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                                                             · {creator.address_city}{creator.address_state ? `, ${creator.address_state}` : ''}
                                                         </Typography>
                                                     )}
                                                 </Stack>
 
                                                 {creator.niches && creator.niches.length > 0 && (
-                                                    <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mt: 0.75 }}>
+                                                    <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mt: 0.5 }}>
                                                         {creator.niches.slice(0, 4).map((n) => (
                                                             <Chip key={n} label={n} size="small" variant="outlined" sx={{ fontSize: '0.65rem', height: 18 }} />
                                                         ))}
@@ -317,21 +329,21 @@ export default function CandidaturasPage() {
                                                     </Stack>
                                                 )}
 
-                                                <Box sx={{ mt: 1.5, p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
+                                                <Box sx={{ mt: 1, p: { xs: 1.25, sm: 1.5 }, borderRadius: 2, bgcolor: 'action.hover' }}>
                                                     <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>
                                                         Pitch
                                                     </Typography>
-                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.78rem', sm: '0.82rem' }, lineHeight: 1.6 }}>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.78rem', sm: '0.82rem' }, lineHeight: 1.6, wordBreak: 'break-word' }}>
                                                         {app.pitch}
                                                     </Typography>
                                                 </Box>
 
                                                 {app.content_proposal && (
-                                                    <Box sx={{ mt: 1, p: 1.5, borderRadius: 2, bgcolor: 'action.hover' }}>
+                                                    <Box sx={{ mt: 1, p: { xs: 1.25, sm: 1.5 }, borderRadius: 2, bgcolor: 'action.hover' }}>
                                                         <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>
                                                             Proposta de conteúdo
                                                         </Typography>
-                                                        <Typography variant="body2" sx={{ fontSize: { xs: '0.78rem', sm: '0.82rem' }, lineHeight: 1.6 }}>
+                                                        <Typography variant="body2" sx={{ fontSize: { xs: '0.78rem', sm: '0.82rem' }, lineHeight: 1.6, wordBreak: 'break-word' }}>
                                                             {app.content_proposal}
                                                         </Typography>
                                                     </Box>
@@ -345,18 +357,30 @@ export default function CandidaturasPage() {
                                             </Box>
                                         </Stack>
 
-                                        {/* Actions */}
-                                        <Stack direction={{ xs: 'row', sm: 'column' }} spacing={1} alignItems={{ xs: 'center', sm: 'flex-end' }} flexShrink={0}>
-                                            <Tooltip title="Ver portfólio do creator">
-                                                <IconButton
-                                                    size="small"
-                                                    component={Link}
-                                                    href={`/dashboard/admin/criadores/${creator._id}?campaignId=${campaignId}`}
-                                                    target="_blank"
-                                                >
-                                                    <OpenProfileIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                        {/* Actions — mobile: coluna com botões full-width; desktop: coluna à direita */}
+                                        <Stack
+                                            direction={{ xs: 'column', sm: 'column' }}
+                                            spacing={1}
+                                            alignItems="stretch"
+                                            flexShrink={0}
+                                            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 140 } }}
+                                        >
+                                            <Button
+                                                component={Link}
+                                                href={`/dashboard/admin/criadores/${creator._id}?campaignId=${campaignId}`}
+                                                target="_blank"
+                                                variant="outlined"
+                                                size="small"
+                                                startIcon={<OpenProfileIcon />}
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    fontWeight: 600,
+                                                    fontSize: { xs: '0.8rem', sm: '0.78rem' },
+                                                    minHeight: { xs: 44, sm: 36 },
+                                                }}
+                                            >
+                                                Ver perfil
+                                            </Button>
 
                                             {app.status === 'pending' && (
                                                 <>
@@ -367,7 +391,12 @@ export default function CandidaturasPage() {
                                                         startIcon={isProcessing ? <CircularProgress size={14} color="inherit" /> : <ApproveIcon />}
                                                         onClick={() => handleApprove(app._id)}
                                                         disabled={isProcessing}
-                                                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', minWidth: 100 }}
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            fontSize: { xs: '0.8rem', sm: '0.78rem' },
+                                                            minHeight: { xs: 44, sm: 36 },
+                                                        }}
                                                     >
                                                         Aprovar
                                                     </Button>
@@ -378,7 +407,12 @@ export default function CandidaturasPage() {
                                                         startIcon={<RejectIcon />}
                                                         onClick={() => openRejectDialog(app._id)}
                                                         disabled={isProcessing}
-                                                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', minWidth: 100 }}
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            fontSize: { xs: '0.8rem', sm: '0.78rem' },
+                                                            minHeight: { xs: 44, sm: 36 },
+                                                        }}
                                                     >
                                                         Recusar
                                                     </Button>
@@ -393,10 +427,18 @@ export default function CandidaturasPage() {
                 )}
             </Paper>
 
-            {/* Reject dialog */}
-            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ fontWeight: 700 }}>Recusar candidatura</DialogTitle>
-                <DialogContent>
+            {/* Reject dialog — fullScreen no mobile para melhor uso */}
+            <Dialog
+                open={rejectDialogOpen}
+                onClose={() => setRejectDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                fullScreen={isMobile}
+            >
+                <DialogTitle sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                    Recusar candidatura
+                </DialogTitle>
+                <DialogContent sx={{ pt: { xs: 0, sm: 2 } }}>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Você pode informar um motivo para o creator entender por que foi recusado (opcional).
                     </Typography>
@@ -406,13 +448,17 @@ export default function CandidaturasPage() {
                         onChange={(e) => setRejectionReason(e.target.value)}
                         fullWidth
                         multiline
-                        rows={3}
+                        rows={isMobile ? 4 : 3}
                         size="small"
                         placeholder="Ex: Perfil não se encaixa no nicho da campanha..."
+                        sx={{ '& .MuiInputBase-root': { fontSize: { xs: '16px', sm: 'inherit' } } }}
                     />
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setRejectDialogOpen(false)} sx={{ textTransform: 'none' }}>
+                <DialogActions sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 3, sm: 2 }, pt: 0, flexDirection: { xs: 'column-reverse', sm: 'row' }, gap: 1 }}>
+                    <Button
+                        onClick={() => setRejectDialogOpen(false)}
+                        sx={{ textTransform: 'none', width: { xs: '100%', sm: 'auto' }, minHeight: { xs: 44, sm: 36 } }}
+                    >
                         Cancelar
                     </Button>
                     <Button
@@ -420,7 +466,12 @@ export default function CandidaturasPage() {
                         variant="contained"
                         color="error"
                         disabled={processingId === rejectingAppId}
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            width: { xs: '100%', sm: 'auto' },
+                            minHeight: { xs: 44, sm: 36 },
+                        }}
                     >
                         {processingId === rejectingAppId ? <CircularProgress size={18} color="inherit" /> : 'Confirmar recusa'}
                     </Button>

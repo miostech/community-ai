@@ -219,6 +219,7 @@ function PlatformButton({ platform, handle }: { platform: 'instagram' | 'tiktok'
         borderRadius: 2,
         fontSize: '0.88rem',
         py: 1,
+        minHeight: { xs: 44, sm: 40 },
         justifyContent: 'flex-start',
         px: 1.5,
         '&:hover': { opacity: 0.88, background: cfg.gradient },
@@ -239,7 +240,7 @@ function DateBadge({ label, value }: { label: string; value: string }) {
         px: 1.5,
         py: 0.75,
         textAlign: 'center',
-        minWidth: 88,
+        minWidth: { xs: '100%', sm: 88 },
         bgcolor: 'background.paper',
       }}
     >
@@ -430,8 +431,17 @@ export default function CampaignDetailDialog({
           >
             {campaign.title}
           </Typography>
-          <IconButton size="small" onClick={handleClose} sx={{ ml: 1, flexShrink: 0 }}>
-            <CloseIcon sx={{ fontSize: 18 }} />
+          <IconButton
+            size="small"
+            onClick={handleClose}
+            sx={{
+              ml: 1,
+              flexShrink: 0,
+              minWidth: { xs: 44, sm: 40 },
+              minHeight: { xs: 44, sm: 40 },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: { xs: 20, sm: 18 } }} />
           </IconButton>
         </Stack>
 
@@ -475,7 +485,13 @@ export default function CampaignDetailDialog({
           </Stack>
 
           {dates.length > 0 && (
-            <Stack direction="row" spacing={1} flexShrink={0} flexWrap="wrap" sx={{ gap: 1 }}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              flexShrink={0}
+              flexWrap="wrap"
+              sx={{ gap: 1, width: { xs: '100%', sm: 'auto' } }}
+            >
               {dates.map((d) => (
                 <DateBadge key={d.label} label={d.label} value={d.value} />
               ))}
@@ -649,7 +665,7 @@ export default function CampaignDetailDialog({
                         label={n}
                         size="small"
                         variant="outlined"
-                        sx={{ fontSize: '0.7rem', height: 22, borderRadius: 1.5 }}
+                        sx={{ fontSize: '0.7rem', height: { xs: 32, sm: 22 }, borderRadius: 1.5 }}
                       />
                     ))}
                   </Stack>
@@ -692,7 +708,7 @@ export default function CampaignDetailDialog({
                           label={`#${n.replace(/\s+/g, '')}`}
                           size="small"
                           variant="outlined"
-                          sx={{ fontSize: '0.7rem', height: 22, borderRadius: 1.5 }}
+                          sx={{ fontSize: '0.7rem', height: { xs: 32, sm: 22 }, borderRadius: 1.5 }}
                         />
                       ))}
                     </Stack>
@@ -1030,11 +1046,13 @@ export default function CampaignDetailDialog({
       <DialogActions
         sx={{
           px: { xs: 2, sm: 3 },
-          py: 1.75,
+          py: { xs: 2, sm: 1.75 },
           borderTop: '1px solid',
           borderColor: 'divider',
           flexShrink: 0,
           bgcolor: 'background.paper',
+          flexDirection: { xs: 'column-reverse', sm: 'row' },
+          gap: { xs: 1, sm: 0 },
         }}
       >
         {step === 'detail' ? (
@@ -1042,18 +1060,32 @@ export default function CampaignDetailDialog({
             <Button
               onClick={handleClose}
               size="small"
-              sx={{ textTransform: 'none', color: 'text.disabled', fontWeight: 500, fontSize: '0.8rem' }}
+              sx={{
+                textTransform: 'none',
+                color: 'text.disabled',
+                fontWeight: 500,
+                fontSize: '0.8rem',
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
+              }}
             >
               Não tenho interesse
             </Button>
-            <Box sx={{ flex: 1 }} />
+            <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
             {hasApplied ? (
               <Button
                 variant="outlined"
                 color="success"
                 startIcon={<CheckIcon />}
                 disabled
-                sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, px: 2.5 }}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  px: 2.5,
+                  width: { xs: '100%', sm: 'auto' },
+                  minHeight: { xs: 44, sm: 36 },
+                }}
               >
                 Candidatura enviada
               </Button>
@@ -1069,6 +1101,8 @@ export default function CampaignDetailDialog({
                   px: 3,
                   py: 1,
                   fontSize: '0.88rem',
+                  width: { xs: '100%', sm: 'auto' },
+                  minHeight: { xs: 44, sm: 36 },
                   background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   boxShadow: '0 2px 12px rgba(16,185,129,0.35)',
                   '&:hover': {
@@ -1087,11 +1121,17 @@ export default function CampaignDetailDialog({
             <Button
               onClick={handleBack}
               size="small"
-              sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 500 }}
+              sx={{
+                textTransform: 'none',
+                color: 'text.secondary',
+                fontWeight: 500,
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
+              }}
             >
               Voltar
             </Button>
-            <Box sx={{ flex: 1 }} />
+            <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
             <Button
               variant="contained"
               onClick={openTerms}
@@ -1102,6 +1142,8 @@ export default function CampaignDetailDialog({
                 px: 3,
                 py: 1,
                 fontSize: '0.88rem',
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
                 background: 'linear-gradient(135deg, #ec4899 0%, #9333ea 100%)',
                 boxShadow: '0 2px 12px rgba(147,51,234,0.3)',
                 '&:hover': {
@@ -1118,11 +1160,17 @@ export default function CampaignDetailDialog({
             <Button
               onClick={handleBack}
               size="small"
-              sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 500 }}
+              sx={{
+                textTransform: 'none',
+                color: 'text.secondary',
+                fontWeight: 500,
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
+              }}
             >
               Voltar
             </Button>
-            <Box sx={{ flex: 1 }} />
+            <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
             <Button
               variant="contained"
               onClick={openApply}
@@ -1134,6 +1182,8 @@ export default function CampaignDetailDialog({
                 px: 3,
                 py: 1,
                 fontSize: '0.88rem',
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
                 background: 'linear-gradient(135deg, #ec4899 0%, #9333ea 100%)',
                 boxShadow: '0 2px 12px rgba(147,51,234,0.3)',
                 '&:hover': {
@@ -1152,11 +1202,17 @@ export default function CampaignDetailDialog({
               onClick={handleBack}
               disabled={applying}
               size="small"
-              sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 500 }}
+              sx={{
+                textTransform: 'none',
+                color: 'text.secondary',
+                fontWeight: 500,
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
+              }}
             >
               Voltar
             </Button>
-            <Box sx={{ flex: 1 }} />
+            <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
             <Button
               onClick={handleApply}
               variant="contained"
@@ -1169,6 +1225,8 @@ export default function CampaignDetailDialog({
                 px: 3,
                 py: 1,
                 fontSize: '0.88rem',
+                width: { xs: '100%', sm: 'auto' },
+                minHeight: { xs: 44, sm: 36 },
                 background: 'linear-gradient(135deg, #ec4899 0%, #9333ea 100%)',
                 boxShadow: '0 2px 12px rgba(147,51,234,0.3)',
                 '&:hover': {
