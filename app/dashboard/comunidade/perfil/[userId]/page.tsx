@@ -72,6 +72,7 @@ type ProfileDisplay = CommunityUser | {
   avatar: string | null;
   initials: string;
   interactionCount: number;
+  rankingWins?: number;
   instagramProfile?: string;
   tiktokProfile?: string;
   youtubeProfile?: string;
@@ -328,12 +329,14 @@ export default function PerfilComunidadePage() {
   const [ownInteractionCount, setOwnInteractionCount] = useState<number>(0);
   const [ownCreatedAt, setOwnCreatedAt] = useState<string | null>(null);
   const [ownFollowersAtSignup, setOwnFollowersAtSignup] = useState<number | null>(null);
+  const [ownRankingWins, setOwnRankingWins] = useState<number>(0);
 
   useEffect(() => {
     if (!isOwnProfile || !account?.id) {
       setOwnInteractionCount(0);
       setOwnCreatedAt(null);
       setOwnFollowersAtSignup(null);
+      setOwnRankingWins(0);
       return;
     }
     fetch(`/api/accounts/public/${encodeURIComponent(account.id)}`)
@@ -349,6 +352,9 @@ export default function PerfilComunidadePage() {
           setOwnFollowersAtSignup(data.profile.followers_at_signup);
         } else {
           setOwnFollowersAtSignup(null);
+        }
+        if (data?.profile?.rankingWins != null) {
+          setOwnRankingWins(data.profile.rankingWins);
         }
       })
       .catch(() => { });
@@ -451,6 +457,7 @@ export default function PerfilComunidadePage() {
           avatar: profile?.avatar_url ?? null,
           initials: getInitialsFromName(name),
           interactionCount: profile?.interactionCount ?? 0,
+          rankingWins: profile?.rankingWins ?? 0,
           instagramProfile: profile?.link_instagram?.trim() || undefined,
           tiktokProfile: profile?.link_tiktok?.trim() || undefined,
           youtubeProfile: profile?.link_youtube?.trim() || undefined,
@@ -491,6 +498,7 @@ export default function PerfilComunidadePage() {
         avatar: avatar ?? null,
         initials: getInitialsFromName(name),
         interactionCount: ownInteractionCount,
+        rankingWins: ownRankingWins,
         instagramProfile,
         tiktokProfile,
         youtubeProfile,
@@ -502,7 +510,7 @@ export default function PerfilComunidadePage() {
       };
     }
     return resolvedFromList;
-  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownCreatedAt, ownFollowersAtSignup, ownCourseIds]);
+  }, [isOtherUserById, otherProfileData, otherProfileLoading, resolvedFromList, isOwnProfile, fullName, user?.name, user?.avatar, user?.instagramProfile, user?.tiktokProfile, account?.avatar_url, account?.link_instagram, account?.link_tiktok, account?.link_youtube, ownInteractionCount, ownRankingWins, ownCreatedAt, ownFollowersAtSignup, ownCourseIds]);
 
   const authorNameForPosts = profileUser ? (isOwnProfile ? (fullName || user?.name) ?? profileUser.name : profileUser.name) : '';
   // Posts para exibir no perfil (todos do tipo ProfilePostFromApi para consistência)
@@ -1223,6 +1231,21 @@ export default function PerfilComunidadePage() {
                     </Typography>
                   </Box>
                 </Link>
+              )}
+              {'rankingWins' in profileUser && profileUser.rankingWins != null && profileUser.rankingWins > 0 && (
+                <Tooltip title="Vezes que ficou em 1º lugar no ranking semanal" arrow placement="top">
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
+                      <TrophyIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {profileUser.rankingWins}x
+                      </Typography>
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      campeão
+                    </Typography>
+                  </Box>
+                </Tooltip>
               )}
               {socialStats !== null && (
                 <Tooltip

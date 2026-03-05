@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -11,17 +11,42 @@ import {
   CircularProgress,
   Stack,
   IconButton,
+  Chip,
   useTheme,
 } from '@mui/material';
-import { EmojiEvents as TrophyIcon, Leaderboard as LeaderboardIcon, Close as CloseIcon } from '@mui/icons-material';
+import {
+  EmojiEvents as TrophyIcon,
+  Leaderboard as LeaderboardIcon,
+  Close as CloseIcon,
+  CalendarMonth as CalendarIcon,
+  WorkspacePremium as MedalIcon,
+} from '@mui/icons-material';
 import { useStories } from '@/contexts/StoriesContext';
 import { useAccount } from '@/contexts/AccountContext';
 
+interface PastWinner {
+  accountId: string;
+  name: string;
+  avatar: string | null;
+  totalWins: number;
+  weeks: { weekStart: string; weekEnd: string; score: number }[];
+}
+
 export default function RankingPage() {
   const router = useRouter();
-  const { users, isLoading, error } = useStories();
+  const { users, week, isLoading, error } = useStories();
   const { account } = useAccount();
   const theme = useTheme();
+  const [pastWinners, setPastWinners] = useState<PastWinner[]>([]);
+
+  useEffect(() => {
+    fetch('/api/accounts/ranking-wins')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setPastWinners(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const userPosition = account?.id ? users.findIndex((u) => u.id === account.id) + 1 : 0;
   const userInRanking = account?.id && userPosition > 0;
@@ -55,7 +80,7 @@ export default function RankingPage() {
         pb: { xs: 10, md: 3 },
       }}
     >
-      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 3 }}>
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
         <LeaderboardIcon sx={{ fontSize: 28, color: 'primary.main' }} />
         <Typography variant="h5" fontWeight={700} sx={{ flex: 1 }}>
           Ranking da Comunidade
@@ -69,11 +94,19 @@ export default function RankingPage() {
         </IconButton>
       </Stack>
 
+      {week && (
+        <Stack direction="row" alignItems="center" gap={0.5} sx={{ mb: 2 }}>
+          <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+          <Typography variant="body2" color="text.secondary">
+            Semana {week.label}
+          </Typography>
+        </Stack>
+      )}
+
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Quem mais interagiu: curtidas dadas, curtidas recebidas, posts e comentários somam os pontos.
+        Quem mais interagiu esta semana: curtidas dadas, curtidas recebidas, posts e comentários somam os pontos. O ranking reseta toda segunda-feira.
       </Typography>
 
-      {/* Destaque atual */}
       {destaque && (
         <Paper
           elevation={0}
@@ -89,8 +122,21 @@ export default function RankingPage() {
           <Stack direction="row" alignItems="center" gap={1.5} sx={{ mb: 1.5 }}>
             <TrophyIcon sx={{ fontSize: 24, color: 'warning.main' }} />
             <Typography variant="subtitle1" fontWeight={700} color="warning.dark">
-              Destaque atual
+              Destaque da semana
             </Typography>
+            {destaque.rankingWins > 0 && (
+              <Chip
+                icon={<MedalIcon sx={{ fontSize: 16 }} />}
+                label={`${destaque.rankingWins}x campeão`}
+                size="small"
+                sx={{
+                  bgcolor: 'warning.light',
+                  color: 'warning.dark',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                }}
+              />
+            )}
           </Stack>
           <Link
             href={`/dashboard/comunidade/perfil/${destaque.id}`}
@@ -128,9 +174,8 @@ export default function RankingPage() {
         </Paper>
       )}
 
-      {/* Lista do ranking */}
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 600 }}>
-        Top 10
+        Top 10 da semana
       </Typography>
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
         {ranking.length === 0 ? (
@@ -181,9 +226,25 @@ export default function RankingPage() {
                     {!user.avatar && user.initials}
                   </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="body1" fontWeight={500} noWrap>
-                      {user.name}
-                    </Typography>
+                    <Stack direction="row" alignItems="center" gap={0.5}>
+                      <Typography variant="body1" fontWeight={500} noWrap>
+                        {user.name}
+                      </Typography>
+                      {user.rankingWins > 0 && (
+                        <Chip
+                          label={`${user.rankingWins}x`}
+                          size="small"
+                          sx={{
+                            height: 18,
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            bgcolor: 'warning.light',
+                            color: 'warning.dark',
+                            '& .MuiChip-label': { px: 0.5 },
+                          }}
+                        />
+                      )}
+                    </Stack>
                     {user.stats && (
                       <Typography variant="caption" color="text.secondary" noWrap display="block">
                         {user.stats.postsCount} posts · {user.stats.likesGiven + user.stats.likesReceived} curtidas · {user.stats.commentsCount} comentários
@@ -200,15 +261,82 @@ export default function RankingPage() {
         )}
       </Paper>
 
-      {/* Sua posição */}
       {account?.id && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
           {userInRanking ? (
-            <>Você está no {userPosition}º lugar</>
+            <>Você está no {userPosition}º lugar esta semana</>
           ) : (
-            <>Você ainda não está no top 20. Interaja no feed para subir.</>
+            <>Você ainda não está no top 10. Interaja no feed para subir!</>
           )}
         </Typography>
+      )}
+
+      {pastWinners.length > 0 && (
+        <Box sx={{ mt: 4 }}>
+          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1.5 }}>
+            <MedalIcon sx={{ fontSize: 22, color: 'warning.main' }} />
+            <Typography variant="subtitle1" fontWeight={700}>
+              Hall da Fama
+            </Typography>
+          </Stack>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Campeões semanais e quantas vezes ficaram em 1º lugar.
+          </Typography>
+          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+            <Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />}>
+              {pastWinners.map((winner) => (
+                <Link
+                  key={winner.accountId}
+                  href={`/dashboard/comunidade/perfil/${winner.accountId}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={2}
+                    sx={{
+                      px: 2,
+                      py: 1.5,
+                      '&:hover': { bgcolor: 'action.hover' },
+                      transition: 'background-color 0.2s',
+                    }}
+                  >
+                    <Avatar
+                      src={winner.avatar || undefined}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: !winner.avatar ? 'warning.light' : undefined,
+                        fontSize: '0.875rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {winner.name?.slice(0, 2).toUpperCase()}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body1" fontWeight={500} noWrap>
+                        {winner.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {winner.totalWins}x campeão
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={0.25}>
+                      {Array.from({ length: Math.min(winner.totalWins, 5) }).map((_, i) => (
+                        <TrophyIcon key={i} sx={{ fontSize: 18, color: 'warning.main' }} />
+                      ))}
+                      {winner.totalWins > 5 && (
+                        <Typography variant="caption" color="warning.main" fontWeight={700}>
+                          +{winner.totalWins - 5}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Stack>
+                </Link>
+              ))}
+            </Stack>
+          </Paper>
+        </Box>
       )}
     </Box>
   );

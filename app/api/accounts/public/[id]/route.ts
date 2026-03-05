@@ -5,6 +5,7 @@ import Account from '@/models/Account';
 import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
+import WeeklyRankingModel from '@/models/WeeklyRanking';
 import { getSubscriptionsByEmail } from '@/lib/kiwify';
 import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 import mongoose from 'mongoose';
@@ -99,8 +100,12 @@ export async function GET(
     const postsCount = postsCountResult[0]?.total ?? 0;
     const commentsCount = commentsResult[0]?.total ?? 0;
 
-    // Score = likes dados + likes recebidos (só de outros) + total de posts * 2 + comentários (só em posts de outros)
     const interactionCount = likesGiven + likesReceived + (postsCount * 2) + commentsCount;
+
+    const rankingWins = await WeeklyRankingModel.countDocuments({
+      account_id: accountId,
+      position: 1,
+    });
 
     const acc = account as {
       first_name?: string;
@@ -128,6 +133,7 @@ export async function GET(
         role: acc.role,
         is_founding_member: acc.is_founding_member === true,
         interactionCount,
+        rankingWins,
         stats: {
           likesGiven,
           likesReceived,

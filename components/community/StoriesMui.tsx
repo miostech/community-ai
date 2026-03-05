@@ -22,6 +22,7 @@ interface StoryUser {
     avatar: string | null;
     initials: string;
     interactionCount: number;
+    rankingWins: number;
     latestStoryAt?: number;
     instagramProfile?: string;
     tiktokProfile?: string;
@@ -100,7 +101,7 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                             onClick={(e: React.MouseEvent) => { e.stopPropagation(); }}
                             sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.5, textDecoration: 'none', cursor: 'pointer', '&:hover': { color: 'text.primary' } }}
                         >
-                            1º Ranking
+                            {first.rankingWins > 0 ? `1º · ${first.rankingWins}x` : '1º Ranking'}
                         </Typography>
                         {renderUser(first, true, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories)}
                     </Box>

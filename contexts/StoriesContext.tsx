@@ -8,6 +8,7 @@ export interface StoryUser {
     avatar: string | null;
     initials: string;
     interactionCount: number;
+    rankingWins: number;
     /** Timestamp (ms) do story mais recente — usado no feed para borda "não visto". */
     latestStoryAt?: number;
     stats?: {
@@ -22,14 +23,19 @@ export interface StoryUser {
     primarySocialLink?: 'instagram' | 'tiktok' | null;
 }
 
+export interface WeekInfo {
+    start: string;
+    end: string;
+    label: string;
+}
+
 interface StoriesContextType {
-    // Estado
     users: StoryUser[];
+    week: WeekInfo | null;
     isLoading: boolean;
     error: string | null;
     isInitialized: boolean;
 
-    // Ações
     fetchUsers: () => Promise<void>;
     refreshUsers: () => Promise<void>;
 }
@@ -38,11 +44,11 @@ const StoriesContext = createContext<StoriesContextType | undefined>(undefined);
 
 export function StoriesProvider({ children }: { children: React.ReactNode }) {
     const [users, setUsers] = useState<StoryUser[]>([]);
+    const [week, setWeek] = useState<WeekInfo | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
 
-    // Buscar usuários da API
     const fetchUsers = useCallback(async () => {
         try {
             setIsLoading(true);
@@ -55,7 +61,8 @@ export function StoriesProvider({ children }: { children: React.ReactNode }) {
             }
 
             const data = await response.json();
-            setUsers(data);
+            setUsers(data.users);
+            setWeek(data.week);
             setIsInitialized(true);
         } catch (err) {
             console.error('Erro ao buscar usuários para stories:', err);
@@ -65,12 +72,10 @@ export function StoriesProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    // Refresh (força nova busca)
     const refreshUsers = useCallback(async () => {
         await fetchUsers();
     }, [fetchUsers]);
 
-    // Buscar usuários automaticamente na primeira vez
     useEffect(() => {
         if (!isInitialized) {
             fetchUsers();
@@ -79,6 +84,7 @@ export function StoriesProvider({ children }: { children: React.ReactNode }) {
 
     const value: StoriesContextType = {
         users,
+        week,
         isLoading,
         error,
         isInitialized,
