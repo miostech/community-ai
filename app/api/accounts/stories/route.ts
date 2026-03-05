@@ -6,6 +6,8 @@ import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
 import StoryModel, { STORY_EXPIRY_HOURS } from '@/models/Story';
+import StoryCommentModel from '@/models/StoryComment';
+import SocialFollowModel from '@/models/SocialFollow';
 import WeeklyRankingModel from '@/models/WeeklyRanking';
 import mongoose from 'mongoose';
 import { getCurrentWeekBounds, formatWeekRange } from '@/lib/week-helpers';
@@ -68,14 +70,22 @@ export async function GET() {
             likesReceivedMap.set(item._id.toString(), item.count);
         });
 
-        // 3. Posts criados na semana
+        // 3. Posts criados na semana — separados por categoria (resultado = 4pts, outros = 2pts)
         const postsCountAgg = await Post.aggregate([
             { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true }, created_at: weekDateFilter } },
-            { $group: { _id: '$author_id', count: { $sum: 1 } } },
+            {
+                $group: {
+                    _id: '$author_id',
+                    resultadoCount: { $sum: { $cond: [{ $eq: ['$category', 'resultado'] }, 1, 0] } },
+                    otherCount: { $sum: { $cond: [{ $ne: ['$category', 'resultado'] }, 1, 0] } },
+                },
+            },
         ]);
-        const postsMap = new Map<string, number>();
-        postsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
-            postsMap.set(item._id.toString(), item.count);
+        const postsResultadoMap = new Map<string, number>();
+        const postsOtherMap = new Map<string, number>();
+        postsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; resultadoCount: number; otherCount: number }) => {
+            postsResultadoMap.set(item._id.toString(), item.resultadoCount);
+            postsOtherMap.set(item._id.toString(), item.otherCount);
         });
 
         // 4. Comentários na semana: só em posts de outros
@@ -89,6 +99,51 @@ export async function GET() {
         const commentsMap = new Map<string, number>();
         commentsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
             commentsMap.set(item._id.toString(), item.count);
+        });
+
+        // 5. Stories postados na semana (+1 ponto cada)
+        const storiesPostedAgg = await StoryModel.aggregate([
+            { $match: { account_id: { $in: accountIds }, created_at: weekDateFilter } },
+            { $group: { _id: '$account_id', count: { $sum: 1 } } },
+        ]);
+        const storiesPostedMap = new Map<string, number>();
+        storiesPostedAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            storiesPostedMap.set(item._id.toString(), item.count);
+        });
+
+        // 6. Comentários em stories de outros (excluir comentário no próprio story)
+        const storyCommentsAgg = await StoryCommentModel.aggregate([
+            { $match: { author_id: { $in: accountIds }, created_at: weekDateFilter } },
+            { $lookup: { from: 'stories', localField: 'story_id', foreignField: '_id', as: 'storyDoc' } },
+            { $unwind: '$storyDoc' },
+            { $match: { $expr: { $ne: ['$author_id', '$storyDoc.account_id'] } } },
+            { $group: { _id: '$author_id', count: { $sum: 1 } } },
+        ]);
+        const storyCommentsMap = new Map<string, number>();
+        storyCommentsAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            storyCommentsMap.set(item._id.toString(), item.count);
+        });
+
+        // 7. Likes dados em comentários de stories (excluir auto-like no próprio comentário)
+        const storyCommentLikesAgg = await StoryCommentModel.aggregate([
+            { $match: { created_at: weekDateFilter } },
+            { $unwind: '$likes' },
+            { $match: { $expr: { $ne: ['$likes', '$author_id'] }, likes: { $in: accountIds } } },
+            { $group: { _id: '$likes', count: { $sum: 1 } } },
+        ]);
+        const storyCommentLikesMap = new Map<string, number>();
+        storyCommentLikesAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            storyCommentLikesMap.set(item._id.toString(), item.count);
+        });
+
+        // 8. Social follows dados na semana (clicou no link social de outro membro, +2 pontos, 1x por par)
+        const socialFollowsAgg = await SocialFollowModel.aggregate([
+            { $match: { follower_id: { $in: accountIds }, created_at: weekDateFilter } },
+            { $group: { _id: '$follower_id', count: { $sum: 1 } } },
+        ]);
+        const socialFollowsMap = new Map<string, number>();
+        socialFollowsAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            socialFollowsMap.set(item._id.toString(), item.count);
         });
 
         // Buscar quantas vezes o #1 atual já venceu (position === 1)
@@ -138,12 +193,23 @@ export async function GET() {
 
             const likesGiven = likesGivenMap.get(accountIdStr) || 0;
             const likesReceived = likesReceivedMap.get(accountIdStr) || 0;
-            const postsCount = postsMap.get(accountIdStr) || 0;
+            const postsResultado = postsResultadoMap.get(accountIdStr) || 0;
+            const postsOther = postsOtherMap.get(accountIdStr) || 0;
             const commentsCount = commentsMap.get(accountIdStr) || 0;
+            const storiesPosted = storiesPostedMap.get(accountIdStr) || 0;
+            const storyCommentsGiven = storyCommentsMap.get(accountIdStr) || 0;
+            const storyCommentLikesGiven = storyCommentLikesMap.get(accountIdStr) || 0;
+            const socialFollows = socialFollowsMap.get(accountIdStr) || 0;
 
             const interactionScore = refundedAccountIds.has(accountIdStr)
                 ? 0
-                : likesGiven + likesReceived + (postsCount * 2) + commentsCount;
+                : likesGiven + likesReceived
+                  + (postsResultado * 4) + (postsOther * 2)
+                  + commentsCount
+                  + storiesPosted
+                  + storyCommentsGiven
+                  + storyCommentLikesGiven
+                  + (socialFollows * 2);
 
             const latestStoryAt = latestStoryAtMap.get(accountIdStr);
 
@@ -158,7 +224,7 @@ export async function GET() {
                 stats: {
                     likesGiven,
                     likesReceived,
-                    postsCount,
+                    postsCount: postsResultado + postsOther,
                     commentsCount,
                 },
                 instagramProfile: account.link_instagram || undefined,

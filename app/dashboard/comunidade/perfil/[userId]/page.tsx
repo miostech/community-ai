@@ -1355,6 +1355,11 @@ export default function PerfilComunidadePage() {
                       href={instagramUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        if (!isOwnProfile && profileAccountId) {
+                          fetch(`/api/accounts/${profileAccountId}/follow`, { method: 'POST' }).catch(() => {});
+                        }
+                      }}
                       variant="contained"
                       size="small"
                       startIcon={<InstagramIcon />}
@@ -1377,6 +1382,11 @@ export default function PerfilComunidadePage() {
                       href={tiktokUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        if (!isOwnProfile && profileAccountId) {
+                          fetch(`/api/accounts/${profileAccountId}/follow`, { method: 'POST' }).catch(() => {});
+                        }
+                      }}
                       variant="contained"
                       size="small"
                       startIcon={<TikTokIcon />}
@@ -1399,6 +1409,11 @@ export default function PerfilComunidadePage() {
                       href={youtubeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        if (!isOwnProfile && profileAccountId) {
+                          fetch(`/api/accounts/${profileAccountId}/follow`, { method: 'POST' }).catch(() => {});
+                        }
+                      }}
                       variant="contained"
                       size="small"
                       startIcon={<YouTubeIcon />}

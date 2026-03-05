@@ -5,6 +5,9 @@ import AccountPayment from '@/models/AccountPayment';
 import Post from '@/models/Post';
 import Like from '@/models/Like';
 import Comment from '@/models/Comment';
+import StoryModel from '@/models/Story';
+import StoryCommentModel from '@/models/StoryComment';
+import SocialFollowModel from '@/models/SocialFollow';
 import WeeklyRankingModel from '@/models/WeeklyRanking';
 import mongoose from 'mongoose';
 import { getPreviousWeekBounds } from '@/lib/week-helpers';
@@ -58,11 +61,19 @@ export async function GET(request: Request) {
 
         const postsCountAgg = await Post.aggregate([
             { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true }, created_at: weekDateFilter } },
-            { $group: { _id: '$author_id', count: { $sum: 1 } } },
+            {
+                $group: {
+                    _id: '$author_id',
+                    resultadoCount: { $sum: { $cond: [{ $eq: ['$category', 'resultado'] }, 1, 0] } },
+                    otherCount: { $sum: { $cond: [{ $ne: ['$category', 'resultado'] }, 1, 0] } },
+                },
+            },
         ]);
-        const postsMap = new Map<string, number>();
-        postsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
-            postsMap.set(item._id.toString(), item.count);
+        const postsResultadoMap = new Map<string, number>();
+        const postsOtherMap = new Map<string, number>();
+        postsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; resultadoCount: number; otherCount: number }) => {
+            postsResultadoMap.set(item._id.toString(), item.resultadoCount);
+            postsOtherMap.set(item._id.toString(), item.otherCount);
         });
 
         const commentsCountAgg = await Comment.aggregate([
@@ -75,6 +86,47 @@ export async function GET(request: Request) {
         const commentsMap = new Map<string, number>();
         commentsCountAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
             commentsMap.set(item._id.toString(), item.count);
+        });
+
+        const storiesPostedAgg = await StoryModel.aggregate([
+            { $match: { account_id: { $in: accountIds }, created_at: weekDateFilter } },
+            { $group: { _id: '$account_id', count: { $sum: 1 } } },
+        ]);
+        const storiesPostedMap = new Map<string, number>();
+        storiesPostedAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            storiesPostedMap.set(item._id.toString(), item.count);
+        });
+
+        const storyCommentsAgg = await StoryCommentModel.aggregate([
+            { $match: { author_id: { $in: accountIds }, created_at: weekDateFilter } },
+            { $lookup: { from: 'stories', localField: 'story_id', foreignField: '_id', as: 'storyDoc' } },
+            { $unwind: '$storyDoc' },
+            { $match: { $expr: { $ne: ['$author_id', '$storyDoc.account_id'] } } },
+            { $group: { _id: '$author_id', count: { $sum: 1 } } },
+        ]);
+        const storyCommentsMap = new Map<string, number>();
+        storyCommentsAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            storyCommentsMap.set(item._id.toString(), item.count);
+        });
+
+        const storyCommentLikesAgg = await StoryCommentModel.aggregate([
+            { $match: { created_at: weekDateFilter } },
+            { $unwind: '$likes' },
+            { $match: { $expr: { $ne: ['$likes', '$author_id'] }, likes: { $in: accountIds } } },
+            { $group: { _id: '$likes', count: { $sum: 1 } } },
+        ]);
+        const storyCommentLikesMap = new Map<string, number>();
+        storyCommentLikesAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            storyCommentLikesMap.set(item._id.toString(), item.count);
+        });
+
+        const socialFollowsAgg = await SocialFollowModel.aggregate([
+            { $match: { follower_id: { $in: accountIds }, created_at: weekDateFilter } },
+            { $group: { _id: '$follower_id', count: { $sum: 1 } } },
+        ]);
+        const socialFollowsMap = new Map<string, number>();
+        socialFollowsAgg.forEach((item: { _id: mongoose.Types.ObjectId; count: number }) => {
+            socialFollowsMap.set(item._id.toString(), item.count);
         });
 
         const accountEmails = accounts
@@ -99,11 +151,23 @@ export async function GET(request: Request) {
             const id = account._id.toString();
             const likesGiven = likesGivenMap.get(id) || 0;
             const likesReceived = likesReceivedMap.get(id) || 0;
-            const postsCount = postsMap.get(id) || 0;
+            const postsResultado = postsResultadoMap.get(id) || 0;
+            const postsOther = postsOtherMap.get(id) || 0;
             const commentsCount = commentsMap.get(id) || 0;
+            const storiesPosted = storiesPostedMap.get(id) || 0;
+            const storyCommentsGiven = storyCommentsMap.get(id) || 0;
+            const storyCommentLikesGiven = storyCommentLikesMap.get(id) || 0;
+            const socialFollows = socialFollowsMap.get(id) || 0;
+
             const score = refundedAccountIds.has(id)
                 ? 0
-                : likesGiven + likesReceived + (postsCount * 2) + commentsCount;
+                : likesGiven + likesReceived
+                  + (postsResultado * 4) + (postsOther * 2)
+                  + commentsCount
+                  + storiesPosted
+                  + storyCommentsGiven
+                  + storyCommentLikesGiven
+                  + (socialFollows * 2);
 
             const fullName = account.last_name
                 ? `${account.first_name} ${account.last_name}`.trim()
@@ -114,7 +178,7 @@ export async function GET(request: Request) {
                 account_name: fullName,
                 account_avatar: account.avatar_url || undefined,
                 score,
-                stats: { likesGiven, likesReceived, postsCount, commentsCount },
+                stats: { likesGiven, likesReceived, postsCount: postsResultado + postsOther, commentsCount },
             };
         });
 
