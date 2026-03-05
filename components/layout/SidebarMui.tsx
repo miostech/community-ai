@@ -184,7 +184,7 @@ export function SidebarMui() {
         return name.charAt(0).toUpperCase();
     };
 
-    const isModeratorOrAdmin = account?.role === 'moderator' || account?.role === 'admin';
+    const canAccessAdmin = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
 
     function renderNavItem(item: NavItem) {
         const isActive = item.exactMatch
@@ -356,7 +356,7 @@ export function SidebarMui() {
                     .map((item) => renderNavItem(item))}
 
                 {/* Admin/Moderador section */}
-                {isModeratorOrAdmin && (
+                {canAccessAdmin && (
                     <>
                         <Divider sx={{ mx: 2, my: 1 }} />
                         {adminNavItems.map((item) => renderNavItem(item))}

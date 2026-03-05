@@ -56,7 +56,7 @@ const bottomNavItems: NavItem[] = [
 export function MobileMenuMui() {
     const pathname = usePathname();
     const { account } = useAccount();
-    const isModeratorOrAdmin = account?.role === 'moderator' || account?.role === 'admin';
+    const canAccessAdmin = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
     const [isModalOpen, setIsModalOpen] = React.useState(false);
 
     // Observar se há modal aberto
@@ -182,7 +182,7 @@ export function MobileMenuMui() {
                         />
                     );
                 })}
-                {isModeratorOrAdmin && (
+                {canAccessAdmin && (
                     <BottomNavigationAction
                         component={Link}
                         href="/dashboard/admin"

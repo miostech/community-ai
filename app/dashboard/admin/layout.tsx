@@ -10,7 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const router = useRouter();
 
     React.useEffect(() => {
-        if (!isLoading && account && !['moderator', 'admin'].includes(account.role || '')) {
+        if (!isLoading && account && !['moderator', 'admin', 'criador'].includes(account.role || '')) {
             router.replace('/dashboard');
         }
     }, [account, isLoading, router]);
@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
-    if (!account || !['moderator', 'admin'].includes(account.role || '')) {
+    if (!account || !['moderator', 'admin', 'criador'].includes(account.role || '')) {
         return null;
     }
 
