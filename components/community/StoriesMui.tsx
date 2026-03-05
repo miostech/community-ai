@@ -40,7 +40,6 @@ export function StoriesMui({ users }: StoriesProps) {
         router.push(`/dashboard/comunidade/perfil/${user.id}`);
     };
 
-    /** Borda colorida só quando essa pessoa tem stories não vistos (mesma lógica do perfil). */
     const hasUnseenStories = (user: StoryUser) => {
         if (user.latestStoryAt == null) return false;
         try {
@@ -51,6 +50,10 @@ export function StoriesMui({ users }: StoriesProps) {
             return true;
         }
     };
+
+    const first = users[0];
+    const storyPosters = users.slice(1).filter((u) => u.latestStoryAt != null);
+    const displayUsers = first ? [first, ...storyPosters] : storyPosters;
 
     return (
         <Box
@@ -72,9 +75,8 @@ export function StoriesMui({ users }: StoriesProps) {
                     minWidth: 'min-content',
                 }}
             >
-                {users.map((user, index) => {
+                {displayUsers.map((user, index) => {
                         const isFirst = index === 0;
-                        /** Primeiro: arco dourado só se tiver stories; senão só troféu. Demais: arco colorido só se tiver stories não vistos */
                         const firstHasStories = isFirst && user.latestStoryAt != null;
                         const showRing = firstHasStories || (!isFirst && hasUnseenStories(user));
                         return (
@@ -101,7 +103,6 @@ export function StoriesMui({ users }: StoriesProps) {
                                 },
                             }}
                         >
-                            {/* Área fixa para o avatar (com ou sem borda) para todos ficarem alinhados */}
                             <Box
                                 sx={{
                                     ...AVATAR_AREA_SX,
@@ -111,7 +112,6 @@ export function StoriesMui({ users }: StoriesProps) {
                                     flexShrink: 0,
                                 }}
                             >
-                                {/* Borda colorida só quando tem stories não vistos; sem borda quando já viu todos */}
                                 {showRing ? (
                                     <Box
                                         sx={{
@@ -252,15 +252,17 @@ export function StoriesMui({ users }: StoriesProps) {
                                 {user.name.split(' ')[0]}
                             </Typography>
 
-                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
-                                <ThumbUpIcon sx={{ fontSize: 12, color: 'purple' }} />
-                                <Typography
-                                    variant="caption"
-                                    sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}
-                                >
-                                    {user.interactionCount}
-                                </Typography>
-                            </Stack>
+                            {isFirst && (
+                                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                                    <ThumbUpIcon sx={{ fontSize: 12, color: 'purple' }} />
+                                    <Typography
+                                        variant="caption"
+                                        sx={{ fontSize: 12, color: 'text.secondary', fontWeight: 500 }}
+                                    >
+                                        {user.interactionCount}
+                                    </Typography>
+                                </Stack>
+                            )}
                         </Box>
                         );
                 })}

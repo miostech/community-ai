@@ -342,7 +342,7 @@ export default function ComunidadePageMui() {
               variant="caption"
               color="text.secondary"
               sx={{
-                display: 'block',
+                display: 'none',
                 mb: 0.5,
                 textDecoration: 'none',
                 '&:hover': { color: 'text.primary', textDecoration: 'underline' },

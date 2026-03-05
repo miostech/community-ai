@@ -210,7 +210,7 @@ export default function RankingPage() {
         )}
       </Paper>
 
-      {/* Sua posição — embaixo do ranking, discreto */}
+      {/* Sua posição */}
       {account?.id && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
           {userInRanking ? (
