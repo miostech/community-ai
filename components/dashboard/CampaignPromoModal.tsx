@@ -17,7 +17,7 @@ const KIWIFY_URL = 'https://pay.kiwify.com.br/tuxuXlK';
 const DELAY_SECONDS = 10;
 
 export function CampaignPromoModal() {
-    const { account, subscription, isLoading, refreshAccount, updateAccount } = useAccount();
+    const { account, subscription, isLoading, refreshAccount, updateAccount, hasPhone } = useAccount();
     const firstName = account?.first_name?.trim() || '';
     const displayName = firstName ? `${firstName}, temos ` : 'Temos ';
     const [open, setOpen] = useState(false);
@@ -27,7 +27,8 @@ export function CampaignPromoModal() {
     const isActive = subscription?.status === 'active';
     const alreadyDismissed = Boolean(account?.campaign_promo_dismissed_at);
 
-    const shouldShow = !isLoading && isCampaignUser && isActive && !alreadyDismissed;
+    // Só mostra depois que cadastrou o telefone e acessou o feed (modal de telefone some antes)
+    const shouldShow = !isLoading && isCampaignUser && isActive && hasPhone && !alreadyDismissed;
 
     React.useEffect(() => {
         if (!shouldShow) return;

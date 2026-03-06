@@ -10,11 +10,9 @@ import { Input } from '@/components/ui/Input';
 import { SocialLoginBox } from '@/components/auth/SocialLoginBox';
 import { DomeLogo } from '@/components/ui/DomeLogo';
 
-function LoginContent() {
+function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: boolean }) {
   const { status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const messageEmailJaVinculado = searchParams.get('message') === 'email_ja_vinculado';
   const [isLoading, setIsLoading] = useState(false);
   const [kiwifyModalOpen, setKiwifyModalOpen] = useState(false);
   const [kiwifyStep, setKiwifyStep] = useState<1 | 2>(1);
@@ -336,10 +334,16 @@ function LoginPageFallback() {
   );
 }
 
+function LoginWithSearchParams() {
+  const searchParams = useSearchParams();
+  const messageEmailJaVinculado = searchParams.get('message') === 'email_ja_vinculado';
+  return <LoginContent messageEmailJaVinculado={messageEmailJaVinculado} />;
+}
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<LoginPageFallback />}>
-      <LoginContent />
+      <LoginWithSearchParams />
     </Suspense>
   );
 }
