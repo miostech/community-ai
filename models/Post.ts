@@ -48,6 +48,14 @@ export interface IPost extends Document {
     published_at?: Date;
 }
 
+const PollOptionSchema = new Schema(
+    {
+        text: { type: String, required: true, trim: true, maxlength: 200 },
+        votes_count: { type: Number, default: 0, min: 0 },
+    },
+    { _id: false }
+);
+
 const ReportSchema = new Schema<IReport>(
     {
         reporter_id: {
@@ -144,13 +152,7 @@ const PostSchema = new Schema<IPost>(
             maxlength: 300,
         },
         poll_options: {
-            type: [
-                {
-                    text: { type: String, required: true, trim: true, maxlength: 200 },
-                    votes_count: { type: Number, default: 0, min: 0 },
-                },
-            ],
-            default: undefined,
+            type: [PollOptionSchema],
             validate: {
                 validator(this: IPost, v: { text: string; votes_count: number }[]) {
                     if (!this.poll_question) return true;
