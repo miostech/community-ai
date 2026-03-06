@@ -61,7 +61,8 @@ export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps
     };
 
     const first = users[0];
-    const storyPosters = users.slice(1).filter((u) => u.latestStoryAt != null);
+    const rest = users.slice(1);
+    const storyPosters = rest.filter((u) => u.latestStoryAt != null);
     const sortedStoryPosters = [...storyPosters].sort((a, b) => {
         const aUnseen = hasUnseenStories(a);
         const bUnseen = hasUnseenStories(b);
@@ -69,6 +70,8 @@ export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps
         if (!aUnseen && bUnseen) return 1;
         return (b.latestStoryAt ?? 0) - (a.latestStoryAt ?? 0);
     });
+    /** Perfis sem story ativo, na ordem do ranking (mesma ordem de `users`). */
+    const rankingOnly = rest.filter((u) => u.latestStoryAt == null);
 
     const hasStories = sortedStoryPosters.length > 0;
 
@@ -122,10 +125,10 @@ export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps
                         <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5, pl: 0.5 }}>
                             <StoriesIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
                             <Typography variant="caption" sx={{ fontSize: 10, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                Stories
+                            Comunidade
                             </Typography>
                         </Stack>
-                        {hasStories || onAddStoryClick ? (
+                        {(hasStories || onAddStoryClick || rankingOnly.length > 0) ? (
                             <Stack direction="row" spacing={1.5} alignItems="flex-start">
                                 {onAddStoryClick && (
                                     <Box
@@ -180,6 +183,7 @@ export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps
                                     </Box>
                                 )}
                                 {sortedStoryPosters.map((user) => renderUser(user, false, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories))}
+                                {rankingOnly.map((user) => renderUser(user, false, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories))}
                             </Stack>
                         ) : (
                             <Typography variant="caption" sx={{ pl: 0.5, fontSize: 11, color: 'text.secondary' }}>
