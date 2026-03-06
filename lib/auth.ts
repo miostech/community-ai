@@ -279,9 +279,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 return url;
             }
 
-            // Fallback: redireciona para o dashboard/comunidade
-            console.log('📍 Fallback, redirecionando para:', `${baseUrl}/dashboard/comunidade`);
-            return `${baseUrl}/dashboard/comunidade`;
+            // Fallback: redireciona para o dashboard
+            console.log('📍 Fallback, redirecionando para:', `${baseUrl}/dashboard`);
+            return `${baseUrl}/dashboard`;
         },
     },
 });

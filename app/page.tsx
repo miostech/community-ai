@@ -144,7 +144,7 @@ export default function Home() {
   // Redireciona usuários autenticados para o dashboard
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard/comunidade');
+      router.push('/dashboard');
     }
   }, [status, router]);
 

@@ -144,7 +144,7 @@ export function PhoneInput({
               <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-lg shadow-xl z-20 max-h-80 overflow-y-auto">
                 {countryCodes.map((country) => (
                   <button
-                    key={country.code}
+                    key={country.country}
                     type="button"
                     onClick={() => {
                       onCountryCodeChange(country.code);

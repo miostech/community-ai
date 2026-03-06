@@ -39,7 +39,7 @@ export default function LoginKiwifyPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard/comunidade');
+      router.push('/dashboard');
     }
   }, [status, router]);
 

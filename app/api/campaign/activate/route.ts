@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         const campaignCookie = request.cookies.get(CAMPAIGN_COOKIE)?.value;
 
         if (!campaignCookie) {
-            return NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
+            return NextResponse.redirect(new URL('/dashboard', baseUrl));
         }
 
         await connectMongo();
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         });
 
         if (existingCampaignPayment) {
-            const response = NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
+            const response = NextResponse.redirect(new URL('/dashboard', baseUrl));
             response.cookies.set(CAMPAIGN_COOKIE, '', { path: '/', maxAge: 0 });
             return response;
         }
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         const accountCreatedAt = account.created_at ? new Date(account.created_at).getTime() : 0;
         const isNewAccount = accountCreatedAt && Date.now() - accountCreatedAt <= NEW_ACCOUNT_MAX_AGE_MS;
         if (!isNewAccount) {
-            const response = NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
+            const response = NextResponse.redirect(new URL('/dashboard', baseUrl));
             response.cookies.set(CAMPAIGN_COOKIE, '', { path: '/', maxAge: 0 });
             return response;
         }
@@ -117,12 +117,12 @@ export async function GET(request: NextRequest) {
             }
         );
 
-        const response = NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
+        const response = NextResponse.redirect(new URL('/dashboard', baseUrl));
         response.cookies.set(CAMPAIGN_COOKIE, '', { path: '/', maxAge: 0 });
 
         return response;
     } catch (error) {
         console.error('Erro ao ativar campanha:', error);
-        return NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
+        return NextResponse.redirect(new URL('/dashboard', baseUrl));
     }
 }

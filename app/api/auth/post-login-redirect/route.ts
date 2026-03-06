@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(
         redirectCookie
             ? new URL(decodeURIComponent(redirectCookie), request.url)
-            : new URL('/dashboard/comunidade', request.url)
+            : new URL('/dashboard', request.url)
     );
 
     // Remove o cookie após usar
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (redirectCookie) {
         console.log('✅ Redirecionando para:', decodeURIComponent(redirectCookie));
     } else {
-        console.log('📍 Sem cookie de redirect, indo para dashboard/comunidade');
+        console.log('📍 Sem cookie de redirect, indo para /dashboard');
     }
 
     return response;

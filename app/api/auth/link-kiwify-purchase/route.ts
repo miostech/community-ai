@@ -8,7 +8,7 @@ const COOKIE_MAX_AGE = 600; // 10 min
 
 export async function GET(request: NextRequest) {
   const baseUrl = request.nextUrl.origin;
-  const dashboardUrl = new URL('/dashboard/comunidade', baseUrl);
+  const dashboardUrl = new URL('/dashboard', baseUrl);
 
   try {
     const session = await auth();

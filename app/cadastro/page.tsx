@@ -21,7 +21,7 @@ export default function CadastroPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard/comunidade');
+      router.push('/dashboard');
     }
   }, [status, router]);
 
@@ -29,7 +29,7 @@ export default function CadastroPage() {
     setIsLoading(true);
     try {
       await signIn('google', {
-        redirectTo: '/dashboard/comunidade',
+        redirectTo: '/dashboard',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Google', err);
@@ -41,7 +41,7 @@ export default function CadastroPage() {
     setIsLoading(true);
     try {
       await signIn('apple', {
-        redirectTo: '/dashboard/comunidade',
+        redirectTo: '/dashboard',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Apple', err);

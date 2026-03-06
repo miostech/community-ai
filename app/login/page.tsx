@@ -24,7 +24,7 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
   // Redireciona para o dashboard se já estiver logado
   useEffect(() => {
     if (status === 'authenticated') {
-      router.push('/dashboard/comunidade');
+      router.push('/dashboard');
     }
   }, [status, router]);
 
@@ -50,7 +50,7 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
     setIsLoading(true);
     try {
       await signIn('google', {
-        redirectTo: '/dashboard/comunidade',
+        redirectTo: '/dashboard',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Google', err);
@@ -62,7 +62,7 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
     setIsLoading(true);
     try {
       await signIn('apple', {
-        redirectTo: '/dashboard/comunidade',
+        redirectTo: '/dashboard',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Apple', err);
@@ -157,7 +157,7 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
       const result = await signIn('kiwify', {
         email,
         password,
-        callbackUrl: '/dashboard/comunidade',
+        callbackUrl: '/dashboard',
         redirect: false,
       });
       if (result?.error) {
@@ -167,7 +167,7 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
       }
       if (result?.ok) {
         closeKiwifyModal();
-        router.push('/dashboard/comunidade');
+        router.push('/dashboard');
         return;
       }
       setIsLoading(false);
