@@ -9,7 +9,7 @@ import {
     Stack,
     Badge,
 } from '@mui/material';
-import { EmojiEvents as TrophyIcon, AutoAwesome as StoriesIcon } from '@mui/icons-material';
+import { EmojiEvents as TrophyIcon, AutoAwesome as StoriesIcon, Add as AddIcon } from '@mui/icons-material';
 
 const STORIES_SEEN_KEY = 'stories_seen_';
 /** Tamanho total da área do avatar (com borda = avatar + padding dos 2 anéis). Todos os itens usam esse tamanho para alinhar. */
@@ -33,9 +33,11 @@ interface StoriesProps {
     users: StoryUser[];
     /** Quando definido, ao clicar num usuário com stories, chama essa callback em vez de navegar ao perfil. */
     onStoryOpen?: (userId: string, userName: string) => void;
+    /** Quando definido, mostra um botão "+" para gravar/publicar story direto dali; ao clicar chama esta callback. */
+    onAddStoryClick?: () => void;
 }
 
-export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
+export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps) {
     const router = useRouter();
     const [pressedStory, setPressedStory] = useState<string | null>(null);
 
@@ -123,8 +125,60 @@ export function StoriesMui({ users, onStoryOpen }: StoriesProps) {
                                 Stories
                             </Typography>
                         </Stack>
-                        {hasStories ? (
-                            <Stack direction="row" spacing={1.5}>
+                        {hasStories || onAddStoryClick ? (
+                            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                                {onAddStoryClick && (
+                                    <Box
+                                        component="button"
+                                        onClick={onAddStoryClick}
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            flexShrink: 0,
+                                            minWidth: '64px',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            p: 0,
+                                            transition: 'transform 0.2s',
+                                            '&:hover': { transform: 'scale(1.05)' },
+                                            '&:active': { transform: 'scale(0.95)' },
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                ...AVATAR_AREA_SX,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                flexShrink: 0,
+                                                borderRadius: '50%',
+                                                border: '2px dashed',
+                                                borderColor: 'divider',
+                                                bgcolor: 'action.hover',
+                                            }}
+                                        >
+                                            <AddIcon sx={{ fontSize: 28, color: 'text.secondary' }} />
+                                        </Box>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                mt: 0.5,
+                                                fontWeight: 500,
+                                                fontSize: '0.675rem',
+                                                color: 'text.primary',
+                                                maxWidth: 58,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                                textAlign: 'center',
+                                            }}
+                                        >
+                                            Seu story
+                                        </Typography>
+                                    </Box>
+                                )}
                                 {sortedStoryPosters.map((user) => renderUser(user, false, handleStoryClick, pressedStory, setPressedStory, hasUnseenStories))}
                             </Stack>
                         ) : (

@@ -22,6 +22,7 @@ import {
   Bookmark as BookmarkIcon,
 } from '@mui/icons-material';
 import { StoriesMui } from '@/components/community/StoriesMui';
+import { AddStoryDialog } from '@/components/community/AddStoryDialog';
 import { PostCardMui } from '@/components/community/PostCardMui';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
@@ -54,7 +55,7 @@ export default function ComunidadePageMui() {
   } = usePosts();
 
   const { account, fullName, isSubscriptionActive, isLoading: isAccountLoading } = useAccount();
-  const { users: storyUsers } = useStories();
+  const { users: storyUsers, refreshUsers: refreshStories } = useStories();
   const pathname = usePathname();
   const publicProfileHref = account?.id ? `/dashboard/comunidade/perfil/${account.id}` : '/dashboard/perfil';
   const isProfileActive = pathname === publicProfileHref;
@@ -72,6 +73,7 @@ export default function ComunidadePageMui() {
   const [feedStories, setFeedStories] = useState<StoryItem[]>([]);
   const [feedStoryUserName, setFeedStoryUserName] = useState('');
   const [feedStoryUserId, setFeedStoryUserId] = useState<string | null>(null);
+  const [addStoryDialogOpen, setAddStoryDialogOpen] = useState(false);
 
   const handleStoryOpen = async (userId: string, userName: string) => {
     setFeedStoryUserName(userName);
@@ -359,7 +361,12 @@ export default function ComunidadePageMui() {
               bgcolor: 'background.paper',
             }}
           >
-            <StoriesMui users={storyUsers} onStoryOpen={handleStoryOpen} key={storiesSeenVersion} />
+            <StoriesMui
+              users={storyUsers}
+              onStoryOpen={handleStoryOpen}
+              onAddStoryClick={account ? () => setAddStoryDialogOpen(true) : undefined}
+              key={storiesSeenVersion}
+            />
           </Box>
         )}
 
@@ -495,6 +502,13 @@ export default function ComunidadePageMui() {
           onStoryViewed={(storyId) => {
             fetch(`/api/stories/${storyId}/view`, { method: 'POST' }).catch(() => {});
           }}
+        />
+
+        {/* Dialog: gravar/publicar story direto do feed */}
+        <AddStoryDialog
+          open={addStoryDialogOpen}
+          onClose={() => setAddStoryDialogOpen(false)}
+          onSuccess={() => refreshStories()}
         />
       </Box>
     </Box>

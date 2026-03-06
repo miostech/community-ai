@@ -21,6 +21,7 @@ import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 import { StoryViewer, type StoryItem, type ViewsByStory } from '@/components/community/StoryViewer';
+import { AddStoryDialog } from '@/components/community/AddStoryDialog';
 import { sortCourseIds, getCourseLabel, CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 import { useCourses } from '@/contexts/CoursesContext';
 
@@ -41,10 +42,6 @@ import {
   AppBar,
   Toolbar,
   Badge,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -541,8 +538,6 @@ export default function PerfilComunidadePage() {
   const [lastStoriesSeenAt, setLastStoriesSeenAt] = useState<number | null>(null);
   const STORIES_SEEN_KEY = 'stories_seen_';
   const [addStoryOpen, setAddStoryOpen] = useState(false);
-  const [addStoryFile, setAddStoryFile] = useState<File | null>(null);
-  const [addStoryUploading, setAddStoryUploading] = useState(false);
   /** Quem viu cada story (só no próprio perfil, preenchido ao abrir o viewer). */
   const [storyViewsByStory, setStoryViewsByStory] = useState<ViewsByStory>({});
 
@@ -699,65 +694,6 @@ export default function PerfilComunidadePage() {
             const i = profileStories.findIndex((s) => new Date(s.created_at).getTime() > lastStoriesSeenAt!);
             return i === -1 ? 0 : i;
           })();
-
-  const handleAddStorySubmit = async () => {
-    if (!addStoryFile) return;
-    setAddStoryUploading(true);
-    try {
-      const isVideo = addStoryFile.type.startsWith('video/');
-      // Mesmo fluxo do feed: upload direto (SAS) para foto e vídeo — evita limite de payload da API
-      const urlRes = await fetch('/api/stories/upload-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: isVideo ? 'video' : 'image',
-          fileName: addStoryFile.name,
-          contentType: addStoryFile.type,
-          fileSize: addStoryFile.size,
-        }),
-      });
-      if (!urlRes.ok) {
-        const data = await urlRes.json().catch(() => ({}));
-        throw new Error(data?.error || 'Erro ao gerar link de upload');
-      }
-      const { sasUrl, finalUrl, mediaType } = await urlRes.json();
-      const putRes = await fetch(sasUrl, {
-        method: 'PUT',
-        headers: { 'x-ms-blob-type': 'BlockBlob', 'Content-Type': addStoryFile.type },
-        body: addStoryFile,
-      });
-      if (!putRes.ok) {
-        throw new Error('Falha ao enviar o arquivo. Tente novamente.');
-      }
-      const res = await fetch('/api/stories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mediaUrl: finalUrl, mediaType }),
-      });
-      if (!res.ok) {
-        const contentType = res.headers.get('content-type') ?? '';
-        const data = contentType.includes('application/json') ? await res.json() : { error: await res.text() || 'Erro ao publicar' };
-        throw new Error(typeof data?.error === 'string' ? data.error : 'Erro ao publicar story');
-      }
-      setAddStoryOpen(false);
-      setAddStoryFile(null);
-      if (profileAccountId) {
-        const listRes = await fetch(`/api/accounts/${profileAccountId}/stories`);
-        if (listRes.ok) {
-          const list = await listRes.json();
-          setProfileStories(Array.isArray(list) ? list : []);
-        }
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '';
-      const mensagem = msg && !/expected pattern|fetch failed|network/i.test(msg)
-        ? `${msg} Tente novamente.`
-        : 'Algo deu errado ao publicar. Tente novamente.';
-      alert(mensagem);
-    } finally {
-      setAddStoryUploading(false);
-    }
-  };
 
   const handleLike = (postId: string) => {
     if (isOwnProfile) {
@@ -1849,57 +1785,21 @@ export default function PerfilComunidadePage() {
       />
 
       {/* Dialog: escolher foto ou vídeo e publicar */}
-      <Dialog
+      <AddStoryDialog
         open={addStoryOpen}
-        onClose={() => {
-          if (!addStoryUploading) {
-            setAddStoryOpen(false);
-            setAddStoryFile(null);
-          }
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Adicionar story</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Sua foto ou vídeo aparece no seu perfil público por 24 horas.
-          </Typography>
-          <Button
-            variant="outlined"
-            component="label"
-            fullWidth
-            startIcon={<PhotoLibraryIcon />}
-            sx={{ py: 2 }}
-          >
-            {addStoryFile ? addStoryFile.name : 'Escolher imagem ou vídeo'}
-            <input
-              type="file"
-              hidden
-              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/mov"
-              onChange={(e) => setAddStoryFile(e.target.files?.[0] ?? null)}
-            />
-          </Button>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setAddStoryOpen(false);
-              setAddStoryFile(null);
-            }}
-            disabled={addStoryUploading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleAddStorySubmit}
-            disabled={!addStoryFile || addStoryUploading}
-          >
-            {addStoryUploading ? 'Publicando...' : 'Publicar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={() => setAddStoryOpen(false)}
+        onSuccess={
+          profileAccountId
+            ? async () => {
+                const listRes = await fetch(`/api/accounts/${profileAccountId}/stories`);
+                if (listRes.ok) {
+                  const list = await listRes.json();
+                  setProfileStories(Array.isArray(list) ? list : []);
+                }
+              }
+            : undefined
+        }
+      />
     </Box>
   );
 }
