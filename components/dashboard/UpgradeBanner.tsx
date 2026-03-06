@@ -76,7 +76,6 @@ export function UpgradeBanner() {
     }, []);
 
     if (isLoading || !isSubscriptionActive || hidden) return null;
-    if (new Date() < new Date('2026-03-08T00:00:00-03:00')) return null;
     if (!isMonthlyPlan(subscription?.product_name, subscription?.plan_frequency)) return null;
 
     const handleDismiss = () => {
