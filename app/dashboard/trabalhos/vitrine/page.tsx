@@ -22,6 +22,7 @@ import {
   FormControl,
   InputLabel,
   Tooltip,
+  LinearProgress,
 } from '@mui/material';
 import {
   Badge as BadgeIcon,
@@ -51,8 +52,10 @@ interface Campaign {
   category?: string;
   niches: string[];
   slots: number;
+  slots_unlimited?: boolean;
   slots_filled: number;
   budget_per_creator?: number;
+  requires_invoice?: boolean;
   includes_product: boolean;
   product_description?: string;
   deliverables: string[];
@@ -257,8 +260,10 @@ function CampaignCard({
   const theme = useTheme();
   const compensation = getCompensationType(campaign);
   const compCfg = COMPENSATION_CONFIG[compensation];
-  const slotsLeft = campaign.slots - campaign.slots_filled;
-  const isFull = slotsLeft <= 0;
+  const slotsUnlimited = campaign.slots_unlimited === true;
+  const slotsLeft = slotsUnlimited ? null : campaign.slots - campaign.slots_filled;
+  const isFull = !slotsUnlimited && slotsLeft !== null && slotsLeft <= 0;
+  const slotsFilledPct = slotsUnlimited ? null : campaign.slots > 0 ? Math.round((campaign.slots_filled / campaign.slots) * 100) : 0;
   const days = daysUntil(campaign.application_deadline);
   const budget = formatBudget(campaign.budget_per_creator);
 
@@ -456,6 +461,50 @@ function CampaignCard({
               {budget} por creator
             </Typography>
           </Stack>
+        )}
+        {/* Nota fiscal — campanha paga */}
+        {compensation === 'paid' && campaign.requires_invoice && (
+          <Chip
+            size="small"
+            label="Precisa nota fiscal"
+            sx={{
+              mb: 1,
+              fontSize: '0.68rem',
+              height: 20,
+              borderRadius: 1,
+              bgcolor: alpha(theme.palette.info.main, 0.12),
+              color: 'info.dark',
+              border: '1px solid',
+              borderColor: alpha(theme.palette.info.main, 0.3),
+            }}
+          />
+        )}
+
+        {/* Vagas preenchidas — porcentagem (não mostramos número de vagas) */}
+        {!slotsUnlimited && slotsFilledPct !== null && (
+          <Box sx={{ mb: 1.5 }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+                Vagas preenchidas
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem', color: isFull ? 'error.main' : 'success.main' }}>
+                {slotsFilledPct}%
+              </Typography>
+            </Stack>
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(slotsFilledPct, 100)}
+              sx={{
+                height: 6,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.success.main, 0.12),
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: isFull ? 'error.main' : 'success.main',
+                  borderRadius: 1,
+                },
+              }}
+            />
+          </Box>
         )}
 
         {/* Deadline */}

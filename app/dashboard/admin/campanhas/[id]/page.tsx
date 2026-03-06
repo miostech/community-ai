@@ -38,10 +38,12 @@ interface CampaignData {
     category: string;
     niches: string[];
     slots: number;
+    slots_unlimited?: boolean;
     slots_filled: number;
     budget_per_creator?: number;
     payment_type?: 'per_post' | 'per_views';
     budget_per_1000_views?: number;
+    requires_invoice?: boolean;
     includes_product: boolean;
     product_description?: string;
     deliverables: string[];
@@ -184,10 +186,12 @@ export default function EditCampanhaPage() {
         category: campaign.category || '',
         niches: campaign.niches || [],
         slots: campaign.slots,
+        slots_unlimited: campaign.slots_unlimited ?? false,
         compensation_type: compensationType,
         paid_payment_type: campaign.payment_type === 'per_views' ? 'per_views' : 'per_post',
         budget_per_creator: campaign.budget_per_creator ? String(campaign.budget_per_creator / 100) : '',
         budget_per_1000_views: campaign.budget_per_1000_views ? String(campaign.budget_per_1000_views / 100) : '',
+        requires_invoice: campaign.requires_invoice ?? false,
         includes_product: campaign.includes_product,
         product_description: compensationType === 'product' ? (campaign.product_description || '') : '',
         affiliate_commission: affiliateCommission,
@@ -236,7 +240,7 @@ export default function EditCampanhaPage() {
                         <Chip label={cfg.label} color={cfg.color} size="small" sx={{ fontWeight: 600 }} />
                     </Stack>
                     <Typography variant="body2" color="text.secondary">
-                        {campaign.brand_name} · {campaign.slots_filled}/{campaign.slots} vagas preenchidas
+                        {campaign.brand_name} · {campaign.slots_unlimited ? 'Sem limite de vagas' : `${campaign.slots_filled}/${campaign.slots} vagas preenchidas`}
                     </Typography>
                 </Box>
 

@@ -21,6 +21,8 @@ import {
     InputAdornment,
     alpha,
     useTheme,
+    Checkbox,
+    FormControlLabel,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -46,8 +48,10 @@ export interface CampaignFormData {
     category: string;
     niches: string[];
     slots: number;
+    slots_unlimited: boolean;
     compensation_type: CompensationType;
     paid_payment_type: 'per_post' | 'per_views';
+    requires_invoice: boolean;
     budget_per_creator: string;
     budget_per_1000_views: string;
     includes_product: boolean;
@@ -82,8 +86,10 @@ const EMPTY_FORM: CampaignFormData = {
     category: '',
     niches: [],
     slots: 1,
+    slots_unlimited: false,
     compensation_type: 'paid',
     paid_payment_type: 'per_post',
+    requires_invoice: false,
     budget_per_creator: '',
     budget_per_1000_views: '',
     includes_product: false,
@@ -405,10 +411,12 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
 
         const payload = {
             ...form,
-            slots: Number(form.slots),
+            slots: form.slots_unlimited ? 1 : Number(form.slots),
+            slots_unlimited: form.slots_unlimited,
             budget_per_creator: isPaidPerPost && form.budget_per_creator ? Number(form.budget_per_creator) * 100 : isPaidPerViews ? 0 : undefined,
             payment_type: isPaid ? form.paid_payment_type : undefined,
             budget_per_1000_views: isPaidPerViews && form.budget_per_1000_views ? Number(form.budget_per_1000_views) * 100 : undefined,
+            requires_invoice: isPaid ? form.requires_invoice : undefined,
             includes_product: isProduct,
             product_description: isProduct ? form.product_description : undefined,
             // Store affiliate info in product_description field with a prefix when type is affiliate
@@ -716,17 +724,30 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                     {/* Vagas — sempre visível */}
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField
-                                label="Número de vagas *"
-                                type="number"
-                                value={form.slots}
-                                onChange={(e) => setField('slots', Number(e.target.value))}
-                                fullWidth
-                                required
-                                size="small"
-                                inputProps={{ min: 1 }}
-                                helperText="Quantos creators serão selecionados para essa campanha"
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={!!form.slots_unlimited}
+                                        onChange={(e) => setField('slots_unlimited', e.target.checked)}
+                                        size="small"
+                                    />
+                                }
+                                label="Sem limite de vagas"
+                                sx={{ mb: 1, display: 'block', '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
                             />
+                            {!form.slots_unlimited && (
+                                <TextField
+                                    label="Número de vagas *"
+                                    type="number"
+                                    value={form.slots}
+                                    onChange={(e) => setField('slots', Number(e.target.value))}
+                                    fullWidth
+                                    required
+                                    size="small"
+                                    inputProps={{ min: 1 }}
+                                    helperText="Quantos creators serão selecionados para essa campanha"
+                                />
+                            )}
                         </Grid>
 
                         {/* Campos condicionais por tipo — campanha paga */}
@@ -799,6 +820,19 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                                         />
                                     </Grid>
                                 )}
+                                <Grid size={{ xs: 12 }}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={!!form.requires_invoice}
+                                                onChange={(e) => setField('requires_invoice', e.target.checked)}
+                                                size="small"
+                                            />
+                                        }
+                                        label="Exige nota fiscal do creator (será exibido na vitrine para quem for se inscrever)"
+                                        sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
+                                    />
+                                </Grid>
                             </>
                         )}
 

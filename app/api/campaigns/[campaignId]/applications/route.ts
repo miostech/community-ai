@@ -108,7 +108,8 @@ export async function POST(
         if (campaign.status !== 'active') {
             return NextResponse.json({ error: 'Esta campanha não está aceitando candidaturas.' }, { status: 400 });
         }
-        if (campaign.slots_filled >= campaign.slots) {
+        const slotsUnlimited = campaign.slots_unlimited === true;
+        if (!slotsUnlimited && campaign.slots_filled >= campaign.slots) {
             return NextResponse.json({ error: 'Todas as vagas já foram preenchidas.' }, { status: 400 });
         }
         if (campaign.application_deadline && new Date() > campaign.application_deadline) {

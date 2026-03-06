@@ -32,8 +32,10 @@ export interface ICampaign extends Document {
         max_followers?: number;
     };
 
-    /** Número de vagas para creators */
+    /** Número de vagas para creators (ignorado quando slots_unlimited é true) */
     slots: number;
+    /** Sem limite de vagas — aceita candidaturas ilimitadas */
+    slots_unlimited?: boolean;
     /** Vagas já preenchidas (desnormalizado) */
     slots_filled: number;
 
@@ -43,6 +45,8 @@ export interface ICampaign extends Document {
     payment_type?: 'per_post' | 'per_views';
     /** Valor pago a cada 1.000 visualizações (em centavos BRL) — usado quando payment_type é per_views */
     budget_per_1000_views?: number;
+    /** Campanha paga exige nota fiscal do creator (exibido na vitrine) */
+    requires_invoice?: boolean;
     /** Inclui produto grátis */
     includes_product: boolean;
     product_description?: string;
@@ -108,11 +112,13 @@ const CampaignSchema = new Schema<ICampaign>(
         },
 
         slots: { type: Number, required: true, min: 1 },
+        slots_unlimited: { type: Boolean, default: false },
         slots_filled: { type: Number, default: 0, min: 0 },
 
         budget_per_creator: { type: Number },
         payment_type: { type: String, enum: ['per_post', 'per_views'], trim: true },
         budget_per_1000_views: { type: Number },
+        requires_invoice: { type: Boolean, default: false },
         includes_product: { type: Boolean, default: false },
         product_description: { type: String, trim: true },
 

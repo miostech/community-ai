@@ -42,6 +42,7 @@ interface Campaign {
     content_type: string;
     niches: string[];
     slots: number;
+    slots_unlimited?: boolean;
     slots_filled: number;
     applications_count: number;
     created_at: string;
@@ -289,7 +290,7 @@ export default function AdminCampanhasPage() {
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary">·</Typography>
                                                         <Typography variant="caption" color="text.secondary">
-                                                            {campaign.slots_filled}/{campaign.slots} vagas
+                                                            {campaign.slots_unlimited ? 'Sem limite de vagas' : `${campaign.slots_filled}/${campaign.slots} vagas`}
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary">·</Typography>
                                                         <Typography variant="caption" color="text.secondary">

@@ -61,7 +61,7 @@ export async function PATCH(
             'title', 'description', 'briefing',
             'content_type', 'content_usage',
             'category', 'niches', 'filters',
-            'slots', 'budget_per_creator', 'payment_type', 'budget_per_1000_views',
+            'slots', 'slots_unlimited', 'budget_per_creator', 'payment_type', 'budget_per_1000_views', 'requires_invoice',
             'includes_product', 'product_description',
             'deliverables',
             'application_deadline', 'content_deadline', 'start_date',

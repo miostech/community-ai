@@ -19,6 +19,7 @@ import {
   Divider,
   IconButton,
   Grid,
+  LinearProgress,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -49,8 +50,10 @@ export interface CampaignDetail {
   category?: string;
   niches: string[];
   slots: number;
+  slots_unlimited?: boolean;
   slots_filled: number;
   budget_per_creator?: number;
+  requires_invoice?: boolean;
   includes_product: boolean;
   product_description?: string;
   deliverables: string[];
@@ -355,8 +358,10 @@ export default function CampaignDetailDialog({
   const compensation = getCompensationType(campaign);
   const compCfg = COMPENSATION_CONFIG[compensation];
   const budget = formatBudget(campaign.budget_per_creator);
-  const slotsLeft = campaign.slots - campaign.slots_filled;
-  const isFull = slotsLeft <= 0;
+  const slotsUnlimited = campaign.slots_unlimited === true;
+  const slotsLeft = slotsUnlimited ? null : campaign.slots - campaign.slots_filled;
+  const isFull = !slotsUnlimited && slotsLeft !== null && slotsLeft <= 0;
+  const slotsFilledPct = slotsUnlimited ? null : campaign.slots > 0 ? Math.round((campaign.slots_filled / campaign.slots) * 100) : 0;
   const platform = CONTENT_TYPE_PLATFORMS[campaign.content_type];
   const audienceLabel = buildAudienceLabel(campaign);
 
@@ -562,31 +567,47 @@ export default function CampaignDetailDialog({
                   </Typography>
                 </Box>
 
-                {/* Slots pill */}
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    px: 1.25,
-                    py: 0.5,
-                    borderRadius: 6,
-                    bgcolor: isFull ? alpha('#ef4444', 0.08) : alpha('#10b981', 0.08),
-                    border: '1px solid',
-                    borderColor: isFull ? alpha('#ef4444', 0.2) : alpha('#10b981', 0.2),
-                  }}
-                >
-                  <ClockIcon sx={{ fontSize: 11, color: isFull ? 'error.main' : 'success.main' }} />
-                  <Typography
+                {/* Vagas preenchidas — porcentagem (não mostramos número de vagas) */}
+                {slotsUnlimited ? (
+                  <Box
                     sx={{
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      color: isFull ? 'error.main' : 'success.main',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      px: 1.25,
+                      py: 0.5,
+                      borderRadius: 6,
+                      bgcolor: alpha('#10b981', 0.08),
+                      border: '1px solid',
+                      borderColor: alpha('#10b981', 0.2),
                     }}
                   >
-                    {isFull ? 'Vagas esgotadas' : `${slotsLeft} vaga${slotsLeft !== 1 ? 's' : ''}`}
-                  </Typography>
-                </Box>
+                    <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: 'success.main' }}>
+                      Sem limite de vagas
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ minWidth: 100 }}>
+                    <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.25 }}>
+                      <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, color: isFull ? 'error.main' : 'success.main' }}>
+                        {slotsFilledPct}% preenchido
+                      </Typography>
+                    </Stack>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.min(slotsFilledPct ?? 0, 100)}
+                      sx={{
+                        height: 6,
+                        borderRadius: 1,
+                        bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: isFull ? 'error.main' : 'success.main',
+                          borderRadius: 1,
+                        },
+                      }}
+                    />
+                  </Box>
+                )}
               </Stack>
 
               {/* Payment notice */}
@@ -609,11 +630,29 @@ export default function CampaignDetailDialog({
                   ) : (
                     <ProductIcon sx={{ fontSize: 16, color: '#6366f1', mt: 0.1, flexShrink: 0 }} />
                   )}
-                  <Typography variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.5, color: 'text.secondary' }}>
-                    {budget
-                  ? `Remuneração de ${budget} por creator`
-                  : 'O pagamento desta campanha é exclusivamente em produto.'}
-                  </Typography>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.5, color: 'text.secondary' }}>
+                      {budget
+                        ? `Remuneração de ${budget} por creator`
+                        : 'O pagamento desta campanha é exclusivamente em produto.'}
+                    </Typography>
+                    {budget && campaign.requires_invoice && (
+                      <Chip
+                        size="small"
+                        label="Precisa nota fiscal"
+                        sx={{
+                          mt: 1,
+                          fontSize: '0.7rem',
+                          height: 22,
+                          borderRadius: 1,
+                          bgcolor: (t) => alpha(t.palette.info.main, 0.12),
+                          color: 'info.dark',
+                          border: '1px solid',
+                          borderColor: (t) => alpha(t.palette.info.main, 0.3),
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Box>
               )}
 
