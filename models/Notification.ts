@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign';
 
 export interface INotification extends Document {
     _id: mongoose.Types.ObjectId;
@@ -10,6 +10,7 @@ export interface INotification extends Document {
     post_id?: mongoose.Types.ObjectId; // Post relacionado (se houver)
     comment_id?: mongoose.Types.ObjectId; // Comentário relacionado (se houver)
     story_id?: mongoose.Types.ObjectId; // Story relacionado (se houver)
+    campaign_id?: mongoose.Types.ObjectId; // Campanha (nova campanha ativada)
     content_preview?: string; // Preview do conteúdo (comentário, post, etc)
     is_read: boolean;
     created_at: Date;
@@ -31,7 +32,7 @@ const NotificationSchema = new Schema<INotification>(
         },
         type: {
             type: String,
-            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment'],
+            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment', 'new_campaign'],
             required: true,
         },
         post_id: {
@@ -47,6 +48,11 @@ const NotificationSchema = new Schema<INotification>(
         story_id: {
             type: Schema.Types.ObjectId,
             ref: 'Story',
+            default: null,
+        },
+        campaign_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'Campaign',
             default: null,
         },
         content_preview: {
@@ -68,9 +74,9 @@ const NotificationSchema = new Schema<INotification>(
 // Índice composto para buscar notificações não lidas de um usuário
 NotificationSchema.index({ recipient_id: 1, is_read: 1, created_at: -1 });
 
-// Índice para evitar notificações duplicadas
+// Índice para evitar notificações duplicadas (campaign_id para tipo new_campaign)
 NotificationSchema.index(
-    { recipient_id: 1, actor_id: 1, type: 1, post_id: 1, comment_id: 1 },
+    { recipient_id: 1, actor_id: 1, type: 1, post_id: 1, comment_id: 1, campaign_id: 1 },
     { unique: true, sparse: true }
 );
 

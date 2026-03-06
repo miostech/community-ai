@@ -23,9 +23,10 @@ import {
     AlternateEmail as MentionIcon,
     Gavel as ModerationIcon,
     AutoStories as StoryCommentIcon,
+    Campaign as CampaignIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign';
 
 export interface NotificationItem {
     id: string;
@@ -41,6 +42,7 @@ export interface NotificationItem {
     comment_id?: string;
     story_id?: string;
     story_owner_id?: string;
+    campaign_id?: string;
     content_preview?: string;
     likes_count?: number;
 }
@@ -84,6 +86,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'comentou no seu story';
         case 'subscription_cancel_request':
             return 'solicitou o cancelamento da assinatura';
+        case 'new_campaign':
+            return 'disponível!';
         default:
             return 'interagiu';
     }
@@ -105,6 +109,8 @@ function getNotificationIcon(type: NotificationType) {
             return <StoryCommentIcon sx={{ fontSize: 14, color: 'secondary.main' }} />;
         case 'subscription_cancel_request':
             return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
+        case 'new_campaign':
+            return <CampaignIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         default:
             return null;
     }
@@ -218,13 +224,15 @@ export function NotificationsButtonMui() {
                             key={n.id}
                             component={Link}
                             href={
-                                n.type === 'subscription_cancel_request'
-                                    ? `/dashboard/comunidade/perfil/${n.actor.id}`
-                                    : n.type === 'story_comment' && n.story_owner_id
-                                        ? `/dashboard/comunidade/perfil/${n.story_owner_id}`
-                                        : n.post_id
-                                            ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
-                                            : '#'
+                                n.type === 'new_campaign'
+                                    ? '/dashboard/trabalhos/vitrine'
+                                    : n.type === 'subscription_cancel_request'
+                                        ? `/dashboard/comunidade/perfil/${n.actor.id}`
+                                        : n.type === 'story_comment' && n.story_owner_id
+                                            ? `/dashboard/comunidade/perfil/${n.story_owner_id}`
+                                            : n.post_id
+                                                ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
+                                                : '#'
                             }
                             onClick={handleClose}
                             sx={{
@@ -257,15 +265,27 @@ export function NotificationsButtonMui() {
                             <ListItemText
                                 primary={
                                     <Typography variant="body2" fontWeight={n.is_read ? 400 : 600} style={{ textWrap: "wrap" }}>
-                                        <Typography component="span" fontWeight={600}>
-                                            {n.actor.name}
-                                        </Typography>{' '}
-                                        {getNotificationLabel(n)}
+                                        {n.type === 'new_campaign' ? (
+                                            <>
+                                                Campanha{' '}
+                                                <Typography component="span" fontWeight={600}>
+                                                    {n.content_preview || 'Nova campanha'}
+                                                </Typography>{' '}
+                                                {getNotificationLabel(n)}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Typography component="span" fontWeight={600}>
+                                                    {n.actor.name}
+                                                </Typography>{' '}
+                                                {getNotificationLabel(n)}
+                                            </>
+                                        )}
                                     </Typography>
                                 }
                                 secondary={
                                     <Box component="span">
-                                        {n.content_preview && (
+                                        {n.content_preview && n.type !== 'new_campaign' && (
                                             <Typography
                                                 variant="caption"
                                                 color="text.secondary"

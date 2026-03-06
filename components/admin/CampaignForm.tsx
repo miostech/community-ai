@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Box,
@@ -27,6 +27,8 @@ import {
     AttachMoney as MoneyIcon,
     ShoppingBag as ProductIcon,
     Link as AffiliateIcon,
+    PhotoCamera as PhotoCameraIcon,
+    DeleteOutline as DeleteIcon,
 } from '@mui/icons-material';
 
 export type CompensationType = 'paid' | 'product' | 'affiliate';
@@ -162,6 +164,154 @@ function buildDeliverablesFromQuantities(quantities: Record<string, number>, oth
         .filter((t) => (quantities[t] ?? 0) > 0)
         .map((t) => `${quantities[t]} ${t}`);
     return [...fromQty, ...other];
+}
+
+function BrandLogoUpload({
+    value,
+    onChange,
+    disabled,
+}: {
+    value: string;
+    onChange: (url: string) => void;
+    disabled?: boolean;
+}) {
+    const theme = useTheme();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || disabled || uploading) return;
+        if (!file.type.startsWith('image/')) {
+            setUploadError('Selecione uma imagem (JPG, PNG, WebP ou GIF).');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setUploadError('Imagem muito grande. Máximo 10MB.');
+            return;
+        }
+        setUploadError('');
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('type', 'image');
+            formData.append('files', file);
+            const res = await fetch('/api/posts/media', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erro no upload');
+            const url = data.urls?.[0];
+            if (url) onChange(url);
+        } catch (err) {
+            setUploadError(err instanceof Error ? err.message : 'Erro ao enviar imagem');
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleRemove = () => {
+        if (disabled || uploading) return;
+        onChange('');
+        setUploadError('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    return (
+        <Box>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+            />
+            {value ? (
+                <Box
+                    sx={{
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        p: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                    }}
+                >
+                    <Box
+                        component="img"
+                        src={value}
+                        alt="Logo da marca"
+                        sx={{
+                            width: 64,
+                            height: 64,
+                            objectFit: 'contain',
+                            borderRadius: 1,
+                            bgcolor: alpha(theme.palette.grey[500], 0.08),
+                        }}
+                    />
+                    <Stack direction="row" spacing={1} flex={1}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <PhotoCameraIcon />}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={disabled || uploading}
+                        >
+                            {uploading ? 'Enviando...' : 'Trocar'}
+                        </Button>
+                        <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            startIcon={<DeleteIcon />}
+                            onClick={handleRemove}
+                            disabled={disabled || uploading}
+                        >
+                            Remover
+                        </Button>
+                    </Stack>
+                </Box>
+            ) : (
+                <Box
+                    onClick={() => !disabled && !uploading && fileInputRef.current?.click()}
+                    sx={{
+                        border: 2,
+                        borderStyle: 'dashed',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        p: 3,
+                        textAlign: 'center',
+                        cursor: disabled || uploading ? 'default' : 'pointer',
+                        bgcolor: alpha(theme.palette.primary.main, 0.02),
+                        '&:hover': (disabled || uploading) ? {} : { borderColor: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                    }}
+                >
+                    {uploading ? (
+                        <Stack alignItems="center" spacing={1}>
+                            <CircularProgress size={32} />
+                            <Typography variant="body2" color="text.secondary">Enviando logo...</Typography>
+                        </Stack>
+                    ) : (
+                        <>
+                            <PhotoCameraIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                            <Typography variant="body2" color="text.secondary" display="block">
+                                Clique para selecionar uma imagem
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                JPG, PNG, WebP ou GIF. Máx. 10MB
+                            </Typography>
+                        </>
+                    )}
+                </Box>
+            )}
+            {uploadError && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                    {uploadError}
+                </Typography>
+            )}
+        </Box>
+    );
 }
 
 interface Props {
@@ -351,13 +501,13 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField
-                                label="Logo da marca (URL)"
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                                Logo da marca
+                            </Typography>
+                            <BrandLogoUpload
                                 value={form.brand_logo}
-                                onChange={(e) => setField('brand_logo', e.target.value)}
-                                fullWidth
-                                size="small"
-                                placeholder="https://..."
+                                onChange={(url) => setField('brand_logo', url)}
+                                disabled={loading}
                             />
                         </Grid>
                     </Grid>
@@ -384,7 +534,8 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                             multiline
                             rows={3}
                             size="small"
-                            helperText="Resumo da campanha para os creators verem na vitrine."
+                            inputProps={{ maxLength: 500 }}
+                            helperText={`Resumo da campanha para os creators verem na vitrine. ${form.description.length}/500 caracteres`}
                         />
                         <TextField
                             label="Briefing completo *"

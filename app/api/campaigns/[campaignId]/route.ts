@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Campaign from '@/models/Campaign';
+import Account from '@/models/Account';
+import { createNotification } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,8 +49,12 @@ export async function PATCH(
 
         const { campaignId } = await params;
         const body = await request.json();
+        const newStatus = body.status;
 
         await connectMongo();
+
+        const previousCampaign = await Campaign.findById(campaignId).select('status').lean();
+        const isActivating = newStatus === 'active' && previousCampaign?.status !== 'active';
 
         const allowedFields = [
             'brand_name', 'brand_logo', 'brand_website', 'brand_instagram',
@@ -81,6 +87,24 @@ export async function PATCH(
 
         if (!campaign) {
             return NextResponse.json({ error: 'Campanha não encontrada' }, { status: 404 });
+        }
+
+        if (isActivating && campaign.status === 'active') {
+            const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+            const actorAccount = await Account.findOne({ auth_user_id: authUserId }).select('_id').lean();
+            if (actorAccount) {
+                const recipients = await Account.find({ _id: { $ne: actorAccount._id } }).select('_id').lean();
+                const brandName = (campaign as { brand_name?: string }).brand_name || 'Nova campanha';
+                for (const rec of recipients) {
+                    await createNotification({
+                        recipientId: rec._id,
+                        actorId: actorAccount._id,
+                        type: 'new_campaign',
+                        campaignId: campaign._id,
+                        contentPreview: brandName,
+                    });
+                }
+            }
         }
 
         return NextResponse.json({ success: true, campaign });

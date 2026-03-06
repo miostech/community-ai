@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign';
 
 export interface NotificationItem {
   id: string;
@@ -27,6 +27,7 @@ export interface NotificationItem {
   comment_id?: string;
   story_id?: string;
   story_owner_id?: string;
+  campaign_id?: string;
   content_preview?: string;
   likes_count?: number;
 }
@@ -142,6 +143,7 @@ export async function GET() {
         comment_id: n.comment_id?.toString(),
         story_id: storyId || undefined,
         story_owner_id: n.type === 'story_comment' ? storyOwnerId : undefined,
+        campaign_id: (n as any).campaign_id?.toString(),
         content_preview: n.content_preview || undefined,
         likes_count: likesCount,
       };
