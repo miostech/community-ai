@@ -309,7 +309,7 @@ export default function CriarPostPageMui() {
     const videoUrl = uploadedVideo?.url;
 
     if (!newPost.category) {
-      setError('Escolha o tipo de post');
+      setError('Escolha uma tag do tipo de post');
       return;
     }
 
@@ -443,14 +443,54 @@ export default function CriarPostPageMui() {
         </Box>
       </AppBar>
 
-      <Box sx={{ px: { xs: 2, sm: 3 }, pt: 3 }}>
+      {/* Espaço para o header fixo */}
+      <Toolbar sx={{ minHeight: { xs: 56, md: 64 } }} />
 
-        {/* Error Alert */}
-        <Fade in={!!error}>
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
+      <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
+
+        {/* Error em card centralizado */}
+        {error && (
+          <Fade in>
+            <Box
+              sx={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 1300,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'rgba(0,0,0,0.5)',
+                p: 2,
+              }}
+              onClick={() => setError(null)}
+            >
+            <Paper
+              elevation={8}
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                maxWidth: 400,
+                width: '100%',
+                borderRadius: 3,
+                overflow: 'hidden',
+              }}
+            >
+              <Alert
+                severity="error"
+                icon={<ErrorIcon />}
+                onClose={() => setError(null)}
+                action={
+                  <Button color="inherit" size="small" onClick={() => setError(null)}>
+                    Fechar
+                  </Button>
+                }
+                sx={{ alignItems: 'center', '& .MuiAlert-message': { flex: 1 } }}
+              >
+                {error}
+              </Alert>
+            </Paper>
+          </Box>
         </Fade>
+        )}
 
         <Stack spacing={4}>
           {/* Categoria */}
