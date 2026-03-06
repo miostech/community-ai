@@ -8,9 +8,9 @@ import { randomUUID } from 'crypto';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const TRIAL_DAYS = 10;
+const TRIAL_DAYS = 14;
 const CAMPAIGN_COOKIE = 'dome_campaign';
-const CAMPAIGN_PRODUCT_NAME = 'Dome - Campanha 10 dias grátis';
+const CAMPAIGN_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
 
 export async function GET(request: NextRequest) {
     const baseUrl = request.nextUrl.origin;
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
                 status: 'active',
                 start_date: now,
                 next_payment: expiresAt,
-                plan_name: 'Campanha 10 dias grátis',
+                plan_name: 'Campanha 14 dias grátis',
                 plan_frequency: 'once',
             },
             commissions: {

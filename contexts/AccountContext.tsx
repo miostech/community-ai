@@ -165,7 +165,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const isInactive = subscription?.status === 'inactive' || subscription?.status === 'expired';
 
         if (isDashboardRoute && !isPublicRoute && isInactive) {
-            const isCampaignUser = subscription?.product_name === 'Dome - Campanha 10 dias grátis';
+            const isCampaignUser = subscription?.product_name === 'Dome - Campanha 14 dias grátis';
             const destination = isCampaignUser ? '/promo' : '/dashboard/assinatura';
             console.log('🔴 Assinatura inativa - redirecionando para', destination);
             router.push(destination);
