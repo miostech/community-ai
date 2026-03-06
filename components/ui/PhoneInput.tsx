@@ -15,6 +15,7 @@ const countryCodes = [
   { code: '+55', country: 'BR', flag: '🇧🇷', name: 'Brasil', placeholder: '(11) 99999-9999' },
   { code: '+1', country: 'US', flag: '🇺🇸', name: 'Estados Unidos', placeholder: '(555) 123-4567' },
   { code: '+44', country: 'GB', flag: '🇬🇧', name: 'Reino Unido', placeholder: '7400 123456' },
+  { code: '+353', country: 'IE', flag: '🇮🇪', name: 'Irlanda', placeholder: '87 123 4567' },
   { code: '+34', country: 'ES', flag: '🇪🇸', name: 'Espanha', placeholder: '612 34 56 78' },
   { code: '+351', country: 'PT', flag: '🇵🇹', name: 'Portugal', placeholder: '912 345 678' },
   { code: '+54', country: 'AR', flag: '🇦🇷', name: 'Argentina', placeholder: '11 2345-6789' },
