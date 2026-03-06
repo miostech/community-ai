@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { SocialLoginBox } from '@/components/auth/SocialLoginBox';
 import { DomeLogo } from '@/components/ui/DomeLogo';
 
-export default function LoginPage() {
+function LoginContent() {
   const { status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -325,5 +325,21 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }
