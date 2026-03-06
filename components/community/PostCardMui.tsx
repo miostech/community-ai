@@ -166,15 +166,29 @@ export function PostCardMui({
         return 'Ver post original';
     };
 
+    const isAtualizacao = post.category === 'atualizacao';
+
     return (
         <Card
             elevation={0}
-            sx={{
+            sx={(theme) => ({
                 borderRadius: 0,
                 borderBottom: 1,
                 borderColor: 'divider',
                 bgcolor: 'background.paper',
-            }}
+                ...(isAtualizacao && {
+                    background:
+                        theme.palette.mode === 'dark'
+                            ? 'linear-gradient(135deg, rgba(147, 51, 234, 0.22) 0%, rgba(59, 130, 246, 0.18) 50%, rgba(236, 72, 153, 0.14) 100%)'
+                            : 'linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(59, 130, 246, 0.06) 50%, rgba(236, 72, 153, 0.05) 100%)',
+                    borderLeft: '4px solid',
+                    borderLeftColor: 'primary.main',
+                    boxShadow:
+                        theme.palette.mode === 'dark'
+                            ? 'inset 0 0 0 1px rgba(147, 51, 234, 0.35)'
+                            : 'inset 0 0 0 1px rgba(147, 51, 234, 0.12)',
+                }),
+            })}
         >
             {/* Header */}
             <CardHeader
@@ -239,6 +253,12 @@ export function PostCardMui({
                                     height: 24,
                                     fontSize: '0.625rem',
                                     fontWeight: 500,
+                                    ...(post.category === 'atualizacao' && {
+                                        background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 50%, #ec4899 100%)',
+                                        color: '#fff',
+                                        fontWeight: 600,
+                                        '& .MuiChip-label': { color: '#fff' },
+                                    }),
                                 }}
                             />
                         )}
