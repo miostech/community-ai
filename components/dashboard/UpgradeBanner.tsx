@@ -115,7 +115,7 @@ export function UpgradeBanner() {
                     variant="body2"
                     sx={{ fontWeight: 500, fontSize: '0.8rem', flex: 1, lineHeight: 1.4 }}
                 >
-                    Oferta exclusiva para membros fundadores: faça upgrade para o plano semestral por <strong>R$ 89,90</strong>. Válido por apenas 7 dias.
+                    Oferta especial de Dia das Mulheres para membros fundadores: desbloqueie 6 meses completos de acesso à Dome por apenas <strong>R$ 89,90</strong>.
                 </Typography>
                 <Button
                     size="small"
@@ -168,7 +168,7 @@ export function UpgradeBanner() {
                     variant="body2"
                     sx={{ fontWeight: 500, fontSize: '0.75rem', lineHeight: 1.4 }}
                 >
-                    Oferta exclusiva para membros fundadores: upgrade para o semestral por <strong>R$ 89,90</strong>. Válido por 7 dias.
+                    Oferta especial de Dia das Mulheres para membros fundadores: desbloqueie 6 meses completos de acesso à Dome por apenas <strong>R$ 89,90</strong>.
                 </Typography>
                 <Button
                     size="small"
