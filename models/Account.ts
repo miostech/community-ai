@@ -44,6 +44,8 @@ export interface Account {
     geo_lat?: number;
     geo_lon?: number;
     geo_updated_at?: Date;
+    /** Email usado na compra na Kiwify; usado para vincular subscription quando o login é social (Google/Apple) com outro email. */
+    kiwify_purchase_email?: string;
     /** Slugs canônicos dos cursos comprados (cache atualizado via check-subscriptions). */
     cached_course_ids?: string[];
     /** Quando o cache de cursos foi atualizado pela última vez. */
@@ -121,6 +123,7 @@ const AccountSchema = new Schema(
         geo_lat: { type: Number },
         geo_lon: { type: Number },
         geo_updated_at: { type: Date },
+        kiwify_purchase_email: { type: String, trim: true, lowercase: true },
         cached_course_ids: { type: [String], default: [] },
         cached_course_ids_at: { type: Date, default: null },
         birth_date: { type: Date },

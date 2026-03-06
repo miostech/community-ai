@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
@@ -13,6 +13,8 @@ import { DomeLogo } from '@/components/ui/DomeLogo';
 export default function LoginPage() {
   const { status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const messageEmailJaVinculado = searchParams.get('message') === 'email_ja_vinculado';
   const [isLoading, setIsLoading] = useState(false);
   const [kiwifyModalOpen, setKiwifyModalOpen] = useState(false);
   const [kiwifyStep, setKiwifyStep] = useState<1 | 2>(1);
@@ -205,6 +207,12 @@ export default function LoginPage() {
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">Entre na sua conta</h1>
             <p className="text-sm sm:text-base text-gray-600 dark:text-slate-400 mt-1 sm:mt-2">Continue criando conteúdo incrível</p>
           </div>
+
+          {messageEmailJaVinculado && (
+            <div className="mb-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+              Este email de compra já está vinculado a outra conta. Entre com a conta que você usou no cadastro.
+            </div>
+          )}
 
           <SocialLoginBox
             onGoogleLogin={handleGoogleLogin}

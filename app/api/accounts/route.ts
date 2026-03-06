@@ -129,7 +129,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        const email = account.email || session.user.email;
+        const email = account.kiwify_purchase_email || account.email || session.user.email;
         const emailNorm = email?.toLowerCase().trim();
         const lastPayment = await AccountPayment.findOne({
             email: emailNorm,
