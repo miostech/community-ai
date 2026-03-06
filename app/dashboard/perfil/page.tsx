@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { useAccount } from '@/contexts/AccountContext';
-import { useCourses } from '@/contexts/CoursesContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   AppBar,
@@ -36,15 +35,12 @@ import {
   Instagram as InstagramIcon,
   YouTube as YouTubeIcon,
   Delete as DeleteIcon,
-  School as SchoolIcon,
-  CheckCircle as CheckCircleIcon,
   ShoppingCart as ShoppingCartIcon,
   Support as SupportIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
-import { CURSOS, courseIdsIncludeCourse } from '@/lib/courses';
 
 interface FormData {
   first_name: string;
@@ -61,7 +57,6 @@ interface FormData {
 export default function PerfilPage() {
   const { data: session } = useSession();
   const { account, subscription, isLoading: accountLoading, refreshAccount, setAccountFromResponse } = useAccount();
-  const { courseIds: myCourseIds, loading: coursesLoading } = useCourses();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
@@ -764,101 +759,6 @@ export default function PerfilPage() {
           </Stack>
         </Paper>
 
-        {/* Meus cursos — mobile: botão para página de cursos */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2, display: { xs: 'block', sm: 'none' } }}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            alignItems={{ sm: 'center' }}
-            justifyContent="space-between"
-          >
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle1" fontWeight={600}>
-                Cursos
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Desbloqueie ainda mais sua criação de conteúdo, com nossos cursos exclusivos.
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              href="/dashboard/cursos"
-              variant="outlined"
-              // startIcon={<SchoolIcon />}
-              fullWidth
-              sx={{ width: { sm: 'auto' } }}
-            >
-              Ver cursos
-            </Button>
-          </Stack>
-        </Paper>
-
-        {/* Meus cursos — desktop: lista completa */}
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2, display: { xs: 'none', sm: 'block' } }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Cursos
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Acesse seus cursos e desbloqueie os próximos.
-          </Typography>
-          {coursesLoading ? (
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <CircularProgress size={20} />
-              <Typography variant="body2" color="text.secondary">
-                Verificando cursos...
-              </Typography>
-            </Stack>
-          ) : (
-            <Stack spacing={1.5}>
-              {CURSOS.map((curso) => {
-                const hasAccess = courseIdsIncludeCourse(myCourseIds, curso);
-                return (
-                  <Stack
-                    key={curso.id}
-                    direction="row"
-                    alignItems="center"
-                    justifyContent="space-between"
-                    sx={{
-                      py: 1.5,
-                      px: 2,
-                      borderRadius: 1,
-                      bgcolor: 'action.hover',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
-                      <SchoolIcon sx={{ color: 'text.secondary', fontSize: 22 }} />
-                      <Typography variant="body2" fontWeight={500}>
-                        {curso.label}
-                      </Typography>
-                      {hasAccess && (
-                        <CheckCircleIcon sx={{ color: 'success.main', fontSize: 20 }} titleAccess="Você tem acesso" />
-                      )}
-                    </Stack>
-                    {hasAccess ? (
-                      <Typography variant="caption" color="text.secondary">
-                        Acessar
-                      </Typography>
-                    ) : (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        href={curso.kiwifyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        component="a"
-                      >
-                        Adquirir
-                      </Button>
-                    )}
-                  </Stack>
-                );
-              })}
-            </Stack>
-          )}
-        </Paper>
-
         {/* Acesso ao suporte */}
         <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
           <Stack
@@ -872,7 +772,7 @@ export default function PerfilPage() {
                 Suporte
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Precisa de ajuda? Fale com a gente pelo WhatsApp.
+                Precisa de ajuda com a Dome? Fale com a gente pelo WhatsApp.
               </Typography>
             </Box>
             <Button
