@@ -75,6 +75,8 @@ export interface Account {
     payment_revolut_account?: string;
     /** Aceite dos termos do portfólio (LGPD): data/hora em que aceitou; preenchido apenas pelo endpoint de aceite */
     portfolio_terms_accepted_at?: Date | null;
+    /** Fechou o modal de promo exclusiva da campanha (14 dias grátis) sem comprar; não volta a ver a oferta. */
+    campaign_promo_dismissed_at?: Date | null;
     portfolio_terms_accepted_ip?: string | null;
     portfolio_terms_accepted_country?: string | null;
     portfolio_terms_accepted_region?: string | null;
@@ -144,6 +146,7 @@ const AccountSchema = new Schema(
         payment_pix_key: { type: String, trim: true },
         payment_revolut_account: { type: String, trim: true },
         portfolio_terms_accepted_at: { type: Date },
+        campaign_promo_dismissed_at: { type: Date },
         portfolio_terms_accepted_ip: { type: String, trim: true },
         portfolio_terms_accepted_country: { type: String, trim: true },
         portfolio_terms_accepted_region: { type: String, trim: true },

@@ -238,6 +238,9 @@ export async function GET() {
                 payment_pix_key: account.payment_pix_key ?? null,
                 payment_revolut_account: account.payment_revolut_account ?? null,
                 followers_at_signup: account.followers_at_signup ?? null,
+                campaign_promo_dismissed_at: account.campaign_promo_dismissed_at
+                    ? new Date(account.campaign_promo_dismissed_at).toISOString()
+                    : null,
             },
             subscription: {
                 status: subscriptionStatus,
@@ -276,6 +279,7 @@ export async function PATCH(request: NextRequest) {
             'interest_product_campaigns', 'address_zip', 'address_street', 'address_number', 'address_complement', 'address_neighborhood',
             'link_media_kit', 'portfolio_videos',
             'payment_pix_key', 'payment_revolut_account',
+            'campaign_promo_dismissed_at',
         ];
 
         const updateData: Record<string, unknown> = {};
@@ -283,6 +287,10 @@ export async function PATCH(request: NextRequest) {
             if (body[field] !== undefined) {
                 updateData[field] = body[field];
             }
+        }
+        if (typeof updateData.campaign_promo_dismissed_at === 'string') {
+            const d = new Date(updateData.campaign_promo_dismissed_at as string);
+            updateData.campaign_promo_dismissed_at = Number.isNaN(d.getTime()) ? undefined : d;
         }
 
         if (Object.keys(updateData).length === 0) {
@@ -352,6 +360,9 @@ export async function PATCH(request: NextRequest) {
             payment_pix_key: acc.payment_pix_key ?? null,
             payment_revolut_account: acc.payment_revolut_account ?? null,
             followers_at_signup: acc.followers_at_signup ?? null,
+            campaign_promo_dismissed_at: acc.campaign_promo_dismissed_at
+                ? new Date(acc.campaign_promo_dismissed_at).toISOString()
+                : null,
         };
 
         return NextResponse.json({

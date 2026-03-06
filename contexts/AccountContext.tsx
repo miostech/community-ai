@@ -56,6 +56,8 @@ export interface Account {
     payment_revolut_account?: string | null;
     /** Total de seguidores (soma das redes) no cadastro */
     followers_at_signup?: number | null;
+    /** Fechou o modal de promo da campanha sem comprar; não vê mais a oferta. */
+    campaign_promo_dismissed_at?: string | null;
 }
 
 export interface Subscription {
@@ -166,7 +168,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
 
         if (isDashboardRoute && !isPublicRoute && isInactive) {
             const isCampaignUser = subscription?.product_name === 'Dome - Campanha 14 dias grátis';
-            const destination = isCampaignUser ? '/promo' : '/dashboard/assinatura';
+            const destination = isCampaignUser ? '/precos' : '/dashboard/assinatura';
             console.log('🔴 Assinatura inativa - redirecionando para', destination);
             router.push(destination);
         }

@@ -19,6 +19,7 @@ import { MuiProvider } from '@/components/providers/MuiProvider';
 import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
 import { Phone as PhoneIcon } from '@mui/icons-material';
 import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
+import { CampaignPromoModal } from '@/components/dashboard/CampaignPromoModal';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -100,6 +101,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     </Box>
                   )}
                 </Box>
+
+                <CampaignPromoModal />
 
                 {/* Modal de cadastro de telefone */}
                 <Dialog
