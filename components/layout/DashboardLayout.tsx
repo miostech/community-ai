@@ -96,7 +96,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   {isComunidadePage ? (
                     children
                   ) : (
-                    <Box sx={{ p: { xs: 0, md: 4 } }}>
+                    <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 2, md: 4 }, pb: { xs: 12, md: 4 } }}>
                       {children}
                     </Box>
                   )}
@@ -150,8 +150,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   </DialogContent>
                 </Dialog>
 
-                {/* Botão flutuante de chat - apenas em páginas que não sejam comunidade */}
-                {!isComunidadePage && <FloatingChatButtonMui />}
+                {/* Botão flutuante de chat: só no desktop (escondido no mobile) */}
+                {!isComunidadePage && (
+                  <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                    <FloatingChatButtonMui />
+                  </Box>
+                )}
               </Box>
               </AddToDesktopProvider>
             </ChatHistoryProvider>

@@ -454,8 +454,12 @@ export default function ComunidadePageMui() {
           )}
         </Stack>
 
-        {/* Floating chat */}
-        {!activeCommentsPostId && <FloatingChatButtonMui />}
+        {/* Floating chat (só no desktop, escondido no mobile) */}
+        {!activeCommentsPostId && (
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+            <FloatingChatButtonMui />
+          </Box>
+        )}
 
         {/* Comments modal */}
         {activeCommentsPostId && (

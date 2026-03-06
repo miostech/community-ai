@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import {
     Home as HomeIcon,
-    TrendingUp as TrendingUpIcon,
+    Group as FeedIcon,
     Add as AddIcon,
     Settings as SettingsIcon,
     Work as WorkIcon,
@@ -28,13 +28,13 @@ interface NavItem {
 const bottomNavItems: NavItem[] = [
     {
         label: 'Comunidade',
-        href: '/dashboard/comunidade',
+        href: '/dashboard',
         icon: <HomeIcon />,
     },
     {
-        label: 'Trends',
-        href: '/dashboard/trends',
-        icon: <TrendingUpIcon />,
+        label: 'Feed',
+        href: '/dashboard/comunidade',
+        icon: <FeedIcon />,
     },
     {
         label: 'Criar',
