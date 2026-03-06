@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic';
 const TRIAL_DAYS = 14;
 const CAMPAIGN_COOKIE = 'dome_campaign';
 const CAMPAIGN_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
+/** Só novos cadastros recebem o trial; conta criada há mais que isso = login de usuário já existente. */
+const NEW_ACCOUNT_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutos
 
 export async function GET(request: NextRequest) {
     const baseUrl = request.nextUrl.origin;
@@ -48,6 +50,15 @@ export async function GET(request: NextRequest) {
         });
 
         if (existingCampaignPayment) {
+            const response = NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
+            response.cookies.set(CAMPAIGN_COOKIE, '', { path: '/', maxAge: 0 });
+            return response;
+        }
+
+        // Só usuários novos (cadastro na hora) ganham os 14 dias; email que já tinha conta = só login, sem trial
+        const accountCreatedAt = account.created_at ? new Date(account.created_at).getTime() : 0;
+        const isNewAccount = accountCreatedAt && Date.now() - accountCreatedAt <= NEW_ACCOUNT_MAX_AGE_MS;
+        if (!isNewAccount) {
             const response = NextResponse.redirect(new URL('/dashboard/comunidade', baseUrl));
             response.cookies.set(CAMPAIGN_COOKIE, '', { path: '/', maxAge: 0 });
             return response;
