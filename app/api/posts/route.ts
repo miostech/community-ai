@@ -205,16 +205,35 @@ export async function GET(request: NextRequest) {
 
         const skip = (page - 1) * limit;
 
-        // Buscar posts com paginação
-        const [posts, total] = await Promise.all([
-            Post.find(query)
-                .sort({ is_pinned: -1, created_at: -1 })
-                .skip(skip)
-                .limit(limit)
-                .populate('author_id', 'first_name last_name avatar_url link_instagram link_tiktok link_youtube role is_founding_member')
-                .lean(),
-            Post.countDocuments(query),
+        // Buscar posts: fixados primeiro (mais antigo no topo), depois não fixados (mais recente primeiro)
+        const posts = await Post.aggregate([
+            { $match: query },
+            {
+                $addFields: {
+                    _feed_sort: {
+                        $cond: [
+                            { $eq: ['$is_pinned', true] },
+                            '$created_at',
+                            { $subtract: [new Date('9999-01-01'), '$created_at'] },
+                        ],
+                    },
+                },
+            },
+            { $sort: { is_pinned: -1, _feed_sort: 1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: 'accounts',
+                    localField: 'author_id',
+                    foreignField: '_id',
+                    as: 'author_doc',
+                    pipeline: [{ $project: { first_name: 1, last_name: 1, avatar_url: 1, link_instagram: 1, link_tiktok: 1, link_youtube: 1, role: 1, is_founding_member: 1 } }],
+                },
+            },
+            { $unwind: { path: '$author_doc', preserveNullAndEmptyArrays: true } },
         ]);
+        const total = await Post.countDocuments(query);
 
         // Buscar likes e salvos do usuário atual para esses posts
         let userLikes: Set<string> = new Set();
@@ -238,18 +257,19 @@ export async function GET(request: NextRequest) {
             userSaved = new Set(savedPosts.map((s: any) => s.post_id.toString()));
         }
 
-        // Formatar posts para resposta
+        // Formatar posts para resposta (author_doc vem da agregação)
+        const authorDoc = (post: any) => post.author_doc || post.author_id;
         const formattedPosts = posts.map((post: any) => ({
             id: post._id.toString(),
             author: {
-                id: post.author_id?._id?.toString(),
-                name: post.author_id ? `${post.author_id.first_name} ${post.author_id.last_name}`.trim() : 'Usuário',
-                avatar_url: post.author_id?.avatar_url,
-                link_instagram: post.author_id?.link_instagram,
-                link_tiktok: post.author_id?.link_tiktok,
-                link_youtube: post.author_id?.link_youtube,
-                role: post.author_id?.role,
-                is_founding_member: post.author_id?.is_founding_member === true,
+                id: authorDoc(post)?._id?.toString(),
+                name: authorDoc(post) ? `${authorDoc(post).first_name} ${authorDoc(post).last_name}`.trim() : 'Usuário',
+                avatar_url: authorDoc(post)?.avatar_url,
+                link_instagram: authorDoc(post)?.link_instagram,
+                link_tiktok: authorDoc(post)?.link_tiktok,
+                link_youtube: authorDoc(post)?.link_youtube,
+                role: authorDoc(post)?.role,
+                is_founding_member: authorDoc(post)?.is_founding_member === true,
             },
             content: post.content,
             images: post.images,

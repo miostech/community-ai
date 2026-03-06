@@ -189,7 +189,7 @@ const PostSchema = new Schema<IPost>(
 // Índices compostos para queries comuns
 PostSchema.index({ status: 1, created_at: -1 }); // Feed principal
 PostSchema.index({ author_id: 1, created_at: -1 }); // Posts de um usuário
-PostSchema.index({ is_pinned: -1, created_at: -1 }); // Pinned primeiro
+PostSchema.index({ is_pinned: -1, created_at: -1 }); // Feed: fixados primeiro (ordem final via agregação: mais antigo no topo)
 PostSchema.index({ tags: 1, status: 1, created_at: -1 }); // Busca por tags
 
 // Middleware para definir published_at quando status muda para published
