@@ -52,6 +52,7 @@ export default function ComunidadePageMui() {
     toggleSave,
     updatePost,
     removePost,
+    votePoll,
   } = usePosts();
 
   const { account, fullName, isSubscriptionActive, isLoading: isAccountLoading } = useAccount();
@@ -442,6 +443,7 @@ export default function ComunidadePageMui() {
                 onPinToggle={() => handlePinToggle(post.id)}
                 isTogglingPin={togglingPinPostId === post.id}
                 videoReloadTrigger={videoReloadTrigger}
+                onVotePoll={(optionIndex) => votePoll(post.id, optionIndex)}
               />
             ))
           )}

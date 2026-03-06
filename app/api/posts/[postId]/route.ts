@@ -5,6 +5,7 @@ import Post from '@/models/Post';
 import Account from '@/models/Account';
 import Like from '@/models/Like';
 import SavedPost from '@/models/SavedPost';
+import PollVote from '@/models/PollVote';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,22 +28,7 @@ export async function GET(
             return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
         }
 
-        // Posts da categoria "atualização" só podem ser vistos por admin, moderator e criador
-        if ((post as { category?: string }).category === 'atualizacao') {
-            const session = await auth();
-            if (!session?.user?.id) {
-                return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
-            }
-            const authUserId = (session.user as { id?: string; auth_user_id?: string }).auth_user_id || session.user.id;
-            const account = await Account.findOne({ auth_user_id: authUserId }).select('role').lean();
-            const role = (account as { role?: string } | null)?.role;
-            const canSee = role === 'admin' || role === 'moderator' || role === 'criador';
-            if (!canSee) {
-                return NextResponse.json({ error: 'Post não encontrado' }, { status: 404 });
-            }
-        }
-
-        // Formatar post para resposta
+        // Formatar post para resposta (todos podem ver posts de qualquer categoria)
         const author = post.author_id as any;
         const formattedPost = {
             id: post._id.toString(),
@@ -63,29 +49,40 @@ export async function GET(
             created_at: post.created_at || post.published_at || new Date(),
             liked: false,
             saved: false,
+            poll_question: (post as { poll_question?: string }).poll_question ?? null,
+            poll_options: (post as { poll_options?: { text: string; votes_count: number }[] }).poll_options ?? null,
+            poll_vote_index: null as number | null,
         };
 
-        // Verificar se usuário logado deu like/salvou
+        // Verificar se usuário logado deu like/salvou e votou na enquete
         const session = await auth();
         if (session?.user?.id) {
             const authUserId = (session.user as any).auth_user_id || session.user.id;
             const account = await Account.findOne({ auth_user_id: authUserId });
 
             if (account) {
-                // Verificar like usando o model Like
-                const userLike = await Like.findOne({
-                    user_id: account._id,
-                    target_type: 'post',
-                    target_id: post._id,
-                });
+                const [userLike, userSaved, userPollVote] = await Promise.all([
+                    Like.findOne({
+                        user_id: account._id,
+                        target_type: 'post',
+                        target_id: post._id,
+                    }),
+                    SavedPost.findOne({
+                        account_id: account._id,
+                        post_id: post._id,
+                    }),
+                    formattedPost.poll_question
+                        ? PollVote.findOne({
+                              post_id: post._id,
+                              account_id: account._id,
+                          }).lean()
+                        : null,
+                ]);
                 formattedPost.liked = !!userLike;
-
-                // Verificar se salvou usando o model SavedPost
-                const userSaved = await SavedPost.findOne({
-                    account_id: account._id,
-                    post_id: post._id,
-                });
                 formattedPost.saved = !!userSaved;
+                if (userPollVote && typeof (userPollVote as { option_index: number }).option_index === 'number') {
+                    formattedPost.poll_vote_index = (userPollVote as { option_index: number }).option_index;
+                }
             }
         }
 

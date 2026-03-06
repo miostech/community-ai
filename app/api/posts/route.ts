@@ -6,6 +6,7 @@ import Post from '@/models/Post';
 import Account from '@/models/Account';
 import Like from '@/models/Like';
 import SavedPost from '@/models/SavedPost';
+import PollVote from '@/models/PollVote';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -46,6 +47,12 @@ export async function POST(request: NextRequest) {
         const category = body.category;
         const tags = Array.isArray(body.tags) ? body.tags : [];
         const visibility = body.visibility;
+        const poll_question = typeof body.poll_question === 'string' ? body.poll_question.trim() : undefined;
+        const poll_options_raw = Array.isArray(body.poll_options) ? body.poll_options : [];
+        const poll_options_strings = poll_options_raw
+            .filter((o): o is string => typeof o === 'string')
+            .map((o) => String(o).trim())
+            .filter((o) => o.length > 0);
 
         // Categoria é obrigatória — normalizar para aceitar com acento ou maiúsculas (ex: "Atualização", "Suporte")
         const validCategories = ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'];
@@ -70,10 +77,25 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validação básica
-        if (!content?.trim() && (!images || images.length === 0) && !video_url?.trim()) {
+        // Validação enquete: se tem pergunta, precisa de 2–6 opções
+        if (poll_question) {
+            if (poll_options_strings.length < 2 || poll_options_strings.length > 6) {
+                return NextResponse.json(
+                    { error: 'Enquete deve ter entre 2 e 6 opções' },
+                    { status: 400 }
+                );
+            }
+        } else if (poll_options_strings.length > 0) {
             return NextResponse.json(
-                { error: 'Post deve ter conteúdo, imagens ou vídeo' },
+                { error: 'Adicione a pergunta da enquete' },
+                { status: 400 }
+            );
+        }
+
+        // Validação básica
+        if (!content?.trim() && (!images || images.length === 0) && !video_url?.trim() && !poll_question) {
+            return NextResponse.json(
+                { error: 'Post deve ter conteúdo, imagens, vídeo ou enquete' },
                 { status: 400 }
             );
         }
@@ -90,6 +112,11 @@ export async function POST(request: NextRequest) {
         const accountId = rawAccountId instanceof mongoose.Types.ObjectId
             ? rawAccountId
             : new mongoose.Types.ObjectId(String(rawAccountId));
+        const pollOptionsForSave =
+            poll_question && poll_options_strings.length >= 2
+                ? poll_options_strings.map((text) => ({ text, votes_count: 0 }))
+                : undefined;
+
         const post = new Post({
             author_id: accountId,
             content: content?.trim() || '',
@@ -104,6 +131,10 @@ export async function POST(request: NextRequest) {
             visibility: visibility || 'members',
             status: 'published',
             published_at: new Date(),
+            ...(poll_question && pollOptionsForSave && {
+                poll_question,
+                poll_options: pollOptionsForSave,
+            }),
         });
 
         await post.save();
@@ -138,6 +169,8 @@ export async function POST(request: NextRequest) {
                 status: post.status,
                 created_at: post.created_at,
                 published_at: post.published_at,
+                poll_question: post.poll_question,
+                poll_options: post.poll_options,
             },
         }, { status: 201 });
     } catch (error) {
@@ -173,30 +206,16 @@ export async function GET(request: NextRequest) {
 
         await connectMongo();
 
-        // Buscar account do usuário atual (com role para restringir categoria atualização)
+        // Buscar account do usuário atual (para likes, salvos, votos em enquete)
         const currentAccount = await Account.findOne({ auth_user_id: authUserId }).select('_id role').lean();
-        const userRole = (currentAccount as { role?: string } | null)?.role;
-        const canSeeAtualizacao = userRole === 'admin' || userRole === 'moderator' || userRole === 'criador';
 
-        // Construir query
+        // Construir query — todos veem todos os posts no feed (Atualização e Suporte só não aparecem como opção ao criar)
         const query: Record<string, unknown> = {
             status: 'published',
         };
 
         if (category && category !== 'all') {
             query.category = category;
-        }
-
-        // Usuários sem role privilegiado não veem posts da categoria "atualização"
-        if (!canSeeAtualizacao) {
-            if (category === 'atualizacao') {
-                return NextResponse.json({
-                    success: true,
-                    posts: [],
-                    pagination: { page: 1, limit, total: 0, totalPages: 0, hasMore: false },
-                });
-            }
-            query.category = query.category || { $ne: 'atualizacao' };
         }
 
         if (authorId) {
@@ -232,16 +251,42 @@ export async function GET(request: NextRequest) {
                 },
             },
             { $unwind: { path: '$author_doc', preserveNullAndEmptyArrays: true } },
+            // Incluir explicitamente todos os campos usados no feed (incl. enquete)
+            {
+                $project: {
+                    _id: 1,
+                    content: 1,
+                    images: 1,
+                    video_url: 1,
+                    link_instagram_post: 1,
+                    link_tiktok_post: 1,
+                    link_youtube_post: 1,
+                    category: 1,
+                    media_type: 1,
+                    tags: 1,
+                    is_pinned: 1,
+                    likes_count: 1,
+                    comments_count: 1,
+                    visibility: 1,
+                    created_at: 1,
+                    published_at: 1,
+                    poll_question: 1,
+                    poll_options: 1,
+                    author_doc: 1,
+                },
+            },
         ]);
         const total = await Post.countDocuments(query);
 
-        // Buscar likes e salvos do usuário atual para esses posts
+        // Buscar likes, salvos e votos em enquete do usuário atual para esses posts
         let userLikes: Set<string> = new Set();
         let userSaved: Set<string> = new Set();
+        const userPollVotes: Record<string, number> = {}; // postId -> option_index
         if (currentAccount) {
             const postIds = posts.map((p: any) => p._id);
+            const pollPostIds = posts.filter((p: any) => p.poll_question).map((p: any) => p._id);
 
-            const [likes, savedPosts] = await Promise.all([
+            const [likes, savedPosts, pollVotes] = await Promise.all([
                 Like.find({
                     user_id: currentAccount._id,
                     target_type: 'post',
@@ -251,10 +296,19 @@ export async function GET(request: NextRequest) {
                     account_id: currentAccount._id,
                     post_id: { $in: postIds },
                 }).lean(),
+                pollPostIds.length > 0
+                    ? PollVote.find({
+                          post_id: { $in: pollPostIds },
+                          account_id: currentAccount._id,
+                      }).lean()
+                    : Promise.resolve([]),
             ]);
 
             userLikes = new Set(likes.map((l: any) => l.target_id.toString()));
             userSaved = new Set(savedPosts.map((s: any) => s.post_id.toString()));
+            for (const pv of pollVotes as { post_id: { toString: () => string }; option_index: number }[]) {
+                userPollVotes[pv.post_id.toString()] = pv.option_index;
+            }
         }
 
         // Formatar posts para resposta (author_doc vem da agregação)
@@ -288,6 +342,9 @@ export async function GET(request: NextRequest) {
             visibility: post.visibility,
             created_at: post.created_at,
             published_at: post.published_at,
+            poll_question: post.poll_question ?? null,
+            poll_options: Array.isArray(post.poll_options) ? post.poll_options : null,
+            poll_vote_index: post.poll_question ? (userPollVotes[post._id.toString()] ?? null) : null,
         }));
 
         return NextResponse.json({

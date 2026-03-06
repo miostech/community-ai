@@ -12,6 +12,11 @@ export interface PostAuthor {
   is_founding_member?: boolean;
 }
 
+export interface PostPollOption {
+  text: string;
+  votes_count: number;
+}
+
 export interface Post {
   id: string;
   author: PostAuthor;
@@ -26,6 +31,9 @@ export interface Post {
   liked?: boolean;
   saved?: boolean;
   is_pinned?: boolean;
+  poll_question?: string;
+  poll_options?: PostPollOption[];
+  poll_vote_index?: number | null;
 }
 
 interface PostsContextType {
@@ -48,6 +56,7 @@ interface PostsContextType {
   removePost: (postId: string) => void;
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
+  votePoll: (postId: string, optionIndex: number) => Promise<void>;
 }
 
 const PostsContext = createContext<PostsContextType | undefined>(undefined);
@@ -196,6 +205,31 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // Votar na enquete
+  const votePoll = useCallback(async (postId: string, optionIndex: number) => {
+    const res = await fetch(`/api/posts/${postId}/poll/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ option_index: optionIndex }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Erro ao votar');
+    }
+    const data = await res.json();
+    setPosts(prev =>
+      prev.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              poll_options: data.poll_options ?? post.poll_options,
+              poll_vote_index: data.poll_vote_index ?? optionIndex,
+            }
+          : post
+      )
+    );
+  }, []);
+
   return (
     <PostsContext.Provider
       value={{
@@ -215,6 +249,7 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
         removePost,
         toggleLike,
         toggleSave,
+        votePoll,
       }}
     >
       {children}

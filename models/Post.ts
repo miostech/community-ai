@@ -25,6 +25,10 @@ export interface IPost extends Document {
     tags: string[];
     is_pinned: boolean;
 
+    // Enquete (opcional)
+    poll_question?: string;
+    poll_options?: { text: string; votes_count: number }[];
+
     // Contadores (desnormalizados para performance)
     likes_count: number;
     comments_count: number;
@@ -133,6 +137,29 @@ const PostSchema = new Schema<IPost>(
             default: false,
         },
 
+        // Enquete (opcional)
+        poll_question: {
+            type: String,
+            trim: true,
+            maxlength: 300,
+        },
+        poll_options: {
+            type: [
+                {
+                    text: { type: String, required: true, trim: true, maxlength: 200 },
+                    votes_count: { type: Number, default: 0, min: 0 },
+                },
+            ],
+            default: undefined,
+            validate: {
+                validator(this: IPost, v: { text: string; votes_count: number }[]) {
+                    if (!this.poll_question) return true;
+                    return Array.isArray(v) && v.length >= 2 && v.length <= 6;
+                },
+                message: 'Enquete deve ter entre 2 e 6 opções',
+            },
+        },
+
         // Contadores
         likes_count: {
             type: Number,
@@ -199,11 +226,14 @@ PostSchema.pre('save', function () {
     }
 });
 
-// Em desenvolvimento, se o modelo em cache tiver enum de category desatualizado (sem atualizacao/suporte), recompilar
+// Em desenvolvimento, recompilar o modelo se o cache estiver desatualizado (category ou enquete)
 if (process.env.NODE_ENV === 'development' && mongoose.models.Post) {
-    const path = mongoose.models.Post.schema.path('category') as { enumValues?: string[] };
-    const cachedEnum = path?.enumValues;
-    if (!cachedEnum || !cachedEnum.includes('atualizacao')) {
+    const schema = mongoose.models.Post.schema;
+    const categoryPath = schema.path('category') as { enumValues?: string[] };
+    const hasPoll = schema.paths['poll_question'] != null;
+    const needsReload =
+        !categoryPath?.enumValues?.includes('atualizacao') || !hasPoll;
+    if (needsReload) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).Post;
     }
 }

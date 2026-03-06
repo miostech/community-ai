@@ -77,6 +77,8 @@ interface PostCardMuiProps {
     isTogglingPin?: boolean;
     /** Quando muda, o vídeo remonta (evita tela preta ao fechar comentários) */
     videoReloadTrigger?: number;
+    /** Callback ao votar na enquete (optionIndex 0-based) */
+    onVotePoll?: (optionIndex: number) => void;
 }
 
 export function PostCardMui({
@@ -95,8 +97,10 @@ export function PostCardMui({
     onPinToggle,
     isTogglingPin = false,
     videoReloadTrigger = 0,
+    onVotePoll,
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+    const [isVotingPoll, setIsVotingPoll] = useState(false);
     const [isVerticalVideo, setIsVerticalVideo] = useState(false);
     const [videoError, setVideoError] = useState(false);
     const [videoReady, setVideoReady] = useState(false);
@@ -409,6 +413,95 @@ export function PostCardMui({
                     >
                         {post.content}
                     </Typography>
+                </CardContent>
+            )}
+
+            {/* Enquete */}
+            {post.poll_question &&
+                Array.isArray(post.poll_options) &&
+                post.poll_options.length > 0 && (
+                <CardContent sx={{ pt: 0, pb: 1.5 }}>
+                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
+                        {post.poll_question}
+                    </Typography>
+                    <Stack spacing={1}>
+                        {post.poll_options.map((opt, index) => {
+                            const options = post.poll_options!;
+                            const totalVotes = options.reduce((s, o) => s + Number(typeof o === 'object' && o && 'votes_count' in o ? o.votes_count : 0), 0);
+                            const votesCount = Number(typeof opt === 'object' && opt && 'votes_count' in opt ? opt.votes_count : 0);
+                            const pct = totalVotes > 0 ? Math.round((votesCount / totalVotes) * 100) : 0;
+                            const optText = typeof opt === 'object' && opt && 'text' in opt ? String(opt.text ?? '') : String(opt);
+                            const voted = post.poll_vote_index !== undefined && post.poll_vote_index !== null;
+                            const isSelected = post.poll_vote_index === index;
+
+                            return (
+                                <Box
+                                    key={index}
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        if (!onVotePoll || isVotingPoll || (voted && isSelected)) return;
+                                        setIsVotingPoll(true);
+                                        try {
+                                            await onVotePoll(index);
+                                        } catch (err) {
+                                            console.error('Erro ao votar:', err);
+                                        } finally {
+                                            setIsVotingPoll(false);
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if ((e.key === 'Enter' || e.key === ' ') && onVotePoll && !isVotingPoll && !(voted && isSelected)) {
+                                            e.preventDefault();
+                                            onVotePoll(index);
+                                        }
+                                    }}
+                                    sx={{
+                                        position: 'relative',
+                                        borderRadius: 2,
+                                        overflow: 'hidden',
+                                        border: '1px solid',
+                                        borderColor: isSelected ? 'primary.main' : 'divider',
+                                        bgcolor: isSelected ? 'action.selected' : 'action.hover',
+                                        cursor: onVotePoll && !isVotingPoll ? 'pointer' : 'default',
+                                        opacity: isVotingPoll ? 0.8 : 1,
+                                        '&:hover': onVotePoll && !isVotingPoll ? { bgcolor: 'action.hover' } : {},
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: voted ? `${pct}%` : 0,
+                                            bgcolor: 'primary.main',
+                                            opacity: 0.25,
+                                            transition: 'width 0.3s ease',
+                                            pointerEvents: 'none',
+                                        }}
+                                    />
+                                    <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        justifyContent="space-between"
+                                        sx={{ position: 'relative', px: 1.5, py: 1 }}
+                                    >
+                                        <Typography variant="body2" sx={{ fontWeight: isSelected ? 600 : 400 }}>
+                                            {optText}
+                                        </Typography>
+                                        {voted && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {pct}%{votesCount > 0 && ` (${votesCount})`}
+                                            </Typography>
+                                        )}
+                                    </Stack>
+                                </Box>
+                            );
+                        })}
+                    </Stack>
                 </CardContent>
             )}
 

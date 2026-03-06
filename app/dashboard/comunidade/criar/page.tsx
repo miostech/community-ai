@@ -34,6 +34,8 @@ import {
   CloudUpload as UploadIcon,
   Movie as MovieIcon,
   Link as LinkIcon,
+  Poll as PollIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import { MultiImageUpload } from '@/components/community/MultiImageUpload';
 
@@ -88,6 +90,10 @@ export default function CriarPostPageMui() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [activeMediaTab, setActiveMediaTab] = useState(0);
   const [uploadedVideo, setUploadedVideo] = useState<UploadedVideo | null>(null);
+
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
 
   const canUseAtualizacao = account?.role === 'admin' || account?.role === 'moderator' || account?.role === 'criador';
 
@@ -307,8 +313,18 @@ export default function CriarPostPageMui() {
       return;
     }
 
-    if (!newPost.content.trim() && validImages.length === 0 && !videoUrl) {
-      setError('Adicione conteúdo, imagem ou vídeo');
+    const hasPoll = pollEnabled && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
+    if (
+      !newPost.content.trim() &&
+      validImages.length === 0 &&
+      !videoUrl &&
+      !hasPoll
+    ) {
+      setError('Adicione conteúdo, imagem, vídeo ou uma enquete');
+      return;
+    }
+    if (pollEnabled && (!pollQuestion.trim() || pollOptions.filter((o) => o.trim()).length < 2)) {
+      setError('Enquete precisa de uma pergunta e pelo menos 2 opções');
       return;
     }
 
@@ -326,6 +342,14 @@ export default function CriarPostPageMui() {
       const imageUrls = validImages.map((img) => img.url);
       const finalVideoUrl = uploadedVideo?.url || undefined;
 
+      const pollPayload =
+        pollEnabled && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2
+          ? {
+              poll_question: pollQuestion.trim(),
+              poll_options: pollOptions.map((o) => o.trim()).filter(Boolean),
+            }
+          : {};
+
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -335,6 +359,7 @@ export default function CriarPostPageMui() {
           video_url: finalVideoUrl,
           link_instagram_post: newPost.link_instagram_post || undefined,
           category: newPost.category!,
+          ...pollPayload,
         }),
       });
 
@@ -347,8 +372,12 @@ export default function CriarPostPageMui() {
 
       const data = await response.json();
 
-      // Adicionar o novo post ao feed
+      // Adicionar o novo post ao feed (incluir enquete do response ou do form)
       if (data.post) {
+        const hasPoll = pollEnabled && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
+        const pollOpts =
+          data.post.poll_options ??
+          (hasPoll ? pollOptions.filter((o) => o.trim()).map((text) => ({ text: text.trim(), votes_count: 0 })) : undefined);
         addPostToFeed({
           id: data.post.id || data.post._id,
           author: {
@@ -366,6 +395,9 @@ export default function CriarPostPageMui() {
           created_at: new Date().toISOString(),
           liked: false,
           saved: false,
+          poll_question: data.post.poll_question ?? (hasPoll ? pollQuestion.trim() : undefined),
+          poll_options: pollOpts,
+          poll_vote_index: null,
         });
       }
 
@@ -484,6 +516,85 @@ export default function CriarPostPageMui() {
               {newPost.content.length}/5000 caracteres
             </Typography>
           </Box>
+
+          {/* Enquete (opcional) */}
+          <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <PollIcon color="primary" />
+              <Typography variant="subtitle2" fontWeight="bold">
+                Adicionar enquete (opcional)
+              </Typography>
+              <Box sx={{ flex: 1 }} />
+              <Button
+                size="small"
+                variant={pollEnabled ? 'contained' : 'outlined'}
+                onClick={() => {
+                  setPollEnabled((e) => !e);
+                  if (!pollEnabled) {
+                    setPollQuestion('');
+                    setPollOptions(['', '']);
+                  }
+                }}
+              >
+                {pollEnabled ? 'Ativada' : 'Ativar'}
+              </Button>
+            </Stack>
+            {pollEnabled && (
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Pergunta da enquete"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder="Ex: Qual tema você prefere para o próximo encontro?"
+                  inputProps={{ maxLength: 300 }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Opções (entre 2 e 6)
+                </Typography>
+                {pollOptions.map((opt, index) => (
+                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={opt}
+                      onChange={(e) =>
+                        setPollOptions((prev) =>
+                          prev.map((o, i) => (i === index ? e.target.value : o))
+                        )
+                      }
+                      placeholder={`Opção ${index + 1}`}
+                      inputProps={{ maxLength: 200 }}
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                    />
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() =>
+                        setPollOptions((prev) => prev.filter((_, i) => i !== index))
+                      }
+                      disabled={pollOptions.length <= 2}
+                      aria-label="Remover opção"
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                ))}
+                {pollOptions.length < 6 && (
+                  <Button
+                    startIcon={<AddIcon />}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setPollOptions((prev) => [...prev, ''])}
+                  >
+                    Adicionar opção
+                  </Button>
+                )}
+              </Stack>
+            )}
+          </Paper>
 
           {/* Mídia */}
           <Paper variant="outlined" sx={{ p: 3, borderRadius: 3 }}>
