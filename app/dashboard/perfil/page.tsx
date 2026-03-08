@@ -790,6 +790,36 @@ export default function PerfilPage() {
           </Stack>
         </Paper>
 
+        {/* Indique a Dome / Afiliados */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Indique a Dome
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Indique a Dome para outras pessoas e ganhe comissões como afiliado.
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              href="https://dashboard.kiwify.com/join/affiliate/FnaqWiUH"
+              target="_blank"
+              rel="noopener noreferrer"
+              component="a"
+              fullWidth
+              sx={{ width: { sm: 'auto' } }}
+            >
+              Quero ser afiliado
+            </Button>
+          </Stack>
+        </Paper>
+
         {/* Sair da conta */}
         <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
           <Stack
@@ -819,61 +849,64 @@ export default function PerfilPage() {
           </Stack>
         </Paper>
 
-        {/* Cancelar assinatura */}
-        <Box sx={{ mt: 3, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
-          {account?.request_cancel_at ||
-          (subscription?.subscription_status &&
-            ['cancelled', 'canceled', 'cancelado'].includes(
-              subscription.subscription_status.toLowerCase()
-            )) ? (
-            <Typography variant="caption" color="text.disabled">
-              {account?.request_cancel_at ? (
-                <>
-                  Cancelamento da assinatura solicitado em{' '}
-                  {new Date(account.request_cancel_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  .
-                </>
-              ) : (
-                <>Sua assinatura está cancelada.</>
-              )}
-              {subscription?.order_status !== 'refunded' && subscription?.expires_at && (
-                <>
-                  {' '}
-                  Você terá acesso até{' '}
-                  {new Date(subscription.expires_at).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                  .
-                </>
-              )}
-            </Typography>
-          ) : (
-            <Button
-              variant="text"
-              color="inherit"
-              size="small"
-              onClick={() => setCancelSubscriptionModalOpen(true)}
-              sx={{
-                color: 'text.disabled',
-                textTransform: 'none',
-                fontSize: '0.8rem',
-                p: 0,
-                minWidth: 'auto',
-                '&:hover': { color: 'error.main', backgroundColor: 'transparent' },
-              }}
-            >
-              Gerenciar assinatura
-            </Button>
-          )}
-        </Box>
+        {/* Gerenciar/Cancelar assinatura — só para quem tem plano pago ativo (não trial 14 dias, não sem plano) */}
+        {subscription?.status === 'active' &&
+          subscription?.product_name !== 'Dome - Campanha 14 dias grátis' && (
+          <Box sx={{ mt: 3, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
+            {account?.request_cancel_at ||
+            (subscription?.subscription_status &&
+              ['cancelled', 'canceled', 'cancelado'].includes(
+                subscription.subscription_status.toLowerCase()
+              )) ? (
+              <Typography variant="caption" color="text.disabled">
+                {account?.request_cancel_at ? (
+                  <>
+                    Cancelamento da assinatura solicitado em{' '}
+                    {new Date(account.request_cancel_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                    .
+                  </>
+                ) : (
+                  <>Sua assinatura está cancelada.</>
+                )}
+                {subscription?.order_status !== 'refunded' && subscription?.expires_at && (
+                  <>
+                    {' '}
+                    Você terá acesso até{' '}
+                    {new Date(subscription.expires_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                    .
+                  </>
+                )}
+              </Typography>
+            ) : (
+              <Button
+                variant="text"
+                color="inherit"
+                size="small"
+                onClick={() => setCancelSubscriptionModalOpen(true)}
+                sx={{
+                  color: 'text.disabled',
+                  textTransform: 'none',
+                  fontSize: '0.8rem',
+                  p: 0,
+                  minWidth: 'auto',
+                  '&:hover': { color: 'error.main', backgroundColor: 'transparent' },
+                }}
+              >
+                Gerenciar assinatura
+              </Button>
+            )}
+          </Box>
+        )}
 
         <Dialog
           open={cancelSubscriptionModalOpen}
