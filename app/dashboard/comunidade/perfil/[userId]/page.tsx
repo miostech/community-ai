@@ -1376,7 +1376,7 @@ export default function PerfilComunidadePage() {
         </Stack>
       </Box>
 
-      {/* Posts section header */}
+      {/* Publicações na comunidade: todas as publicações do perfil (all-time). Não depende do ranking semanal; nunca limpar por semana. */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Typography
           variant="subtitle2"

@@ -219,14 +219,16 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '20');
         const category = searchParams.get('category'); // filtro opcional
-        const authorId = searchParams.get('author_id'); // posts de um usuário
+        const authorId = searchParams.get('author_id'); // posts de um usuário (perfil: todas as publicações, sem filtro de semana)
 
         await connectMongo();
 
         // Buscar account do usuário atual (para likes, salvos, votos em enquete)
         const currentAccount = await Account.findOne({ auth_user_id: authUserId }).select('_id role').lean();
 
-        // Construir query — todos veem todos os posts no feed (Atualização e Suporte só não aparecem como opção ao criar)
+        // Construir query — todos veem todos os posts no feed (Atualização e Suporte só não aparecem como opção ao criar).
+        // Quando author_id é passado (perfil público): listar TODAS as publicações do autor, sem filtro por semana.
+        // O ranking semanal é independente; aqui nunca aplicamos week/created_at.
         const query: Record<string, unknown> = {
             status: 'published',
         };
@@ -236,7 +238,9 @@ export async function GET(request: NextRequest) {
         }
 
         if (authorId) {
-            query.author_id = authorId;
+            query.author_id = mongoose.Types.ObjectId.isValid(authorId)
+                ? new mongoose.Types.ObjectId(authorId)
+                : authorId;
         }
 
         const skip = (page - 1) * limit;
