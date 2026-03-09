@@ -27,7 +27,7 @@ interface TopUser {
     name: string;
     avatar: string | null;
     initials: string;
-    engagementScore: number;
+    engagementScore: number | null;
     instagramProfile?: string;
     tiktokProfile?: string;
 }
@@ -170,7 +170,9 @@ export default function InfluenciadoresDashboardPage() {
                                             {user.name}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            Engajamento {user.engagementScore}/100
+                                            {user.engagementScore != null
+                                                ? `Engajamento ${user.engagementScore}/100`
+                                                : 'Engajamento: atualizado 1x ao dia'}
                                         </Typography>
                                     </Box>
                                 </Stack>

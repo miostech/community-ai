@@ -16,13 +16,26 @@ function sleep(ms: number): Promise<void> {
 
 /** Atualiza cached_followers_total e cached_followers_updated_at para influenciadores (1x/dia). */
 export async function GET(request: Request) {
+    const secret = process.env.CRON_SECRET;
     const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!secret) {
+        return NextResponse.json(
+            { error: 'CRON_SECRET não configurado no servidor. Adicione em .env.local (local) ou em Vercel → Settings → Environment Variables.' },
+            { status: 503 }
+        );
+    }
+    if (authHeader !== `Bearer ${secret}`) {
+        return NextResponse.json(
+            { error: 'Unauthorized. Verifique se o header Authorization: Bearer <CRON_SECRET> usa o mesmo valor configurado no servidor.' },
+            { status: 401 }
+        );
     }
 
     if (!process.env.SEARCHAPI_API_KEY) {
-        return NextResponse.json({ error: 'SEARCHAPI_API_KEY não configurada' }, { status: 503 });
+        return NextResponse.json(
+            { error: 'SEARCHAPI_API_KEY não configurada no servidor. Necessária para buscar seguidores nas redes.' },
+            { status: 503 }
+        );
     }
 
     try {

@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const TOP_N = 20;
+const TOP_N = 30;
 
 // GET - Top creators para portfólio marcas + métricas agregadas
 export async function GET() {
@@ -45,7 +45,7 @@ export async function GET() {
             Account.aggregate([
                 { $match: filter },
                 { $addFields: { effectiveFollowers: effectiveFollowersExpr } },
-                { $sort: { effectiveFollowers: -1 } },
+                { $sort: { cached_engagement_score: -1, effectiveFollowers: -1 } },
                 { $limit: TOP_N },
                 {
                     $project: {
