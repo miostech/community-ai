@@ -98,7 +98,7 @@ export async function GET(
         const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
         const moderator = await Account.findOne({ auth_user_id: authUserId }).select('role').lean();
         const role = (moderator as { role?: string } | null)?.role;
-        if (!moderator || !['moderator', 'admin'].includes(role || '')) {
+        if (!moderator || !['moderator', 'admin', 'criador'].includes(role || '')) {
             return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
         }
 

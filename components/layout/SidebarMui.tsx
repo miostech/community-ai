@@ -42,6 +42,8 @@ import {
     AdminPanelSettings as AdminIcon,
     Campaign as CampaignIcon,
     Dashboard as DashboardIcon,
+    PersonSearch as InfluencersIcon,
+    Slideshow as SlideshowIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
@@ -150,6 +152,25 @@ const adminNavItems: NavItem[] = [
                 label: 'Candidaturas',
                 href: '/dashboard/admin/candidaturas',
                 icon: <AssignmentIcon fontSize="small" />,
+            },
+        ],
+    },
+    {
+        label: 'Influenciadores',
+        href: '/dashboard/influenciadores',
+        exactMatch: false,
+        icon: <InfluencersIcon />,
+        children: [
+            {
+                label: 'Dashboard',
+                href: '/dashboard/influenciadores',
+                icon: <DashboardIcon fontSize="small" />,
+                exactMatch: true,
+            },
+            {
+                label: 'Apresentação',
+                href: '/dashboard/influenciadores/apresentacao',
+                icon: <SlideshowIcon fontSize="small" />,
             },
         ],
     },
@@ -363,7 +384,9 @@ export function SidebarMui() {
                 {canAccessAdmin && (
                     <>
                         <Divider sx={{ mx: 2, my: 1 }} />
-                        {adminNavItems.map((item) => renderNavItem(item))}
+                        {adminNavItems
+                            .filter((item) => item.label !== 'Influenciadores' || account?.role === 'moderator')
+                            .map((item) => renderNavItem(item))}
                     </>
                 )}
 

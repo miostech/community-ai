@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Box,
@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
+    Campaign as CampaignIcon,
     Instagram as InstagramIcon,
     YouTube as YouTubeIcon,
     OpenInNew as OpenInNewIcon,
@@ -148,15 +149,19 @@ function getVideoEmbedUrl(url: string): string | null {
     return null;
 }
 
-export default function CreatorPortfolioPage() {
+interface DomeStats {
+    ranking_position: number | null;
+    ranking_week: string | null;
+    ranking_wins: number;
+}
+
+export default function InfluencerProfilePage() {
     const theme = useTheme();
     const params = useParams();
-    const router = useRouter();
-    const searchParams = useSearchParams();
     const accountId = params.accountId as string;
-    const campaignId = searchParams.get('campaignId');
 
     const [creator, setCreator] = useState<Creator | null>(null);
+    const [domeStats, setDomeStats] = useState<DomeStats | null>(null);
     const [applications, setApplications] = useState<ApplicationEntry[]>([]);
     const [stats, setStats] = useState({ posts_count: 0, comments_count: 0, likes_received: 0 });
     const [loading, setLoading] = useState(true);
@@ -190,6 +195,10 @@ export default function CreatorPortfolioPage() {
         if (!accountId) return;
         fetchCreator();
         fetchSocialStats();
+        fetch('/api/admin/influencers/' + accountId + '/dome-stats')
+            .then((r) => r.json())
+            .then((data) => setDomeStats({ ranking_position: data.ranking_position ?? null, ranking_week: data.ranking_week ?? null, ranking_wins: data.ranking_wins ?? 0 }))
+            .catch(() => setDomeStats(null));
     }, [accountId]);
 
     useEffect(() => {
@@ -200,8 +209,8 @@ export default function CreatorPortfolioPage() {
             : creator.link_tiktok
             ? `@${creator.link_tiktok.replace('@', '')}`
             : null;
-        document.title = handle ? `${name} (${handle}) — Admin` : `${name} — Admin`;
-        return () => { document.title = 'Admin — Dome'; };
+        document.title = handle ? `${name} (${handle}) — Influenciadores` : `${name} — Influenciadores`;
+        return () => { document.title = 'Influenciadores — Dome'; };
     }, [creator]);
 
     async function fetchCreator() {
@@ -263,26 +272,15 @@ export default function CreatorPortfolioPage() {
     return (
         <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
-                {campaignId ? (
-                    <Button
-                        component={Link}
-                        href={`/dashboard/admin/campanhas/${campaignId}/candidaturas`}
-                        startIcon={<ArrowBackIcon />}
-                        size="small"
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
-                    >
-                        Voltar às candidaturas
-                    </Button>
-                ) : (
-                    <Button
-                        onClick={() => router.back()}
-                        startIcon={<ArrowBackIcon />}
-                        size="small"
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
-                    >
-                        Voltar
-                    </Button>
-                )}
+                <Button
+                    component={Link}
+                    href="/dashboard/influenciadores"
+                    startIcon={<ArrowBackIcon />}
+                    size="small"
+                    sx={{ textTransform: 'none', fontWeight: 600 }}
+                >
+                    Voltar aos influenciadores
+                </Button>
                 <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.75rem' }}>
                     /
                 </Typography>
@@ -571,6 +569,84 @@ export default function CreatorPortfolioPage() {
                         </Stack>
                     </Box>
                 )}
+            </Paper>
+
+            {/* Na Dome */}
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: { xs: 2.5, sm: 3 }, border: 1, borderColor: 'divider', mb: 3 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" sx={{ mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        Na Dome
+                    </Typography>
+                    <Button
+                        component={Link}
+                        href="/dashboard/admin/campanhas"
+                        startIcon={<CampaignIcon />}
+                        variant="contained"
+                        size="small"
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                        }}
+                    >
+                        Convidar para campanha
+                    </Button>
+                </Stack>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                    {creator.created_at && (
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
+                                Data de entrada
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                {new Date(creator.created_at).toLocaleDateString('pt-BR')}
+                            </Typography>
+                        </Grid>
+                    )}
+                    {creator.followers_at_signup != null && (
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
+                                Seguidores na entrada
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                {creator.followers_at_signup.toLocaleString('pt-BR')}
+                            </Typography>
+                        </Grid>
+                    )}
+                    {domeStats && domeStats.ranking_position != null && (
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
+                                Posição no ranking
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                #{domeStats.ranking_position}
+                                {domeStats.ranking_week && (
+                                    <Typography component="span" variant="caption" color="text.disabled" sx={{ ml: 0.5 }}>
+                                        ({domeStats.ranking_week})
+                                    </Typography>
+                                )}
+                            </Typography>
+                        </Grid>
+                    )}
+                    {domeStats && domeStats.ranking_wins > 0 && (
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
+                                Vitórias no ranking
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                {domeStats.ranking_wins}
+                            </Typography>
+                        </Grid>
+                    )}
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em', mb: 0.25 }}>
+                            Campanhas na Dome
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                            {applications.filter((a) => ['completed', 'approved'].includes(a.status)).length}
+                        </Typography>
+                    </Grid>
+                </Grid>
             </Paper>
 
             {/* Métricas das Redes Sociais via SearchAPI */}

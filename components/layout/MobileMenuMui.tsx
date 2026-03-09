@@ -17,6 +17,7 @@ import {
     Settings as SettingsIcon,
     Work as WorkIcon,
     AdminPanelSettings as AdminIcon,
+    PersonSearch as InfluencersIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -182,17 +183,32 @@ export function MobileMenuMui() {
                         />
                     );
                 })}
-                {canAccessAdmin && (
+                {canAccessAdmin && [
                     <BottomNavigationAction
+                        key="admin"
                         component={Link}
                         href="/dashboard/admin"
                         icon={<AdminIcon />}
                         sx={{
-                            opacity: pathname?.startsWith('/dashboard/admin') ? 1 : 0.6,
-                            color: pathname?.startsWith('/dashboard/admin') ? 'primary.main' : undefined,
+                            opacity: pathname?.startsWith('/dashboard/admin') && !pathname?.startsWith('/dashboard/influenciadores') ? 1 : 0.6,
+                            color: pathname?.startsWith('/dashboard/admin') && !pathname?.startsWith('/dashboard/influenciadores') ? 'primary.main' : undefined,
                         }}
-                    />
-                )}
+                    />,
+                    ...(account?.role === 'moderator'
+                        ? [
+                              <BottomNavigationAction
+                                  key="influencers"
+                                  component={Link}
+                                  href="/dashboard/influenciadores"
+                                  icon={<InfluencersIcon />}
+                                  sx={{
+                                      opacity: pathname?.startsWith('/dashboard/influenciadores') ? 1 : 0.6,
+                                      color: pathname?.startsWith('/dashboard/influenciadores') ? 'primary.main' : undefined,
+                                  }}
+                              />,
+                          ]
+                        : []),
+                ]}
             </BottomNavigation>
         </Paper>
     );

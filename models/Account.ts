@@ -31,6 +31,11 @@ export interface Account {
     password_hash?: string;
     /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura — para monitorar crescimento e premiações */
     followers_at_signup?: number | null;
+    /** Cache de seguidores atuais (IG+TT) para Apresentação; atualizado 1x/dia pelo cron */
+    cached_followers_total?: number | null;
+    cached_followers_updated_at?: Date | null;
+    /** Score de engajamento 0–100 (Search API); atualizado junto com cached_followers */
+    cached_engagement_score?: number | null;
     /** Papel na comunidade: moderador pode aprovar/ocultar comentários e deletar qualquer comentário; criador é exibido com badge */
     role?: 'user' | 'moderator' | 'admin' | 'criador';
     /** Membro fundador: assinou entre 23/02/2026 e 08/03/2026, sem cancelamento nem reembolso */
@@ -116,6 +121,9 @@ const AccountSchema = new Schema(
         password_hash: { type: String, trim: true, select: false },
         /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura */
         followers_at_signup: { type: Number, default: null },
+        cached_followers_total: { type: Number, default: null },
+        cached_followers_updated_at: { type: Date, default: null },
+        cached_engagement_score: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
         is_founding_member: { type: Boolean, default: false },
         request_cancel_at: { type: Date },
