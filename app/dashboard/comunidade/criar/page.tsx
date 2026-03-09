@@ -23,6 +23,8 @@ import {
   Fade,
   alpha,
   useTheme,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -94,8 +96,11 @@ export default function CriarPostPageMui() {
   const [pollEnabled, setPollEnabled] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [notifyAllUsers, setNotifyAllUsers] = useState(false);
 
   const canUseAtualizacao = account?.role === 'admin' || account?.role === 'moderator' || account?.role === 'criador';
+  /** Apenas moderador, admin e criador veem a opção "Notificar todos"; usuário comum não vê. */
+  const showNotifyAllOption = canUseAtualizacao;
 
   // Se categoria for "atualização" e o usuário não tiver permissão, limpar seleção
   useEffect(() => {
@@ -360,6 +365,7 @@ export default function CriarPostPageMui() {
           link_instagram_post: newPost.link_instagram_post || undefined,
           category: newPost.category!,
           ...pollPayload,
+          ...(showNotifyAllOption && { notify_all: notifyAllUsers }),
         }),
       });
 
@@ -529,6 +535,19 @@ export default function CriarPostPageMui() {
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                 Selecione o tipo de post antes de publicar
               </Typography>
+            )}
+            {showNotifyAllOption && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={notifyAllUsers}
+                    onChange={(e) => setNotifyAllUsers(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Notificar todos os usuários sobre este post"
+                sx={{ mt: 1.5, display: 'block' }}
+              />
             )}
           </Box>
 

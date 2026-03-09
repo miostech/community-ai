@@ -24,9 +24,10 @@ import {
     Gavel as ModerationIcon,
     AutoStories as StoryCommentIcon,
     Campaign as CampaignIcon,
+    Article as NewPostIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post';
 
 export interface NotificationItem {
     id: string;
@@ -88,6 +89,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'solicitou o cancelamento da assinatura';
         case 'new_campaign':
             return 'disponível!';
+        case 'new_post':
+            return 'publicou um novo post';
         default:
             return 'interagiu';
     }
@@ -111,6 +114,8 @@ function getNotificationIcon(type: NotificationType) {
             return <ModerationIcon sx={{ fontSize: 14, color: 'warning.main' }} />;
         case 'new_campaign':
             return <CampaignIcon sx={{ fontSize: 14, color: 'info.main' }} />;
+        case 'new_post':
+            return <NewPostIcon sx={{ fontSize: 14, color: 'primary.main' }} />;
         default:
             return null;
     }

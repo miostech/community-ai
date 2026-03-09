@@ -7,6 +7,7 @@ import Account from '@/models/Account';
 import Like from '@/models/Like';
 import SavedPost from '@/models/SavedPost';
 import PollVote from '@/models/PollVote';
+import { createNotification } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -138,6 +139,22 @@ export async function POST(request: NextRequest) {
         });
 
         await post.save();
+
+        // Notificar todos os usuários apenas se moderador/admin/criador ativou a opção
+        const notifyAll = body.notify_all === true;
+        if (canUseAtualizacao && notifyAll) {
+            const recipients = await Account.find({ _id: { $ne: accountId } }).select('_id').lean();
+            const contentPreview = (post.content || '').slice(0, 150) || undefined;
+            for (const rec of recipients) {
+                await createNotification({
+                    recipientId: rec._id,
+                    actorId: accountId,
+                    type: 'new_post',
+                    postId: post._id,
+                    contentPreview: contentPreview || null,
+                });
+            }
+        }
 
         // Popular author para retornar dados completos
         await post.populate('author_id', 'first_name last_name avatar_url role is_founding_member');
