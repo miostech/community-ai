@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
 import Campaign from '@/models/Campaign';
+import { createNotification } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -121,6 +122,25 @@ export async function POST(request: NextRequest) {
             status: body.status || 'draft',
             images: body.images || [],
         });
+
+        // Se a campanha foi criada já ativa (ex.: campanha paga), notificar todos os usuários
+        if (campaign.status === 'active') {
+            const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+            const actorAccount = await Account.findOne({ auth_user_id: authUserId }).select('_id').lean();
+            if (actorAccount) {
+                const recipients = await Account.find({ _id: { $ne: actorAccount._id } }).select('_id').lean();
+                const brandName = campaign.brand_name || 'Nova campanha';
+                for (const rec of recipients) {
+                    await createNotification({
+                        recipientId: rec._id,
+                        actorId: actorAccount._id,
+                        type: 'new_campaign',
+                        campaignId: campaign._id,
+                        contentPreview: brandName,
+                    });
+                }
+            }
+        }
 
         return NextResponse.json({ success: true, campaign }, { status: 201 });
     } catch (error) {

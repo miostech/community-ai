@@ -290,7 +290,11 @@ export function NotificationsButtonMui() {
                                 }
                                 secondary={
                                     <Box component="span">
-                                        {n.content_preview && n.type !== 'new_campaign' && (
+                                        {n.type === 'new_campaign' ? (
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                Candidate-se agora!
+                                            </Typography>
+                                        ) : n.content_preview ? (
                                             <Typography
                                                 variant="caption"
                                                 color="text.secondary"
@@ -304,7 +308,7 @@ export function NotificationsButtonMui() {
                                             >
                                                 &quot;{n.content_preview}&quot;
                                             </Typography>
-                                        )}
+                                        ) : null}
                                         <Typography variant="caption" color="text.disabled">
                                             {formatTimeAgo(n.created_at)}
                                         </Typography>
