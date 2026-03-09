@@ -46,6 +46,7 @@ import {
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
 import { isChatLaunched } from '@/lib/chat-launch';
+import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 
 const DRAWER_WIDTH = 256;
 
@@ -341,9 +342,12 @@ export function SidebarMui() {
                 <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
                     <DomeLogo style={{ fontSize: 20, fontWeight: 600 }} />
                 </Link>
-                <IconButton onClick={toggleTheme} size="small">
-                    {resolvedTheme === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <NotificationsButtonMui />
+                    <IconButton onClick={toggleTheme} size="small">
+                        {resolvedTheme === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                    </IconButton>
+                </Box>
             </Box>
 
             {/* Navigation */}
