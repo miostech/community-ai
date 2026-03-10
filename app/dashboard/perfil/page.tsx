@@ -83,6 +83,8 @@ export default function PerfilPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const push = usePushNotifications();
+  const [pushTestLoading, setPushTestLoading] = useState(false);
+  const [pushTestMessage, setPushTestMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   /** Botão "Usar foto do Instagram" só aparece uma vez por dia (24h desde o último uso). */
   const canUseInstagramAvatar =
@@ -709,7 +711,9 @@ export default function PerfilPage() {
                     </Typography>
                   </Stack>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Receba avisos de curtidas, comentários e novidades mesmo com o site fechado. No iPhone, adicione o site à tela inicial para receber notificações.
+                    {push.isPwaStandalone
+                      ? 'Você está usando o app. Ative abaixo para receber notificações mesmo com o app fechado.'
+                      : 'Receba avisos de curtidas, comentários e novidades mesmo com o site fechado. No iPhone, adicione o site à tela inicial (Safari → compartilhar → "Adicionar à tela de início") e abra por ele para ativar.'}
                   </Typography>
                   {push.error && (
                     <Alert severity="warning" sx={{ mb: 2 }}>
@@ -737,6 +741,41 @@ export default function PerfilPage() {
                             : 'Ativar notificações'
                     }
                   />
+                  {/* Botão de teste desativado para prod — reative se quiser testar push manualmente
+                  {push.isSubscribed && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={pushTestLoading}
+                      onClick={async () => {
+                        setPushTestLoading(true);
+                        setPushTestMessage(null);
+                        try {
+                          const res = await fetch('/api/push/test', { method: 'POST' });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            setPushTestMessage({ type: 'success', text: data.message ?? 'Enviada! Minimize a janela ou mude de aba para ver a notificação.' });
+                          } else {
+                            setPushTestMessage({ type: 'error', text: data.error ?? data.message ?? 'Falha ao enviar.' });
+                          }
+                        } catch {
+                          setPushTestMessage({ type: 'error', text: 'Erro ao enviar teste.' });
+                        } finally {
+                          setPushTestLoading(false);
+                          setTimeout(() => setPushTestMessage(null), 5000);
+                        }
+                      }}
+                      sx={{ mt: 2 }}
+                    >
+                      {pushTestLoading ? 'Enviando...' : 'Testar notificação'}
+                    </Button>
+                  )}
+                  {pushTestMessage && (
+                    <Alert severity={pushTestMessage.type} sx={{ mt: 2 }}>
+                      {pushTestMessage.text}
+                    </Alert>
+                  )}
+                  */}
                 </Box>
               </>
             )}

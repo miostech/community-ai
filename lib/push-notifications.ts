@@ -17,25 +17,34 @@ import { NotificationType } from '@/models/Notification';
  * - moderation (moderadores)
  */
 
-const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY?.trim();
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY?.trim();
-const CONTACT_MAILTO = process.env.VAPID_MAILTO?.trim() || 'mailto:support@example.com';
-
 let vapidConfigured = false;
+let vapidPublic: string | null = null;
+let vapidPrivate: string | null = null;
 
-function ensureVapid() {
-  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+function readVapidFromEnv(): { public: string | null; private: string | null; mailto: string } {
+  const public_ = process.env.VAPID_PUBLIC_KEY?.trim() || null;
+  const private_ = process.env.VAPID_PRIVATE_KEY?.trim() || null;
+  const mailto = process.env.VAPID_MAILTO?.trim() || 'mailto:support@example.com';
+  return { public: public_ || null, private: private_ || null, mailto };
+}
+
+function ensureVapid(): boolean {
+  const { public: pub, private: priv, mailto } = readVapidFromEnv();
+  if (!pub || !priv) {
     return false;
   }
-  if (!vapidConfigured) {
-    webpush.setVapidDetails(CONTACT_MAILTO, VAPID_PUBLIC, VAPID_PRIVATE);
+  if (!vapidConfigured || vapidPublic !== pub || vapidPrivate !== priv) {
+    webpush.setVapidDetails(mailto, pub, priv);
     vapidConfigured = true;
+    vapidPublic = pub;
+    vapidPrivate = priv;
   }
   return true;
 }
 
 export function getVapidPublicKey(): string | null {
-  return VAPID_PUBLIC || null;
+  const { public: pub } = readVapidFromEnv();
+  return pub || null;
 }
 
 export interface PushPayload {

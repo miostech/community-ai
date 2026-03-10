@@ -15,12 +15,22 @@ function urlBase64ToUint8Array(base64String: string): BufferSource {
   return outputArray as BufferSource;
 }
 
+/** True quando o usuário abriu o site pelo atalho na tela inicial (PWA / web app instalado). */
+export function isPwaStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia('(display-mode: standalone)').matches) return true;
+  if ((navigator as { standalone?: boolean }).standalone === true) return true; // iOS Safari
+  return false;
+}
+
 export interface UsePushNotificationsResult {
   pushSupported: boolean;
   permission: NotificationPermission | null;
   isSubscribed: boolean;
   isLoading: boolean;
   error: string | null;
+  /** True se abriu pelo atalho do celular (PWA), onde push funciona no iPhone. */
+  isPwaStandalone: boolean;
   subscribe: () => Promise<boolean>;
   unsubscribe: () => Promise<void>;
 }
@@ -32,10 +42,10 @@ export function usePushNotifications(): UsePushNotificationsResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Mostra a opção de push em qualquer dispositivo com Service Worker + Notification (inclui mobile)
   const pushSupported =
     typeof window !== 'undefined' &&
     'serviceWorker' in navigator &&
-    'PushManager' in window &&
     'Notification' in window;
 
   useEffect(() => {
@@ -48,15 +58,21 @@ export function usePushNotifications(): UsePushNotificationsResult {
   }, [pushSupported]);
 
   useEffect(() => {
-    if (!pushSupported || !registration) return;
+    if (!registration?.pushManager) return;
     registration.pushManager.getSubscription().then((sub) => {
       setIsSubscribed(!!sub);
     });
-  }, [pushSupported, registration]);
+  }, [registration]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (!pushSupported || !registration) {
       setError('Push não suportado ou service worker não registrado');
+      return false;
+    }
+    if (!registration.pushManager) {
+      setError(
+        'No celular: use o Chrome no Android ou, no iPhone, adicione o site à tela inicial (Safari → compartilhar → "Adicionar à tela de início") e abra por ele.'
+      );
       return false;
     }
     setError(null);
@@ -74,7 +90,8 @@ export function usePushNotifications(): UsePushNotificationsResult {
       }
       const keyRes = await fetch('/api/push/vapid-public-key');
       if (!keyRes.ok) {
-        setError('Chave de push não disponível');
+        const data = await keyRes.json().catch(() => ({}));
+        setError(data.hint || data.error || 'Chave de push não disponível. Reinicie o servidor após configurar as variáveis VAPID.');
         setIsLoading(false);
         return false;
       }
@@ -139,6 +156,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     isSubscribed,
     isLoading,
     error,
+    isPwaStandalone: isPwaStandalone(),
     subscribe,
     unsubscribe,
   };
