@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Snackbar, Button, Typography, Box } from '@mui/material';
+import { Snackbar, Button, Typography, Box, Alert } from '@mui/material';
 import { NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
@@ -18,7 +18,7 @@ function isDismissedRecently(): boolean {
 }
 
 export function PushPromptBanner() {
-  const { pushSupported, isSubscribed, permission, subscribe, isLoading } = usePushNotifications();
+  const { pushSupported, isSubscribed, permission, subscribe, isLoading, error } = usePushNotifications();
   const [open, setOpen] = useState(false);
   const [hasVisited, setHasVisited] = useState(false);
   const [canShow, setCanShow] = useState(false);
@@ -57,6 +57,7 @@ export function PushPromptBanner() {
   const handleActivate = async () => {
     const ok = await subscribe();
     if (ok) setOpen(false);
+    // Se deu erro (ex.: iPhone em aba normal), a mensagem aparece no Alert abaixo
   };
 
   const handleDismiss = () => {
@@ -78,7 +79,7 @@ export function PushPromptBanner() {
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
           gap: 1.5,
           px: 2,
           py: 1.5,
@@ -91,17 +92,18 @@ export function PushPromptBanner() {
           maxWidth: 360,
         }}
       >
-        <NotificationsActiveIcon sx={{ color: 'primary.main', fontSize: 28 }} />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="subtitle2" fontWeight={600}>
-            Receba notificações no celular
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Curtidas, comentários e novidades mesmo com o site fechado.
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Button
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <NotificationsActiveIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Receba notificações no celular
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Curtidas, comentários e novidades mesmo com o site fechado.
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Button
             size="small"
             variant="contained"
             onClick={handleActivate}
@@ -110,10 +112,16 @@ export function PushPromptBanner() {
           >
             {isLoading ? '...' : 'Ativar'}
           </Button>
-          <Button size="small" variant="text" onClick={handleDismiss} sx={{ minWidth: 0 }}>
-            Agora não
-          </Button>
+            <Button size="small" variant="text" onClick={handleDismiss} sx={{ minWidth: 0 }}>
+              Agora não
+            </Button>
+          </Box>
         </Box>
+        {error && (
+          <Alert severity="info" sx={{ py: 0.5, '& .MuiAlert-message': { fontSize: '0.8rem' } }}>
+            {error}
+          </Alert>
+        )}
       </Box>
     </Snackbar>
   );

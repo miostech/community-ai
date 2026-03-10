@@ -65,14 +65,25 @@ export function usePushNotifications(): UsePushNotificationsResult {
   }, [registration]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
+    const iphoneMessage =
+      'No iPhone: adicione o site à tela inicial (Safari ou Chrome → compartilhar → "Adicionar à tela de início") e abra por esse ícone para ativar notificações.';
+
     if (!pushSupported || !registration) {
       setError('Push não suportado ou service worker não registrado');
       return false;
     }
-    if (!hasNotificationApi || !registration.pushManager) {
-      setError(
-        'No iPhone: adicione o site à tela inicial (Safari ou Chrome → compartilhar → "Adicionar à tela de início") e abra por esse ícone para ativar notificações.'
-      );
+    if (!hasNotificationApi) {
+      setError(iphoneMessage);
+      return false;
+    }
+    let hasPushManager = false;
+    try {
+      hasPushManager = !!(registration.pushManager);
+    } catch {
+      hasPushManager = false;
+    }
+    if (!hasPushManager) {
+      setError(iphoneMessage);
       return false;
     }
     setError(null);

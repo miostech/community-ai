@@ -15,6 +15,7 @@ import {
     CircularProgress,
     Divider,
 } from '@mui/material';
+import { PostContentText } from '@/components/community/PostContentText';
 import {
     NotificationsOutlined as NotificationsIcon,
     Favorite as LikeIcon,
@@ -274,7 +275,7 @@ export function NotificationsButtonMui() {
                                             <>
                                                 Campanha{' '}
                                                 <Typography component="span" fontWeight={600}>
-                                                    {n.content_preview || 'Nova campanha'}
+                                                    <PostContentText content={n.content_preview || 'Nova campanha'} inline />
                                                 </Typography>{' '}
                                                 {getNotificationLabel(n)}
                                             </>
@@ -298,6 +299,7 @@ export function NotificationsButtonMui() {
                                             <Typography
                                                 variant="caption"
                                                 color="text.secondary"
+                                                component="span"
                                                 sx={{
                                                     display: 'block',
                                                     overflow: 'hidden',
@@ -306,7 +308,7 @@ export function NotificationsButtonMui() {
                                                     maxWidth: 200,
                                                 }}
                                             >
-                                                &quot;{n.content_preview}&quot;
+                                                &quot;<PostContentText content={n.content_preview} inline />&quot;
                                             </Typography>
                                         ) : null}
                                         <Typography variant="caption" color="text.disabled">
