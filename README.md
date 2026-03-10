@@ -104,6 +104,15 @@ Templates pré-configurados:
 - Visualização por projeto
 - Histórico de modificações
 
+### 6. Notificações push (celular)
+- Usuários podem receber notificações no celular mesmo com o site fechado (Web Push + Service Worker).
+- Ativação em **Meu Perfil** > "Notificações no celular". A permissão só é pedida quando o usuário ativa.
+- **Variáveis de ambiente** (opcional; sem elas o push fica desabilitado):
+  - `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`: chaves VAPID para Web Push.
+  - `VAPID_MAILTO`: contato (ex.: `mailto:suporte@dominio.com`).
+- Gerar chaves: `node scripts/generate-vapid-keys.js` e adicionar ao `.env.local`.
+- **Testes**: em Android (Chrome) use HTTPS; em iOS (Safari) o site deve ser adicionado à tela inicial (PWA) para notificações com o app fechado.
+
 ## 🔄 Próximos Passos
 
 Para evoluir para produção:

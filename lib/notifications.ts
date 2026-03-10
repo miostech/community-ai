@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Notification, { NotificationType } from '@/models/Notification';
+import { sendPushForNotification } from '@/lib/push-notifications';
 
 interface CreateNotificationParams {
     recipientId: mongoose.Types.ObjectId | string;
@@ -78,6 +79,18 @@ export async function createNotification({
         );
 
         console.log(`✅ Notificação salva: ${type} para ${recipientId}, _id: ${result?._id}`);
+
+        // Enviar push para o dispositivo (não bloqueia; falhas são ignoradas)
+        sendPushForNotification({
+            recipientId,
+            actorId,
+            type,
+            contentPreview,
+            postId,
+            commentId,
+            storyId,
+            campaignId,
+        }).catch((err) => console.error('Push notification error:', err));
     } catch (error) {
         // Log do erro mas não interrompe o fluxo principal
         console.error('❌ Erro ao criar notificação:', error);

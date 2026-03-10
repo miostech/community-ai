@@ -20,6 +20,8 @@ import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/mat
 import { Phone as PhoneIcon } from '@mui/icons-material';
 import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
 import { CampaignPromoModal } from '@/components/dashboard/CampaignPromoModal';
+import { PushServiceWorkerRegistration } from '@/components/push/PushServiceWorkerRegistration';
+import { PushPromptBanner } from '@/components/push/PushPromptBanner';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,6 +36,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <PushServiceWorkerRegistration />
+      <PushPromptBanner />
       <StoriesProvider>
         <PostsProvider>
           <CreatePostProvider>

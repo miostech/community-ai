@@ -41,6 +41,9 @@ import {
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { PhoneInput } from '@/components/ui/PhoneInput';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { Switch, FormControlLabel } from '@mui/material';
+import { NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
 
 interface FormData {
   first_name: string;
@@ -78,6 +81,8 @@ export default function PerfilPage() {
   const [cancelSubscriptionModalOpen, setCancelSubscriptionModalOpen] = useState(false);
   const [isRequestingCancel, setIsRequestingCancel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const push = usePushNotifications();
 
   /** Botão "Usar foto do Instagram" só aparece uma vez por dia (24h desde o último uso). */
   const canUseInstagramAvatar =
@@ -691,6 +696,50 @@ export default function PerfilPage() {
                 </Box>
               </Stack>
             </Box>
+
+            {/* Notificações no celular (push) */}
+            {push.pushSupported && (
+              <>
+                <Divider />
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                    <NotificationsActiveIcon color="action" />
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      Notificações no celular
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Receba avisos de curtidas, comentários e novidades mesmo com o site fechado. No iPhone, adicione o site à tela inicial para receber notificações.
+                  </Typography>
+                  {push.error && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      {push.error}
+                    </Alert>
+                  )}
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={push.isSubscribed}
+                        disabled={push.isLoading || push.permission === 'denied'}
+                        onChange={async () => {
+                          if (push.isSubscribed) await push.unsubscribe();
+                          else await push.subscribe();
+                        }}
+                      />
+                    }
+                    label={
+                      push.isLoading
+                        ? '...'
+                        : push.permission === 'denied'
+                          ? 'Permissão bloqueada (ative nas configurações do navegador)'
+                          : push.isSubscribed
+                            ? 'Notificações ativadas'
+                            : 'Ativar notificações'
+                    }
+                  />
+                </Box>
+              </>
+            )}
 
             {/* Aparência (tema) — visível só no mobile, onde não há sidebar com toggle */}
             <Box sx={{ display: { xs: 'block', md: 'none' } }}>
