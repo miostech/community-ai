@@ -28,6 +28,7 @@ import {
     Star as StarIcon,
 } from '@mui/icons-material';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
+import { PostContentText } from '@/components/community/PostContentText';
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { StoriesMui } from '@/components/community/StoriesMui';
@@ -107,14 +108,13 @@ function BlurredRealPostCard({ post }: { post: Post }) {
                 <CardContent sx={{ pt: 0, pb: 1.5 }}>
                     <Typography
                         variant="body2"
+                        component="div"
                         sx={{
-                            whiteSpace: 'pre-line',
-                            wordBreak: 'break-word',
                             filter: 'blur(4px)',
                             userSelect: 'none',
                         }}
                     >
-                        {post.content}
+                        <PostContentText content={post.content} />
                     </Typography>
                 </CardContent>
             )}

@@ -17,6 +17,7 @@ import { useAccount } from '@/contexts/AccountContext';
 import { usePosts, type Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
+import { PostContentText } from '@/components/community/PostContentText';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
@@ -1480,14 +1481,13 @@ export default function PerfilComunidadePage() {
                 {/* Content */}
                 <Typography
                   variant="body2"
+                  component="div"
                   sx={{
-                    whiteSpace: 'pre-line',
-                    wordBreak: 'break-word',
                     mb: 1.5,
                     lineHeight: 1.6,
                   }}
                 >
-                  {post.content}
+                  <PostContentText content={post.content} />
                 </Typography>
 
                 {/* Images */}

@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { VideoEmbed } from '@/components/community/VideoEmbed';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
+import { PostContentText } from '@/components/community/PostContentText';
 import { CommentsSectionMui } from '@/components/community/CommentsSectionMui';
 import { useSession } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
@@ -282,7 +283,9 @@ export default function PostDetailPageMui() {
                     {/* Content */}
                     {displayPost.content && (
                         <Box sx={{ px: 2, pb: 2 }}>
-                            <Typography sx={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{displayPost.content}</Typography>
+                            <Typography component="div" sx={{ wordBreak: 'break-word' }}>
+                                <PostContentText content={displayPost.content} />
+                            </Typography>
                         </Box>
                     )}
 

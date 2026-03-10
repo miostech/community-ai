@@ -32,6 +32,7 @@ import {
     PushPin as PushPinIcon,
 } from '@mui/icons-material';
 import { ImageCarousel } from './ImageCarousel';
+import { PostContentText } from './PostContentText';
 import { Post } from '@/contexts/PostsContext';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
@@ -403,15 +404,14 @@ export function PostCardMui({
                 <CardContent sx={{ pt: 0, pb: 1.5 }}>
                     <Typography
                         variant="body2"
+                        component="div"
                         onClick={onNavigate}
                         sx={{
                             cursor: 'pointer',
-                            whiteSpace: 'pre-line',
-                            wordBreak: 'break-word',
                             '&:hover': { color: 'text.secondary' },
                         }}
                     >
-                        {post.content}
+                        <PostContentText content={post.content} />
                     </Typography>
                 </CardContent>
             )}
