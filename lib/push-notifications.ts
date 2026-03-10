@@ -174,9 +174,10 @@ export async function sendPushForNotification(
   switch (type) {
     case 'like':
       title = 'Nova curtida';
-      body = `${actorName} curtiu seu conteúdo`;
+      body = postId ? `${actorName} curtiu seu post` : `${actorName} curtiu seu story`;
       if (postId) url = `/dashboard/comunidade/${postId}`;
-      tag = postId ? `like-post-${postId}` : 'like';
+      else if (storyId) url = `/dashboard/comunidade/perfil/${recipientId}`;
+      tag = postId ? `like-post-${postId}` : storyId ? `like-story-${storyId}` : 'like';
       break;
     case 'comment':
       title = 'Novo comentário';
