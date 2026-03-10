@@ -35,6 +35,14 @@ export async function POST(
 
     const accountId = account._id as mongoose.Types.ObjectId;
 
+    const existingComment = await StoryCommentModel.findById(commentId).select('author_id').lean();
+    if (!existingComment) {
+      return NextResponse.json({ error: 'Comentário não encontrado' }, { status: 404 });
+    }
+    if (existingComment.author_id.toString() === accountId.toString()) {
+      return NextResponse.json({ error: 'Você não pode curtir seu próprio comentário' }, { status: 400 });
+    }
+
     const comment = await StoryCommentModel.findByIdAndUpdate(
       commentId,
       { $addToSet: { likes: accountId } },
@@ -87,6 +95,14 @@ export async function DELETE(
     }
 
     const accountId = account._id as mongoose.Types.ObjectId;
+
+    const existingComment = await StoryCommentModel.findById(commentId).select('author_id').lean();
+    if (!existingComment) {
+      return NextResponse.json({ error: 'Comentário não encontrado' }, { status: 404 });
+    }
+    if (existingComment.author_id.toString() === accountId.toString()) {
+      return NextResponse.json({ error: 'Você não pode curtir seu próprio comentário' }, { status: 400 });
+    }
 
     const comment = await StoryCommentModel.findByIdAndUpdate(
       commentId,

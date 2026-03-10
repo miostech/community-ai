@@ -13,6 +13,8 @@ export interface StoryDoc {
   /** Posição do texto em % (0-100). text_x=50, text_y=85 = centro horizontal, perto do rodapé */
   text_x?: number;
   text_y?: number;
+  /** Contador de curtidas (mantido em sync com a coleção Like) */
+  likes_count?: number;
   created_at: Date;
 }
 
@@ -24,6 +26,7 @@ const StorySchema = new Schema<StoryDoc>(
     text: { type: String, trim: true, default: '' },
     text_x: { type: Number, min: 0, max: 100 },
     text_y: { type: Number, min: 0, max: 100 },
+    likes_count: { type: Number, default: 0, min: 0 },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: false },

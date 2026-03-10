@@ -53,6 +53,9 @@ export type StoryItem = {
   /** Posição do texto em % (0-100). Se não definido, usa barra inferior. */
   text_x?: number;
   text_y?: number;
+  /** Contador de curtidas e se o usuário atual curtiu */
+  likes_count?: number;
+  liked?: boolean;
   created_at: string;
 };
 
@@ -144,6 +147,8 @@ export function StoryViewer({
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  /** Overrides de like por story (atualização otimista após toggle) */
+  const [storyLikeOverrides, setStoryLikeOverrides] = useState<Record<string, { liked: boolean; likes_count: number }>>({});
 
   /** Índice seguro para não renderizar com current indefinido (ex.: lista trocou e currentIndex ficou fora do range). */
   const safeIndex =
@@ -329,6 +334,43 @@ export function StoryViewer({
 
   const currentComments = current?.id ? (commentsByStory[current.id] || []) : [];
   const commentsCount = currentComments.length;
+
+  const currentStoryLikeOverride = current?.id ? storyLikeOverrides[current.id] : undefined;
+  const currentStoryLiked = currentStoryLikeOverride?.liked ?? current?.liked ?? false;
+  const currentStoryLikesCount = currentStoryLikeOverride?.likes_count ?? current?.likes_count ?? 0;
+
+  const handleStoryLikeToggle = async () => {
+    if (!current?.id) return;
+    const storyId = current.id;
+    const prevLiked = currentStoryLiked;
+    const prevCount = currentStoryLikesCount;
+    setStoryLikeOverrides((prev) => ({
+      ...prev,
+      [storyId]: { liked: !prevLiked, likes_count: prevCount + (prevLiked ? -1 : 1) },
+    }));
+    try {
+      const res = await fetch(`/api/stories/${storyId}/like`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (process.env.NODE_ENV === 'development' && data?.details) {
+          console.error('[Story like] Erro da API:', data.details);
+        }
+        throw new Error(data?.error || 'Falha ao curtir');
+      }
+      setStoryLikeOverrides((prev) => ({
+        ...prev,
+        [storyId]: { liked: data.liked, likes_count: data.likes_count },
+      }));
+    } catch {
+      setStoryLikeOverrides((prev) => ({
+        ...prev,
+        [storyId]: { liked: prevLiked, likes_count: prevCount },
+      }));
+    }
+  };
 
   if (!open || stories.length === 0 || !current) return null;
 
@@ -637,7 +679,7 @@ export function StoryViewer({
             </Box>
           )}
 
-          {/* Ações: chat, mute, delete */}
+          {/* Ações: like, chat, mute, delete */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {storyOwnerId && (
               <IconButton
@@ -654,6 +696,29 @@ export function StoryViewer({
                   <ChatBubbleIcon sx={{ fontSize: 20 }} />
                 </Badge>
               </IconButton>
+            )}
+            {storyOwnerId && (
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStoryLikeToggle();
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                size="small"
+                sx={{ color: currentStoryLiked ? 'error.main' : 'white', p: 0.75 }}
+                aria-label={currentStoryLiked ? 'Descurtir' : 'Curtir'}
+              >
+                {currentStoryLiked ? (
+                  <FavoriteIcon sx={{ fontSize: 20 }} />
+                ) : (
+                  <FavoriteBorderIcon sx={{ fontSize: 20 }} />
+                )}
+              </IconButton>
+            )}
+            {storyOwnerId && currentStoryLikesCount > 0 && (
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', mr: 0.5 }}>
+                {currentStoryLikesCount}
+              </Typography>
             )}
 
             <Box sx={{ flex: 1 }} />
@@ -862,15 +927,24 @@ export function StoryViewer({
                       secondaryTypographyProps={{ variant: 'caption' }}
                     />
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 0.5, mt: 0.5, flexShrink: 0 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleToggleLike(c.id, c.liked)}
-                        sx={{ p: 0.25, color: c.liked ? 'error.main' : 'text.secondary' }}
-                        aria-label={c.liked ? 'Descurtir' : 'Curtir'}
-                      >
-                        {c.liked ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
-                      </IconButton>
-                      {c.likes_count > 0 && (
+                      {account?.id !== c.author.id && (
+                        <>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleToggleLike(c.id, c.liked)}
+                            sx={{ p: 0.25, color: c.liked ? 'error.main' : 'text.secondary' }}
+                            aria-label={c.liked ? 'Descurtir' : 'Curtir'}
+                          >
+                            {c.liked ? <FavoriteIcon sx={{ fontSize: 16 }} /> : <FavoriteBorderIcon sx={{ fontSize: 16 }} />}
+                          </IconButton>
+                          {c.likes_count > 0 && (
+                            <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1 }}>
+                              {c.likes_count}
+                            </Typography>
+                          )}
+                        </>
+                      )}
+                      {account?.id === c.author.id && c.likes_count > 0 && (
                         <Typography variant="caption" sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1 }}>
                           {c.likes_count}
                         </Typography>

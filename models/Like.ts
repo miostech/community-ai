@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 export interface ILike extends Document {
     _id: Types.ObjectId;
     user_id: Types.ObjectId;
-    target_type: 'post' | 'comment';
+    target_type: 'post' | 'comment' | 'story';
     target_id: Types.ObjectId;
     created_at: Date;
 }
@@ -17,13 +17,12 @@ const LikeSchema = new Schema<ILike>(
         },
         target_type: {
             type: String,
-            enum: ['post', 'comment'],
+            enum: ['post', 'comment', 'story'],
             required: true,
         },
         target_id: {
             type: Schema.Types.ObjectId,
             required: true,
-            refPath: 'target_type_ref',
         },
     },
     {
@@ -33,11 +32,6 @@ const LikeSchema = new Schema<ILike>(
         },
     }
 );
-
-// Virtual para dynamic ref
-LikeSchema.virtual('target_type_ref').get(function () {
-    return this.target_type === 'post' ? 'Post' : 'Comment';
-});
 
 // Índice único para evitar likes duplicados
 LikeSchema.index({ user_id: 1, target_type: 1, target_id: 1 }, { unique: true });

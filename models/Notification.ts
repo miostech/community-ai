@@ -74,9 +74,9 @@ const NotificationSchema = new Schema<INotification>(
 // Índice composto para buscar notificações não lidas de um usuário
 NotificationSchema.index({ recipient_id: 1, is_read: 1, created_at: -1 });
 
-// Índice para evitar notificações duplicadas (campaign_id para tipo new_campaign)
+// Índice para evitar notificações duplicadas (inclui story_id para like em story)
 NotificationSchema.index(
-    { recipient_id: 1, actor_id: 1, type: 1, post_id: 1, comment_id: 1, campaign_id: 1 },
+    { recipient_id: 1, actor_id: 1, type: 1, post_id: 1, comment_id: 1, story_id: 1, campaign_id: 1 },
     { unique: true, sparse: true }
 );
 

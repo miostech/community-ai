@@ -85,7 +85,7 @@ export async function createNotification({
 }
 
 /**
- * Remove uma notificação (ex: quando descurte um post)
+ * Remove uma notificação (ex: quando descurte um post ou story)
  */
 export async function removeNotification({
     recipientId,
@@ -93,6 +93,7 @@ export async function removeNotification({
     type,
     postId,
     commentId,
+    storyId,
 }: Omit<CreateNotificationParams, 'contentPreview'>): Promise<void> {
     try {
         await Notification.deleteOne({
@@ -101,6 +102,7 @@ export async function removeNotification({
             type,
             post_id: postId ? new mongoose.Types.ObjectId(postId.toString()) : null,
             comment_id: commentId ? new mongoose.Types.ObjectId(commentId.toString()) : null,
+            story_id: storyId ? new mongoose.Types.ObjectId(storyId.toString()) : null,
         });
 
         console.log(`🔕 Notificação removida: ${type}`);
