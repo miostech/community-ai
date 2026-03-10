@@ -42,20 +42,20 @@ export function usePushNotifications(): UsePushNotificationsResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mostra a opção de push em qualquer dispositivo com Service Worker + Notification (inclui mobile)
+  // Mostra a opção quando há Service Worker (no iPhone em aba normal Notification não existe, mas assim a opção aparece e explicamos ao ativar)
   const pushSupported =
-    typeof window !== 'undefined' &&
-    'serviceWorker' in navigator &&
-    'Notification' in window;
+    typeof window !== 'undefined' && 'serviceWorker' in navigator;
+
+  const hasNotificationApi = typeof window !== 'undefined' && 'Notification' in window;
 
   useEffect(() => {
     if (!pushSupported) return;
-    setPermission(Notification.permission);
+    if (hasNotificationApi) setPermission(Notification.permission);
     navigator.serviceWorker
       .register(SW_PATH)
       .then((reg) => setRegistration(reg))
       .catch(() => setError('Falha ao registrar service worker'));
-  }, [pushSupported]);
+  }, [pushSupported, hasNotificationApi]);
 
   useEffect(() => {
     if (!registration?.pushManager) return;
@@ -69,9 +69,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
       setError('Push não suportado ou service worker não registrado');
       return false;
     }
-    if (!registration.pushManager) {
+    if (!hasNotificationApi || !registration.pushManager) {
       setError(
-        'No celular: use o Chrome no Android ou, no iPhone, adicione o site à tela inicial (Safari → compartilhar → "Adicionar à tela de início") e abra por ele.'
+        'No iPhone: adicione o site à tela inicial (Safari ou Chrome → compartilhar → "Adicionar à tela de início") e abra por esse ícone para ativar notificações.'
       );
       return false;
     }
@@ -125,7 +125,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
       setIsLoading(false);
       return false;
     }
-  }, [pushSupported, registration]);
+  }, [pushSupported, registration, hasNotificationApi]);
 
   const unsubscribe = useCallback(async (): Promise<void> => {
     if (!pushSupported || !registration) return;
