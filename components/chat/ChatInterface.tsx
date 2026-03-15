@@ -26,17 +26,12 @@ import {
 import ReactMarkdown from 'react-markdown';
 
 interface ChatInterfaceProps {
-  initialContent?: {
-    hook: string;
-    development: string;
-    cta: string;
-  };
   initialPrompt?: string;
   conversationId?: string;
   onNewConversation?: () => void;
 }
 
-export function ChatInterface({ initialContent, initialPrompt, conversationId, onNewConversation }: ChatInterfaceProps) {
+export function ChatInterface({ initialPrompt, conversationId, onNewConversation }: ChatInterfaceProps) {
   const { user } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -89,15 +84,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
       return;
     }
 
-    if (initialContent) {
-      const initialMessage: Message = {
-        id: '1',
-        role: 'assistant',
-        content: `Oi, ${user.name}! 👋\n\n✨ Sou a **IA treinada pessoalmente pela Nat e pelo Luigi** para te ajudar a criar conteúdo que viraliza e converte! 🚀\n\nAnalisei seu pedido usando as estratégias que levaram eles a milhões de seguidores. Aqui está o resultado:\n\n**🎯 Hook:**\n${initialContent.hook}\n\n**📖 Desenvolvimento:**\n${initialContent.development}\n\n**💥 CTA:**\n${initialContent.cta}\n\n💬 Como posso ajudar mais? Posso:\n• Melhorar qualquer parte\n• Adaptar para outra rede social\n• Adicionar storytelling\n• Tornar mais persuasivo\n\nTudo com o conhecimento da Nat e do Luigi! 💪`,
-        timestamp: new Date(),
-      };
-      setMessages([initialMessage]);
-    } else if (initialPrompt) {
+    if (initialPrompt) {
       const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
@@ -110,14 +97,6 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
       sendToApi(initialPrompt).catch(() => {
         setIsLoading(false);
       });
-    } else {
-      const welcomeMessage: Message = {
-        id: '1',
-        role: 'assistant',
-        content: `Oi, ${user.name}! 👋\n\n✨ Eu sou a **IA treinada pela Nat e pelo Luigi** para te ajudar a criar conteúdo que viraliza! 🚀\n\n**Quem me treinou:**\n• Natália Trombelli - milhões de seguidores no Instagram\n• Luigi Andersen - especialista em conteúdo viral\n\n**O que posso fazer por você:**\n✨ Criar roteiros completos do zero\n💡 Gerar ideias de conteúdo virais\n📱 Adaptar conteúdo para cada rede social\n🎯 Criar hooks que prendem atenção\n💥 CTAs que convertem de verdade\n📖 Adicionar storytelling que conecta\n\nEstou aqui 24/7 para aplicar as estratégias da Nat e do Luigi na sua criação de conteúdo!\n\n🔥 O que vamos criar hoje?`,
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -244,12 +223,12 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
                     width: 32,
                     height: 32,
                     background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                    fontSize: '0.7rem',
+                    fontSize: '0.65rem',
                     fontWeight: 'bold',
                     flexShrink: 0,
                   }}
                 >
-                  IA
+                  Nat
                 </Avatar>
               )}
               <Box
@@ -364,7 +343,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
                   width: 32,
                   height: 32,
                   background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
-                  fontSize: '0.7rem',
+                  fontSize: '0.65rem',
                   fontWeight: 'bold',
                   flexShrink: 0,
                   '@keyframes pulse': {
@@ -374,7 +353,7 @@ export function ChatInterface({ initialContent, initialPrompt, conversationId, o
                   animation: 'pulse 2s ease-in-out infinite',
                 }}
               >
-                IA
+                Nat
               </Avatar>
               <Box
                 sx={{

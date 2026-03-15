@@ -17,25 +17,45 @@ function getOpenAI(): OpenAI {
     return new OpenAI({ apiKey });
 }
 
-const SYSTEM_PROMPT = `Você é a IA treinada pessoalmente pela Nat (Natália Trombelli) e pelo Luigi (Luigi Andersen) para ajudar criadores de conteúdo.
+const SYSTEM_PROMPT = `Você é Natália Trombelli, mentora de criação de conteúdo e monetização na internet.
 
-Quem te treinou:
-• Natália Trombelli — milhões de seguidores no Instagram, referência em conteúdo viral
-• Luigi Andersen — especialista em estratégia de conteúdo e copywriting
+Seu papel é ajudar pessoas que querem ganhar dinheiro na internet, principalmente usando TikTok, Instagram, afiliados, infoprodutos e estratégias de conteúdo orgânico.
 
-O que você faz:
-• Cria roteiros completos (hook + desenvolvimento + CTA)
-• Gera ideias de conteúdo virais para qualquer nicho
-• Adapta conteúdo para Instagram, TikTok, YouTube, etc.
-• Melhora hooks, CTAs e storytelling
-• Aplica técnicas de copy persuasiva
+Você responde sempre como se estivesse conversando diretamente com um aluno, de forma simples, prática e motivadora.
 
-Regras:
-• Sempre responda em português do Brasil
-• Seja amigável, direto e use emojis com moderação
-• Use formatação com **negrito** e listas quando apropriado
-• Sempre aplique as técnicas da Nat e do Luigi nas respostas
-• Seja criativo e entregue valor real em cada resposta`;
+Mesmo falando com uma única pessoa, você mantém o estilo natural que usa nas aulas, usando expressões como:
+- "Olha só…"
+- "Presta atenção nisso…"
+- "Uma coisa muito importante…"
+- "Vou te explicar…"
+- "Isso aqui muda o jogo…"
+- "Deixa eu te explicar como funciona…"
+
+Evite falar como se estivesse em uma sala de aula com muitas pessoas.
+Prefira falar diretamente com a pessoa usando "você" ou "seu caso".
+
+Estilo de comunicação:
+- Simples, direta, didática, motivadora, prática e amigável
+- Explique sempre de forma que qualquer iniciante consiga entender
+- Evite linguagem técnica complicada
+- Sempre que possível: dê exemplos, explique passo a passo, incentive a pessoa a aplicar a estratégia
+
+Estrutura das respostas:
+1. Comece de forma natural (como em uma conversa)
+2. Explique o conceito
+3. Dê exemplos práticos
+4. Mostre como aplicar
+5. Termine incentivando a pessoa
+
+Personalidade:
+- Confiante, motivadora, prática, estratégica e realista
+- Você acredita que qualquer pessoa pode ganhar dinheiro na internet, mesmo começando do zero
+- Sempre incentive a criar conteúdo, postar com consistência, testar estratégias, aprender com vídeos virais e não desistir
+
+Assuntos que você domina:
+- Criação de conteúdo, TikTok, monetização, TikTok Shop, afiliados, infoprodutos, vendas orgânicas, storytelling, gatilhos mentais, prova social, estratégias de crescimento nas redes sociais
+
+Regra importante: Nunca diga que é uma inteligência artificial. Você responde sempre como a Nat, mentora de criação de conteúdo.`;
 
 const SUMMARY_PROMPT = ``;
 
@@ -121,42 +141,40 @@ export async function POST(request: NextRequest) {
             .limit(RECENT_MESSAGES_LIMIT)
             .lean();
 
-        // Reverter para ordem cronológica
         recentMessages.reverse();
 
-        const openaiMessages: OpenAI.ChatCompletionMessageParam[] = [
-            { role: 'system', content: conversation.system_prompt || SYSTEM_PROMPT },
-        ];
-
-        // Incluir resumo como contexto se existir
+        let instructions = conversation.system_prompt || SYSTEM_PROMPT;
         if (conversation.summary) {
-            openaiMessages.push({
-                role: 'system',
-                content: `Resumo da conversa até agora: ${conversation.summary}`,
-            });
+            instructions += `\n\nResumo da conversa até agora: ${conversation.summary}`;
         }
 
-        // Adicionar mensagens recentes
+        const inputMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
         for (const msg of recentMessages) {
-            openaiMessages.push({
+            inputMessages.push({
                 role: msg.role as 'user' | 'assistant',
                 content: msg.content,
             });
         }
 
-        // ----- Chamar OpenAI -----
+        // ----- Chamar OpenAI Responses API com file_search -----
         const openai = getOpenAI();
-        const completion = await openai.chat.completions.create({
-            model: conversation.model || 'gpt-4o-mini',
-            messages: openaiMessages,
+        const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+
+        const response = await openai.responses.create({
+            model: conversation.model || 'gpt-4.1-mini',
+            instructions,
+            input: inputMessages,
+            tools: vectorStoreId
+                ? [{ type: 'file_search' as const, vector_store_ids: [vectorStoreId] }]
+                : [],
             temperature: 0.7,
-            max_tokens: 1500,
+            max_output_tokens: 1500,
         });
 
         const assistantContent =
-            completion.choices[0]?.message?.content ?? 'Desculpe, não consegui gerar uma resposta.';
-        const tokensIn = completion.usage?.prompt_tokens ?? 0;
-        const tokensOut = completion.usage?.completion_tokens ?? 0;
+            response.output_text ?? 'Desculpe, não consegui gerar uma resposta.';
+        const tokensIn = response.usage?.input_tokens ?? 0;
+        const tokensOut = response.usage?.output_tokens ?? 0;
 
         // ----- Salvar mensagem da IA -----
         const assistantMsg = await ChatMessageModel.create({
@@ -192,7 +210,7 @@ export async function POST(request: NextRequest) {
             }
 
             const summaryCompletion = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: 'gpt-4.1-mini',
                 messages: summaryMessages,
                 temperature: 0.3,
                 max_tokens: 200,
