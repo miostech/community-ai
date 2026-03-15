@@ -159,6 +159,19 @@ Regras:
 Use as informações naturalmente como se fossem parte do seu conhecimento.
 
 
+QUANDO O USUÁRIO ENVIA UM LINK (Instagram, TikTok, YouTube etc.)
+
+Você não consegue abrir vídeos nem ver o que está na tela. Em vez de só dizer que não consegue ver:
+
+1. Se vier "[Conteúdo extraído do link]" na mensagem, use esse texto (título/descrição) para analisar e já dar sugestões.
+2. Se não houver conteúdo extraído ou for pouco, oriente de forma prática e curta:
+   - Para reels/shorts: "Cola aqui a legenda ou o roteiro do vídeo que eu te ajudo a melhorar."
+   - Para perfil/bio: "Me manda a bio ou o texto que está na página que eu te dou sugestões."
+   - Para post: "Copia e cola aqui o texto do post ou me conta o tema que eu te ajudo."
+
+Seja direta e incentive a pessoa a colar o texto na próxima mensagem — assim você consegue ajudar de verdade. Não repita que "não acessa links"; vá direto para o que ela pode fazer.
+
+
 REGRA FINAL
 
 Nunca diga que é uma inteligência artificial.
@@ -166,6 +179,43 @@ Nunca diga que é uma inteligência artificial.
 Você responde sempre como Natália Trombelli, mentora de criação de conteúdo e monetização na internet.`;
 
 const SUMMARY_PROMPT = ``;
+
+/** Extrai URLs de um texto (http/https) */
+function extractUrls(text: string): string[] {
+    const urlRegex = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
+    const matches = text.match(urlRegex) ?? [];
+    return [...new Set(matches)];
+}
+
+/** Busca título e descrição (Open Graph ou meta) de uma URL. Timeout 4s. */
+async function fetchUrlMetadata(url: string): Promise<{ title?: string; description?: string } | null> {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; Bot/1.0)',
+            },
+            redirect: 'follow',
+        });
+        clearTimeout(timeout);
+        if (!res.ok) return null;
+        const html = await res.text();
+        const title =
+            html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i)?.[1] ??
+            html.match(/<meta\s+content="([^"]+)"\s+property="og:title"/i)?.[1] ??
+            html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim();
+        const description =
+            html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i)?.[1] ??
+            html.match(/<meta\s+content="([^"]+)"\s+property="og:description"/i)?.[1] ??
+            html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1];
+        if (title || description) return { title, description };
+        return null;
+    } catch {
+        return null;
+    }
+}
 
 /** Limite de mensagens recentes enviadas como contexto completo */
 const RECENT_MESSAGES_LIMIT = 6;
@@ -251,30 +301,54 @@ export async function POST(request: NextRequest) {
 
         recentMessages.reverse();
 
+        // Se a mensagem atual contém link, tentar extrair título/descrição para dar contexto à IA
+        let linkContext: string | null = null;
+        const urls = extractUrls(message);
+        if (urls.length > 0) {
+            const meta = await fetchUrlMetadata(urls[0]);
+            if (meta && (meta.title || meta.description)) {
+                const parts: string[] = [];
+                if (meta.title) parts.push(`título: ${meta.title}`);
+                if (meta.description) parts.push(`descrição: ${meta.description}`);
+                linkContext = `[Conteúdo extraído do link que o usuário enviou: ${parts.join('; ')}]`;
+            }
+        }
+
         let instructions = conversation.system_prompt || SYSTEM_PROMPT;
         if (conversation.summary) {
             instructions += `\n\nResumo da conversa até agora: ${conversation.summary}`;
         }
 
         const inputMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
-        for (const msg of recentMessages) {
+        for (let i = 0; i < recentMessages.length; i++) {
+            const msg = recentMessages[i];
+            let content = msg.content;
+            // Na última mensagem (usuário atual), acrescentar contexto do link se tivermos
+            if (linkContext && i === recentMessages.length - 1 && msg.role === 'user') {
+                content = `${content}\n\n${linkContext}`;
+            }
             inputMessages.push({
                 role: msg.role as 'user' | 'assistant',
-                content: msg.content,
+                content,
             });
         }
 
-        // ----- Chamar OpenAI Responses API com file_search -----
+        // ----- Chamar OpenAI Responses API com file_search + web_search -----
         const openai = getOpenAI();
         const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+
+        const tools = [
+            { type: 'web_search' as const },
+            ...(vectorStoreId
+                ? [{ type: 'file_search' as const, vector_store_ids: [vectorStoreId] }]
+                : []),
+        ];
 
         const response = await openai.responses.create({
             model: conversation.model || 'gpt-4.1-mini',
             instructions,
             input: inputMessages,
-            tools: vectorStoreId
-                ? [{ type: 'file_search' as const, vector_store_ids: [vectorStoreId] }]
-                : [],
+            tools,
             temperature: 0.7,
             max_output_tokens: 1500,
         });
