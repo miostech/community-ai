@@ -30,6 +30,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Modal de telefone só aparece se tiver assinatura ativa e não tiver telefone
   const showPhoneModal = !isLoading && isSubscriptionActive && !hasPhone && pathname !== '/dashboard/perfil';
 
+  const isDashboardHome = pathname === '/dashboard';
   const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');
   const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
   const isChatPage = pathname === '/dashboard/chat';
@@ -159,12 +160,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   </DialogContent>
                 </Dialog>
 
-                {/* Botão flutuante de chat: só no desktop (escondido no mobile) */}
-                {!isComunidadePage && (
-                  <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                    <FloatingChatButtonMui />
-                  </Box>
-                )}
+                {/* Botão flutuante de chat (não mostra na home do dashboard nem na página do chat) */}
+                {!isDashboardHome && <FloatingChatButtonMui />}
               </Box>
               </AddToDesktopProvider>
             </ChatHistoryProvider>
