@@ -27,14 +27,33 @@ export function CampaignPromoModal() {
     const isActive = subscription?.status === 'active';
     const alreadyDismissed = Boolean(account?.campaign_promo_dismissed_at);
 
-    // Só mostra depois que cadastrou o telefone e acessou o feed (modal de telefone some antes)
-    const shouldShow = !isLoading && isCampaignUser && isActive && hasPhone && !alreadyDismissed;
+    // Último dia do trial: dia anterior ao expires_at (ex.: expira 30/03 → último dia = 29/03)
+    const expiresAt = subscription?.expires_at ? new Date(subscription.expires_at) : null;
+    const isLastDayOfTrial = (() => {
+        if (!expiresAt || Number.isNaN(expiresAt.getTime())) return false;
+        const expiryDate = new Date(expiresAt.getFullYear(), expiresAt.getMonth(), expiresAt.getDate());
+        const lastDay = new Date(expiryDate);
+        lastDay.setDate(lastDay.getDate() - 1);
+        const today = new Date();
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        return todayDate.getTime() === lastDay.getTime();
+    })();
+
+    // Mostra: primeira vez (não dispensou) OU no último dia do trial (mostra de novo)
+    const shouldShow =
+        !isLoading &&
+        isCampaignUser &&
+        isActive &&
+        hasPhone &&
+        (!alreadyDismissed || isLastDayOfTrial);
+
+    const delayMs = isLastDayOfTrial ? 3 * 1000 : DELAY_SECONDS * 1000;
 
     React.useEffect(() => {
         if (!shouldShow) return;
-        const timer = window.setTimeout(() => setOpen(true), DELAY_SECONDS * 1000);
+        const timer = window.setTimeout(() => setOpen(true), delayMs);
         return () => window.clearTimeout(timer);
-    }, [shouldShow]);
+    }, [shouldShow, delayMs]);
 
     const handleDismiss = async () => {
         if (dismissing) return;
