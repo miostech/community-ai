@@ -451,6 +451,7 @@ function ChatPageContent() {
   }
 
   // Chat ativo — interface de conversa com a OpenAI
+  // Altura no mobile: viewport - header (56px) - pt (16px) - pb (48px) = uma única área de scroll (só mensagens)
   return (
     <Box
       sx={{
@@ -458,7 +459,10 @@ function ChatPageContent() {
         mx: 'auto',
         px: { xs: 0, sm: 2, md: 3 },
         py: { xs: 0, sm: 2, md: 3 },
-        height: { xs: 'calc(100vh - 4rem)', sm: 'auto' },
+        height: { xs: 'calc(100vh - 56px - 16px - 96px)', sm: 'auto' },
+        overflow: 'hidden',
+        display: { xs: 'flex', sm: 'block' },
+        flexDirection: 'column',
       }}
     >
       <ChatInterface

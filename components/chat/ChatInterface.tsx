@@ -176,9 +176,9 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        mt: { xs: 7, sm: 0 },
-        height: { xs: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom))', sm: 'auto' },
-        minHeight: { xs: 'calc(100dvh - 56px - 56px - env(safe-area-inset-bottom))' },
+        flex: { xs: 1, sm: 'none' },
+        minHeight: { xs: 0, sm: 'auto' },
+        height: { sm: 'auto' },
         bgcolor: 'background.paper',
         overflow: 'hidden',
         borderRadius: { sm: 3 },
@@ -228,7 +228,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
                     flexShrink: 0,
                   }}
                 >
-                  Nat
+                  Dome
                 </Avatar>
               )}
               <Box
@@ -353,7 +353,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
                   animation: 'pulse 2s ease-in-out infinite',
                 }}
               >
-                Nat
+                Dome
               </Avatar>
               <Box
                 sx={{
