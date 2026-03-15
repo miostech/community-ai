@@ -32,6 +32,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');
   const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
+  const isChatPage = pathname === '/dashboard/chat';
   const hideBlobs = isComunidadePage || isCriarPostPage;
 
   return (
@@ -84,7 +85,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 )}
 
                 <SidebarMui />
-                {!isComunidadePage && <MobileHeaderMui />}
+                {!isComunidadePage && !isChatPage && <MobileHeaderMui />}
                 <MobileMenuMui />
                 <Box
                   component="main"
@@ -93,12 +94,16 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     position: 'relative',
                     zIndex: 10,
                     overflowX: 'hidden',
-                    pt: isComunidadePage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
+                    pt: isComunidadePage || isChatPage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
                   }}
                 >
                   {!isComunidadePage && <UpgradeBanner />}
                   {isComunidadePage ? (
                     children
+                  ) : isChatPage ? (
+                    <Box sx={{ px: { xs: 0, md: 0 }, pt: 0, pb: { xs: 12, md: 0 } }}>
+                      {children}
+                    </Box>
                   ) : (
                     <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 2, md: 4 }, pb: { xs: 12, md: 4 } }}>
                       {children}

@@ -10,13 +10,21 @@ import {
   CircularProgress,
   Stack,
   Paper,
+  IconButton,
+  Button,
 } from '@mui/material';
-import { RocketLaunch as RocketLaunchIcon, LockClock as LockClockIcon } from '@mui/icons-material';
+import {
+  RocketLaunch as RocketLaunchIcon,
+  LockClock as LockClockIcon,
+  ArrowBack as ArrowBackIcon,
+  Add as AddIcon,
+} from '@mui/icons-material';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CHAT_LAUNCH_DATE, isChatLaunched } from '@/lib/chat-launch';
 import { useAccount } from '@/contexts/AccountContext';
 import { Countdown } from '@/components/shared/Countdown';
 import { ChatInterface } from '@/components/chat/ChatInterface';
+import { MOBILE_HEADER_OFFSET } from '@/components/layout/MobileHeaderMui';
 
 function getTimeLeft() {
   const now = new Date();
@@ -51,8 +59,14 @@ function ChatPageContent() {
   useEffect(() => {
     if (conversationId) {
       setHasStarted(true);
+    } else {
+      setHasStarted(false);
     }
   }, [conversationId]);
+
+  const handleNewConversation = () => {
+    router.push('/dashboard/chat');
+  };
 
   const handleStart = (prompt: string) => {
     if (prompt.trim()) {
@@ -75,8 +89,16 @@ function ChatPageContent() {
         borderColor: 'divider',
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', px: 2, minHeight: { xs: 56 } }}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Toolbar sx={{ justifyContent: 'space-between', px: 1, minHeight: { xs: 56 } }}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <IconButton
+            onClick={() => router.push('/dashboard')}
+            sx={{ color: 'text.primary' }}
+            aria-label="Voltar"
+            size="small"
+          >
+            <ArrowBackIcon />
+          </IconButton>
           <Avatar
             sx={{
               width: 32,
@@ -86,12 +108,53 @@ function ChatPageContent() {
               fontWeight: 'bold',
             }}
           >
-            Nat
+            Dome
           </Avatar>
           <Typography variant="h6" fontWeight="bold" fontSize="1rem">
-            Chat com a Nat
+            Chat com IA
           </Typography>
         </Stack>
+      </Toolbar>
+    </AppBar>
+  );
+
+  const chatHeaderBar = (
+    <AppBar
+      position="fixed"
+      sx={{
+        position: { xs: 'fixed', md: 'static' },
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1100,
+        boxShadow: 'none',
+        borderBottom: 1,
+        borderColor: 'divider',
+        pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
+      }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 1, sm: 2 }, minHeight: { xs: 56 } }}>
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <IconButton
+            onClick={() => router.push('/dashboard')}
+            sx={{ color: 'text.primary' }}
+            aria-label="Voltar"
+            size="small"
+          >
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h6" fontWeight="bold" fontSize="1rem" sx={{ display: { xs: 'none', sm: 'block' } }}>
+            Chat com IA
+          </Typography>
+        </Stack>
+        <Button
+          startIcon={<AddIcon />}
+          onClick={handleNewConversation}
+          size="small"
+          sx={{ textTransform: 'none', fontWeight: 600 }}
+        >
+          Nova conversa
+        </Button>
       </Toolbar>
     </AppBar>
   );
@@ -146,7 +209,7 @@ function ChatPageContent() {
               fontWeight={600}
               sx={{ mb: { xs: 0.75, sm: 1 }, fontSize: { xs: '1rem', sm: 'inherit' } }}
             >
-              Chat com a Nat
+              Chat com IA
             </Typography>
             <Typography
               variant="body1"
@@ -290,14 +353,14 @@ function ChatPageContent() {
   // Chat lançado e usuário com acesso — tela inicial com input
   if (!hasStarted) {
     return (
-      <Box sx={{ mt: { xs: '-64px', md: 0 } }}>
+      <Box>
         {appBar}
         <Box
           sx={{
             maxWidth: 720,
             mx: 'auto',
             px: { xs: 2, sm: 3 },
-            pt: { xs: 4, sm: 6, md: 10 },
+            pt: { xs: 'calc(56px + env(safe-area-inset-top, 0px) + 12px)', sm: 6, md: 10 },
             pb: { xs: 12, sm: 16 },
           }}
         >
@@ -451,25 +514,34 @@ function ChatPageContent() {
   }
 
   // Chat ativo — interface de conversa com a OpenAI
-  // Altura no mobile: viewport - header (56px) - pt (16px) - pb (48px) = uma única área de scroll (só mensagens)
+  // No mobile: header fixo (56px + safe-area), conteúdo começa logo abaixo. No desktop: header no fluxo.
   return (
-    <Box
-      sx={{
-        maxWidth: 800,
-        mx: 'auto',
-        px: { xs: 0, sm: 2, md: 3 },
-        py: { xs: 0, sm: 2, md: 3 },
-        height: { xs: 'calc(100vh - 56px - 16px - 96px)', sm: 'auto' },
-        overflow: 'hidden',
-        display: { xs: 'flex', sm: 'block' },
-        flexDirection: 'column',
-      }}
-    >
-      <ChatInterface
-        initialPrompt={initialPrompt}
-        conversationId={conversationId || undefined}
-      />
-    </Box>
+    <>
+      {chatHeaderBar}
+      <Box
+        sx={{
+          maxWidth: 800,
+          mx: 'auto',
+          px: { xs: 0, sm: 2, md: 3 },
+          pt: { xs: MOBILE_HEADER_OFFSET, md: 0 },
+          pb: { xs: 2, sm: 2, md: 3 },
+          height: {
+            xs: 'calc(100vh - 56px - env(safe-area-inset-top, 0px))',
+            md: 'calc(100vh - 56px)',
+          },
+          minHeight: { md: 400 },
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <ChatInterface
+          initialPrompt={initialPrompt}
+          conversationId={conversationId || undefined}
+          onNewConversation={handleNewConversation}
+        />
+      </Box>
+    </>
   );
 }
 

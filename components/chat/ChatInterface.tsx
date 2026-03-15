@@ -176,16 +176,10 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        flex: { xs: 1, sm: 'none' },
-        minHeight: { xs: 0, sm: 'auto' },
-        height: { sm: 'auto' },
+        flex: 1,
+        minHeight: 0,
         bgcolor: 'background.paper',
         overflow: 'hidden',
-        borderRadius: { sm: 3 },
-        border: { sm: 1 },
-        borderColor: { sm: 'divider' },
-        boxShadow: { sm: 1 },
-        maxHeight: { sm: 600 },
       }}
     >
       {/* Messages Area */}
@@ -245,8 +239,6 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
                     : {
                       bgcolor: 'action.hover',
                       color: 'text.primary',
-                      border: 1,
-                      borderColor: 'divider',
                     }),
                 }}
               >
