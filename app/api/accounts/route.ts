@@ -13,6 +13,8 @@ export const dynamic = 'force-dynamic';
 const FOUNDING_START = new Date('2026-02-23T00:00:00.000Z');
 const FOUNDING_END = new Date('2026-03-09T00:00:00.000Z');
 
+const CAMPAIGN_14_DAYS_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
+
 async function checkFoundingMember(email: string): Promise<boolean> {
     if (!email?.trim()) return false;
     const normalizedEmail = email.toLowerCase().trim();
@@ -151,6 +153,27 @@ export async function GET() {
                     : null)
             : null;
 
+        // Primeiro pagamento de plano pago (excluindo a campanha 14 dias) — para saber se converteu dentro do trial
+        const firstRealPaidPayment = await AccountPayment.findOne({
+            email: emailNorm,
+            order_status: 'paid',
+            product_name: { $ne: CAMPAIGN_14_DAYS_PRODUCT_NAME },
+        }).sort({ createdAt: 1 }).lean();
+        const firstRealPaidRaw = firstRealPaidPayment as any;
+        const firstRealPaidAt = firstRealPaidRaw
+            ? (firstRealPaidRaw.subscription?.start_date
+                ? new Date(firstRealPaidRaw.subscription.start_date)
+                : firstRealPaidRaw.createdAt
+                    ? new Date(firstRealPaidRaw.createdAt)
+                    : null)
+            : null;
+        const trialEndsAt = account.campaign_14_days_trial_ends_at
+            ? new Date(account.campaign_14_days_trial_ends_at)
+            : null;
+        const convertedDuringCampaignTrial = Boolean(
+            trialEndsAt && firstRealPaidAt && firstRealPaidAt.getTime() <= trialEndsAt.getTime()
+        );
+
         let subscriptionStatus: 'active' | 'expired' | 'inactive' = 'inactive';
         let subscriptionExpiresAt: Date | null = null;
 
@@ -252,6 +275,8 @@ export async function GET() {
                 payment_method: payment?.payment_method || null,
                 plan_frequency: payment?.subscription?.plan_frequency || null,
                 first_paid_at: firstPaidAt,
+                /** true se entrou na campanha 14 dias e assinou um plano pago dentro dos 14 dias — não aplica bloqueio de 7 dias */
+                converted_during_campaign_trial: convertedDuringCampaignTrial,
             },
         });
     } catch (error) {

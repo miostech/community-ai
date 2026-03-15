@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
                 $set: {
                     plan: 'pro',
                     plan_expire_at: expiresAt,
+                    campaign_14_days_trial_ends_at: expiresAt,
                 },
             }
         );

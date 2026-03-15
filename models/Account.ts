@@ -82,6 +82,8 @@ export interface Account {
     portfolio_terms_accepted_at?: Date | null;
     /** Fechou o modal de promo exclusiva da campanha (14 dias grátis) sem comprar; não volta a ver a oferta. */
     campaign_promo_dismissed_at?: Date | null;
+    /** Fim do trial da campanha 14 dias grátis (preenchido ao ativar). Usado para saber se o usuário assinou um plano pago dentro dos 14 dias (não bloqueia por 7 dias). */
+    campaign_14_days_trial_ends_at?: Date | null;
     portfolio_terms_accepted_ip?: string | null;
     portfolio_terms_accepted_country?: string | null;
     portfolio_terms_accepted_region?: string | null;
@@ -155,6 +157,7 @@ const AccountSchema = new Schema(
         payment_revolut_account: { type: String, trim: true },
         portfolio_terms_accepted_at: { type: Date },
         campaign_promo_dismissed_at: { type: Date },
+        campaign_14_days_trial_ends_at: { type: Date },
         portfolio_terms_accepted_ip: { type: String, trim: true },
         portfolio_terms_accepted_country: { type: String, trim: true },
         portfolio_terms_accepted_region: { type: String, trim: true },

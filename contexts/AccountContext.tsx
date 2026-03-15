@@ -72,6 +72,8 @@ export interface Subscription {
     plan_frequency: string | null;
     /** Data do primeiro pagamento aprovado (ISO). Trabalhos libera 7 dias após essa data. */
     first_paid_at: string | null;
+    /** true se entrou na campanha 14 dias e assinou um plano pago dentro dos 14 dias — não aplica bloqueio de 7 dias */
+    converted_during_campaign_trial?: boolean;
 }
 
 interface AccountContextType {
@@ -98,6 +100,9 @@ interface AccountContextType {
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
+
+/** Plano da campanha 14 dias grátis: exceção que libera IA e Vitrine de campanhas na hora (sem esperar 7 dias). */
+const CAMPAIGN_14_DAYS_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
 
 // Rotas que não requerem assinatura ativa
 const PUBLIC_ROUTES = ['/dashboard/assinatura', '/dashboard/perfil'];
@@ -167,7 +172,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const isInactive = subscription?.status === 'inactive' || subscription?.status === 'expired';
 
         if (isDashboardRoute && !isPublicRoute && isInactive) {
-            const isCampaignUser = subscription?.product_name === 'Dome - Campanha 14 dias grátis';
+            const isCampaignUser = subscription?.product_name === CAMPAIGN_14_DAYS_PRODUCT_NAME;
             const destination = isCampaignUser ? '/precos' : '/dashboard/assinatura';
             console.log('🔴 Assinatura inativa - redirecionando para', destination);
             router.push(destination);
@@ -215,6 +220,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const fullName = account ? `${account.first_name} ${account.last_name}`.trim() : '';
     const isSubscriptionActive = subscription?.status === 'active';
 
+    const isCampaign14Days = subscription?.product_name === CAMPAIGN_14_DAYS_PRODUCT_NAME;
+    const convertedDuringCampaignTrial = subscription?.converted_during_campaign_trial === true;
+
     const TRABALHOS_UNLOCK_DAYS = 7;
     const firstPaidAt = subscription?.first_paid_at ?? null;
     const trabalhosUnlockAt: Date | null = firstPaidAt
@@ -224,7 +232,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             return d;
         })()
         : null;
-    const canAccessTrabalhos = trabalhosUnlockAt === null || Date.now() >= trabalhosUnlockAt.getTime();
+    const canAccessTrabalhos =
+        isCampaign14Days ||
+        convertedDuringCampaignTrial ||
+        trabalhosUnlockAt === null ||
+        Date.now() >= trabalhosUnlockAt.getTime();
 
     const CHAT_UNLOCK_DAYS = 7;
     const chatUnlockAt: Date | null = firstPaidAt
@@ -234,7 +246,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             return d;
         })()
         : null;
-    const canAccessChat = chatUnlockAt === null || Date.now() >= chatUnlockAt.getTime();
+    const canAccessChat =
+        isCampaign14Days ||
+        convertedDuringCampaignTrial ||
+        chatUnlockAt === null ||
+        Date.now() >= chatUnlockAt.getTime();
 
     const isMidiaKitComplete = Boolean(
         account?.birth_date &&

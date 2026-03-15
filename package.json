@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "backfill:followers-at-signup": "tsx scripts/backfill-followers-at-signup.ts"
+    "backfill:followers-at-signup": "tsx scripts/backfill-followers-at-signup.ts",
+    "migrate:campaign-14-days-trial": "tsx scripts/migrate-campaign-14-days-trial-ends.ts"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.30.0",
