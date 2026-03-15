@@ -40,7 +40,7 @@ import {
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
-import { PhoneInput } from '@/components/ui/PhoneInput';
+import { PhoneInput, getPhoneDigitsRange } from '@/components/ui/PhoneInput';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Switch, FormControlLabel } from '@mui/material';
 import { NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
@@ -94,16 +94,25 @@ export default function PerfilPage() {
 
   useEffect(() => {
     if (account) {
-      setFormData({
-        first_name: account.first_name || '',
-        last_name: account.last_name || '',
-        email: account.email || '',
-        phone: account.phone || '',
-        phone_country_code: account.phone_country_code || '+55',
-        avatar_url: account.avatar_url || '',
-        link_instagram: account.link_instagram || '',
-        link_tiktok: account.link_tiktok || '',
-        link_youtube: account.link_youtube || '',
+      setFormData((prev) => {
+        const accountPhone = (account.phone != null && String(account.phone).trim()) ? String(account.phone).trim() : '';
+        const accountCode = (account.phone_country_code != null && String(account.phone_country_code).trim()) ? String(account.phone_country_code).trim() : '+55';
+        // Só preservar valor local se o usuário realmente digitou algo (campo não vazio) e é diferente do servidor.
+        // Se o formulário está vazio, sempre usar o valor do BD para exibir o que está salvo.
+        const userHasTypedPhone = prev.phone.trim() !== '';
+        const hasLocalPhoneEdit =
+          userHasTypedPhone && (prev.phone !== accountPhone || prev.phone_country_code !== accountCode);
+        return {
+          first_name: account.first_name || '',
+          last_name: account.last_name || '',
+          email: account.email || '',
+          phone: hasLocalPhoneEdit ? prev.phone : accountPhone,
+          phone_country_code: hasLocalPhoneEdit ? prev.phone_country_code : accountCode,
+          avatar_url: account.avatar_url || '',
+          link_instagram: account.link_instagram || '',
+          link_tiktok: account.link_tiktok || '',
+          link_youtube: account.link_youtube || '',
+        };
       });
       setIsLoading(false);
     } else if (!accountLoading) {
@@ -144,12 +153,16 @@ export default function PerfilPage() {
 
     hasPhoneChanged.current = true;
 
+    const digits = formData.phone.replace(/\D/g, '');
+    const { minDigits, maxDigits } = getPhoneDigitsRange(formData.phone_country_code);
+    const isPhoneLengthValid = digits.length >= minDigits && digits.length <= maxDigits;
+
     if (phoneAutoSaveTimer.current) clearTimeout(phoneAutoSaveTimer.current);
     phoneAutoSaveTimer.current = setTimeout(() => {
-      if (hasPhoneChanged.current && formData.phone.trim()) {
+      if (hasPhoneChanged.current && formData.phone.trim() && isPhoneLengthValid) {
         autoSavePhone(formData);
       }
-    }, 1500);
+    }, 2000);
 
     return () => {
       if (phoneAutoSaveTimer.current) clearTimeout(phoneAutoSaveTimer.current);
@@ -159,6 +172,16 @@ export default function PerfilPage() {
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  const phoneDigits = formData.phone.replace(/\D/g, '');
+  const phoneRange = getPhoneDigitsRange(formData.phone_country_code);
+  const phoneError =
+    !formData.phone.trim() ||
+    (phoneDigits.length > 0 && (phoneDigits.length < phoneRange.minDigits || phoneDigits.length > phoneRange.maxDigits));
+
+  const hasAtLeastOneSocial = Boolean(
+    formData.link_instagram?.trim() || formData.link_tiktok?.trim() || formData.link_youtube?.trim()
+  );
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -275,17 +298,26 @@ export default function PerfilPage() {
       setError('O telefone é obrigatório para usar a comunidade');
       return;
     }
+    if (!hasAtLeastOneSocial) {
+      setError('Preencha pelo menos uma rede social (Instagram, TikTok ou YouTube)');
+      return;
+    }
 
     setIsSaving(true);
     setError(null);
 
     try {
+      const payload = {
+        ...formData,
+        phone: formData.phone.trim(),
+        phone_country_code: formData.phone_country_code?.trim() || '+55',
+      };
       const response = await fetch('/api/accounts', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -293,8 +325,12 @@ export default function PerfilPage() {
         throw new Error(errorData.error || 'Erro ao salvar perfil');
       }
 
+      const data = await response.json();
       setSuccessMessage('Dados salvos com sucesso.');
       setError(null);
+      if (data.account) {
+        setAccountFromResponse(data.account);
+      }
       await refreshAccount();
       // Esconde o alerta de sucesso após 5 segundos
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -417,6 +453,12 @@ export default function PerfilPage() {
             sx={{ mb: 3 }}
           >
             O telefone é obrigatório para usar a comunidade. Preencha o campo abaixo e salve para continuar.
+          </Alert>
+        )}
+
+        {!hasAtLeastOneSocial && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            Preencha pelo menos uma rede social (Instagram, TikTok ou YouTube) para continuar.
           </Alert>
         )}
 
@@ -603,7 +645,7 @@ export default function PerfilPage() {
                 countryCode={formData.phone_country_code}
                 onValueChange={(value: string) => updateField('phone', value)}
                 onCountryCodeChange={(code: string) => updateField('phone_country_code', code)}
-                error={!formData.phone.trim()}
+                error={phoneError}
               />
             </Box>
 
@@ -615,7 +657,7 @@ export default function PerfilPage() {
                 Redes Sociais
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Preencha os que quiser. Os links aparecerão no seu perfil quando alguém visualizar. Coloque apenas o nome do usuário, sem o @.
+                Pelo menos uma rede social é obrigatória. Os links aparecerão no seu perfil quando alguém visualizar. Coloque apenas o nome do usuário, sem o @.
               </Typography>
 
               <Stack spacing={3}>
@@ -836,7 +878,7 @@ export default function PerfilPage() {
               <Button
                 variant="contained"
                 onClick={handleSave}
-                disabled={isSaving || !formData.phone.trim()}
+                disabled={isSaving || phoneError || !hasAtLeastOneSocial}
                 startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
                 fullWidth
                 sx={{ display: { xs: 'flex', sm: 'inline-flex' }, width: { sm: 'auto' } }}
