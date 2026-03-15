@@ -228,7 +228,7 @@ function ChatPageContent() {
                 lineHeight: 1.5,
               }}
             >
-              Natália é uma mentora especializada em criação de conteúdo, monetização nas redes sociais, TikTok, afiliados e infoprodutos. Em breve você vai poder conversar diretamente com ela.
+              Essa IA é o cérebro da Nat e do Luigi. Foi treinada com todo o conhecimento dos cursos e experiências de ambos para te ajudar a criar conteúdo, monetizar nas redes sociais e crescer no digital. Em breve você vai poder conversar diretamente com ela.
             </Typography>
             <Box sx={{ mt: { xs: 2.5, sm: 3 } }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -338,7 +338,7 @@ function ChatPageContent() {
               O que vamos criar hoje?
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, maxWidth: 480, mx: 'auto', lineHeight: 1.5 }}>
-              Natália é uma mentora especializada em criação de conteúdo, monetização nas redes sociais, TikTok, afiliados e infoprodutos. Ela responde de forma didática, prática e motivadora, ajudando você a ganhar dinheiro na internet usando estratégias de conteúdo orgânico.
+              Essa IA é o cérebro da Nat e do Luigi. Foi treinada com todo o conhecimento dos cursos e experiências de ambos para te ajudar a criar conteúdo, monetizar nas redes sociais e crescer no digital.
             </Typography>
           </Box>
 
