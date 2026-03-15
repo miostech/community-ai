@@ -188,8 +188,8 @@ export async function GET() {
                 first_name: account.first_name,
                 last_name: account.last_name,
                 email: account.email || session.user.email,
-                phone: account.phone,
-                phone_country_code: account.phone_country_code || '+55',
+                phone: account.phone != null ? String(account.phone).trim() : '',
+                phone_country_code: (account.phone_country_code != null && String(account.phone_country_code).trim()) ? String(account.phone_country_code).trim() : '+55',
                 link_instagram: account.link_instagram,
                 link_tiktok: account.link_tiktok,
                 link_youtube: account.link_youtube,
@@ -288,6 +288,22 @@ export async function PATCH(request: NextRequest) {
                 updateData[field] = body[field];
             }
         }
+        // Telefone: só atualizar quando vier valor válido (não sobrescrever com string vazia)
+        const rawPhone = body.phone;
+        const phoneStr = rawPhone === null || rawPhone === undefined
+            ? ''
+            : String(rawPhone).trim();
+        if (phoneStr) {
+            updateData.phone = phoneStr;
+            updateData.phone_country_code =
+                typeof body.phone_country_code === 'string' && body.phone_country_code.trim()
+                    ? body.phone_country_code.trim()
+                    : '+55';
+        } else if (rawPhone !== undefined && rawPhone !== null) {
+            // Cliente enviou phone vazio — remover do updateData para não sobrescrever o valor existente
+            delete updateData.phone;
+            delete updateData.phone_country_code;
+        }
         if (typeof updateData.campaign_promo_dismissed_at === 'string') {
             const d = new Date(updateData.campaign_promo_dismissed_at as string);
             updateData.campaign_promo_dismissed_at = Number.isNaN(d.getTime()) ? undefined : d;
@@ -301,14 +317,19 @@ export async function PATCH(request: NextRequest) {
 
         const authUserId = (session.user as any).auth_user_id || session.user.id;
 
-        // Use native MongoDB driver directly to avoid any Mongoose schema/cache issues
         const col = Account.collection;
-        const acc = await col.findOneAndUpdate(
+        const updateResult = await col.findOneAndUpdate(
             { auth_user_id: authUserId },
             { $set: updateData },
             { returnDocument: 'after' }
         ) as Record<string, any> | null;
 
+        if (!updateResult) {
+            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
+        }
+
+        // Reler do banco para garantir que a resposta reflete o que foi persistido (phone etc.)
+        const acc = (await col.findOne({ auth_user_id: authUserId })) as Record<string, any> | null;
         if (!acc) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
@@ -333,8 +354,8 @@ export async function PATCH(request: NextRequest) {
             first_name: acc.first_name,
             last_name: acc.last_name,
             email: acc.email,
-            phone: acc.phone,
-            phone_country_code: acc.phone_country_code,
+            phone: acc.phone != null ? String(acc.phone).trim() : '',
+            phone_country_code: (acc.phone_country_code != null && String(acc.phone_country_code).trim()) ? String(acc.phone_country_code).trim() : '+55',
             link_instagram: acc.link_instagram ?? null,
             link_tiktok: acc.link_tiktok ?? null,
             link_youtube: acc.link_youtube ?? null,
