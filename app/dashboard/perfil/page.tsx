@@ -80,6 +80,7 @@ export default function PerfilPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [cancelSubscriptionModalOpen, setCancelSubscriptionModalOpen] = useState(false);
   const [isRequestingCancel, setIsRequestingCancel] = useState(false);
+  const [triedSubmit, setTriedSubmit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const push = usePushNotifications();
@@ -294,6 +295,7 @@ export default function PerfilPage() {
   };
 
   const handleSave = async () => {
+    setTriedSubmit(true);
     if (!formData.phone.trim()) {
       setError('O telefone é obrigatório para usar a comunidade');
       return;
@@ -328,6 +330,7 @@ export default function PerfilPage() {
       const data = await response.json();
       setSuccessMessage('Dados salvos com sucesso.');
       setError(null);
+      setTriedSubmit(false);
       if (data.account) {
         setAccountFromResponse(data.account);
       }
@@ -645,7 +648,7 @@ export default function PerfilPage() {
                 countryCode={formData.phone_country_code}
                 onValueChange={(value: string) => updateField('phone', value)}
                 onCountryCodeChange={(code: string) => updateField('phone_country_code', code)}
-                error={phoneError}
+                error={triedSubmit && phoneError}
               />
             </Box>
 
@@ -672,6 +675,22 @@ export default function PerfilPage() {
                     placeholder="seu_usuario"
                     fullWidth
                     size="small"
+                    variant="outlined"
+                    error={!hasAtLeastOneSocial}
+                    helperText={!hasAtLeastOneSocial ? 'Preencha pelo menos uma rede social' : undefined}
+                    slotProps={{
+                      htmlInput: { 'aria-invalid': !hasAtLeastOneSocial },
+                    }}
+                    sx={
+                      !hasAtLeastOneSocial
+                        ? {
+                            '& .MuiOutlinedInput-root fieldset': {
+                              borderWidth: '2px',
+                              borderColor: 'error.main',
+                            },
+                          }
+                        : undefined
+                    }
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">

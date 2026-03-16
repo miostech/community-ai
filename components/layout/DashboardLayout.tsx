@@ -17,7 +17,7 @@ import { StoriesProvider } from '@/contexts/StoriesContext';
 import { AddToDesktopProvider } from '@/contexts/AddToDesktopContext';
 import { MuiProvider } from '@/components/providers/MuiProvider';
 import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
-import { Phone as PhoneIcon } from '@mui/icons-material';
+import { Phone as PhoneIcon, Share as ShareIcon } from '@mui/icons-material';
 import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
 import { CampaignPromoModal } from '@/components/dashboard/CampaignPromoModal';
 import { PushServiceWorkerRegistration } from '@/components/push/PushServiceWorkerRegistration';
@@ -25,10 +25,20 @@ import { PushPromptBanner } from '@/components/push/PushPromptBanner';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { hasPhone, isLoading, isSubscriptionActive } = useAccount();
+  const { account, hasPhone, isLoading, isSubscriptionActive } = useAccount();
+
+  const hasAtLeastOneSocial = Boolean(
+    account?.link_instagram?.trim() ||
+    account?.link_tiktok?.trim() ||
+    account?.link_youtube?.trim()
+  );
 
   // Modal de telefone só aparece se tiver assinatura ativa e não tiver telefone
   const showPhoneModal = !isLoading && isSubscriptionActive && !hasPhone && pathname !== '/dashboard/perfil';
+
+  // Modal de redes sociais: quem já usa a plataforma mas não preencheu nenhuma rede é direcionado ao perfil
+  const showSocialModal =
+    !isLoading && hasPhone && !hasAtLeastOneSocial && pathname !== '/dashboard/perfil';
 
   const isDashboardHome = pathname === '/dashboard';
   const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');
@@ -142,6 +152,52 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                       Para usar a comunidade, é preciso cadastrar seu número de telefone no seu perfil.
+                    </Typography>
+                    <Button
+                      component={Link}
+                      href="/dashboard/perfil"
+                      variant="contained"
+                      fullWidth
+                      sx={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                        },
+                      }}
+                    >
+                      Ir para Meu Perfil
+                    </Button>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Modal: complete pelo menos uma rede social (Instagram, TikTok ou YouTube) */}
+                <Dialog
+                  open={showSocialModal}
+                  PaperProps={{
+                    sx: {
+                      maxWidth: 400,
+                      mx: 2,
+                      borderRadius: 3,
+                    },
+                  }}
+                >
+                  <DialogContent sx={{ textAlign: 'center', py: 4 }}>
+                    <Avatar
+                      sx={{
+                        width: 56,
+                        height: 56,
+                        bgcolor: 'info.light',
+                        mx: 'auto',
+                        mb: 2,
+                      }}
+                    >
+                      <ShareIcon sx={{ color: 'info.dark' }} />
+                    </Avatar>
+                    <Typography variant="h6" gutterBottom>
+                      Complete seu perfil
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      Preencha pelo menos uma rede social (Instagram, TikTok ou YouTube) no seu perfil para continuar usando a plataforma.
                     </Typography>
                     <Button
                       component={Link}
