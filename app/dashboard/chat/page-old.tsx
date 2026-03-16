@@ -83,9 +83,9 @@ function ChatPageContent() {
               {[
                 'Criar roteiro para Reels',
                 'Ideia de post viral',
-                'Storytelling pessoal',
-                'Conteúdo educativo',
-                'Venda sem parecer venda',
+                'Sair do shadowban',
+                'Criar post para TikTok',
+                'Monetizar minha conta',
               ].map((prompt, index) => (
                 <button
                   key={index}

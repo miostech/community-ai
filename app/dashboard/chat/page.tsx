@@ -479,11 +479,11 @@ function ChatPageContent() {
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" useFlexGap>
               {[
-                'Criar roteiro para Reels',
-                'Ideia de post viral',
-                'Storytelling pessoal',
-                'Conteúdo educativo',
-                'Venda sem parecer venda',
+                 'Criar roteiro para Reels',
+                 'Ideia de post viral',
+                 'Sair do shadowban',
+                 'Criar post para TikTok',
+                 'Monetizar minha conta',
               ].map((prompt) => (
                 <Box
                   key={prompt}
