@@ -9,6 +9,10 @@ import {
     BottomNavigationAction,
     Paper,
     Box,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText,
 } from '@mui/material';
 import {
     Home as HomeIcon,
@@ -58,7 +62,19 @@ export function MobileMenuMui() {
     const pathname = usePathname();
     const { account } = useAccount();
     const canAccessAdmin = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
+    const isModerator = account?.role === 'moderator';
     const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [profileMenuAnchor, setProfileMenuAnchor] = React.useState<null | HTMLElement>(null);
+    const profileMenuOpen = Boolean(profileMenuAnchor);
+
+    const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        event.preventDefault();
+        setProfileMenuAnchor(event.currentTarget);
+    };
+
+    const handleProfileMenuClose = () => {
+        setProfileMenuAnchor(null);
+    };
 
     // Observar se há modal aberto
     React.useEffect(() => {
@@ -77,9 +93,12 @@ export function MobileMenuMui() {
         return () => observer.disconnect();
     }, []);
 
-    // Perfil na tab bar sempre vai para "Meu perfil" (/dashboard/perfil), não para o perfil público
-    // Encontrar o índice do item ativo
+    // Perfil na tab bar: para admin/moderador pode abrir menu (Meu perfil, Campanhas, Influenciadores)
     const getCurrentValue = () => {
+        if (canAccessAdmin && (pathname?.startsWith('/dashboard/admin') || pathname?.startsWith('/dashboard/influenciadores'))) {
+            const profileIndex = bottomNavItems.findIndex((i) => i.label === 'Perfil');
+            return profileIndex >= 0 ? profileIndex : 0;
+        }
         const index = bottomNavItems.findIndex((item) => {
             const href = item.href;
             return pathname === href || pathname?.startsWith(href + '/');
@@ -157,6 +176,24 @@ export function MobileMenuMui() {
                         );
                     }
 
+                    if (isProfile && canAccessAdmin) {
+                        // Admin/Moderador: ícone de engrenagem abre menu (Meu perfil, Campanhas, Influenciadores)
+                        const isAnyActive =
+                            isActive ||
+                            pathname?.startsWith('/dashboard/admin') ||
+                            pathname?.startsWith('/dashboard/influenciadores');
+                        return (
+                            <BottomNavigationAction
+                                key={item.href}
+                                onClick={handleProfileMenuOpen}
+                                icon={<SettingsIcon />}
+                                sx={{
+                                    opacity: isAnyActive ? 1 : 0.6,
+                                }}
+                            />
+                        );
+                    }
+
                     if (isProfile) {
                         return (
                             <BottomNavigationAction
@@ -183,33 +220,57 @@ export function MobileMenuMui() {
                         />
                     );
                 })}
-                {canAccessAdmin && [
-                    <BottomNavigationAction
-                        key="admin"
+            </BottomNavigation>
+            {canAccessAdmin && (
+                <Menu
+                    anchorEl={profileMenuAnchor}
+                    open={profileMenuOpen}
+                    onClose={handleProfileMenuClose}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                    transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                    slotProps={{
+                        paper: {
+                            sx: { minWidth: 200, mt: -2 },
+                        },
+                    }}
+                >
+                    <MenuItem
+                        component={Link}
+                        href="/dashboard/perfil"
+                        onClick={handleProfileMenuClose}
+                        selected={pathname === '/dashboard/perfil'}
+                    >
+                        <ListItemIcon>
+                            <SettingsIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Meu perfil</ListItemText>
+                    </MenuItem>
+                    <MenuItem
                         component={Link}
                         href="/dashboard/admin"
-                        icon={<AdminIcon />}
-                        sx={{
-                            opacity: pathname?.startsWith('/dashboard/admin') && !pathname?.startsWith('/dashboard/influenciadores') ? 1 : 0.6,
-                            color: pathname?.startsWith('/dashboard/admin') && !pathname?.startsWith('/dashboard/influenciadores') ? 'primary.main' : undefined,
-                        }}
-                    />,
-                    ...(account?.role === 'moderator'
-                        ? [
-                              <BottomNavigationAction
-                                  key="influencers"
-                                  component={Link}
-                                  href="/dashboard/influenciadores"
-                                  icon={<InfluencersIcon />}
-                                  sx={{
-                                      opacity: pathname?.startsWith('/dashboard/influenciadores') ? 1 : 0.6,
-                                      color: pathname?.startsWith('/dashboard/influenciadores') ? 'primary.main' : undefined,
-                                  }}
-                              />,
-                          ]
-                        : []),
-                ]}
-            </BottomNavigation>
+                        onClick={handleProfileMenuClose}
+                        selected={pathname?.startsWith('/dashboard/admin')}
+                    >
+                        <ListItemIcon>
+                            <AdminIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Campanhas</ListItemText>
+                    </MenuItem>
+                    {isModerator && (
+                        <MenuItem
+                            component={Link}
+                            href="/dashboard/influenciadores"
+                            onClick={handleProfileMenuClose}
+                            selected={pathname?.startsWith('/dashboard/influenciadores')}
+                        >
+                            <ListItemIcon>
+                                <InfluencersIcon fontSize="small" />
+                            </ListItemIcon>
+                            <ListItemText>Influenciadores</ListItemText>
+                        </MenuItem>
+                    )}
+                </Menu>
+            )}
         </Paper>
     );
 }
