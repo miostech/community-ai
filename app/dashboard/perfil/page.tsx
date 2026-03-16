@@ -907,7 +907,9 @@ export default function PerfilPage() {
             </Box>
             <Button
               variant="outlined"
-              href="https://wa.me/5511964056099"
+              href={`https://wa.me/551153042686?text=${encodeURIComponent(
+                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro na Dome é ${formData.email || account?.email || ''}, e preciso de ajuda com a plataforma.`
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               component="a"
