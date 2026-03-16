@@ -5,10 +5,11 @@ import { useAccount } from '@/contexts/AccountContext';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import { Close as CloseIcon, TrendingUp as UpgradeIcon } from '@mui/icons-material';
 
-const DISMISS_KEY = 'upgrade_banner_dismissed_at';
-const FIRST_SEEN_KEY = 'upgrade_banner_first_seen_at';
+/** Chaves por campanha: trocar a cada nova promo para que quem viu a anterior veja de novo e os 7 dias recomecem. */
+const DISMISS_KEY = 'upgrade_banner_consumer_week_dismissed_at';
+const FIRST_SEEN_KEY = 'upgrade_banner_consumer_week_first_seen_at';
 const CAMPAIGN_DAYS = 7;
-const UPGRADE_URL = 'https://pay.kiwify.com.br/tuxuXlK';
+const UPGRADE_URL = 'https://pay.kiwify.com.br/nqgVn0K'; // plano anual
 
 function isMonthlyPlan(productName: string | null | undefined, planFrequency: string | null | undefined): boolean {
     if (planFrequency) {
@@ -115,7 +116,7 @@ export function UpgradeBanner() {
                     variant="body2"
                     sx={{ fontWeight: 500, fontSize: '0.8rem', flex: 1, lineHeight: 1.4 }}
                 >
-                    Oferta especial de Dia das Mulheres para membros fundadores: desbloqueie 6 meses completos de acesso à Dome por apenas <strong>R$ 89,90</strong>.
+                    Promo Semana do Consumidor: desbloqueie 1 ano completo de acesso à Dome por apenas <strong>R$ 147,90</strong>.
                 </Typography>
                 <Button
                     size="small"
@@ -168,7 +169,7 @@ export function UpgradeBanner() {
                     variant="body2"
                     sx={{ fontWeight: 500, fontSize: '0.75rem', lineHeight: 1.4 }}
                 >
-                    Oferta especial de Dia das Mulheres para membros fundadores: desbloqueie 6 meses completos de acesso à Dome por apenas <strong>R$ 89,90</strong>.
+                    Promo Semana do Consumidor: desbloqueie 1 ano completo de acesso à Dome por apenas <strong>R$ 147,90</strong>.
                 </Typography>
                 <Button
                     size="small"
