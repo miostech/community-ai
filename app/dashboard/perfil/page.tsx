@@ -81,7 +81,10 @@ export default function PerfilPage() {
   const [cancelSubscriptionModalOpen, setCancelSubscriptionModalOpen] = useState(false);
   const [isRequestingCancel, setIsRequestingCancel] = useState(false);
   const [triedSubmit, setTriedSubmit] = useState(false);
+  const [appleRelayModalOpen, setAppleRelayModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isApplePrivateRelayEmail = (email: string) => /privaterelay\.appleid\.com/i.test(email || '');
 
   const push = usePushNotifications();
   const [pushTestLoading, setPushTestLoading] = useState(false);
@@ -335,6 +338,9 @@ export default function PerfilPage() {
         setAccountFromResponse(data.account);
       }
       await refreshAccount();
+      if (isApplePrivateRelayEmail(formData.email)) {
+        setAppleRelayModalOpen(true);
+      }
       // Esconde o alerta de sucesso após 5 segundos
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
@@ -1103,6 +1109,42 @@ export default function PerfilPage() {
               disabled={isRequestingCancel}
             >
               Cancelar assinatura
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={appleRelayModalOpen}
+          onClose={() => setAppleRelayModalOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Email privado da Apple</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" paragraph>
+              A Apple deixou o seu email privado (Sign in with Apple). Isso pode causar erros ao
+              vincular ou renovar a sua assinatura.
+            </Typography>
+            <Typography variant="body1">
+              Se não conseguir acessar a plataforma ou tiver problemas com a assinatura, entre em
+              contato com o suporte — estamos aqui para ajudar.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button variant="outlined" onClick={() => setAppleRelayModalOpen(false)}>
+              Entendi
+            </Button>
+            <Button
+              variant="contained"
+              component="a"
+              href={`https://wa.me/551153042686?text=${encodeURIComponent(
+                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro na Dome é ${formData.email || account?.email || ''}, e preciso de ajuda com a plataforma (email privado Apple).`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              startIcon={<SupportIcon />}
+            >
+              Falar com suporte
             </Button>
           </DialogActions>
         </Dialog>
