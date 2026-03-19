@@ -147,16 +147,31 @@ export default function AdminOverviewPage() {
             ) : (
                 <>
                     <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 3, sm: 4 } }}>
-                        {statCards.map((card) => (
+                        {statCards.map((card) => {
+                            const isPendingApplicationsCard = card.label === 'Candidaturas pendentes';
+                            return (
                             <Grid size={{ xs: 6, sm: 4, md: 'auto' }} key={card.label} sx={{ flex: { md: 1 } }}>
                                 <Paper
+                                    component={isPendingApplicationsCard ? Link : 'div'}
+                                    href={isPendingApplicationsCard ? '/dashboard/admin/candidaturas' : undefined}
                                     elevation={0}
                                     sx={{
+                                        display: 'block',
                                         p: { xs: 2, sm: 2.5 },
                                         borderRadius: { xs: 2.5, sm: 3 },
                                         border: 1,
                                         borderColor: 'divider',
                                         height: '100%',
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                        cursor: isPendingApplicationsCard ? 'pointer' : 'default',
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': isPendingApplicationsCard
+                                            ? {
+                                                  borderColor: alpha(theme.palette.primary.main, 0.45),
+                                                  transform: 'translateY(-1px)',
+                                              }
+                                            : undefined,
                                     }}
                                 >
                                     <Box
@@ -182,7 +197,8 @@ export default function AdminOverviewPage() {
                                     </Typography>
                                 </Paper>
                             </Grid>
-                        ))}
+                            );
+                        })}
                     </Grid>
 
                     <Paper

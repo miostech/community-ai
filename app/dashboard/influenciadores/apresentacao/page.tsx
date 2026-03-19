@@ -85,12 +85,12 @@ export default function ApresentacaoPage() {
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
                 <SlideshowIcon sx={{ fontSize: 28, color: 'primary.main' }} />
                 <Typography variant="h5" fontWeight={700}>
-                    Apresentação
+                    Dome Creators
                 </Typography>
             </Stack>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Portfólio para mostrar às marcas: nossos top creators e métricas da comunidade.
+                Nossos top creators e métricas da comunidade.
             </Typography>
 
             {loading ? (

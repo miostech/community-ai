@@ -177,7 +177,7 @@ const adminNavItems: NavItem[] = [
                 exactMatch: true,
             },
             {
-                label: 'Apresentação',
+                label: 'Dome Creators',
                 href: '/dashboard/influenciadores/apresentacao',
                 icon: <SlideshowIcon fontSize="small" />,
             },

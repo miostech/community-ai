@@ -31,7 +31,7 @@ export interface Account {
     password_hash?: string;
     /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura — para monitorar crescimento e premiações */
     followers_at_signup?: number | null;
-    /** Cache de seguidores atuais (IG+TT) para Apresentação; atualizado 1x/dia pelo cron */
+    /** Cache de seguidores atuais (IG+TT) para Dome Creators; atualizado 1x/dia pelo cron */
     cached_followers_total?: number | null;
     cached_followers_updated_at?: Date | null;
     /** Score de engajamento 0–100 (Search API); atualizado junto com cached_followers */

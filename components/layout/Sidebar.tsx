@@ -74,7 +74,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    label: 'Mensagens Privadas',
+    label: 'DM Privada',
     href: '/dashboard/mensagens',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

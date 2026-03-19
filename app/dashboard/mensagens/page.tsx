@@ -274,7 +274,7 @@ function DmPageContent() {
                         <ArrowBackIcon />
                     </IconButton>
                     <Typography variant="h6" fontWeight={700} sx={{ ml: 1 }}>
-                        Mensagens Privadas
+                        DM Privada
                     </Typography>
                     {canStartConversation && (
                         <Box sx={{ ml: 'auto' }}>

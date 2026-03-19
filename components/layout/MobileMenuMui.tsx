@@ -22,6 +22,7 @@ import {
     Work as WorkIcon,
     AdminPanelSettings as AdminIcon,
     PersonSearch as InfluencersIcon,
+    Slideshow as PresentationIcon,
     MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 
@@ -274,19 +275,37 @@ export function MobileMenuMui() {
                         </ListItemIcon>
                         <ListItemText>DM privada</ListItemText>
                     </MenuItem>
-                    {isModerator && (
-                        <MenuItem
-                            component={Link}
-                            href="/dashboard/influenciadores"
-                            onClick={handleProfileMenuClose}
-                            selected={pathname?.startsWith('/dashboard/influenciadores')}
-                        >
-                            <ListItemIcon>
-                                <InfluencersIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText>Influenciadores</ListItemText>
-                        </MenuItem>
-                    )}
+                    {isModerator
+                        ? [
+                              <MenuItem
+                                  key="influenciadores"
+                                  component={Link}
+                                  href="/dashboard/influenciadores"
+                                  onClick={handleProfileMenuClose}
+                                  selected={
+                                      pathname === '/dashboard/influenciadores' ||
+                                      pathname?.startsWith('/dashboard/influenciadores/')
+                                  }
+                              >
+                                  <ListItemIcon>
+                                      <InfluencersIcon fontSize="small" />
+                                  </ListItemIcon>
+                                  <ListItemText>Influenciadores</ListItemText>
+                              </MenuItem>,
+                              <MenuItem
+                                  key="apresentacao"
+                                  component={Link}
+                                  href="/dashboard/influenciadores/apresentacao"
+                                  onClick={handleProfileMenuClose}
+                                  selected={pathname?.startsWith('/dashboard/influenciadores/apresentacao')}
+                              >
+                                  <ListItemIcon>
+                                      <PresentationIcon fontSize="small" />
+                                  </ListItemIcon>
+                                  <ListItemText>Dome Creators</ListItemText>
+                              </MenuItem>,
+                          ]
+                        : null}
                 </Menu>
             )}
         </Paper>
