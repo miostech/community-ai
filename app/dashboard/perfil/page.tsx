@@ -41,6 +41,7 @@ import {
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { PhoneInput, getPhoneDigitsRange } from '@/components/ui/PhoneInput';
+import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeStoredInput } from '@/lib/normalize-social-handles';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Switch, FormControlLabel } from '@mui/material';
 import { NotificationsActive as NotificationsActiveIcon } from '@mui/icons-material';
@@ -187,6 +188,18 @@ export default function PerfilPage() {
     formData.link_instagram?.trim() || formData.link_tiktok?.trim() || formData.link_youtube?.trim()
   );
 
+  const normalizedInstagram = formData.link_instagram?.trim()
+    ? normalizeInstagramHandle(formData.link_instagram)
+    : null;
+  const normalizedTikTok = formData.link_tiktok?.trim() ? normalizeTikTokHandle(formData.link_tiktok) : null;
+  const normalizedYouTube = formData.link_youtube?.trim() ? normalizeYouTubeStoredInput(formData.link_youtube) : null;
+
+  const instagramInvalid = Boolean(formData.link_instagram?.trim()) && normalizedInstagram === null;
+  const tiktokInvalid = Boolean(formData.link_tiktok?.trim()) && normalizedTikTok === null;
+  const youtubeInvalid = Boolean(formData.link_youtube?.trim()) && normalizedYouTube === null;
+
+  const socialsValid = !instagramInvalid && !tiktokInvalid && !youtubeInvalid;
+
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -307,6 +320,20 @@ export default function PerfilPage() {
       setError('Preencha pelo menos uma rede social (Instagram, TikTok ou YouTube)');
       return;
     }
+    if (!socialsValid) {
+      if (instagramInvalid) {
+        setError('Instagram inválido. Informe apenas o usuário (sem @) ou cole a URL do perfil.');
+        return;
+      }
+      if (tiktokInvalid) {
+        setError('TikTok inválido. Informe apenas o usuário (sem @) ou cole a URL do perfil.');
+        return;
+      }
+      if (youtubeInvalid) {
+        setError('YouTube inválido. Informe apenas o identificador (sem @) ou cole a URL do canal.');
+        return;
+      }
+    }
 
     setIsSaving(true);
     setError(null);
@@ -314,6 +341,9 @@ export default function PerfilPage() {
     try {
       const payload = {
         ...formData,
+        link_instagram: normalizedInstagram ?? '',
+        link_tiktok: normalizedTikTok ?? '',
+        link_youtube: normalizedYouTube ?? '',
         phone: formData.phone.trim(),
         phone_country_code: formData.phone_country_code?.trim() || '+55',
       };
@@ -666,7 +696,7 @@ export default function PerfilPage() {
                 Redes Sociais
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                Pelo menos uma rede social é obrigatória. Os links aparecerão no seu perfil quando alguém visualizar. Coloque apenas o nome do usuário, sem o @.
+                Pelo menos uma rede social é obrigatória. Os links aparecerão no seu perfil quando alguém visualizar. Você pode colar a URL do perfil ou informar apenas o usuário (sem @); a plataforma converte automaticamente.
               </Typography>
 
               <Stack spacing={3}>
@@ -677,18 +707,28 @@ export default function PerfilPage() {
                   </Typography>
                   <TextField
                     value={formData.link_instagram}
-                    onChange={(e) => updateField('link_instagram', e.target.value.replace('@', ''))}
+                    onChange={(e) => updateField('link_instagram', e.target.value.replace(/@/g, ''))}
                     placeholder="seu_usuario"
                     fullWidth
                     size="small"
                     variant="outlined"
-                    error={!hasAtLeastOneSocial}
-                    helperText={!hasAtLeastOneSocial ? 'Preencha pelo menos uma rede social' : undefined}
+                    onBlur={() => {
+                      const n = normalizeInstagramHandle(formData.link_instagram);
+                      if (n !== null) updateField('link_instagram', n);
+                    }}
+                    error={instagramInvalid || !hasAtLeastOneSocial}
+                    helperText={
+                      instagramInvalid
+                        ? 'Instagram inválido. Use apenas o nome do usuário ou cole a URL do perfil.'
+                        : !hasAtLeastOneSocial
+                          ? 'Preencha pelo menos uma rede social'
+                          : undefined
+                    }
                     slotProps={{
-                      htmlInput: { 'aria-invalid': !hasAtLeastOneSocial },
+                      htmlInput: { 'aria-invalid': instagramInvalid || !hasAtLeastOneSocial },
                     }}
                     sx={
-                      !hasAtLeastOneSocial
+                      instagramInvalid || !hasAtLeastOneSocial
                         ? {
                             '& .MuiOutlinedInput-root fieldset': {
                               borderWidth: '2px',
@@ -707,7 +747,7 @@ export default function PerfilPage() {
                   />
                   {formData.link_instagram && (
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                      Link: instagram.com/{formData.link_instagram}
+                      Link: instagram.com/{normalizedInstagram ?? formData.link_instagram}
                     </Typography>
                   )}
                 </Box>
@@ -719,10 +759,16 @@ export default function PerfilPage() {
                   </Typography>
                   <TextField
                     value={formData.link_tiktok}
-                    onChange={(e) => updateField('link_tiktok', e.target.value.replace('@', ''))}
+                    onChange={(e) => updateField('link_tiktok', e.target.value.replace(/@/g, ''))}
                     placeholder="seu_usuario"
                     fullWidth
                     size="small"
+                    onBlur={() => {
+                      const n = normalizeTikTokHandle(formData.link_tiktok);
+                      if (n !== null) updateField('link_tiktok', n);
+                    }}
+                    error={tiktokInvalid}
+                    helperText={tiktokInvalid ? 'TikTok inválido. Use apenas o nome do usuário ou cole a URL do perfil.' : undefined}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -733,7 +779,7 @@ export default function PerfilPage() {
                   />
                   {formData.link_tiktok && (
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                      Link: tiktok.com/@{formData.link_tiktok}
+                      Link: tiktok.com/@{normalizedTikTok ?? formData.link_tiktok}
                     </Typography>
                   )}
                 </Box>
@@ -745,10 +791,16 @@ export default function PerfilPage() {
                   </Typography>
                   <TextField
                     value={formData.link_youtube}
-                    onChange={(e) => updateField('link_youtube', e.target.value.replace('@', ''))}
+                    onChange={(e) => updateField('link_youtube', e.target.value.replace(/@/g, ''))}
                     placeholder="seu_canal"
                     fullWidth
                     size="small"
+                    onBlur={() => {
+                      const n = normalizeYouTubeStoredInput(formData.link_youtube);
+                      if (n !== null) updateField('link_youtube', n);
+                    }}
+                    error={youtubeInvalid}
+                    helperText={youtubeInvalid ? 'YouTube inválido. Informe apenas o identificador (sem @) ou cole a URL do canal.' : undefined}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -759,7 +811,12 @@ export default function PerfilPage() {
                   />
                   {formData.link_youtube && (
                     <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                      Link: youtube.com/@{formData.link_youtube}
+                      Link:{' '}
+                      {normalizedYouTube
+                        ? normalizedYouTube.startsWith('UC')
+                          ? `youtube.com/channel/${normalizedYouTube}`
+                          : `youtube.com/@${normalizedYouTube}`
+                        : `youtube.com/@${formData.link_youtube}`}
                     </Typography>
                   )}
                 </Box>

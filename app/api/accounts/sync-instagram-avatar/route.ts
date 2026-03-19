@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
+import { normalizeInstagramHandle } from '@/lib/normalize-social-handles';
 
 const SEARCHAPI_API_KEY = process.env.SEARCHAPI_API_KEY;
 const SEARCHAPI_BASE = 'https://www.searchapi.io/api/v1/search';
@@ -56,8 +57,8 @@ export async function POST() {
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
-    const username = account.link_instagram?.trim();
-    if (!username) {
+    const handle = normalizeInstagramHandle(account.link_instagram || '');
+    if (!handle) {
       return NextResponse.json(
         { error: 'Preencha o Instagram no seu perfil antes de usar a foto do Instagram.' },
         { status: 400 }
@@ -66,7 +67,7 @@ export async function POST() {
 
     const params = new URLSearchParams({
       engine: 'instagram_profile',
-      username: username.replace(/^@/, ''),
+      username: handle,
       api_key: SEARCHAPI_API_KEY,
     });
     const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`);

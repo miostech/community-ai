@@ -21,6 +21,7 @@ import {
     Search as SearchIcon,
     Person as PersonIcon,
 } from '@mui/icons-material';
+import { normalizeInstagramHandle, normalizeTikTokHandle } from '@/lib/normalize-social-handles';
 
 interface TopUser {
     id: string;
@@ -218,11 +219,9 @@ export default function InfluenciadoresDashboardPage() {
                 <Stack spacing={1}>
                     {influencers.map((inf) => {
                         const fullName = `${inf.first_name} ${inf.last_name}`.trim();
-                        const handle = inf.link_instagram
-                            ? `@${inf.link_instagram.replace('@', '')}`
-                            : inf.link_tiktok
-                                ? `@${inf.link_tiktok.replace('@', '')}`
-                                : null;
+                        const igHandle = inf.link_instagram ? normalizeInstagramHandle(inf.link_instagram) : null;
+                        const ttHandle = inf.link_tiktok ? normalizeTikTokHandle(inf.link_tiktok) : null;
+                        const handle = igHandle ? `@${igHandle}` : ttHandle ? `@${ttHandle}` : null;
                         return (
                             <Card
                                 key={inf._id}

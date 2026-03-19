@@ -4,6 +4,7 @@
  */
 
 import { getCombinedEngagementScore, type SocialStatsForEngagement } from './engagement-score';
+import { normalizeInstagramHandle, normalizeTikTokHandle } from './normalize-social-handles';
 
 const SEARCHAPI_KEY = process.env.SEARCHAPI_API_KEY;
 const SEARCHAPI_BASE = 'https://www.searchapi.io/api/v1/search';
@@ -31,11 +32,12 @@ interface TikTokProfileResponse {
 }
 
 export async function fetchInstagramProfile(username: string): Promise<InstagramProfileResponse | null> {
-    if (!SEARCHAPI_KEY || !username?.trim()) return null;
+    const handle = normalizeInstagramHandle(username);
+    if (!SEARCHAPI_KEY || !handle) return null;
     try {
         const params = new URLSearchParams({
             engine: 'instagram_profile',
-            username: username.replace(/^@/, '').trim(),
+            username: handle,
             api_key: SEARCHAPI_KEY,
         });
         const res = await fetch(`${SEARCHAPI_BASE}?${params}`, { cache: 'no-store' });
@@ -47,11 +49,12 @@ export async function fetchInstagramProfile(username: string): Promise<Instagram
 }
 
 export async function fetchTikTokProfile(username: string): Promise<TikTokProfileResponse | null> {
-    if (!SEARCHAPI_KEY || !username?.trim()) return null;
+    const handle = normalizeTikTokHandle(username);
+    if (!SEARCHAPI_KEY || !handle) return null;
     try {
         const params = new URLSearchParams({
             engine: 'tiktok_profile',
-            username: username.replace(/^@/, '').trim(),
+            username: handle,
             api_key: SEARCHAPI_KEY,
         });
         const res = await fetch(`${SEARCHAPI_BASE}?${params}`, { cache: 'no-store' });

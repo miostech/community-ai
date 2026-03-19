@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import { getTotalFollowers } from '@/lib/social-stats';
+import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeStoredInput } from '@/lib/normalize-social-handles';
 import mongoose from 'mongoose';
 import Account from '@/models/Account';
 import AccountPayment from '@/models/AccountPayment';
@@ -329,6 +330,57 @@ export async function PATCH(request: NextRequest) {
             delete updateData.phone;
             delete updateData.phone_country_code;
         }
+
+        // Redes sociais: normalizar "handle" ou URL completa para o formato esperado no Mongo.
+        // Serve para o caso do usuário colar uma URL inteira no campo.
+        if (body.link_instagram !== undefined) {
+            const raw = body.link_instagram == null ? '' : String(body.link_instagram);
+            if (raw.trim()) {
+                const normalized = normalizeInstagramHandle(raw);
+                if (!normalized) {
+                    return NextResponse.json(
+                        { error: 'link_instagram inválido. Informe apenas o usuário (sem @) ou cole a URL do perfil.' },
+                        { status: 400 }
+                    );
+                }
+                updateData.link_instagram = normalized;
+            } else {
+                updateData.link_instagram = '';
+            }
+        }
+
+        if (body.link_tiktok !== undefined) {
+            const raw = body.link_tiktok == null ? '' : String(body.link_tiktok);
+            if (raw.trim()) {
+                const normalized = normalizeTikTokHandle(raw);
+                if (!normalized) {
+                    return NextResponse.json(
+                        { error: 'link_tiktok inválido. Informe apenas o usuário (sem @) ou cole a URL do perfil.' },
+                        { status: 400 }
+                    );
+                }
+                updateData.link_tiktok = normalized;
+            } else {
+                updateData.link_tiktok = '';
+            }
+        }
+
+        if (body.link_youtube !== undefined) {
+            const raw = body.link_youtube == null ? '' : String(body.link_youtube);
+            if (raw.trim()) {
+                const normalized = normalizeYouTubeStoredInput(raw);
+                if (!normalized) {
+                    return NextResponse.json(
+                        { error: 'link_youtube inválido. Informe apenas o identificador (sem @) ou cole a URL do canal.' },
+                        { status: 400 }
+                    );
+                }
+                updateData.link_youtube = normalized;
+            } else {
+                updateData.link_youtube = '';
+            }
+        }
+
         if (typeof updateData.campaign_promo_dismissed_at === 'string') {
             const d = new Date(updateData.campaign_promo_dismissed_at as string);
             updateData.campaign_promo_dismissed_at = Number.isNaN(d.getTime()) ? undefined : d;

@@ -32,6 +32,7 @@ import {
     BarChart as BarChartIcon,
     Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import { normalizeInstagramHandle, normalizeTikTokHandle } from '@/lib/normalize-social-handles';
 
 interface Creator {
     _id: string;
@@ -195,11 +196,9 @@ export default function CreatorPortfolioPage() {
     useEffect(() => {
         if (!creator) return;
         const name = `${creator.first_name} ${creator.last_name}`.trim();
-        const handle = creator.link_instagram
-            ? `@${creator.link_instagram.replace('@', '')}`
-            : creator.link_tiktok
-            ? `@${creator.link_tiktok.replace('@', '')}`
-            : null;
+        const igHandle = normalizeInstagramHandle(creator.link_instagram || '');
+        const ttHandle = normalizeTikTokHandle(creator.link_tiktok || '');
+        const handle = igHandle ? `@${igHandle}` : ttHandle ? `@${ttHandle}` : null;
         document.title = handle ? `${name} (${handle}) — Admin` : `${name} — Admin`;
         return () => { document.title = 'Admin — Dome'; };
     }, [creator]);
@@ -291,7 +290,7 @@ export default function CreatorPortfolioPage() {
                 </Typography>
                 {(creator.link_instagram || creator.link_tiktok) && (
                     <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.72rem' }}>
-                        @{(creator.link_instagram || creator.link_tiktok || '').replace('@', '')}
+                        @{normalizeInstagramHandle(creator.link_instagram || '') ?? normalizeTikTokHandle(creator.link_tiktok || '') ?? ''}
                     </Typography>
                 )}
             </Stack>
@@ -405,7 +404,7 @@ export default function CreatorPortfolioPage() {
                         <Stack direction="row" spacing={1.5} justifyContent={{ xs: 'center', sm: 'flex-start' }} sx={{ mt: 1.5 }} flexWrap="wrap">
                             {creator.link_instagram && (
                                 <Button
-                                    href={`https://instagram.com/${creator.link_instagram.replace('@', '')}`}
+                                    href={`https://instagram.com/${normalizeInstagramHandle(creator.link_instagram) ?? ''}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     startIcon={<InstagramIcon />}
@@ -413,19 +412,19 @@ export default function CreatorPortfolioPage() {
                                     variant="outlined"
                                     sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem' }}
                                 >
-                                    {creator.link_instagram}
+                                    {normalizeInstagramHandle(creator.link_instagram) ?? creator.link_instagram}
                                 </Button>
                             )}
                             {creator.link_tiktok && (
                                 <Button
-                                    href={`https://tiktok.com/@${creator.link_tiktok.replace('@', '')}`}
+                                    href={`https://tiktok.com/@${normalizeTikTokHandle(creator.link_tiktok) ?? ''}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     size="small"
                                     variant="outlined"
                                     sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem' }}
                                 >
-                                    TikTok: {creator.link_tiktok}
+                                    TikTok: {normalizeTikTokHandle(creator.link_tiktok) ?? creator.link_tiktok}
                                 </Button>
                             )}
                             {creator.link_youtube && (

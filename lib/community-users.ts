@@ -2,6 +2,8 @@
  * Usuários em destaque da comunidade (stories) - dados compartilhados
  * entre a lista de stories e a página de perfil.
  */
+import { normalizeInstagramHandle, normalizeTikTokHandle } from './normalize-social-handles';
+
 export interface CommunityUser {
   id: string;
   name: string;
@@ -63,10 +65,12 @@ export function getInitialsFromName(name: string): string {
 
 export function getSocialUrl(user: CommunityUser, network: 'instagram' | 'tiktok'): string | null {
   if (network === 'instagram' && user.instagramProfile) {
-    return `https://instagram.com/${user.instagramProfile}`;
+    const handle = normalizeInstagramHandle(user.instagramProfile);
+    return handle ? `https://instagram.com/${handle}` : null;
   }
   if (network === 'tiktok' && user.tiktokProfile) {
-    return `https://tiktok.com/@${user.tiktokProfile}`;
+    const handle = normalizeTikTokHandle(user.tiktokProfile);
+    return handle ? `https://tiktok.com/@${handle}` : null;
   }
   return null;
 }

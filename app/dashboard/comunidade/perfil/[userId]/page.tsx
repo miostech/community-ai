@@ -820,7 +820,12 @@ export default function PerfilComunidadePage() {
     ? getSocialUrl(profileUser as CommunityUser, 'tiktok')
     : null;
   const youtubeUrl = 'youtubeProfile' in profileUser && profileUser.youtubeProfile
-    ? `https://www.youtube.com/@${profileUser.youtubeProfile.replace(/^@/, '')}`
+    ? (() => {
+        const v = profileUser.youtubeProfile?.trim() ?? '';
+        if (!v) return null;
+        if (v.startsWith('UC')) return `https://www.youtube.com/channel/${v}`;
+        return `https://www.youtube.com/@${v.replace(/^@/, '')}`;
+      })()
     : null;
 
   /** ID do perfil atual para comparar com a lista de stories (URL quando é conta real, ou profileUser.id quando é lista estática) */

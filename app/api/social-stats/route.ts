@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeChannelIdForSearchApi } from '@/lib/normalize-social-handles';
 
 const SEARCHAPI_API_KEY = process.env.SEARCHAPI_API_KEY;
 const SEARCHAPI_BASE = 'https://www.searchapi.io/api/v1/search';
@@ -34,10 +35,11 @@ interface YouTubeChannelResponse {
 }
 
 async function fetchInstagramProfile(username: string): Promise<{ followers: number | null; avatar: string | null }> {
-  if (!SEARCHAPI_API_KEY || !username?.trim()) return { followers: null, avatar: null };
+  const handle = normalizeInstagramHandle(username);
+  if (!SEARCHAPI_API_KEY || !handle) return { followers: null, avatar: null };
   const params = new URLSearchParams({
     engine: 'instagram_profile',
-    username: username.replace(/^@/, '').trim(),
+    username: handle,
     api_key: SEARCHAPI_API_KEY,
   });
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
@@ -57,10 +59,11 @@ async function fetchInstagramProfile(username: string): Promise<{ followers: num
 }
 
 async function fetchTikTokFollowers(username: string): Promise<number | null> {
-  if (!SEARCHAPI_API_KEY || !username?.trim()) return null;
+  const handle = normalizeTikTokHandle(username);
+  if (!SEARCHAPI_API_KEY || !handle) return null;
   const params = new URLSearchParams({
     engine: 'tiktok_profile',
-    username: username.replace(/^@/, '').trim(),
+    username: handle,
     api_key: SEARCHAPI_API_KEY,
   });
   const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
@@ -75,7 +78,8 @@ async function fetchTikTokFollowers(username: string): Promise<number | null> {
 /** channelId: @handle (ex: @TaylorSwift) ou ID do canal */
 async function fetchYouTubeSubscribers(channelId: string): Promise<number | null> {
   if (!SEARCHAPI_API_KEY || !channelId?.trim()) return null;
-  const normalized = channelId.trim().startsWith('@') ? channelId.trim() : `@${channelId.trim()}`;
+  const normalized = normalizeYouTubeChannelIdForSearchApi(channelId);
+  if (!normalized) return null;
   const params = new URLSearchParams({
     engine: 'youtube_channel',
     channel_id: normalized,

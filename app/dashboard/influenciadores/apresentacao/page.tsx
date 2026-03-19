@@ -21,6 +21,7 @@ import {
     People as PeopleIcon,
     Favorite as FavoriteIcon,
 } from '@mui/icons-material';
+import { normalizeInstagramHandle, normalizeTikTokHandle } from '@/lib/normalize-social-handles';
 
 interface ApresentacaoCreator {
     _id: string;
@@ -186,11 +187,9 @@ export default function ApresentacaoPage() {
                     <Grid container spacing={2}>
                         {creators.map((c) => {
                             const fullName = `${c.first_name} ${c.last_name}`.trim();
-                            const handle = c.link_instagram
-                                ? `@${c.link_instagram.replace('@', '')}`
-                                : c.link_tiktok
-                                    ? `@${c.link_tiktok.replace('@', '')}`
-                                    : null;
+                            const igHandle = c.link_instagram ? normalizeInstagramHandle(c.link_instagram) : null;
+                            const ttHandle = c.link_tiktok ? normalizeTikTokHandle(c.link_tiktok) : null;
+                            const handle = igHandle ? `@${igHandle}` : ttHandle ? `@${ttHandle}` : null;
                             return (
                                 <Grid key={c._id} size={{ xs: 12, sm: 6, md: 4 }}>
                                     <Card

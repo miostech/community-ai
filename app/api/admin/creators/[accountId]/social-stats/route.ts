@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
+import { normalizeInstagramHandle, normalizeTikTokHandle } from '@/lib/normalize-social-handles';
 import mongoose from 'mongoose';
 
 export const runtime = 'nodejs';
@@ -42,11 +43,12 @@ interface TikTokProfileResponse {
 }
 
 async function fetchInstagram(username: string): Promise<InstagramProfileResponse | null> {
-    if (!SEARCHAPI_KEY || !username?.trim()) return null;
+    const handle = normalizeInstagramHandle(username);
+    if (!SEARCHAPI_KEY || !handle) return null;
     try {
         const params = new URLSearchParams({
             engine: 'instagram_profile',
-            username: username.replace(/^@/, '').trim(),
+            username: handle,
             api_key: SEARCHAPI_KEY,
         });
         const res = await fetch(`${SEARCHAPI_BASE}?${params}`, {
@@ -60,11 +62,12 @@ async function fetchInstagram(username: string): Promise<InstagramProfileRespons
 }
 
 async function fetchTikTok(username: string): Promise<TikTokProfileResponse | null> {
-    if (!SEARCHAPI_KEY || !username?.trim()) return null;
+    const handle = normalizeTikTokHandle(username);
+    if (!SEARCHAPI_KEY || !handle) return null;
     try {
         const params = new URLSearchParams({
             engine: 'tiktok_profile',
-            username: username.replace(/^@/, '').trim(),
+            username: handle,
             api_key: SEARCHAPI_KEY,
         });
         const res = await fetch(`${SEARCHAPI_BASE}?${params}`, {
