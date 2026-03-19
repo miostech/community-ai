@@ -59,6 +59,10 @@ interface DmMessage {
     created_at: string;
 }
 
+type ThreadItem =
+    | { type: 'day-separator'; key: string; label: string }
+    | { type: 'message'; key: string; message: DmMessage };
+
 interface MentionUser {
     id: string;
     name: string;
@@ -122,6 +126,64 @@ function DmPageContent() {
             )
             .slice(0, 30);
     }, [users, userSearch]);
+
+    const formatDayLabel = useCallback((dateString: string) => {
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '';
+
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+        const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        const diffDays = Math.round((todayStart - targetStart) / oneDayMs);
+
+        if (diffDays === 0) return 'Hoje';
+        if (diffDays === 1) return 'Ontem';
+
+        return new Intl.DateTimeFormat('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        }).format(date);
+    }, []);
+
+    const formatMessageTime = useCallback((dateString: string) => {
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '';
+        return new Intl.DateTimeFormat('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(date);
+    }, []);
+
+    const threadItems = useMemo<ThreadItem[]>(() => {
+        const items: ThreadItem[] = [];
+        let lastDayKey = '';
+
+        for (const message of messages) {
+            const parsedDate = new Date(message.created_at);
+            const dayKey = Number.isNaN(parsedDate.getTime())
+                ? `invalid-${message.id}`
+                : `${parsedDate.getFullYear()}-${parsedDate.getMonth()}-${parsedDate.getDate()}`;
+
+            if (dayKey !== lastDayKey) {
+                items.push({
+                    type: 'day-separator',
+                    key: `day-${dayKey}-${message.id}`,
+                    label: formatDayLabel(message.created_at),
+                });
+                lastDayKey = dayKey;
+            }
+
+            items.push({
+                type: 'message',
+                key: `msg-${message.id}`,
+                message,
+            });
+        }
+
+        return items;
+    }, [formatDayLabel, messages]);
 
     const fetchConversations = useCallback(async () => {
         try {
@@ -446,10 +508,33 @@ function DmPageContent() {
                                     </Box>
                                 ) : (
                                     <Stack spacing={1.25}>
-                                        {messages.map((message) => {
+                                        {threadItems.map((item) => {
+                                            if (item.type === 'day-separator') {
+                                                return (
+                                                    <Box key={item.key} sx={{ display: 'flex', justifyContent: 'center', my: 0.5 }}>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            sx={{
+                                                                px: 1.25,
+                                                                py: 0.4,
+                                                                borderRadius: 999,
+                                                                bgcolor: 'action.selected',
+                                                                fontWeight: 600,
+                                                            }}
+                                                        >
+                                                            {item.label}
+                                                        </Typography>
+                                                    </Box>
+                                                );
+                                            }
+
+                                            const { message } = item;
                                             const mine = message.account_id === account?.id;
+                                            const messageTime = formatMessageTime(message.created_at);
+
                                             return (
-                                                <Box key={message.id} sx={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                                                <Box key={item.key} sx={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                                                     <Box
                                                         sx={{
                                                             maxWidth: '80%',
@@ -462,6 +547,18 @@ function DmPageContent() {
                                                     >
                                                         <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                                                             {message.content}
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                display: 'block',
+                                                                textAlign: 'right',
+                                                                mt: 0.4,
+                                                                opacity: 0.75,
+                                                                fontSize: '0.68rem',
+                                                            }}
+                                                        >
+                                                            {messageTime}
                                                         </Typography>
                                                     </Box>
                                                 </Box>
