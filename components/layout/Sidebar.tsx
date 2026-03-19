@@ -74,6 +74,15 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    label: 'Mensagens Privadas',
+    href: '/dashboard/mensagens',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8l-9 6-9-6m18-2H3a2 2 0 00-2 2v8a2 2 0 002 2h18a2 2 0 002-2v-8a2 2 0 00-2-2z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Cursos',
     href: '/dashboard/cursos',
     icon: (

@@ -25,8 +25,9 @@ export function FloatingChatButtonMui() {
     }, []);
 
     const isChatPage = pathname === '/dashboard/chat';
+    const isPrivateMessagesPage = pathname === '/dashboard/mensagens';
 
-    if (isChatPage) {
+    if (isChatPage || isPrivateMessagesPage) {
         return null;
     }
 
@@ -35,7 +36,9 @@ export function FloatingChatButtonMui() {
             <Box
                 sx={{
                     position: 'fixed',
-                    bottom: { xs: 80, sm: 24 },
+                    // No iPad (breakpoint `sm`) o `MobileMenuMui` fica fixo embaixo.
+                    // Aumentamos o `bottom` para não sobrepor o menu.
+                    bottom: { xs: 80, sm: 80, md: 24 },
                     right: { xs: 16, sm: 24 },
                     zIndex: 50,
                 }}

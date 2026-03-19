@@ -3,6 +3,14 @@ import mongoose, { Model, Schema, Types } from 'mongoose';
 export interface ChatConversation {
     _id: Types.ObjectId;
     account_id: Types.ObjectId;
+    kind: 'ai' | 'dm';
+    participants?: Types.ObjectId[];
+    read_states?: Array<{
+        account_id: Types.ObjectId;
+        last_read_at: Date;
+    }>;
+    created_by?: Types.ObjectId;
+    last_message_at?: Date;
     title: string;
     system_prompt?: string;
     model: string;
@@ -20,6 +28,42 @@ const ChatConversationSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Account',
             required: true,
+            index: true,
+        },
+        kind: {
+            type: String,
+            enum: ['ai', 'dm'],
+            default: 'ai',
+            index: true,
+        },
+        participants: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Account',
+                index: true,
+            },
+        ],
+        read_states: [
+            {
+                account_id: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Account',
+                    required: true,
+                    index: true,
+                },
+                last_read_at: {
+                    type: Date,
+                    default: Date.now,
+                },
+            },
+        ],
+        created_by: {
+            type: Schema.Types.ObjectId,
+            ref: 'Account',
+        },
+        last_message_at: {
+            type: Date,
+            default: null,
             index: true,
         },
         title: { type: String, trim: true, default: 'Nova conversa' },
@@ -40,6 +84,8 @@ const ChatConversationSchema = new Schema(
         versionKey: false,
     }
 );
+
+ChatConversationSchema.index({ kind: 1, participants: 1, status: 1, last_message_at: -1 });
 
 const ChatConversationModel: Model<ChatConversation> =
     mongoose.models.ChatConversation ??

@@ -10,6 +10,7 @@ interface CreateNotificationParams {
     commentId?: mongoose.Types.ObjectId | string | null;
     storyId?: mongoose.Types.ObjectId | string | null;
     campaignId?: mongoose.Types.ObjectId | string | null;
+    conversationId?: mongoose.Types.ObjectId | string | null;
     contentPreview?: string | null;
 }
 
@@ -26,6 +27,7 @@ export async function createNotification({
     commentId,
     storyId,
     campaignId,
+    conversationId,
     contentPreview,
 }: CreateNotificationParams): Promise<void> {
     try {
@@ -48,24 +50,38 @@ export async function createNotification({
             comment_id: commentId ? new mongoose.Types.ObjectId(commentId.toString()) : null,
             story_id: storyId ? new mongoose.Types.ObjectId(storyId.toString()) : null,
             campaign_id: campaignId ? new mongoose.Types.ObjectId(campaignId.toString()) : null,
+            conversation_id: conversationId
+                ? new mongoose.Types.ObjectId(conversationId.toString())
+                : null,
             content_preview: contentPreview?.slice(0, 150) || null,
             is_read: false,
         };
 
         console.log('📝 Dados da notificação:', JSON.stringify(notificationData, null, 2));
 
-        // Usa findOneAndUpdate com upsert para evitar duplicatas
-        // Se já existe uma notificação igual, apenas atualiza o timestamp e marca como não lida
+        // Usa findOneAndUpdate com upsert para evitar duplicatas.
+        // Para DM, reaproveitamos a mesma notificação por ator/destinatário/tipo
+        // para evitar conflito com índices legados e sempre "subir" a notificação.
+        const query =
+            type === 'dm_new_message'
+                ? {
+                      recipient_id: notificationData.recipient_id,
+                      actor_id: notificationData.actor_id,
+                      type: notificationData.type,
+                  }
+                : {
+                      recipient_id: notificationData.recipient_id,
+                      actor_id: notificationData.actor_id,
+                      type: notificationData.type,
+                      post_id: notificationData.post_id,
+                      comment_id: notificationData.comment_id,
+                      story_id: notificationData.story_id,
+                      campaign_id: notificationData.campaign_id,
+                      conversation_id: notificationData.conversation_id,
+                  };
+
         const result = await Notification.findOneAndUpdate(
-            {
-                recipient_id: notificationData.recipient_id,
-                actor_id: notificationData.actor_id,
-                type: notificationData.type,
-                post_id: notificationData.post_id,
-                comment_id: notificationData.comment_id,
-                story_id: notificationData.story_id,
-                campaign_id: notificationData.campaign_id,
-            },
+            query,
             {
                 $set: {
                     ...notificationData,
@@ -90,6 +106,7 @@ export async function createNotification({
             commentId,
             storyId,
             campaignId,
+            conversationId,
         }).catch((err) => console.error('Push notification error:', err));
     } catch (error) {
         // Log do erro mas não interrompe o fluxo principal

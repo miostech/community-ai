@@ -37,6 +37,7 @@ import {
     Send as SendIcon,
     FavoriteBorder as FavoriteBorderIcon,
     Favorite as FavoriteIcon,
+    MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 import { useAccount } from '@/contexts/AccountContext';
 
@@ -528,6 +529,26 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         inputRef.current?.focus();
     };
 
+    const handleOpenPrivateMessage = async (targetAccountId: string) => {
+        if (!viewerIsModerator) return;
+        try {
+            const res = await fetch('/api/dm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_account_id: targetAccountId }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data?.conversation_id) {
+                throw new Error(data?.error || 'Não foi possível abrir a conversa privada');
+            }
+            onClose();
+            router.push(`/dashboard/mensagens?conversation=${data.conversation_id}`);
+        } catch (error) {
+            console.error('Erro ao abrir mensagem privada:', error);
+            alert('Não foi possível abrir a mensagem privada. Tente novamente.');
+        }
+    };
+
     // Like em comentário
     const handleLikeComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
         try {
@@ -970,6 +991,25 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             {viewerIsModerator && !isMyComment(comment.author.id) && (
                                                 <Button
                                                     size="small"
+                                                    onClick={() => handleOpenPrivateMessage(comment.author.id)}
+                                                    sx={{
+                                                        p: 0,
+                                                        minWidth: 'auto',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        textTransform: 'none',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.25,
+                                                    }}
+                                                >
+                                                    <MailOutlineIcon sx={{ fontSize: '0.875rem' }} />
+                                                    Mensagem privada
+                                                </Button>
+                                            )}
+                                            {viewerIsModerator && !isMyComment(comment.author.id) && (
+                                                <Button
+                                                    size="small"
                                                     color="error"
                                                     onClick={() => handleDeleteCommentClick(comment._id)}
                                                     sx={{
@@ -1266,6 +1306,25 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                                                 Excluir
                                                                             </Button>
                                                                         </>
+                                                                    )}
+                                                                    {viewerIsModerator && !isMyComment(reply.author.id) && (
+                                                                        <Button
+                                                                            size="small"
+                                                                            onClick={() => handleOpenPrivateMessage(reply.author.id)}
+                                                                            sx={{
+                                                                                p: 0,
+                                                                                minWidth: 'auto',
+                                                                                fontSize: '0.6875rem',
+                                                                                fontWeight: 600,
+                                                                                textTransform: 'none',
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 0.25,
+                                                                            }}
+                                                                        >
+                                                                            <MailOutlineIcon sx={{ fontSize: '0.75rem' }} />
+                                                                            Mensagem privada
+                                                                        </Button>
                                                                     )}
                                                                     {viewerIsModerator && !isMyComment(reply.author.id) && (
                                                                         <Button

@@ -26,9 +26,10 @@ import {
     AutoStories as StoryCommentIcon,
     Campaign as CampaignIcon,
     Article as NewPostIcon,
+    MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message';
 
 export interface NotificationItem {
     id: string;
@@ -45,6 +46,7 @@ export interface NotificationItem {
     story_id?: string;
     story_owner_id?: string;
     campaign_id?: string;
+    conversation_id?: string;
     content_preview?: string;
     likes_count?: number;
 }
@@ -92,6 +94,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'disponível!';
         case 'new_post':
             return 'publicou um novo post';
+        case 'dm_new_message':
+            return 'enviou uma mensagem privada';
         default:
             return 'interagiu';
     }
@@ -117,6 +121,8 @@ function getNotificationIcon(type: NotificationType) {
             return <CampaignIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         case 'new_post':
             return <NewPostIcon sx={{ fontSize: 14, color: 'primary.main' }} />;
+        case 'dm_new_message':
+            return <MailOutlineIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         default:
             return null;
     }
@@ -236,6 +242,10 @@ export function NotificationsButtonMui() {
                                         ? `/dashboard/comunidade/perfil/${n.actor.id}`
                                         : n.type === 'story_comment' && n.story_owner_id
                                             ? `/dashboard/comunidade/perfil/${n.story_owner_id}`
+                                            : n.type === 'dm_new_message'
+                                                ? (n.conversation_id
+                                                    ? `/dashboard/mensagens?conversation=${n.conversation_id}`
+                                                    : '/dashboard/mensagens')
                                             : n.post_id
                                                 ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
                                                 : '#'

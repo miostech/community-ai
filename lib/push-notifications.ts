@@ -128,6 +128,7 @@ export interface SendPushForNotificationParams {
   /** Para story_comment: dono do story (opcional; se não passado, será carregado pelo storyId). */
   storyOwnerId?: mongoose.Types.ObjectId | string | null;
   campaignId?: mongoose.Types.ObjectId | string | null;
+  conversationId?: mongoose.Types.ObjectId | string | null;
 }
 
 /**
@@ -146,6 +147,7 @@ export async function sendPushForNotification(
     storyId,
     storyOwnerId: storyOwnerIdParam,
     campaignId,
+    conversationId,
   } = params;
 
   await connectMongo();
@@ -223,6 +225,15 @@ export async function sendPushForNotification(
       title = 'Comentário para moderação';
       body = contentPreview ? contentPreview.slice(0, 80) + '…' : 'Novo comentário aguardando aprovação';
       if (postId) url = `/dashboard/comunidade/${postId}`;
+      break;
+    case 'dm_new_message':
+      title = 'Nova mensagem privada';
+      body = contentPreview
+        ? `${actorName}: ${contentPreview.slice(0, 80)}${contentPreview.length > 80 ? '…' : ''}`
+        : `${actorName} enviou uma mensagem privada`;
+      url = conversationId
+        ? `/dashboard/mensagens?conversation=${conversationId.toString()}`
+        : '/dashboard/mensagens';
       break;
     default:
       title = 'Nova notificação';

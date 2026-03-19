@@ -44,6 +44,7 @@ import {
     Dashboard as DashboardIcon,
     PersonSearch as InfluencersIcon,
     Slideshow as SlideshowIcon,
+    MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 import { useTheme as useAppTheme } from '@/contexts/ThemeContext';
 import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
@@ -89,16 +90,13 @@ const navItems: NavItem[] = [
         label: 'Chat com IA',
         href: '/dashboard/chat',
         icon: <ChatIcon />,
-    },
-    {
-        label: 'Histórico de conversas',
-        href: '/dashboard/chat/historico',
-        icon: <HistoryIcon />,
-    },
-    {
-        label: 'Top Trends',
-        href: '/dashboard/trends',
-        icon: <TrendingUpIcon />,
+        children: [
+            {
+                label: 'Histórico de conversas',
+                href: '/dashboard/chat/historico',
+                icon: <HistoryIcon fontSize="small" />,
+            },
+        ],
     },
     {
         label: 'Trabalhos',
@@ -123,6 +121,17 @@ const navItems: NavItem[] = [
             },
         ],
     },
+    {
+        label: 'DM Privada',
+        href: '/dashboard/mensagens',
+        icon: <MailOutlineIcon />,
+    },
+    {
+        label: 'Top Trends',
+        href: '/dashboard/trends',
+        icon: <TrendingUpIcon />,
+    },
+    
     {
         label: 'Cursos',
         href: '/dashboard/cursos',
@@ -207,6 +216,19 @@ export function SidebarMui() {
     };
 
     const canAccessAdmin = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
+    const chatLaunched = isChatLaunched();
+    const visibleNavItems = navItems
+        .map((item) => {
+            if (item.label !== 'Chat com IA' || !item.children) return item;
+            return {
+                ...item,
+                children: item.children.filter((child) => {
+                    if (child.href === '/dashboard/chat/historico') return chatLaunched;
+                    return true;
+                }),
+            };
+        })
+        .filter((item) => item.children ? item.children.length > 0 || item.label !== 'Chat com IA' : true);
 
     function renderNavItem(item: NavItem) {
         const isActive = item.exactMatch
@@ -373,12 +395,7 @@ export function SidebarMui() {
 
             {/* Navigation */}
             <List sx={{ flex: 1, py: 1 }}>
-                {navItems
-                    .filter((item) => {
-                        if (item.href === '/dashboard/chat/historico') return isChatLaunched();
-                        return true;
-                    })
-                    .map((item) => renderNavItem(item))}
+                {visibleNavItems.map((item) => renderNavItem(item))}
 
                 {/* Admin/Moderador section */}
                 {canAccessAdmin && (

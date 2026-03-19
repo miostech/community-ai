@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message';
 
 export interface NotificationItem {
   id: string;
@@ -28,6 +28,7 @@ export interface NotificationItem {
   story_id?: string;
   story_owner_id?: string;
   campaign_id?: string;
+  conversation_id?: string;
   content_preview?: string;
   likes_count?: number;
 }
@@ -66,7 +67,7 @@ export async function GET() {
 
     // Buscar notificações do Model
     const notifications = await Notification.find({ recipient_id: accountId })
-      .sort({ created_at: -1 })
+      .sort({ updated_at: -1, created_at: -1 })
       .limit(50)
       .populate('actor_id', 'first_name last_name avatar_url')
       .lean();
@@ -144,6 +145,7 @@ export async function GET() {
         story_id: storyId || undefined,
         story_owner_id: n.type === 'story_comment' ? storyOwnerId : undefined,
         campaign_id: (n as any).campaign_id?.toString(),
+        conversation_id: (n as any).conversation_id?.toString(),
         content_preview: n.content_preview || undefined,
         likes_count: likesCount,
       };

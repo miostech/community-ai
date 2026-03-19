@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message';
 
 export interface INotification extends Document {
     _id: mongoose.Types.ObjectId;
@@ -11,6 +11,7 @@ export interface INotification extends Document {
     comment_id?: mongoose.Types.ObjectId; // Comentário relacionado (se houver)
     story_id?: mongoose.Types.ObjectId; // Story relacionado (se houver)
     campaign_id?: mongoose.Types.ObjectId; // Campanha (nova campanha ativada)
+    conversation_id?: mongoose.Types.ObjectId; // Conversa de DM relacionada
     content_preview?: string; // Preview do conteúdo (comentário, post, etc)
     is_read: boolean;
     created_at: Date;
@@ -32,7 +33,7 @@ const NotificationSchema = new Schema<INotification>(
         },
         type: {
             type: String,
-            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment', 'new_campaign', 'new_post'],
+            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment', 'new_campaign', 'new_post', 'dm_new_message'],
             required: true,
         },
         post_id: {
@@ -53,6 +54,11 @@ const NotificationSchema = new Schema<INotification>(
         campaign_id: {
             type: Schema.Types.ObjectId,
             ref: 'Campaign',
+            default: null,
+        },
+        conversation_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'ChatConversation',
             default: null,
         },
         content_preview: {
@@ -76,7 +82,7 @@ NotificationSchema.index({ recipient_id: 1, is_read: 1, created_at: -1 });
 
 // Índice para evitar notificações duplicadas (inclui story_id para like em story)
 NotificationSchema.index(
-    { recipient_id: 1, actor_id: 1, type: 1, post_id: 1, comment_id: 1, story_id: 1, campaign_id: 1 },
+    { recipient_id: 1, actor_id: 1, type: 1, post_id: 1, comment_id: 1, story_id: 1, campaign_id: 1, conversation_id: 1 },
     { unique: true, sparse: true }
 );
 

@@ -22,6 +22,7 @@ import {
     Work as WorkIcon,
     AdminPanelSettings as AdminIcon,
     PersonSearch as InfluencersIcon,
+    MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -93,9 +94,14 @@ export function MobileMenuMui() {
         return () => observer.disconnect();
     }, []);
 
-    // Perfil na tab bar: para admin/moderador pode abrir menu (Meu perfil, Campanhas, Influenciadores)
+    // Perfil na tab bar: para admin/moderador pode abrir menu (Meu perfil, Campanhas, Influenciadores, DM)
     const getCurrentValue = () => {
-        if (canAccessAdmin && (pathname?.startsWith('/dashboard/admin') || pathname?.startsWith('/dashboard/influenciadores'))) {
+        if (
+            canAccessAdmin &&
+            (pathname?.startsWith('/dashboard/admin') ||
+                pathname?.startsWith('/dashboard/influenciadores') ||
+                pathname?.startsWith('/dashboard/mensagens'))
+        ) {
             const profileIndex = bottomNavItems.findIndex((i) => i.label === 'Perfil');
             return profileIndex >= 0 ? profileIndex : 0;
         }
@@ -177,11 +183,12 @@ export function MobileMenuMui() {
                     }
 
                     if (isProfile && canAccessAdmin) {
-                        // Admin/Moderador: ícone de engrenagem abre menu (Meu perfil, Campanhas, Influenciadores)
+                        // Admin/Moderador: ícone de engrenagem abre menu (Meu perfil, Campanhas, Influenciadores, DM)
                         const isAnyActive =
                             isActive ||
                             pathname?.startsWith('/dashboard/admin') ||
-                            pathname?.startsWith('/dashboard/influenciadores');
+                            pathname?.startsWith('/dashboard/influenciadores') ||
+                            pathname?.startsWith('/dashboard/mensagens');
                         return (
                             <BottomNavigationAction
                                 key={item.href}
@@ -255,6 +262,17 @@ export function MobileMenuMui() {
                             <AdminIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText>Campanhas</ListItemText>
+                    </MenuItem>
+                    <MenuItem
+                        component={Link}
+                        href="/dashboard/mensagens"
+                        onClick={handleProfileMenuClose}
+                        selected={pathname?.startsWith('/dashboard/mensagens')}
+                    >
+                        <ListItemIcon>
+                            <MailOutlineIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>DM privada</ListItemText>
                     </MenuItem>
                     {isModerator && (
                         <MenuItem
