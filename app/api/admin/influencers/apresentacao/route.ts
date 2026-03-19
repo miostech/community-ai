@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const TOP_N = 30;
 
 // GET - Top creators para portfólio marcas + métricas agregadas
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -41,11 +41,19 @@ export async function GET() {
             ],
         };
 
+        const sortByParam = request.nextUrl.searchParams.get('sortBy');
+        const sortBy: 'engagement' | 'followers' =
+            sortByParam === 'followers' ? 'followers' : 'engagement';
+        const sortStage =
+            sortBy === 'followers'
+                ? ({ $sort: { effectiveFollowers: -1 as const, cached_engagement_score: -1 as const } })
+                : ({ $sort: { cached_engagement_score: -1 as const, effectiveFollowers: -1 as const } });
+
         const [topPipelineResult, aggResult] = await Promise.all([
             Account.aggregate([
                 { $match: filter },
                 { $addFields: { effectiveFollowers: effectiveFollowersExpr } },
-                { $sort: { cached_engagement_score: -1, effectiveFollowers: -1 } },
+                sortStage,
                 { $limit: TOP_N },
                 {
                     $project: {
@@ -116,6 +124,7 @@ export async function GET() {
         return NextResponse.json({
             creators,
             stats,
+            sortBy,
         });
     } catch (error) {
         console.error('Erro ao buscar apresentação:', error);

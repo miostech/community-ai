@@ -65,9 +65,11 @@ export default function ApresentacaoPage() {
     const [creators, setCreators] = useState<ApresentacaoCreator[]>([]);
     const [stats, setStats] = useState<ApresentacaoStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [sortBy, setSortBy] = useState<'engagement' | 'followers'>('engagement');
 
     useEffect(() => {
-        fetch('/api/admin/influencers/apresentacao')
+        setLoading(true);
+        fetch(`/api/admin/influencers/apresentacao?sortBy=${sortBy}`)
             .then((r) => r.json())
             .then((data) => {
                 setCreators(data.creators || []);
@@ -78,7 +80,7 @@ export default function ApresentacaoPage() {
                 setStats(null);
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [sortBy]);
 
     return (
         <Box sx={{ maxWidth: 960, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
@@ -168,7 +170,7 @@ export default function ApresentacaoPage() {
                                         {formatFollowers(stats.totalFollowers)}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Seguidores atuais
+                                       Alcance e base de seguidores
                                     </Typography>
                                     {stats.followersUpdatedAt && (
                                         <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25 }}>
@@ -181,9 +183,35 @@ export default function ApresentacaoPage() {
                     )}
 
                     {/* Top creators */}
-                    <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 2 }}>
-                        Top creators
-                    </Typography>
+                    <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1}
+                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                        justifyContent="space-between"
+                        sx={{ mb: 2 }}
+                    >
+                        <Typography variant="subtitle2" fontWeight={700}>
+                            Top creators
+                        </Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Chip
+                                size="small"
+                                label="Por engajamento"
+                                color={sortBy === 'engagement' ? 'primary' : 'default'}
+                                variant={sortBy === 'engagement' ? 'filled' : 'outlined'}
+                                onClick={() => setSortBy('engagement')}
+                                sx={{ fontWeight: 600 }}
+                            />
+                            <Chip
+                                size="small"
+                                label="Por seguidores"
+                                color={sortBy === 'followers' ? 'primary' : 'default'}
+                                variant={sortBy === 'followers' ? 'filled' : 'outlined'}
+                                onClick={() => setSortBy('followers')}
+                                sx={{ fontWeight: 600 }}
+                            />
+                        </Stack>
+                    </Stack>
                     <Grid container spacing={2}>
                         {creators.map((c) => {
                             const fullName = `${c.first_name} ${c.last_name}`.trim();
@@ -238,6 +266,15 @@ export default function ApresentacaoPage() {
                                                         </Typography>
                                                     )}
                                                     <Box sx={{ mt: 0.75 }}>
+                                                        {sortBy === 'engagement' ? (
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                                                                Engajamento como prioridade
+                                                            </Typography>
+                                                        ) : (
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                                                                Seguidores como prioridade
+                                                            </Typography>
+                                                        )}
                                                         {c.engagementScore != null ? (
                                                             <Chip
                                                                 size="small"
@@ -247,7 +284,7 @@ export default function ApresentacaoPage() {
                                                             />
                                                         ) : (
                                                             <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                                                                Engajamento: atualizado 1x ao dia
+                                                                Sem dados de engajamento no momento
                                                             </Typography>
                                                         )}
                                                     </Box>
