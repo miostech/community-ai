@@ -4,11 +4,10 @@ import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
 import AccountPayment from '@/models/AccountPayment';
 import { randomUUID } from 'crypto';
+import { CAMPAIGN_TRIAL_MS } from '@/lib/campaign-trial';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const TRIAL_DAYS = 14;
 const CAMPAIGN_COOKIE = 'dome_campaign';
 const CAMPAIGN_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
 /** Só novos cadastros recebem o trial; conta criada há mais que isso = login de usuário já existente. */
@@ -65,7 +64,7 @@ export async function GET(request: NextRequest) {
         }
 
         const now = new Date();
-        const expiresAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+        const expiresAt = new Date(now.getTime() + CAMPAIGN_TRIAL_MS);
         const orderId = `campaign-10days-${randomUUID()}`;
 
         await AccountPayment.create({

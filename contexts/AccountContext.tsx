@@ -58,6 +58,10 @@ export interface Account {
     followers_at_signup?: number | null;
     /** Fechou o modal de promo da campanha sem comprar; não vê mais a oferta. */
     campaign_promo_dismissed_at?: string | null;
+    /** ISO da criação da conta (Mongo `created_at`). */
+    created_at?: string | null;
+    /** Período de graça: cadastro recente sem pagamento registado (subscription inactive). Calculado no GET /api/accounts. */
+    signup_grace_active?: boolean;
 }
 
 export interface Subscription {
@@ -87,7 +91,10 @@ interface AccountContextType {
     setAccountFromResponse: (account: Account | null) => void;
     hasPhone: boolean;
     fullName: string;
+    /** Assinatura paga/registada como ativa na API (sem período de graça por idade da conta). */
     isSubscriptionActive: boolean;
+    /** Pode usar o app sem paywall: assinatura ativa ou período de graça (signup recente + inactive). */
+    isSubscriptionEffective: boolean;
     isMidiaKitComplete: boolean;
     /** Data/hora em que a sessão Trabalhos será liberada (7 dias após first_paid_at). null = já liberado ou sem compra. */
     trabalhosUnlockAt: Date | null;
@@ -168,10 +175,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
         const isDashboardRoute = pathname?.startsWith('/dashboard');
 
-        // Só redireciona se status for explicitamente 'inactive' ou 'expired'
+        // Só redireciona se status for explicitamente 'inactive' ou 'expired' e não houver acesso efetivo (graça por idade da conta)
         const isInactive = subscription?.status === 'inactive' || subscription?.status === 'expired';
+        const hasGrace = account.signup_grace_active === true;
+        const isSubscriptionEffective =
+            subscription?.status === 'active' || hasGrace;
 
-        if (isDashboardRoute && !isPublicRoute && isInactive) {
+        if (isDashboardRoute && !isPublicRoute && isInactive && !isSubscriptionEffective) {
             const isCampaignUser = subscription?.product_name === CAMPAIGN_14_DAYS_PRODUCT_NAME;
             const destination = isCampaignUser ? '/precos' : '/dashboard/assinatura';
             console.log('🔴 Assinatura inativa - redirecionando para', destination);
@@ -219,6 +229,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const hasPhone = Boolean(account?.phone && account.phone.trim() !== '');
     const fullName = account ? `${account.first_name} ${account.last_name}`.trim() : '';
     const isSubscriptionActive = subscription?.status === 'active';
+    const isSubscriptionEffective =
+        isSubscriptionActive || account?.signup_grace_active === true;
 
     const isCampaign14Days = subscription?.product_name === CAMPAIGN_14_DAYS_PRODUCT_NAME;
     const convertedDuringCampaignTrial = subscription?.converted_during_campaign_trial === true;
@@ -276,6 +288,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
                 hasPhone,
                 fullName,
                 isSubscriptionActive,
+                isSubscriptionEffective,
                 isMidiaKitComplete,
                 trabalhosUnlockAt,
                 canAccessTrabalhos,

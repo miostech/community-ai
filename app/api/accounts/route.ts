@@ -7,6 +7,7 @@ import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeStored
 import mongoose from 'mongoose';
 import Account from '@/models/Account';
 import AccountPayment from '@/models/AccountPayment';
+import { CAMPAIGN_TRIAL_MS } from '@/lib/campaign-trial';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -197,6 +198,15 @@ export async function GET() {
 
         const payment = lastPayment as any;
 
+        const createdAtRaw = account.created_at ? new Date(account.created_at as Date | string) : null;
+        const createdAtMs =
+            createdAtRaw && !Number.isNaN(createdAtRaw.getTime()) ? createdAtRaw.getTime() : null;
+        const signup_grace_active = Boolean(
+            subscriptionStatus === 'inactive' &&
+                createdAtMs !== null &&
+                Date.now() - createdAtMs < CAMPAIGN_TRIAL_MS
+        );
+
         const isFoundingMember = await checkFoundingMember(email);
         if ((account.is_founding_member ?? false) !== isFoundingMember) {
             Account.collection.updateOne(
@@ -265,6 +275,8 @@ export async function GET() {
                 campaign_promo_dismissed_at: account.campaign_promo_dismissed_at
                     ? new Date(account.campaign_promo_dismissed_at).toISOString()
                     : null,
+                created_at: createdAtMs !== null ? new Date(createdAtMs).toISOString() : null,
+                signup_grace_active,
             },
             subscription: {
                 status: subscriptionStatus,

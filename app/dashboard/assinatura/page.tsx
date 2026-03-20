@@ -8,18 +8,18 @@ import { useAccount } from '@/contexts/AccountContext';
 
 export default function AssinaturaPage() {
     const router = useRouter();
-    const { subscription, isLoading, isSubscriptionActive } = useAccount();
+    const { isLoading, isSubscriptionEffective } = useAccount();
 
-    // Se já tem assinatura ativa, redireciona para o dashboard
+    // Se já tem assinatura ativa ou período de graça (cadastro recente), redireciona para o dashboard
     useEffect(() => {
-        if (!isLoading && isSubscriptionActive) {
-            console.log('✅ Assinatura ativa - redirecionando para dashboard');
+        if (!isLoading && isSubscriptionEffective) {
+            console.log('✅ Assinatura ativa ou graça - redirecionando para dashboard');
             router.push('/dashboard/comunidade');
         }
-    }, [isLoading, isSubscriptionActive, router]);
+    }, [isLoading, isSubscriptionEffective, router]);
 
     // Mostra loading enquanto carrega ou se vai redirecionar
-    if (isLoading || isSubscriptionActive) {
+    if (isLoading || isSubscriptionEffective) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
                 <CircularProgress />
