@@ -183,16 +183,14 @@ async function savePaymentRecord(
         const rawStartDate = parseKiwifyDate(subscription?.start_date);
         const rawNextPayment = parseKiwifyDate(subscription?.next_payment);
 
-        let effectiveStartDate = rawStartDate;
         let effectiveNextPayment = rawNextPayment;
 
         const isSuccessfulChargeEvent = ['paid', 'order_approved', 'subscription_renewed'].includes(eventType);
         const hasStaleNextPayment = !!(approvedAt && rawNextPayment && rawNextPayment <= approvedAt);
 
-        // Em renovação/cobrança aprovada, start_date deve refletir o início do ciclo atual.
+        // Em renovação/cobrança aprovada, corrigimos apenas o next_payment
+        // (start_date permanece como histórico original da assinatura).
         if (subscription && approvedAt && isSuccessfulChargeEvent) {
-            effectiveStartDate = approvedAt;
-
             if (!rawNextPayment || hasStaleNextPayment) {
                 effectiveNextPayment = addByFrequency(approvedAt, subscription.plan?.frequency);
             }
@@ -233,7 +231,7 @@ async function savePaymentRecord(
             subscription: subscription ? {
                 id: subscription.id,
                 status: subscription.status,
-                start_date: effectiveStartDate,
+                start_date: rawStartDate,
                 next_payment: effectiveNextPayment,
                 plan_name: subscription.plan?.name,
                 plan_frequency: subscription.plan?.frequency,
