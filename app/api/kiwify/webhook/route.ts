@@ -113,6 +113,60 @@ interface KiwifyWebhookPayload {
     };
 }
 
+function parseKiwifyDate(value?: string): Date | undefined {
+    if (!value) return undefined;
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const maybeWithTimezone = /Z|[+-]\d{2}:\d{2}$/.test(normalized) ? normalized : `${normalized}:00Z`;
+    const parsed = new Date(maybeWithTimezone);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function addByFrequency(baseDate: Date, frequency?: string): Date {
+    const normalized = (frequency || '').toLowerCase().trim();
+    const next = new Date(baseDate);
+
+    const addDays = (days: number) => {
+        next.setUTCDate(next.getUTCDate() + days);
+        return next;
+    };
+
+    const addMonths = (months: number) => {
+        next.setUTCMonth(next.getUTCMonth() + months);
+        return next;
+    };
+
+    const addYears = (years: number) => {
+        next.setUTCFullYear(next.getUTCFullYear() + years);
+        return next;
+    };
+
+    // Casos comuns em texto livre
+    if (normalized.includes('semestr')) return addMonths(6);
+    if (normalized.includes('trimestr') || normalized.includes('quarter')) return addMonths(3);
+    if (normalized.includes('bimestr')) return addMonths(2);
+    if (normalized.includes('quinzen')) return addDays(15);
+    if (normalized.includes('year') || normalized.includes('anual') || normalized.includes('annual')) return addYears(1);
+    if (normalized.includes('month') || normalized.includes('mensal')) return addMonths(1);
+    if (normalized.includes('week') || normalized.includes('seman')) return addDays(7);
+    if (normalized.includes('day') || normalized.includes('di') || normalized.includes('dia')) return addDays(1);
+
+    // Tenta extrair padrões como "6 months", "12m", "1 year", "15 dias"
+    const amountMatch = normalized.match(/(\d+)\s*(years?|anos?|y|months?|meses?|m|weeks?|semanas?|w|days?|dias?|d)\b/);
+    if (amountMatch) {
+        const amount = Number(amountMatch[1]);
+        const unit = amountMatch[2];
+        if (!Number.isNaN(amount) && amount > 0) {
+            if (/^(years?|anos?|y)$/.test(unit)) return addYears(amount);
+            if (/^(months?|meses?|m)$/.test(unit)) return addMonths(amount);
+            if (/^(weeks?|semanas?|w)$/.test(unit)) return addDays(amount * 7);
+            if (/^(days?|dias?|d)$/.test(unit)) return addDays(amount);
+        }
+    }
+
+    // Fallback seguro: mensal.
+    return addMonths(1);
+}
+
 // Valida a assinatura do webhook
 function validateWebhookSignature(payload: string, signature: string): boolean {
     if (!KIWIFY_WEBHOOK_TOKEN) {
@@ -153,6 +207,24 @@ async function savePaymentRecord(
     try {
         const subscription = payload.Subscription || payload.subscription;
         const commissions = payload.Commissions;
+        const eventType = payload.webhook_event_type as KiwifyEventType;
+        const approvedAt = parseKiwifyDate(payload.approved_date);
+
+        const rawStartDate = parseKiwifyDate(subscription?.start_date);
+        const rawNextPayment = parseKiwifyDate(subscription?.next_payment);
+
+        let effectiveNextPayment = rawNextPayment;
+
+        const isSuccessfulChargeEvent = ['paid', 'order_approved', 'subscription_renewed'].includes(eventType);
+        const hasStaleNextPayment = !!(approvedAt && rawNextPayment && rawNextPayment <= approvedAt);
+
+        // Em renovação/cobrança aprovada, corrigimos apenas o next_payment
+        // (start_date permanece como histórico original da assinatura).
+        if (subscription && approvedAt && isSuccessfulChargeEvent) {
+            if (!rawNextPayment || hasStaleNextPayment) {
+                effectiveNextPayment = addByFrequency(approvedAt, subscription.plan?.frequency);
+            }
+        }
 
         const paymentData = {
             email,
@@ -189,8 +261,8 @@ async function savePaymentRecord(
             subscription: subscription ? {
                 id: subscription.id,
                 status: subscription.status,
-                start_date: subscription.start_date ? new Date(subscription.start_date) : undefined,
-                next_payment: subscription.next_payment ? new Date(subscription.next_payment) : undefined,
+                start_date: rawStartDate,
+                next_payment: effectiveNextPayment,
                 plan_name: subscription.plan?.name,
                 plan_frequency: subscription.plan?.frequency,
             } : undefined,
@@ -206,9 +278,9 @@ async function savePaymentRecord(
             } : undefined,
 
             // Datas
-            kiwify_created_at: payload.created_at ? new Date(payload.created_at.replace(' ', 'T') + ':00Z') : new Date(),
-            kiwify_updated_at: payload.updated_at ? new Date(payload.updated_at.replace(' ', 'T') + ':00Z') : undefined,
-            approved_date: payload.approved_date ? new Date(payload.approved_date.replace(' ', 'T') + ':00Z') : undefined,
+            kiwify_created_at: parseKiwifyDate(payload.created_at) || new Date(),
+            kiwify_updated_at: parseKiwifyDate(payload.updated_at),
+            approved_date: approvedAt,
             refunded_at: payload.refunded_at ? new Date(payload.refunded_at) : undefined,
 
             // Metadados
