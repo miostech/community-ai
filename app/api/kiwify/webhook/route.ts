@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { connectMongo } from '@/lib/mongoose';
 import AccountPayment from '@/models/AccountPayment';
+import AbandonedCheckout from '@/models/AbandonedCheckout';
 import Account from '@/models/Account';
 
 // Token secreto para validar webhooks do Kiwify (configurar no .env)
@@ -18,7 +19,36 @@ type KiwifyEventType =
     | 'refunded'                 // Reembolsado (alternativo)
     | 'chargeback'               // Chargeback
     | 'waiting_payment'          // Aguardando pagamento
-    | 'refused';                 // Pagamento recusado
+    | 'refused'                  // Pagamento recusado
+    | 'cart_abandoned';          // Checkout abandonado (payload plano da Kiwify)
+
+/** Webhook de carrinho abandonado: JSON na raiz, sem `order` nem `webhook_event_type` */
+interface KiwifyAbandonedCartPayload {
+    id: string;
+    email: string;
+    name: string;
+    phone?: string;
+    cpf?: string;
+    country?: string;
+    product_id: string;
+    product_name: string;
+    checkout_link?: string;
+    offer_name?: string | null;
+    store_id?: string;
+    subscription_plan?: string | null;
+    created_at: string;
+    status: 'abandoned';
+}
+
+function parseAbandonedCartPayload(data: unknown): KiwifyAbandonedCartPayload | null {
+    if (!data || typeof data !== 'object') return null;
+    const o = data as Record<string, unknown>;
+    if (o.status !== 'abandoned') return null;
+    if (typeof o.id !== 'string' || typeof o.email !== 'string') return null;
+    if (typeof o.product_id !== 'string' || typeof o.product_name !== 'string') return null;
+    if (typeof o.created_at !== 'string' || typeof o.name !== 'string') return null;
+    return o as unknown as KiwifyAbandonedCartPayload;
+}
 
 interface KiwifyCustomer {
     email: string;
@@ -200,6 +230,38 @@ async function savePaymentRecord(
     }
 }
 
+async function saveAbandonedCheckout(
+    abandoned: KiwifyAbandonedCartPayload,
+    rawInner: object
+) {
+    try {
+        const email = abandoned.email.toLowerCase().trim();
+        await AbandonedCheckout.findOneAndUpdate(
+            { checkout_id: abandoned.id },
+            {
+                checkout_id: abandoned.id,
+                email,
+                name: abandoned.name,
+                phone: abandoned.phone,
+                cpf: abandoned.cpf,
+                country: abandoned.country,
+                product_id: abandoned.product_id,
+                product_name: abandoned.product_name,
+                checkout_link: abandoned.checkout_link,
+                offer_name: abandoned.offer_name ?? null,
+                store_id: abandoned.store_id,
+                subscription_plan: abandoned.subscription_plan ?? null,
+                kiwify_created_at: new Date(abandoned.created_at),
+                raw_payload: JSON.stringify(rawInner),
+            },
+            { upsert: true, new: true }
+        );
+        console.log('💾 Carrinho abandonado salvo:', abandoned.id);
+    } catch (error) {
+        console.error('❌ Erro ao salvar carrinho abandonado:', error);
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const rawBody = await request.text();
@@ -219,8 +281,39 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Kiwify envia o payload dentro de um objeto "order"
-        const payload: KiwifyWebhookPayload = rawPayload.order || rawPayload;
+        // Pedidos: Kiwify envia dentro de `order`. Carrinho abandonado: JSON plano na raiz.
+        const inner = rawPayload.order ?? rawPayload;
+        const abandoned = parseAbandonedCartPayload(inner);
+
+        if (abandoned) {
+            const email = abandoned.email.toLowerCase().trim();
+            console.log('🛒 Kiwify carrinho abandonado:', {
+                checkoutId: abandoned.id,
+                email,
+                name: abandoned.name,
+                product: abandoned.product_name,
+                product_id: abandoned.product_id,
+                checkout_link: abandoned.checkout_link,
+                store_id: abandoned.store_id,
+                country: abandoned.country,
+                created_at: abandoned.created_at,
+            });
+            await connectMongo();
+            await saveAbandonedCheckout(abandoned, inner as object);
+            return NextResponse.json({
+                success: true,
+                event: 'cart_abandoned' as const,
+                email,
+                abandoned_checkout_id: abandoned.id,
+                saved: true,
+            });
+        }
+
+        const payload: KiwifyWebhookPayload = inner;
+
+        if (process.env.NODE_ENV === 'development') {
+            console.log('📋 Kiwify envelope (chaves do JSON recebido):', Object.keys(rawPayload));
+        }
 
         // Kiwify usa webhook_event_type para o tipo de evento
         const eventType = payload.webhook_event_type as KiwifyEventType;
@@ -266,8 +359,11 @@ export async function POST(request: NextRequest) {
                     { $set: { is_founding_member: false } }
                 ).catch(() => {});
             }
+        } else if (process.env.NODE_ENV === 'development') {
+            console.log(`ℹ️ Evento não salvo (debug): ${String(eventType)}`);
+            console.log(JSON.stringify(rawPayload, null, 2));
         } else {
-            console.log(`ℹ️ Evento não salvo: ${eventType}`);
+            console.log(`ℹ️ Evento não salvo: ${String(eventType)}`);
         }
 
         return NextResponse.json({ success: true, event: eventType, email });
