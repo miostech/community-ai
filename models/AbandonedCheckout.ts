@@ -13,6 +13,8 @@ export interface IAbandonedCheckout extends Document {
     offer_name?: string | null;
     store_id?: string;
     subscription_plan?: string | null;
+    status: 'abandoned' | 'paid';
+    paid_at?: Date;
     kiwify_created_at: Date;
     raw_payload?: string;
     createdAt: Date;
@@ -44,6 +46,13 @@ const AbandonedCheckoutSchema = new Schema<IAbandonedCheckout>(
         offer_name: { type: String, default: null },
         store_id: String,
         subscription_plan: { type: String, default: null },
+        status: {
+            type: String,
+            enum: ['abandoned', 'paid'],
+            default: 'abandoned',
+            index: true,
+        },
+        paid_at: Date,
         kiwify_created_at: { type: Date, required: true, index: true },
         raw_payload: String,
     },
@@ -51,6 +60,7 @@ const AbandonedCheckoutSchema = new Schema<IAbandonedCheckout>(
 );
 
 AbandonedCheckoutSchema.index({ email: 1, kiwify_created_at: -1 });
+AbandonedCheckoutSchema.index({ email: 1, product_id: 1, status: 1 });
 
 const AbandonedCheckout: Model<IAbandonedCheckout> =
     mongoose.models.AbandonedCheckout ||

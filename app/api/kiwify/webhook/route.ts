@@ -423,6 +423,13 @@ export async function POST(request: NextRequest) {
                     { email },
                     { $set: { cached_course_ids: [], cached_course_ids_at: null } }
                 ).catch(() => {});
+
+                if (product?.product_id) {
+                    AbandonedCheckout.updateMany(
+                        { email, product_id: product.product_id, status: 'abandoned' },
+                        { $set: { status: 'paid', paid_at: new Date() } }
+                    ).catch(() => {});
+                }
             }
 
             if (email && ['order_refunded', 'refunded', 'chargeback', 'subscription_canceled'].includes(eventType)) {
