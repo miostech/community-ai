@@ -426,7 +426,11 @@ export async function POST(request: NextRequest) {
 
                 if (product?.product_id) {
                     AbandonedCheckout.updateMany(
-                        { email, product_id: product.product_id, status: 'abandoned' },
+                        {
+                            email,
+                            product_id: product.product_id,
+                            $or: [{ status: 'abandoned' }, { status: { $exists: false } }],
+                        },
                         { $set: { status: 'paid', paid_at: new Date() } }
                     ).catch(() => {});
                 }
