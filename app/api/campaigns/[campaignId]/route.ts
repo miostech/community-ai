@@ -222,7 +222,7 @@ export async function PATCH(
                         recipientId: rec._id,
                         actorId: actorAccount._id,
                         type: 'new_campaign',
-                        campaignId: campaign._id,
+                        campaignId,
                         contentPreview: brandName,
                     });
                 }

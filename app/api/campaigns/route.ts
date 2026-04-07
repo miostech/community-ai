@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
-import Campaign from '@/models/Campaign';
+import Campaign, { type ICampaign } from '@/models/Campaign';
 import { createNotification } from '@/lib/notifications';
 import { normalizeBudgetTotalCentsInput } from '@/lib/campaign-budget-total';
 
@@ -135,8 +136,17 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        const rawBrandAccountId = body.brand_account_id;
+        let brand_account_id: mongoose.Types.ObjectId | undefined;
+        if (rawBrandAccountId != null && rawBrandAccountId !== '') {
+            const idStr = String(rawBrandAccountId);
+            if (mongoose.Types.ObjectId.isValid(idStr)) {
+                brand_account_id = new mongoose.Types.ObjectId(idStr);
+            }
+        }
+
         const campaign = await Campaign.create({
-            brand_account_id: body.brand_account_id || null,
+            brand_account_id,
             brand_name: body.brand_name,
             brand_logo: body.brand_logo,
             brand_website: body.brand_website,
@@ -164,7 +174,7 @@ export async function POST(request: NextRequest) {
             status: body.status || 'draft',
             images: body.images || [],
             budget_total_cents: normalizeBudgetTotalCentsInput(body.budget_total_cents),
-        });
+        } as Partial<ICampaign>);
 
         // Se a campanha foi criada já ativa (ex.: campanha paga), notificar todos os usuários
         if (campaign.status === 'active') {
