@@ -37,8 +37,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const showPhoneModal = !isLoading && isSubscriptionActive && !hasPhone && pathname !== '/dashboard/perfil';
 
   // Modal de redes sociais: quem já usa a plataforma mas não preencheu nenhuma rede é direcionado ao perfil
+  // Não bloquear na página de planos: o usuário precisa poder abrir Meu Perfil pelo header/menu
   const showSocialModal =
-    !isLoading && hasPhone && !hasAtLeastOneSocial && pathname !== '/dashboard/perfil';
+    !isLoading &&
+    hasPhone &&
+    !hasAtLeastOneSocial &&
+    pathname !== '/dashboard/perfil' &&
+    pathname !== '/dashboard/assinatura';
 
   const isDashboardHome = pathname === '/dashboard';
   const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');

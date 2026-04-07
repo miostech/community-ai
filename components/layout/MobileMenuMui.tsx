@@ -125,7 +125,8 @@ export function MobileMenuMui() {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                zIndex: 50,
+                // Acima do FAB do chat (z-index 50) para o item Perfil continuar clicável
+                zIndex: 1300,
                 borderTop: '1px solid',
                 borderColor: 'divider',
                 pb: 'env(safe-area-inset-bottom)',
