@@ -31,9 +31,11 @@ export interface Account {
     password_hash?: string;
     /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura — para monitorar crescimento e premiações */
     followers_at_signup?: number | null;
-    /** Cache de seguidores atuais (IG+TT) para Dome Creators; atualizado 1x/dia pelo cron */
+    /** Cache de seguidores atuais (IG+TikTok+YouTube); atualizado 2x/dia pelo cron */
     cached_followers_total?: number | null;
     cached_followers_updated_at?: Date | null;
+    /** Soma de visualizações (IG/TikTok/YouTube quando a API expõe); atualizado junto com cached_followers */
+    cached_total_views?: number | null;
     /** Score de engajamento 0–100 (Search API); atualizado junto com cached_followers */
     cached_engagement_score?: number | null;
     /** Papel na comunidade: moderador pode aprovar/ocultar comentários e deletar qualquer comentário; criador é exibido com badge */
@@ -125,6 +127,7 @@ const AccountSchema = new Schema(
         followers_at_signup: { type: Number, default: null },
         cached_followers_total: { type: Number, default: null },
         cached_followers_updated_at: { type: Date, default: null },
+        cached_total_views: { type: Number, default: null },
         cached_engagement_score: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
         is_founding_member: { type: Boolean, default: false },

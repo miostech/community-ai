@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
             $or: [
                 { link_instagram: { $exists: true, $nin: [null, ''], $type: 'string', $regex: /\S/ } },
                 { link_tiktok: { $exists: true, $nin: [null, ''], $type: 'string', $regex: /\S/ } },
+                { link_youtube: { $exists: true, $nin: [null, ''], $type: 'string', $regex: /\S/ } },
             ],
         };
 
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
                 {
                     $project: {
                         total: effectiveFollowersExpr,
+                        views: { $ifNull: ['$cached_total_views', 0] },
                     },
                 },
                 {
@@ -83,6 +85,7 @@ export async function GET(request: NextRequest) {
                         _id: null,
                         totalCreators: { $sum: 1 },
                         totalFollowers: { $sum: '$total' },
+                        totalViews: { $sum: '$views' },
                     },
                 },
             ]),
@@ -101,9 +104,10 @@ export async function GET(request: NextRequest) {
             ? {
                   totalCreators: aggResult[0].totalCreators,
                   totalFollowers: aggResult[0].totalFollowers,
+                  totalViews: aggResult[0].totalViews as number,
                   followersUpdatedAt: latestUpdated ? latestUpdated.toISOString() : null,
               }
-            : { totalCreators: 0, totalFollowers: 0, followersUpdatedAt: null };
+            : { totalCreators: 0, totalFollowers: 0, totalViews: 0, followersUpdatedAt: null };
 
         const creators = topAccounts.map((a) => {
             const cached = (a as { cached_followers_total?: number }).cached_followers_total;

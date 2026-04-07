@@ -20,6 +20,7 @@ import {
     Slideshow as SlideshowIcon,
     People as PeopleIcon,
     Favorite as FavoriteIcon,
+    Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { normalizeInstagramHandle, normalizeTikTokHandle } from '@/lib/normalize-social-handles';
 
@@ -38,6 +39,7 @@ interface ApresentacaoCreator {
 interface ApresentacaoStats {
     totalCreators: number;
     totalFollowers: number;
+    totalViews: number;
     followersUpdatedAt: string | null;
 }
 
@@ -161,19 +163,61 @@ export default function ApresentacaoPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
+                                        flexShrink: 0,
                                     }}
                                 >
                                     <FavoriteIcon sx={{ fontSize: 28, color: 'secondary.main' }} />
                                 </Box>
-                                <Box>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
                                     <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.2 }}>
                                         {formatFollowers(stats.totalFollowers)}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                       Alcance e base de seguidores
+                                        Base de seguidores
                                     </Typography>
                                     {stats.followersUpdatedAt && (
-                                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25 }}>
+                                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
+                                            Atualizado em {new Date(stats.followersUpdatedAt).toLocaleDateString('pt-BR')}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Paper>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    flex: 1,
+                                    p: 2,
+                                    borderRadius: 2,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 2,
+                                        bgcolor: alpha(theme.palette.info.main, 0.12),
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <VisibilityIcon sx={{ fontSize: 28, color: 'info.main' }} />
+                                </Box>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+                                        {formatFollowers(stats.totalViews)}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                       Alcance nas redes sociais
+                                    </Typography>
+                                    {stats.followersUpdatedAt && (
+                                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
                                             Atualizado em {new Date(stats.followersUpdatedAt).toLocaleDateString('pt-BR')}
                                         </Typography>
                                     )}

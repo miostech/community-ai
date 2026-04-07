@@ -14,7 +14,7 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Atualiza cached_followers_total e cached_followers_updated_at para influenciadores (1x/dia). */
+/** Atualiza cache de seguidores, visualizações e score de engajamento (2x/dia — ver `vercel.json`, horários em UTC). */
 export async function GET(request: Request) {
     const secret = process.env.CRON_SECRET;
     const authHeader = request.headers.get('authorization');
@@ -41,13 +41,15 @@ export async function GET(request: Request) {
     try {
         await connectMongo();
 
+        /** Todas as contas com pelo menos uma rede social preenchida (IG, TikTok ou YouTube). */
         const accounts = await Account.find({
             $or: [
                 { link_instagram: { $exists: true, $nin: [null, ''], $type: 'string', $regex: /\S/ } },
                 { link_tiktok: { $exists: true, $nin: [null, ''], $type: 'string', $regex: /\S/ } },
+                { link_youtube: { $exists: true, $nin: [null, ''], $type: 'string', $regex: /\S/ } },
             ],
         })
-            .select('_id link_instagram link_tiktok')
+            .select('_id link_instagram link_tiktok link_youtube')
             .lean();
 
         const now = new Date();
@@ -58,9 +60,10 @@ export async function GET(request: Request) {
             await Promise.all(
                 batch.map(async (acc) => {
                     try {
-                        const { totalFollowers, engagementScore } = await getSocialStatsForAccount({
+                        const { totalFollowers, engagementScore, totalViews } = await getSocialStatsForAccount({
                             instagram: (acc as { link_instagram?: string }).link_instagram ?? null,
                             tiktok: (acc as { link_tiktok?: string }).link_tiktok ?? null,
+                            youtube: (acc as { link_youtube?: string }).link_youtube ?? null,
                         });
                         await Account.updateOne(
                             { _id: (acc as { _id: mongoose.Types.ObjectId })._id },
@@ -69,6 +72,7 @@ export async function GET(request: Request) {
                                     cached_followers_total: totalFollowers,
                                     cached_followers_updated_at: now,
                                     cached_engagement_score: engagementScore ?? null,
+                                    cached_total_views: totalViews ?? null,
                                 },
                             }
                         );
