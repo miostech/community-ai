@@ -66,7 +66,10 @@ export function readPhoneDraft(authUserId: string): { phone: string; phone_count
 export function clearPhoneDraft(authUserId: string): void {
   if (typeof window === 'undefined' || !authUserId) return;
   try {
-    window.localStorage.removeItem(PREFIX + authUserId);
+    const key = PREFIX + authUserId;
+    // Só notifica se havia rascunho; evita loop com AccountProvider (clear → tick → effect → clear).
+    if (window.localStorage.getItem(key) === null) return;
+    window.localStorage.removeItem(key);
     notifyDraftChanged();
   } catch {
     // ignore
