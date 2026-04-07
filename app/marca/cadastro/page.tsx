@@ -142,10 +142,10 @@ export default function MarcaCadastroPage() {
                         <DomeLogo style={{ fontSize: 28, fontWeight: 700 }} />
                     </Link>
                     <Typography variant="h5" fontWeight={700} sx={{ mt: 2 }}>
-                        Pré-cadastro — marcas
+                        Cadastre sua marca
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Agende sua apresentação e acesse o portal para criar campanhas com creators.
+                        Crie sua conta e acesse o portal para criar campanhas com creators.
                     </Typography>
                 </Box>
 
@@ -225,7 +225,7 @@ export default function MarcaCadastroPage() {
                     </Link>
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block', textAlign: 'center' }}>
-                    <Link href="/" style={{ color: 'inherit' }}>
+                    <Link href="/#marcas" style={{ color: 'inherit' }}>
                         Voltar ao site
                     </Link>
                 </Typography>

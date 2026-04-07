@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { DomeLogo } from '@/components/ui/DomeLogo';
+import { MarcaApresentacaoLeadDialog } from '@/components/landing/MarcaApresentacaoLeadDialog';
 import {
   Box,
   Container,
@@ -137,6 +138,7 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [placeholderText, setPlaceholderText] = useState('');
   const [followersMap, setFollowersMap] = useState<Record<string, string>>({});
+  const [apresentacaoOpen, setApresentacaoOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const fullPlaceholder = 'Crie ideias de conteúdo para Instagram';
@@ -762,30 +764,66 @@ export default function Home() {
               </Box>
               .{' '}Uma plataforma onde você cria campanhas, filtra creators e escolhe quem vai dar voz à sua marca.
             </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              endIcon={<ArrowForwardIcon />}
-              component={Link}
-              href="/marca/cadastro"
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
               sx={{
                 mt: 2,
-                px: { xs: 4, sm: 5 },
-                py: { xs: 1.2, sm: 1.5 },
-                borderRadius: 3,
-                fontSize: { xs: '0.9rem', sm: '1rem' },
-                fontWeight: 600,
-                textTransform: 'none',
-                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                boxShadow: `0 4px 20px ${alpha('#2563eb', 0.35)}`,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #1d4ed8, #6d28d9)',
-                  boxShadow: `0 6px 28px ${alpha('#2563eb', 0.45)}`,
-                },
+                width: '100%',
+                maxWidth: 560,
+                justifyContent: 'center',
+                alignItems: 'stretch',
               }}
             >
-              Agendar apresentação
-            </Button>
+              <Button
+                variant="contained"
+                size="large"
+                endIcon={<ArrowForwardIcon />}
+                component={Link}
+                href="/marca/cadastro"
+                sx={{
+                  px: { xs: 4, sm: 5 },
+                  py: { xs: 1.2, sm: 1.5 },
+                  borderRadius: 3,
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                  boxShadow: `0 4px 20px ${alpha('#2563eb', 0.35)}`,
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #1d4ed8, #6d28d9)',
+                    boxShadow: `0 6px 28px ${alpha('#2563eb', 0.45)}`,
+                  },
+                  flex: { sm: '0 1 auto' },
+                }}
+              >
+                Começar agora
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => setApresentacaoOpen(true)}
+                sx={{
+                  px: { xs: 4, sm: 5 },
+                  py: { xs: 1.2, sm: 1.5 },
+                  borderRadius: 3,
+                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  borderWidth: 2,
+                  borderColor: alpha('#2563eb', 0.45),
+                  color: 'primary.main',
+                  flex: { sm: '0 1 auto' },
+                  '&:hover': {
+                    borderWidth: 2,
+                    borderColor: 'primary.main',
+                    bgcolor: alpha(theme.palette.primary.main, 0.06),
+                  },
+                }}
+              >
+                Agendar apresentação
+              </Button>
+            </Stack>
           </Stack>
 
           {/* Criação de conteúdo para... */}
@@ -1235,33 +1273,66 @@ export default function Home() {
               >
                 Coloque suas campanhas dentro da Dome e conecte-se com creators que vão dar voz à sua marca de forma autêntica e estratégica.
               </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                endIcon={<ArrowForwardIcon />}
-                component={Link}
-                href="/marca/cadastro"
-                sx={{
-                  px: { xs: 4, sm: 5 },
-                  py: { xs: 1.2, sm: 1.5 },
-                  borderRadius: 3,
-                  fontSize: { xs: '0.9rem', sm: '1rem' },
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                  boxShadow: `0 4px 20px ${alpha('#2563eb', 0.35)}`,
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #1d4ed8, #6d28d9)',
-                    boxShadow: `0 6px 28px ${alpha('#2563eb', 0.45)}`,
-                  },
-                }}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                sx={{ justifyContent: 'center', alignItems: 'stretch', width: '100%', flexWrap: 'wrap' }}
               >
-                Agendar apresentação
-              </Button>
+                <Button
+                  variant="contained"
+                  size="large"
+                  endIcon={<ArrowForwardIcon />}
+                  component={Link}
+                  href="/marca/cadastro"
+                  sx={{
+                    px: { xs: 4, sm: 5 },
+                    py: { xs: 1.2, sm: 1.5 },
+                    borderRadius: 3,
+                    fontSize: { xs: '0.9rem', sm: '1rem' },
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                    boxShadow: `0 4px 20px ${alpha('#2563eb', 0.35)}`,
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #1d4ed8, #6d28d9)',
+                      boxShadow: `0 6px 28px ${alpha('#2563eb', 0.45)}`,
+                    },
+                    flex: { sm: '0 1 auto' },
+                  }}
+                >
+                  Começar agora
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => setApresentacaoOpen(true)}
+                  sx={{
+                    px: { xs: 4, sm: 5 },
+                    py: { xs: 1.2, sm: 1.5 },
+                    borderRadius: 3,
+                    fontSize: { xs: '0.9rem', sm: '1rem' },
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    borderWidth: 2,
+                    borderColor: alpha('#2563eb', 0.45),
+                    color: 'primary.main',
+                    flex: { sm: '0 1 auto' },
+                    '&:hover': {
+                      borderWidth: 2,
+                      borderColor: 'primary.main',
+                      bgcolor: alpha(theme.palette.primary.main, 0.06),
+                    },
+                  }}
+                >
+                  Agendar apresentação
+                </Button>
+              </Stack>
             </Paper>
           </Stack>
         </Container>
       </Box>
+
+      <MarcaApresentacaoLeadDialog open={apresentacaoOpen} onClose={() => setApresentacaoOpen(false)} />
     </Box>
   );
 }
