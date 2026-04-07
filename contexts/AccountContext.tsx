@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
+import { getPhoneDigitsRange } from '@/components/ui/PhoneInput';
+import { readPhoneDraft, clearPhoneDraft, subscribePhoneDraftChanged } from '@/lib/profile-phone-draft';
 
 export interface Account {
     id: string;
@@ -122,8 +124,13 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    /** Incrementado quando o rascunho local do telefone muda (Meu Perfil) para tentar sync de novo. */
+    const [phoneDraftTick, setPhoneDraftTick] = useState(0);
+    const phoneSyncInFlight = useRef(false);
 
     const sessionUserId = (session?.user as any)?.auth_user_id || session?.user?.id || null;
+
+    useEffect(() => subscribePhoneDraftChanged(() => setPhoneDraftTick((t) => t + 1)), []);
 
     const fetchAccount = useCallback(async () => {
         if (status !== 'authenticated' || !sessionUserId) {
@@ -221,6 +228,33 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             return false;
         }
     }, []);
+
+    // Rascunho do telefone (localStorage) → Mongo na próxima visita, se o servidor ainda estiver vazio
+    useEffect(() => {
+        if (status !== 'authenticated' || !sessionUserId || isLoading || !account) return;
+        if (account.phone?.trim()) {
+            clearPhoneDraft(sessionUserId);
+            return;
+        }
+        const draft = readPhoneDraft(sessionUserId);
+        if (!draft?.phone?.trim()) return;
+        const digits = draft.phone.replace(/\D/g, '');
+        const { minDigits, maxDigits } = getPhoneDigitsRange(draft.phone_country_code);
+        if (digits.length < minDigits || digits.length > maxDigits) return;
+        if (phoneSyncInFlight.current) return;
+        phoneSyncInFlight.current = true;
+        (async () => {
+            try {
+                const ok = await updateAccount({
+                    phone: draft.phone.trim(),
+                    phone_country_code: draft.phone_country_code.trim() || '+55',
+                });
+                if (ok) clearPhoneDraft(sessionUserId);
+            } finally {
+                phoneSyncInFlight.current = false;
+            }
+        })();
+    }, [status, sessionUserId, isLoading, account?.phone, updateAccount, phoneDraftTick]);
 
     const setAccountFromResponse = useCallback((accountData: Account | null) => {
         setAccount(accountData);

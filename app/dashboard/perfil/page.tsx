@@ -41,6 +41,7 @@ import {
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { PhoneInput, getPhoneDigitsRange } from '@/components/ui/PhoneInput';
+import { readPhoneDraft, savePhoneDraft, clearPhoneDraft } from '@/lib/profile-phone-draft';
 import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeStoredInput } from '@/lib/normalize-social-handles';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Switch, FormControlLabel } from '@mui/material';
@@ -60,6 +61,8 @@ interface FormData {
 
 export default function PerfilPage() {
   const { data: session } = useSession();
+  const authUserId =
+    (session?.user as { auth_user_id?: string })?.auth_user_id || session?.user?.id || null;
   const { account, subscription, isLoading: accountLoading, refreshAccount, setAccountFromResponse } = useAccount();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [formData, setFormData] = useState<FormData>({
@@ -107,12 +110,21 @@ export default function PerfilPage() {
         const userHasTypedPhone = prev.phone.trim() !== '';
         const hasLocalPhoneEdit =
           userHasTypedPhone && (prev.phone !== accountPhone || prev.phone_country_code !== accountCode);
+        let displayPhone = accountPhone;
+        let displayCode = accountCode;
+        if (!accountPhone && authUserId) {
+          const draft = readPhoneDraft(authUserId);
+          if (draft?.phone?.trim()) {
+            displayPhone = draft.phone.trim();
+            displayCode = draft.phone_country_code;
+          }
+        }
         return {
           first_name: account.first_name || '',
           last_name: account.last_name || '',
           email: account.email || '',
-          phone: hasLocalPhoneEdit ? prev.phone : accountPhone,
-          phone_country_code: hasLocalPhoneEdit ? prev.phone_country_code : accountCode,
+          phone: hasLocalPhoneEdit ? prev.phone : displayPhone,
+          phone_country_code: hasLocalPhoneEdit ? prev.phone_country_code : displayCode,
           avatar_url: account.avatar_url || '',
           link_instagram: account.link_instagram || '',
           link_tiktok: account.link_tiktok || '',
@@ -123,7 +135,7 @@ export default function PerfilPage() {
     } else if (!accountLoading) {
       setIsLoading(false);
     }
-  }, [account, accountLoading]);
+  }, [account, accountLoading, authUserId]);
 
   const phoneAutoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasPhoneChanged = useRef(false);
@@ -137,12 +149,24 @@ export default function PerfilPage() {
         body: JSON.stringify(data),
       });
       if (response.ok) {
+        if (authUserId) clearPhoneDraft(authUserId);
         await refreshAccount();
       }
     } catch {
       // silently fail — user can still save manually
     }
-  }, [refreshAccount]);
+  }, [refreshAccount, authUserId]);
+
+  // Backup local: se o PATCH falhar ou a aba fechar, na próxima visita tentamos enviar de novo (AccountContext).
+  useEffect(() => {
+    if (!authUserId) return;
+    const t = setTimeout(() => {
+      if (formData.phone.trim()) {
+        savePhoneDraft(authUserId, formData.phone, formData.phone_country_code);
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [formData.phone, formData.phone_country_code, authUserId]);
 
   useEffect(() => {
     if (!account) return;
@@ -364,6 +388,7 @@ export default function PerfilPage() {
       setSuccessMessage('Dados salvos com sucesso.');
       setError(null);
       setTriedSubmit(false);
+      if (authUserId) clearPhoneDraft(authUserId);
       if (data.account) {
         setAccountFromResponse(data.account);
       }

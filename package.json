@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "eslint",
     "backfill:followers-at-signup": "tsx scripts/backfill-followers-at-signup.ts",
-    "migrate:campaign-14-days-trial": "tsx scripts/migrate-campaign-14-days-trial-ends.ts"
+    "migrate:campaign-14-days-trial": "tsx scripts/migrate-campaign-14-days-trial-ends.ts",
+    "report:accounts-without-phone": "tsx scripts/report-accounts-without-phone.ts"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.30.0",

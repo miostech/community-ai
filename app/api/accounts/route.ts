@@ -69,7 +69,12 @@ export async function POST(request: NextRequest) {
         const totalTokensWeekInput =
             body.total_tokens_used_current_week ?? body.total_token_used_current_week;
 
-        const payload = {
+        const phoneStr =
+            body.phone === null || body.phone === undefined
+                ? ''
+                : String(body.phone).trim();
+
+        const payload: Record<string, unknown> = {
             first_name,
             last_name,
             auth_user_id,
@@ -89,11 +94,22 @@ export async function POST(request: NextRequest) {
             last_access_at: toDate(body.last_access_at) ?? new Date(),
         };
 
+        if (typeof body.email === 'string' && body.email.trim()) {
+            payload.email = body.email.trim().toLowerCase();
+        }
+        if (phoneStr) {
+            payload.phone = phoneStr;
+            payload.phone_country_code =
+                typeof body.phone_country_code === 'string' && body.phone_country_code.trim()
+                    ? body.phone_country_code.trim()
+                    : '+55';
+        }
+
         const account = await Account.findOneAndUpdate(
             { auth_user_id },
             { $set: payload },
             {
-                returnDocument: 'after',
+                new: true,
                 upsert: true,
                 runValidators: true,
                 setDefaultsOnInsert: true,
@@ -406,19 +422,12 @@ export async function PATCH(request: NextRequest) {
 
         const authUserId = (session.user as any).auth_user_id || session.user.id;
 
-        const col = Account.collection;
-        const updateResult = await col.findOneAndUpdate(
+        let acc = (await Account.findOneAndUpdate(
             { auth_user_id: authUserId },
             { $set: updateData },
-            { returnDocument: 'after' }
-        ) as Record<string, any> | null;
+            { new: true, runValidators: true }
+        ).lean()) as Record<string, any> | null;
 
-        if (!updateResult) {
-            return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
-        }
-
-        // Reler do banco para garantir que a resposta reflete o que foi persistido (phone etc.)
-        const acc = (await col.findOne({ auth_user_id: authUserId })) as Record<string, any> | null;
         if (!acc) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
@@ -428,11 +437,12 @@ export async function PATCH(request: NextRequest) {
         if (hasLinks && (acc.followers_at_signup === undefined || acc.followers_at_signup === null)) {
             try {
                 const total = await getTotalFollowers({
-                    instagram: acc.link_instagram,
-                    tiktok: acc.link_tiktok,
-                    youtube: acc.link_youtube,
+                    instagram: acc.link_instagram as string | undefined,
+                    tiktok: acc.link_tiktok as string | undefined,
+                    youtube: acc.link_youtube as string | undefined,
                 });
-                await col.updateOne({ _id: acc._id }, { $set: { followers_at_signup: total } });
+                await Account.updateOne({ _id: acc._id }, { $set: { followers_at_signup: total } });
+                acc = { ...acc, followers_at_signup: total };
             } catch (e) {
                 console.error('Erro ao registrar followers_at_signup:', e);
             }
