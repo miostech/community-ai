@@ -766,10 +766,8 @@ export default function Home() {
               variant="contained"
               size="large"
               endIcon={<ArrowForwardIcon />}
-              component="a"
-              href="https://wa.me/551153042686?text=Ol%C3%A1%2C%20sou%20uma%20marca%20e%20quero%20criar%20uma%20campanha%20com%20ajuda%20de%20um%20especialista"
-              target="_blank"
-              rel="noopener noreferrer"
+              component={Link}
+              href="/marca/cadastro"
               sx={{
                 mt: 2,
                 px: { xs: 4, sm: 5 },
@@ -1241,10 +1239,8 @@ export default function Home() {
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
-                component="a"
-                href="https://wa.me/551153042686?text=Ol%C3%A1%2C%20sou%20uma%20marca%20e%20quero%20criar%20uma%20campanha%20com%20ajuda%20de%20um%20especialista"
-                target="_blank"
-                rel="noopener noreferrer"
+                component={Link}
+                href="/marca/cadastro"
                 sx={{
                   px: { xs: 4, sm: 5 },
                   py: { xs: 1.2, sm: 1.5 },

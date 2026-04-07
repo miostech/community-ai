@@ -4,6 +4,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
 import Campaign from '@/models/Campaign';
 import { createNotification } from '@/lib/notifications';
+import { normalizeBudgetTotalCentsInput } from '@/lib/campaign-budget-total';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,12 +25,26 @@ export async function GET(request: NextRequest) {
         const category = searchParams.get('category');
         const niche = searchParams.get('niche');
         const isAdminView = searchParams.get('admin') === 'true';
+        const isBrandView = searchParams.get('brand') === 'true';
         const statusFilter = searchParams.get('status');
         const skip = (page - 1) * limit;
 
         let filter: Record<string, unknown> = { status: 'active' };
 
-        if (isAdminView) {
+        if (isBrandView) {
+            const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+            const account = await Account.findOne({ auth_user_id: authUserId }).select('role _id').lean();
+            const role = (account as { role?: string } | null)?.role;
+
+            if (!account || !['marca', 'moderator', 'admin'].includes(role || '')) {
+                return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+            }
+
+            filter = { brand_account_id: account._id };
+            if (statusFilter && statusFilter !== 'all') {
+                filter.status = statusFilter;
+            }
+        } else if (isAdminView) {
             const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
             const account = await Account.findOne({ auth_user_id: authUserId }).select('role').lean();
             const role = (account as { role?: string } | null)?.role;
@@ -81,15 +96,42 @@ export async function POST(request: NextRequest) {
 
         await connectMongo();
 
-        const body = await request.json();
+        const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
+        const actorAccount = await Account.findOne({ auth_user_id: authUserId }).select('role _id').lean();
+        const actorRole = actorAccount?.role || 'user';
+
+        if (!['marca', 'moderator', 'admin'].includes(actorRole)) {
+            return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+        }
+
+        const raw = await request.json();
+        const wizardDraft = raw.wizard_draft === true;
+        const body = { ...raw } as Record<string, unknown>;
+        delete body.wizard_draft;
+
+        if (actorRole === 'marca' && actorAccount) {
+            body.brand_account_id = actorAccount._id.toString();
+        }
 
         const requiredFields = ['brand_name', 'title', 'description', 'briefing', 'slots'];
-        for (const field of requiredFields) {
-            if (!body[field]) {
-                return NextResponse.json(
-                    { error: `Campo obrigatório: ${field}` },
-                    { status: 400 }
-                );
+        if (wizardDraft) {
+            const t = typeof body.title === 'string' ? body.title.trim() : '';
+            body.title = t || 'Nova campanha (rascunho)';
+            const d = typeof body.description === 'string' ? body.description.trim() : '';
+            body.description = d || 'Rascunho — complete os dados na edição.';
+            const b = typeof body.briefing === 'string' ? body.briefing.trim() : '';
+            body.briefing = b || 'Rascunho — complete o briefing na edição da campanha.';
+            if (body.slots == null || body.slots === '') {
+                body.slots = 1;
+            }
+        } else {
+            for (const field of requiredFields) {
+                if (!body[field]) {
+                    return NextResponse.json(
+                        { error: `Campo obrigatório: ${field}` },
+                        { status: 400 }
+                    );
+                }
             }
         }
 
@@ -121,6 +163,7 @@ export async function POST(request: NextRequest) {
             start_date: body.start_date,
             status: body.status || 'draft',
             images: body.images || [],
+            budget_total_cents: normalizeBudgetTotalCentsInput(body.budget_total_cents),
         });
 
         // Se a campanha foi criada já ativa (ex.: campanha paga), notificar todos os usuários

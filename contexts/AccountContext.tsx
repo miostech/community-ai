@@ -24,7 +24,7 @@ export interface Account {
     background_url: string | null;
     plan: 'free' | 'pro' | 'enterprise';
     code_invite: string | null;
-    role?: 'user' | 'moderator' | 'admin' | 'criador';
+    role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
     is_founding_member?: boolean;
     /** ISO date em que o usuário solicitou o cancelamento da assinatura. */
     request_cancel_at: string | null;
@@ -62,6 +62,10 @@ export interface Account {
     campaign_promo_dismissed_at?: string | null;
     /** ISO da criação da conta (Mongo `created_at`). */
     created_at?: string | null;
+    /** Perfil da marca (creators veem na vitrine) */
+    brand_logo_url?: string | null;
+    brand_description?: string | null;
+    wallet_balance_cents?: number;
     /** Período de graça: cadastro recente sem pagamento registado (subscription inactive). Calculado no GET /api/accounts. */
     signup_grace_active?: boolean;
 }

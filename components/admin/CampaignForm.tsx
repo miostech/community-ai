@@ -324,9 +324,11 @@ interface Props {
     initialData?: Partial<CampaignFormData>;
     campaignId?: string;
     mode: 'create' | 'edit';
+    /** Rotas após criar campanha: admin (padrão) ou área da marca */
+    campaignBasePath?: 'admin' | 'marca';
 }
 
-export function CampaignForm({ initialData, campaignId, mode }: Props) {
+export function CampaignForm({ initialData, campaignId, mode, campaignBasePath = 'admin' }: Props) {
     const router = useRouter();
     const theme = useTheme();
     const [form, setForm] = useState<CampaignFormData>({ ...EMPTY_FORM, ...initialData });
@@ -458,7 +460,11 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
             } else {
                 setSuccess(mode === 'create' ? 'Campanha criada com sucesso!' : 'Campanha atualizada com sucesso!');
                 if (mode === 'create') {
-                    setTimeout(() => router.push(`/dashboard/admin/campanhas/${data.campaign._id}`), 1000);
+                    const base =
+                        campaignBasePath === 'marca'
+                            ? '/marca/campanhas'
+                            : '/dashboard/admin/campanhas';
+                    setTimeout(() => router.push(`${base}/${data.campaign._id}`), 1000);
                 }
             }
         } catch {
@@ -1046,7 +1052,13 @@ export function CampaignForm({ initialData, campaignId, mode }: Props) {
                 <Stack direction="row" justifyContent="flex-end" spacing={2}>
                     <Button
                         variant="outlined"
-                        onClick={() => router.push('/dashboard/admin/campanhas')}
+                        onClick={() =>
+                            router.push(
+                                campaignBasePath === 'marca'
+                                    ? '/marca/campanhas'
+                                    : '/dashboard/admin/campanhas'
+                            )
+                        }
                         sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
                         Cancelar

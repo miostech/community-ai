@@ -8,7 +8,7 @@ export interface Account {
     phone?: string;
     phone_country_code: string;
     auth_user_id: string;
-    provider_oauth?: 'google' | 'apple' | 'facebook' | 'kiwify';
+    provider_oauth?: 'google' | 'apple' | 'facebook' | 'kiwify' | 'marca';
     link_instagram?: string;
     link_tiktok?: string;
     link_youtube?: string;
@@ -39,7 +39,7 @@ export interface Account {
     /** Score de engajamento 0–100 (Search API); atualizado junto com cached_followers */
     cached_engagement_score?: number | null;
     /** Papel na comunidade: moderador pode aprovar/ocultar comentários e deletar qualquer comentário; criador é exibido com badge */
-    role?: 'user' | 'moderator' | 'admin' | 'criador';
+    role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
     /** Membro fundador: assinou entre 23/02/2026 e 08/03/2026, sem cancelamento nem reembolso */
     is_founding_member?: boolean;
     /** Data em que o usuário solicitou o cancelamento da assinatura (apenas registro; cancelamento efetivo é externo). */
@@ -84,6 +84,11 @@ export interface Account {
     portfolio_terms_accepted_at?: Date | null;
     /** Fechou o modal de promo exclusiva da campanha (14 dias grátis) sem comprar; não volta a ver a oferta. */
     campaign_promo_dismissed_at?: Date | null;
+    /** Perfil público da marca (visível aos creators na vitrine) */
+    brand_logo_url?: string;
+    brand_description?: string;
+    /** Saldo em centavos BRL para veiculação (carteira da marca) */
+    wallet_balance_cents?: number;
     /** Fim do trial da campanha 14 dias grátis (preenchido ao ativar). Usado para saber se o usuário assinou um plano pago dentro dos 14 dias (não bloqueia por 7 dias). */
     campaign_14_days_trial_ends_at?: Date | null;
     portfolio_terms_accepted_ip?: string | null;
@@ -102,7 +107,7 @@ const AccountSchema = new Schema(
         phone: { type: String, trim: true },
         phone_country_code: { type: String, trim: true, default: '+55' },
         auth_user_id: { type: String, required: true, unique: true, index: true, trim: true },
-        provider_oauth: { type: String, enum: ['google', 'apple', 'facebook', 'kiwify'], trim: true },
+        provider_oauth: { type: String, enum: ['google', 'apple', 'facebook', 'kiwify', 'marca'], trim: true },
         link_instagram: { type: String, trim: true },
         link_tiktok: { type: String, trim: true },
         link_youtube: { type: String, trim: true },
@@ -121,7 +126,7 @@ const AccountSchema = new Schema(
         utm_ref: { type: String, trim: true },
         last_access_at: { type: Date, default: Date.now },
         last_notifications_read_at: { type: Date, default: null },
-        /** Hash da senha (apenas para contas com provider_oauth === 'kiwify') */
+        /** Hash da senha (Kiwify e portal da marca com email/senha) */
         password_hash: { type: String, trim: true, select: false },
         /** Total de seguidores (soma das redes) no momento do cadastro/primeira captura */
         followers_at_signup: { type: Number, default: null },
@@ -129,7 +134,7 @@ const AccountSchema = new Schema(
         cached_followers_updated_at: { type: Date, default: null },
         cached_total_views: { type: Number, default: null },
         cached_engagement_score: { type: Number, default: null },
-        role: { type: String, enum: ['user', 'moderator', 'admin', 'criador'], default: 'user' },
+        role: { type: String, enum: ['user', 'moderator', 'admin', 'criador', 'marca'], default: 'user' },
         is_founding_member: { type: Boolean, default: false },
         request_cancel_at: { type: Date },
         geo_country: { type: String, trim: true },
@@ -161,6 +166,9 @@ const AccountSchema = new Schema(
         portfolio_terms_accepted_at: { type: Date },
         campaign_promo_dismissed_at: { type: Date },
         campaign_14_days_trial_ends_at: { type: Date },
+        brand_logo_url: { type: String, trim: true },
+        brand_description: { type: String, trim: true, maxlength: 1000 },
+        wallet_balance_cents: { type: Number, default: 0, min: 0 },
         portfolio_terms_accepted_ip: { type: String, trim: true },
         portfolio_terms_accepted_country: { type: String, trim: true },
         portfolio_terms_accepted_region: { type: String, trim: true },

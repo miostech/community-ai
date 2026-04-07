@@ -1,0 +1,319 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import {
+    Box,
+    Typography,
+    Stack,
+    Button,
+    Chip,
+    CircularProgress,
+    Alert,
+    Badge,
+    ButtonGroup,
+} from '@mui/material';
+import {
+    ArrowBack as ArrowBackIcon,
+    Group as GroupIcon,
+    PlayArrow as ActivateIcon,
+    Pause as PauseIcon,
+    CheckCircle as CompleteIcon,
+    Cancel as CancelIcon,
+} from '@mui/icons-material';
+import { CampaignForm, CampaignFormData, CompensationType } from '@/components/admin/CampaignForm';
+import { useAccount } from '@/contexts/AccountContext';
+
+interface CampaignData {
+    _id: string;
+    brand_name: string;
+    brand_logo?: string;
+    brand_website?: string;
+    brand_instagram?: string;
+    title: string;
+    description: string;
+    briefing: string;
+    content_type: string;
+    content_usage: string;
+    category: string;
+    niches: string[];
+    slots: number;
+    slots_unlimited?: boolean;
+    slots_filled: number;
+    budget_per_creator?: number;
+    payment_type?: 'per_post' | 'per_views';
+    budget_per_1000_views?: number;
+    requires_invoice?: boolean;
+    includes_product: boolean;
+    product_description?: string;
+    deliverables: string[];
+    application_deadline?: string;
+    content_deadline?: string;
+    start_date?: string;
+    status: string;
+    applications_count: number;
+    filters?: {
+        gender?: string;
+        min_age?: number;
+        max_age?: number;
+        min_followers?: number;
+        max_followers?: number;
+        countries?: string[];
+    };
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: 'default' | 'success' | 'warning' | 'error' | 'info' | 'primary' }> = {
+    draft: { label: 'Rascunho', color: 'default' },
+    active: { label: 'Ativa', color: 'success' },
+    paused: { label: 'Pausada', color: 'warning' },
+    completed: { label: 'Concluída', color: 'info' },
+    cancelled: { label: 'Cancelada', color: 'error' },
+};
+
+function toDateInput(dateStr?: string): string {
+    if (!dateStr) return '';
+    return dateStr.split('T')[0];
+}
+
+export default function MarcaEditCampanhaPage() {
+    const params = useParams();
+    const id = params.campaignId as string;
+    const { account } = useAccount();
+    const showStaffTools = account?.role === 'moderator' || account?.role === 'admin';
+
+    const [campaign, setCampaign] = useState<CampaignData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [statusLoading, setStatusLoading] = useState(false);
+    const [statusError, setStatusError] = useState('');
+    const [pendingCount, setPendingCount] = useState(0);
+
+    useEffect(() => {
+        if (!id) return;
+        fetchCampaign();
+        fetchPendingCount();
+    }, [id]);
+
+    async function fetchCampaign() {
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/campaigns/${id}`);
+            const data = await res.json();
+            if (res.ok) setCampaign(data.campaign);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function fetchPendingCount() {
+        try {
+            const res = await fetch(`/api/campaigns/${id}/applications`);
+            const data = await res.json();
+            const pending = (data.applications || []).filter((a: { status: string }) => a.status === 'pending').length;
+            setPendingCount(pending);
+        } catch {
+            setPendingCount(0);
+        }
+    }
+
+    async function updateStatus(newStatus: string) {
+        setStatusLoading(true);
+        setStatusError('');
+        try {
+            const res = await fetch(`/api/campaigns/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setCampaign((prev) => (prev ? { ...prev, status: newStatus } : prev));
+            } else {
+                setStatusError(data.error || 'Erro ao atualizar status.');
+            }
+        } catch {
+            setStatusError('Erro ao conectar com o servidor.');
+        } finally {
+            setStatusLoading(false);
+        }
+    }
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (!campaign) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error">Campanha não encontrada ou sem permissão.</Alert>
+            </Box>
+        );
+    }
+
+    const cfg = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.draft;
+
+    const compensationType: CompensationType =
+        campaign.budget_per_creator && campaign.budget_per_creator > 0
+            ? 'paid'
+            : campaign.includes_product
+              ? 'product'
+              : 'affiliate';
+
+    let affiliateCommission = '';
+    let affiliateLink = '';
+    if (compensationType === 'affiliate' && campaign.product_description) {
+        const commMatch = campaign.product_description.match(/Comissão:\s*([\d.]+)%/);
+        const linkMatch = campaign.product_description.match(/Link:\s*(.+)/);
+        if (commMatch) affiliateCommission = commMatch[1];
+        if (linkMatch) affiliateLink = linkMatch[1];
+    }
+
+    const initialData: Partial<CampaignFormData> = {
+        brand_name: campaign.brand_name,
+        brand_logo: campaign.brand_logo || '',
+        brand_website: campaign.brand_website || '',
+        brand_instagram: campaign.brand_instagram || '',
+        title: campaign.title,
+        description: campaign.description,
+        briefing: campaign.briefing,
+        content_type: campaign.content_type,
+        content_usage: campaign.content_usage,
+        category: campaign.category || '',
+        niches: campaign.niches || [],
+        slots: campaign.slots,
+        slots_unlimited: campaign.slots_unlimited ?? false,
+        compensation_type: compensationType,
+        paid_payment_type: campaign.payment_type === 'per_views' ? 'per_views' : 'per_post',
+        budget_per_creator: campaign.budget_per_creator ? String(campaign.budget_per_creator / 100) : '',
+        budget_per_1000_views: campaign.budget_per_1000_views ? String(campaign.budget_per_1000_views / 100) : '',
+        requires_invoice: campaign.requires_invoice ?? false,
+        includes_product: campaign.includes_product,
+        product_description: compensationType === 'product' ? (campaign.product_description || '') : '',
+        affiliate_commission: affiliateCommission,
+        affiliate_link: affiliateLink,
+        deliverables: campaign.deliverables || [],
+        application_deadline: toDateInput(campaign.application_deadline),
+        content_deadline: toDateInput(campaign.content_deadline),
+        start_date: toDateInput(campaign.start_date),
+        status: campaign.status,
+        filters: {
+            gender: campaign.filters?.gender || 'todos',
+            min_age: campaign.filters?.min_age ? String(campaign.filters.min_age) : '',
+            max_age: campaign.filters?.max_age ? String(campaign.filters.max_age) : '',
+            min_followers: campaign.filters?.min_followers ? String(campaign.filters.min_followers) : '',
+            max_followers: campaign.filters?.max_followers ? String(campaign.filters.max_followers) : '',
+            countries: campaign.filters?.countries?.[0] ?? 'all',
+        },
+    };
+
+    return (
+        <Box sx={{ maxWidth: 800, mx: 'auto', px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 4 }, pb: { xs: 10, sm: 4 } }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
+                <Button
+                    component={Link}
+                    href="/marca/campanhas"
+                    startIcon={<ArrowBackIcon />}
+                    size="small"
+                    sx={{ textTransform: 'none', fontWeight: 600 }}
+                >
+                    Campanhas
+                </Button>
+            </Stack>
+
+            <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                justifyContent="space-between"
+                spacing={2}
+                sx={{ mb: { xs: 2, sm: 3 } }}
+            >
+                <Box>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }} flexWrap="wrap">
+                        <Typography variant="h5" sx={{ fontWeight: 700, fontSize: { xs: '1.15rem', sm: '1.5rem' } }}>
+                            {campaign.title}
+                        </Typography>
+                        <Chip label={cfg.label} color={cfg.color} size="small" sx={{ fontWeight: 600 }} />
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                        {campaign.brand_name} ·{' '}
+                        {campaign.slots_unlimited ? 'Sem limite de vagas' : `${campaign.slots_filled}/${campaign.slots} vagas preenchidas`}
+                    </Typography>
+                </Box>
+
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {showStaffTools && (
+                        <Badge badgeContent={pendingCount} color="error" max={99}>
+                            <Button
+                                component={Link}
+                                href={`/dashboard/admin/campanhas/${id}/candidaturas`}
+                                variant="outlined"
+                                startIcon={<GroupIcon />}
+                                size="small"
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Candidaturas
+                            </Button>
+                        </Badge>
+                    )}
+
+                    <ButtonGroup size="small" disabled={statusLoading}>
+                        {campaign.status !== 'active' && !['completed', 'cancelled'].includes(campaign.status) && (
+                            <Button
+                                color="success"
+                                startIcon={<ActivateIcon />}
+                                onClick={() => updateStatus('active')}
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Ativar
+                            </Button>
+                        )}
+                        {campaign.status === 'active' && (
+                            <Button
+                                color="warning"
+                                startIcon={<PauseIcon />}
+                                onClick={() => updateStatus('paused')}
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Pausar
+                            </Button>
+                        )}
+                        {['active', 'paused'].includes(campaign.status) && (
+                            <Button
+                                color="info"
+                                startIcon={<CompleteIcon />}
+                                onClick={() => updateStatus('completed')}
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Concluir
+                            </Button>
+                        )}
+                        {!['completed', 'cancelled'].includes(campaign.status) && (
+                            <Button
+                                color="error"
+                                startIcon={<CancelIcon />}
+                                onClick={() => updateStatus('cancelled')}
+                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                            >
+                                Cancelar campanha
+                            </Button>
+                        )}
+                    </ButtonGroup>
+                </Stack>
+            </Stack>
+
+            {statusError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {statusError}
+                </Alert>
+            )}
+
+            <CampaignForm mode="edit" campaignId={id} initialData={initialData} campaignBasePath="marca" />
+        </Box>
+    );
+}

@@ -45,6 +45,10 @@ export interface ICampaign extends Document {
     payment_type?: 'per_post' | 'per_views';
     /** Valor pago a cada 1.000 visualizações (em centavos BRL) — usado quando payment_type é per_views */
     budget_per_1000_views?: number;
+    /** Orçamento total planejado pela marca (centavos BRL) — usado para retenção na carteira ao ativar */
+    budget_total_cents?: number;
+    /** Saldo já retido da carteira da marca para esta campanha (centavos), preenchido na ativação */
+    wallet_reserved_cents?: number;
     /** Campanha paga exige nota fiscal do creator (exibido na vitrine) */
     requires_invoice?: boolean;
     /** Inclui produto grátis */
@@ -118,6 +122,8 @@ const CampaignSchema = new Schema<ICampaign>(
         budget_per_creator: { type: Number },
         payment_type: { type: String, enum: ['per_post', 'per_views'], trim: true },
         budget_per_1000_views: { type: Number },
+        budget_total_cents: { type: Number, min: 0 },
+        wallet_reserved_cents: { type: Number, min: 0 },
         requires_invoice: { type: Boolean, default: false },
         includes_product: { type: Boolean, default: false },
         product_description: { type: String, trim: true },

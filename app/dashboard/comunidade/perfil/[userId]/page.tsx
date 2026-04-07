@@ -77,7 +77,7 @@ type ProfileDisplay = CommunityUser | {
   created_at?: string | null;
   followers_at_signup?: number | null;
   courseIds?: string[];
-  role?: 'user' | 'moderator' | 'admin' | 'criador';
+  role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
   is_founding_member?: boolean;
 };
 

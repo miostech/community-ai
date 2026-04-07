@@ -184,7 +184,7 @@ export function MobileMenuMui() {
                     }
 
                     if (isProfile && canAccessAdmin) {
-                        // Admin/Moderador: ícone de engrenagem abre menu (Meu perfil, Campanhas, Influenciadores, DM)
+                        // Admin/Moderador: ícone de engrenagem abre menu
                         const isAnyActive =
                             isActive ||
                             pathname?.startsWith('/dashboard/admin') ||
@@ -253,59 +253,63 @@ export function MobileMenuMui() {
                         </ListItemIcon>
                         <ListItemText>Meu perfil</ListItemText>
                     </MenuItem>
-                    <MenuItem
-                        component={Link}
-                        href="/dashboard/admin"
-                        onClick={handleProfileMenuClose}
-                        selected={pathname?.startsWith('/dashboard/admin')}
-                    >
-                        <ListItemIcon>
-                            <AdminIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText>Campanhas</ListItemText>
-                    </MenuItem>
-                    <MenuItem
-                        component={Link}
-                        href="/dashboard/mensagens"
-                        onClick={handleProfileMenuClose}
-                        selected={pathname?.startsWith('/dashboard/mensagens')}
-                    >
-                        <ListItemIcon>
-                            <MailOutlineIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText>DM privada</ListItemText>
-                    </MenuItem>
-                    {isModerator
-                        ? [
-                              <MenuItem
-                                  key="influenciadores"
-                                  component={Link}
-                                  href="/dashboard/influenciadores"
-                                  onClick={handleProfileMenuClose}
-                                  selected={
-                                      pathname === '/dashboard/influenciadores' ||
-                                      pathname?.startsWith('/dashboard/influenciadores/')
-                                  }
-                              >
-                                  <ListItemIcon>
-                                      <InfluencersIcon fontSize="small" />
-                                  </ListItemIcon>
-                                  <ListItemText>Influenciadores</ListItemText>
-                              </MenuItem>,
-                              <MenuItem
-                                  key="apresentacao"
-                                  component={Link}
-                                  href="/dashboard/influenciadores/apresentacao"
-                                  onClick={handleProfileMenuClose}
-                                  selected={pathname?.startsWith('/dashboard/influenciadores/apresentacao')}
-                              >
-                                  <ListItemIcon>
-                                      <PresentationIcon fontSize="small" />
-                                  </ListItemIcon>
-                                  <ListItemText>Dome Creators</ListItemText>
-                              </MenuItem>,
-                          ]
-                        : null}
+                    {[
+                            <MenuItem
+                                key="painel-admin"
+                                component={Link}
+                                href="/dashboard/admin"
+                                onClick={handleProfileMenuClose}
+                                selected={pathname?.startsWith('/dashboard/admin')}
+                            >
+                                <ListItemIcon>
+                                    <AdminIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Painel admin</ListItemText>
+                            </MenuItem>,
+                            <MenuItem
+                                key="dm-privada"
+                                component={Link}
+                                href="/dashboard/mensagens"
+                                onClick={handleProfileMenuClose}
+                                selected={pathname?.startsWith('/dashboard/mensagens')}
+                            >
+                                <ListItemIcon>
+                                    <MailOutlineIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>DM privada</ListItemText>
+                            </MenuItem>,
+                            ...(isModerator
+                                ? [
+                                      <MenuItem
+                                          key="influenciadores"
+                                          component={Link}
+                                          href="/dashboard/influenciadores"
+                                          onClick={handleProfileMenuClose}
+                                          selected={
+                                              pathname === '/dashboard/influenciadores' ||
+                                              pathname?.startsWith('/dashboard/influenciadores/')
+                                          }
+                                      >
+                                          <ListItemIcon>
+                                              <InfluencersIcon fontSize="small" />
+                                          </ListItemIcon>
+                                          <ListItemText>Influenciadores</ListItemText>
+                                      </MenuItem>,
+                                      <MenuItem
+                                          key="apresentacao"
+                                          component={Link}
+                                          href="/dashboard/influenciadores/apresentacao"
+                                          onClick={handleProfileMenuClose}
+                                          selected={pathname?.startsWith('/dashboard/influenciadores/apresentacao')}
+                                      >
+                                          <ListItemIcon>
+                                              <PresentationIcon fontSize="small" />
+                                          </ListItemIcon>
+                                          <ListItemText>Dome Creators</ListItemText>
+                                      </MenuItem>,
+                                  ]
+                                : []),
+                    ]}
                 </Menu>
             )}
         </Paper>

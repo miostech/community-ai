@@ -6,6 +6,7 @@ import { getTotalFollowers } from '@/lib/social-stats';
 import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeStoredInput } from '@/lib/normalize-social-handles';
 import mongoose from 'mongoose';
 import Account from '@/models/Account';
+import BusinessAccount from '@/models/BusinessAccount';
 import AccountPayment from '@/models/AccountPayment';
 import { CAMPAIGN_TRIAL_MS } from '@/lib/campaign-trial';
 
@@ -231,6 +232,18 @@ export async function GET() {
             ).catch(() => {});
         }
 
+        const business = await BusinessAccount.findOne({ account_id: account._id }).lean();
+        const brand_logo_url_merged = business?.brand_logo_url ?? account.brand_logo_url ?? null;
+        const brand_description_merged = business?.brand_description ?? account.brand_description ?? null;
+        const wallet_merged =
+            business != null
+                ? typeof business.wallet_balance_cents === 'number'
+                    ? business.wallet_balance_cents
+                    : 0
+                : typeof account.wallet_balance_cents === 'number'
+                  ? account.wallet_balance_cents
+                  : 0;
+
         return NextResponse.json({
             success: true,
             account: {
@@ -293,6 +306,9 @@ export async function GET() {
                     : null,
                 created_at: createdAtMs !== null ? new Date(createdAtMs).toISOString() : null,
                 signup_grace_active,
+                brand_logo_url: brand_logo_url_merged,
+                brand_description: brand_description_merged,
+                wallet_balance_cents: wallet_merged,
             },
             subscription: {
                 status: subscriptionStatus,
@@ -485,10 +501,29 @@ export async function PATCH(request: NextRequest) {
                 : null,
         };
 
+        const bizAfter = await BusinessAccount.findOne({ account_id: acc._id }).lean();
+        const brand_logo_patch = bizAfter?.brand_logo_url ?? acc.brand_logo_url ?? null;
+        const brand_desc_patch = bizAfter?.brand_description ?? acc.brand_description ?? null;
+        const wallet_patch =
+            bizAfter != null
+                ? typeof bizAfter.wallet_balance_cents === 'number'
+                    ? bizAfter.wallet_balance_cents
+                    : 0
+                : typeof acc.wallet_balance_cents === 'number'
+                  ? acc.wallet_balance_cents
+                  : 0;
+
+        const responseAccountFull = {
+            ...responseAccount,
+            brand_logo_url: brand_logo_patch,
+            brand_description: brand_desc_patch,
+            wallet_balance_cents: wallet_patch,
+        };
+
         return NextResponse.json({
             success: true,
             message: 'Perfil atualizado com sucesso',
-            account: responseAccount,
+            account: responseAccountFull,
         });
     } catch (error) {
         console.error('Erro ao atualizar conta:', error);

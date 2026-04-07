@@ -6,6 +6,7 @@ import Credentials from 'next-auth/providers/credentials';
 
 import { connectMongo } from '@/lib/mongoose';
 import { validateKiwifyCredentials } from '@/lib/kiwify-auth';
+import { validateMarcaCredentials } from '@/lib/marca-auth';
 import Account from '@/models/Account';
 
 function splitName(name?: string | null): { first: string; last: string } {
@@ -92,6 +93,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
         Credentials({
+            id: 'marca-credentials',
+            name: 'Portal da marca',
+            credentials: {
+                email: { label: 'Email', type: 'email' },
+                password: { label: 'Senha', type: 'password' },
+            },
+            async authorize(credentials) {
+                const email = typeof credentials?.email === 'string' ? credentials.email : '';
+                const password = typeof credentials?.password === 'string' ? credentials.password : '';
+                const result = await validateMarcaCredentials(email, password);
+                return result.ok ? result.user : null;
+            },
+        }),
+        Credentials({
             id: 'test',
             name: 'Login de teste',
             credentials: {
@@ -153,8 +168,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
 
             // Para providers Credentials (kiwify/test), o account já foi tratado no authorize()
-            if (account?.provider === 'credentials' || account?.provider === 'kiwify' || account?.provider === 'test') {
-                console.log('✅ Provider credentials/kiwify/test - retornando true');
+            if (
+                account?.provider === 'credentials' ||
+                account?.provider === 'kiwify' ||
+                account?.provider === 'test' ||
+                account?.provider === 'marca-credentials'
+            ) {
+                console.log('✅ Provider credentials/kiwify/test/marca - retornando true');
                 return true;
             }
 
@@ -218,8 +238,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return true;
         },
         async jwt({ token, account, user }) {
-            if ((account?.provider === 'credentials' || account?.provider === 'kiwify') && user?.auth_user_id) {
-                token.auth_user_id = user.auth_user_id;
+            if (
+                (account?.provider === 'credentials' ||
+                    account?.provider === 'kiwify' ||
+                    account?.provider === 'marca-credentials') &&
+                user &&
+                'auth_user_id' in user &&
+                (user as { auth_user_id?: string }).auth_user_id
+            ) {
+                token.auth_user_id = (user as { auth_user_id: string }).auth_user_id;
                 token.sub = user.id;
             } else if (account) {
                 // OAuth (Google/Apple) - usa o providerAccountId
