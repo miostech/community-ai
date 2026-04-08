@@ -661,8 +661,17 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             PaperProps={{
                 sx: {
                     borderRadius: '24px 24px 0 0',
-                    maxHeight: '85vh',
-                    height: '85vh',
+                    // Tab bar mobile (MobileMenuMui) fica em z-index 1300; drawer padrão é 1200.
+                    // Desloca o sheet para o campo de comentário ficar acima da barra, não atrás dela.
+                    bottom: { xs: 'calc(56px + env(safe-area-inset-bottom, 0px))', md: 0 },
+                    maxHeight: {
+                        xs: 'calc(100dvh - 56px - env(safe-area-inset-bottom, 0px))',
+                        md: '85vh',
+                    },
+                    height: {
+                        xs: 'min(85vh, calc(100dvh - 56px - env(safe-area-inset-bottom, 0px)))',
+                        md: '85vh',
+                    },
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1402,7 +1411,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                         left: 0,
                         right: 0,
                         bottom: keyboardOffset,
-                        zIndex: 1300,
+                        zIndex: 1350,
                         borderRadius: '24px 24px 0 0',
                     }),
                 }}
