@@ -106,6 +106,8 @@ const countryCodes: Array<{
   { code: '+90', country: 'TR', flag: '🇹🇷', name: 'Turquia', placeholder: '532 123 45 67', minDigits: 10, maxDigits: 10 },
   { code: '+380', country: 'UA', flag: '🇺🇦', name: 'Ucrânia', placeholder: '67 123 4567', minDigits: 9, maxDigits: 9 },
   { code: '+379', country: 'VA', flag: '🇻🇦', name: 'Vaticano', placeholder: '312 3456789', minDigits: 8, maxDigits: 9 },
+  // Ásia (ordem alfabética)
+  { code: '+81', country: 'JP', flag: '🇯🇵', name: 'Japão', placeholder: '90 1234 5678', minDigits: 9, maxDigits: 10 },
 ];
 
 /** Retorna min e max de dígitos do número nacional para um código de país. */
