@@ -56,6 +56,8 @@ interface Reply {
     created_at: string;
     likes_count?: number;
     liked?: boolean;
+    replies_count?: number;
+    replies?: Reply[];
     mentions?: Record<string, string>;
     moderation_status?: 'pending' | 'approved';
 }
@@ -81,8 +83,11 @@ interface CommentsSectionMuiProps {
 }
 
 interface ReplyingTo {
+    /** parent_id enviado à API (pode ser comentário raiz ou uma resposta) */
     commentId: string;
     authorName: string;
+    /** Comentário de primeiro nível — mantém a thread expandida e ancora updates na árvore */
+    rootCommentId: string;
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -159,6 +164,100 @@ interface MentionUser {
     id: string;
     name: string;
     handle: string;
+}
+
+function addReplyDeep(replies: Reply[] | undefined, parentId: string, newReply: Reply): Reply[] | undefined {
+    if (!replies?.length) return replies;
+    return replies.map(r => {
+        if (r._id === parentId) {
+            return {
+                ...r,
+                replies_count: (r.replies_count || 0) + 1,
+                replies: [...(r.replies || []), { ...newReply, replies: newReply.replies ?? [] }],
+            };
+        }
+        const nested = addReplyDeep(r.replies, parentId, newReply);
+        if (nested !== r.replies) {
+            return { ...r, replies: nested };
+        }
+        return r;
+    });
+}
+
+function addReplyToCommentTree(comments: Comment[], rootCommentId: string, parentId: string, newReply: Reply): Comment[] {
+    return comments.map(c => {
+        if (c._id !== rootCommentId) return c;
+        if (c._id === parentId) {
+            return {
+                ...c,
+                replies_count: (c.replies_count || 0) + 1,
+                replies: [...(c.replies || []), { ...newReply, replies: newReply.replies ?? [] }],
+            };
+        }
+        const next = addReplyDeep(c.replies, parentId, newReply);
+        if (next === c.replies) return c;
+        return { ...c, replies: next };
+    });
+}
+
+function removeReplyByIdFromList(replies: Reply[] | undefined, targetId: string): Reply[] | undefined {
+    if (!replies?.length) return replies;
+    const i = replies.findIndex(r => r._id === targetId);
+    if (i >= 0) {
+        return [...replies.slice(0, i), ...replies.slice(i + 1)];
+    }
+    let changed = false;
+    const next = replies.map(r => {
+        const sub = removeReplyByIdFromList(r.replies, targetId);
+        if (sub !== r.replies) {
+            changed = true;
+            return {
+                ...r,
+                replies: sub,
+                replies_count: Math.max(0, (r.replies_count || 0) - 1),
+            };
+        }
+        return r;
+    });
+    return changed ? next : replies;
+}
+
+function removeReplyFromRoot(comments: Comment[], rootId: string, targetId: string): Comment[] {
+    return comments.map(c => {
+        if (c._id !== rootId) return c;
+        const directIdx = c.replies?.findIndex(r => r._id === targetId) ?? -1;
+        if (directIdx >= 0) {
+            return {
+                ...c,
+                replies: c.replies!.filter((_, j) => j !== directIdx),
+                replies_count: Math.max(0, (c.replies_count || 0) - 1),
+            };
+        }
+        const next = removeReplyByIdFromList(c.replies, targetId);
+        if (next === c.replies) return c;
+        return { ...c, replies: next };
+    });
+}
+
+function mapReplyInTree(replies: Reply[] | undefined, replyId: string, fn: (r: Reply) => Reply): Reply[] | undefined {
+    if (!replies?.length) return replies;
+    return replies.map(r => {
+        if (r._id === replyId) return fn(r);
+        const nested = mapReplyInTree(r.replies, replyId, fn);
+        if (nested !== r.replies) {
+            return { ...r, replies: nested };
+        }
+        return r;
+    });
+}
+
+function mapReplyUnderRoot(comments: Comment[], rootId: string, replyId: string, fn: (r: Reply) => Reply): Comment[] {
+    return comments.map(c => {
+        if (c._id !== rootId) return c;
+        const next = mapReplyInTree(c.replies, replyId, fn);
+        if (next === c.replies) return c;
+        return { ...c, replies: next };
+    });
 }
 
 export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: CommentsSectionMuiProps) {
@@ -304,19 +403,11 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                 const data = await response.json();
 
                 if (replyingTo) {
+                    const newReply: Reply = { ...data.comment, replies: [] };
                     setComments(prev =>
-                        prev.map(comment => {
-                            if (comment._id === replyingTo.commentId) {
-                                return {
-                                    ...comment,
-                                    replies_count: (comment.replies_count || 0) + 1,
-                                    replies: [...(comment.replies || []), data.comment],
-                                };
-                            }
-                            return comment;
-                        })
+                        addReplyToCommentTree(prev, replyingTo.rootCommentId, replyingTo.commentId, newReply)
                     );
-                    setExpandedReplies(prev => new Set(prev).add(replyingTo.commentId));
+                    setExpandedReplies(prev => new Set(prev).add(replyingTo.rootCommentId));
                     setReplyingTo(null);
                 } else {
                     setComments(prev => [{ ...data.comment, replies: [] }, ...prev]);
@@ -342,8 +433,8 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
         }
     };
 
-    const handleReply = (commentId: string, authorName: string) => {
-        setReplyingTo({ commentId, authorName });
+    const handleReply = (commentId: string, authorName: string, rootCommentId: string) => {
+        setReplyingTo({ commentId, authorName, rootCommentId });
         setCommentText('');
         inputRef.current?.focus();
     };
@@ -380,18 +471,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
 
             if (response.ok) {
                 if (isReply && parentId) {
-                    setComments(prev =>
-                        prev.map(comment => {
-                            if (comment._id === parentId) {
-                                return {
-                                    ...comment,
-                                    replies_count: Math.max(0, (comment.replies_count || 0) - 1),
-                                    replies: comment.replies?.filter(r => r._id !== commentId) || [],
-                                };
-                            }
-                            return comment;
-                        })
-                    );
+                    setComments(prev => removeReplyFromRoot(prev, parentId, commentId));
                 } else {
                     setComments(prev => prev.filter(c => c._id !== commentId));
                 }
@@ -434,23 +514,11 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                 const updated = data.comment;
                 if (editingComment.isReply && editingComment.parentId) {
                     setComments(prev =>
-                        prev.map(comment => {
-                            if (comment._id === editingComment.parentId) {
-                                return {
-                                    ...comment,
-                                    replies: comment.replies?.map(r =>
-                                        r._id === editingComment.id
-                                            ? {
-                                                  ...r,
-                                                  content: updated.content,
-                                                  mentions: updated.mentions,
-                                              }
-                                            : r
-                                    ) || [],
-                                };
-                            }
-                            return comment;
-                        })
+                        mapReplyUnderRoot(prev, editingComment.parentId!, editingComment.id, r => ({
+                            ...r,
+                            content: updated.content,
+                            mentions: updated.mentions,
+                        }))
                     );
                 } else {
                     setComments(prev =>
@@ -490,15 +558,10 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
             if (response.ok) {
                 if (isReply && parentId) {
                     setComments(prev =>
-                        prev.map(c => {
-                            if (c._id !== parentId) return c;
-                            return {
-                                ...c,
-                                replies: c.replies?.map(r =>
-                                    r._id === commentId ? { ...r, moderation_status: 'approved' as const } : r
-                                ) || [],
-                            };
-                        })
+                        mapReplyUnderRoot(prev, parentId, commentId, r => ({
+                            ...r,
+                            moderation_status: 'approved' as const,
+                        }))
                     );
                 } else {
                     setComments(prev =>
@@ -551,32 +614,19 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
 
     // Like em comentário
     const handleLikeComment = async (commentId: string, isReply: boolean = false, parentId?: string) => {
+        const toggleReply = (reply: Reply) => {
+            const newLiked = !reply.liked;
+            return {
+                ...reply,
+                liked: newLiked,
+                likes_count: newLiked
+                    ? (reply.likes_count || 0) + 1
+                    : Math.max(0, (reply.likes_count || 0) - 1),
+            };
+        };
         try {
-            // Atualização otimista
             if (isReply && parentId) {
-                setComments(prev =>
-                    prev.map(comment => {
-                        if (comment._id === parentId) {
-                            return {
-                                ...comment,
-                                replies: comment.replies?.map(reply => {
-                                    if (reply._id === commentId) {
-                                        const newLiked = !reply.liked;
-                                        return {
-                                            ...reply,
-                                            liked: newLiked,
-                                            likes_count: newLiked
-                                                ? (reply.likes_count || 0) + 1
-                                                : Math.max(0, (reply.likes_count || 0) - 1),
-                                        };
-                                    }
-                                    return reply;
-                                }),
-                            };
-                        }
-                        return comment;
-                    })
-                );
+                setComments(prev => mapReplyUnderRoot(prev, parentId, commentId, toggleReply));
             } else {
                 setComments(prev =>
                     prev.map(comment => {
@@ -595,37 +645,13 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                 );
             }
 
-            // Chamar API
             const response = await fetch(`/api/comments/${commentId}/like`, {
                 method: 'POST',
             });
 
             if (!response.ok) {
-                // Reverter em caso de erro
                 if (isReply && parentId) {
-                    setComments(prev =>
-                        prev.map(comment => {
-                            if (comment._id === parentId) {
-                                return {
-                                    ...comment,
-                                    replies: comment.replies?.map(reply => {
-                                        if (reply._id === commentId) {
-                                            const newLiked = !reply.liked;
-                                            return {
-                                                ...reply,
-                                                liked: newLiked,
-                                                likes_count: newLiked
-                                                    ? (reply.likes_count || 0) + 1
-                                                    : Math.max(0, (reply.likes_count || 0) - 1),
-                                            };
-                                        }
-                                        return reply;
-                                    }),
-                                };
-                            }
-                            return comment;
-                        })
-                    );
+                    setComments(prev => mapReplyUnderRoot(prev, parentId, commentId, toggleReply));
                 } else {
                     setComments(prev =>
                         prev.map(comment => {
@@ -651,6 +677,314 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
 
     const userName = account?.first_name || 'U';
     const userInitial = userName.charAt(0).toUpperCase();
+
+    function renderNestedReply(reply: Reply, rootCommentId: string): React.ReactNode {
+        return (
+            <Stack key={reply._id} spacing={1}>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                    <Box
+                        component="button"
+                        type="button"
+                        onClick={() => goToProfile(reply.author.id)}
+                        sx={{
+                            p: 0,
+                            m: 0,
+                            border: 'none',
+                            background: 'none',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            lineHeight: 0,
+                        }}
+                    >
+                        <Avatar
+                            src={reply.author.avatar_url}
+                            sx={{
+                                width: 28,
+                                height: 28,
+                                background: 'linear-gradient(135deg, #4ade80 0%, #3b82f6 100%)',
+                                fontSize: '0.75rem',
+                                '&:hover': { opacity: 0.9 },
+                            }}
+                        >
+                            {reply.author.name.charAt(0).toUpperCase()}
+                        </Avatar>
+                    </Box>
+
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box
+                            sx={{
+                                bgcolor: 'action.selected',
+                                borderRadius: 2,
+                                px: 1.5,
+                                pt: 0.25,
+                                pb: 1,
+                            }}
+                        >
+                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+                                <Typography
+                                    component="button"
+                                    type="button"
+                                    variant="caption"
+                                    fontWeight={600}
+                                    onClick={() => goToProfile(reply.author.id)}
+                                    sx={{
+                                        p: 0,
+                                        m: 0,
+                                        border: 'none',
+                                        background: 'none',
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                        display: 'block',
+                                        '&:hover': { textDecoration: 'underline' },
+                                    }}
+                                >
+                                    {reply.author.name}
+                                </Typography>
+                                {(reply.author.role === 'moderator' || reply.author.role === 'admin' || reply.author.role === 'criador') && (
+                                    <Tooltip
+                                        title={
+                                            reply.author.role === 'admin'
+                                                ? 'Administrador(a) Dome'
+                                                : reply.author.role === 'moderator'
+                                                    ? 'Moderador(a) Dome'
+                                                    : 'Criador(a) Dome'
+                                        }
+                                        arrow
+                                        placement="top"
+                                        enterDelay={300}
+                                        leaveDelay={0}
+                                        enterTouchDelay={0}
+                                    >
+                                        <Box
+                                            component="span"
+                                            tabIndex={0}
+                                            role="img"
+                                            aria-label={
+                                                reply.author.role === 'admin'
+                                                    ? 'Administrador(a) Dome'
+                                                    : reply.author.role === 'moderator'
+                                                        ? 'Moderador(a) Dome'
+                                                        : 'Criador(a) Dome'
+                                            }
+                                            sx={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                cursor: 'help',
+                                                outline: 'none',
+                                                '&:focus-visible': { opacity: 0.9 },
+                                            }}
+                                        >
+                                            <Box
+                                                component="img"
+                                                src={
+                                                    reply.author.role === 'admin'
+                                                        ? '/moderador.png'
+                                                        : reply.author.role === 'moderator'
+                                                            ? '/coroa.png'
+                                                            : '/verificado.png'
+                                                }
+                                                alt=""
+                                                sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }}
+                                            />
+                                        </Box>
+                                    </Tooltip>
+                                )}
+                                {reply.author.is_founding_member && (
+                                    <Tooltip title="Membro Fundador" arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                        <Box
+                                            component="span"
+                                            tabIndex={0}
+                                            role="img"
+                                            aria-label="Membro Fundador"
+                                            sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
+                                        >
+                                            <Box component="img" src="/moderador.png" alt="" sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                        </Box>
+                                    </Tooltip>
+                                )}
+                            </Stack>
+                            {editingComment?.id === reply._id && editingComment.isReply ? (
+                                <Box sx={{ mt: 0.75 }}>
+                                    <TextField
+                                        fullWidth
+                                        size="small"
+                                        multiline
+                                        minRows={1}
+                                        value={editingComment.content}
+                                        onChange={e =>
+                                            setEditingComment(prev => (prev ? { ...prev, content: e.target.value } : null))
+                                        }
+                                        placeholder="Editar resposta..."
+                                        sx={{
+                                            '& .MuiInputBase-root': { bgcolor: 'background.paper' },
+                                            '& .MuiInputBase-input': { fontSize: '0.75rem' },
+                                        }}
+                                        autoFocus
+                                    />
+                                    <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={handleSaveEdit}
+                                            disabled={!editingComment.content.trim() || isSavingEdit}
+                                            sx={{ fontSize: '0.6875rem' }}
+                                        >
+                                            {isSavingEdit ? <CircularProgress size={14} /> : 'Salvar'}
+                                        </Button>
+                                        <Button size="small" onClick={handleCancelEdit} disabled={isSavingEdit} sx={{ fontSize: '0.6875rem' }}>
+                                            Cancelar
+                                        </Button>
+                                    </Stack>
+                                </Box>
+                            ) : (
+                                <Typography variant="caption" display="block" sx={{ wordBreak: 'break-word' }}>
+                                    <CommentContent content={reply.content} mentions={reply.mentions} />
+                                </Typography>
+                            )}
+                            {reply.moderation_status === 'pending' && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}>
+                                    Aguardando moderação
+                                </Typography>
+                            )}
+                        </Box>
+                        <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center" flexWrap="wrap">
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                                {formatTimeAgo(reply.created_at)}
+                            </Typography>
+                            <IconButton
+                                size="small"
+                                onClick={() => handleLikeComment(reply._id, true, rootCommentId)}
+                                sx={{
+                                    p: 0.25,
+                                    color: reply.liked ? 'error.main' : 'text.secondary',
+                                    '&:hover': { color: 'error.main' },
+                                }}
+                            >
+                                {reply.liked ? (
+                                    <FavoriteIcon sx={{ fontSize: '0.75rem' }} />
+                                ) : (
+                                    <FavoriteBorderIcon sx={{ fontSize: '0.75rem' }} />
+                                )}
+                            </IconButton>
+                            {(reply.likes_count || 0) > 0 && (
+                                <Typography
+                                    variant="caption"
+                                    color={reply.liked ? 'error.main' : 'text.secondary'}
+                                    fontWeight={600}
+                                    sx={{ ml: -1, fontSize: '0.6875rem' }}
+                                >
+                                    {reply.likes_count}
+                                </Typography>
+                            )}
+                            <Button
+                                size="small"
+                                onClick={() => handleReply(reply._id, reply.author.name, rootCommentId)}
+                                sx={{
+                                    p: 0,
+                                    minWidth: 'auto',
+                                    fontSize: '0.6875rem',
+                                    fontWeight: 600,
+                                    textTransform: 'none',
+                                }}
+                            >
+                                Responder
+                            </Button>
+                            {viewerIsModerator && reply.moderation_status === 'pending' && (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="primary"
+                                    onClick={() => handleApproveComment(reply._id, true, rootCommentId)}
+                                    disabled={approvingId === reply._id}
+                                    sx={{
+                                        p: 0,
+                                        minWidth: 'auto',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                    }}
+                                >
+                                    {approvingId === reply._id ? <CircularProgress size={12} /> : 'Aprovar'}
+                                </Button>
+                            )}
+                            {isMyComment(reply.author.id) && (
+                                <>
+                                    <Button
+                                        size="small"
+                                        onClick={() => handleStartEdit(reply._id, reply.content, true, rootCommentId)}
+                                        disabled={!!editingComment}
+                                        sx={{
+                                            p: 0,
+                                            minWidth: 'auto',
+                                            fontSize: '0.6875rem',
+                                            fontWeight: 600,
+                                            textTransform: 'none',
+                                        }}
+                                    >
+                                        Editar
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleDeleteCommentClick(reply._id, true, rootCommentId)}
+                                        sx={{
+                                            p: 0,
+                                            minWidth: 'auto',
+                                            fontSize: '0.6875rem',
+                                            fontWeight: 600,
+                                            textTransform: 'none',
+                                        }}
+                                    >
+                                        Excluir
+                                    </Button>
+                                </>
+                            )}
+                            {viewerIsModerator && !isMyComment(reply.author.id) && (
+                                <Button
+                                    size="small"
+                                    onClick={() => handleOpenPrivateMessage(reply.author.id)}
+                                    sx={{
+                                        p: 0,
+                                        minWidth: 'auto',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 0.25,
+                                    }}
+                                >
+                                    <MailOutlineIcon sx={{ fontSize: '0.75rem' }} />
+                                    Mensagem privada
+                                </Button>
+                            )}
+                            {viewerIsModerator && !isMyComment(reply.author.id) && (
+                                <Button
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleDeleteCommentClick(reply._id, true, rootCommentId)}
+                                    sx={{
+                                        p: 0,
+                                        minWidth: 'auto',
+                                        fontSize: '0.6875rem',
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                    }}
+                                >
+                                    Excluir
+                                </Button>
+                            )}
+                        </Stack>
+                    </Box>
+                </Stack>
+                {reply.replies && reply.replies.length > 0 && (
+                    <Stack spacing={1.5} sx={{ pl: 1.5, ml: 0.5, borderLeft: 1, borderColor: 'divider' }}>
+                        {reply.replies.map(child => renderNestedReply(child, rootCommentId))}
+                    </Stack>
+                )}
+            </Stack>
+        );
+    }
 
     return (
         <>
@@ -934,7 +1268,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             )}
                                             <Button
                                                 size="small"
-                                                onClick={() => handleReply(comment._id, comment.author.name)}
+                                                onClick={() => handleReply(comment._id, comment.author.name, comment._id)}
                                                 sx={{
                                                     p: 0,
                                                     minWidth: 'auto',
@@ -1064,297 +1398,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                         <Collapse in={expandedReplies.has(comment._id)}>
                                             {comment.replies && comment.replies.length > 0 && (
                                                 <Stack spacing={1.5} sx={{ mt: 1.5, pl: 1 }}>
-                                                    {comment.replies.map((reply) => (
-                                                        <Stack key={reply._id} direction="row" spacing={1} alignItems="flex-start">
-                                                            <Box
-                                                                component="button"
-                                                                type="button"
-                                                                onClick={() => goToProfile(reply.author.id)}
-                                                                sx={{
-                                                                    p: 0,
-                                                                    m: 0,
-                                                                    border: 'none',
-                                                                    background: 'none',
-                                                                    cursor: 'pointer',
-                                                                    flexShrink: 0,
-                                                                    lineHeight: 0,
-                                                                }}
-                                                            >
-                                                                <Avatar
-                                                                    src={reply.author.avatar_url}
-                                                                    sx={{
-                                                                        width: 28,
-                                                                        height: 28,
-                                                                        background: 'linear-gradient(135deg, #4ade80 0%, #3b82f6 100%)',
-                                                                        fontSize: '0.75rem',
-                                                                        '&:hover': { opacity: 0.9 },
-                                                                    }}
-                                                                >
-                                                                    {reply.author.name.charAt(0).toUpperCase()}
-                                                                </Avatar>
-                                                            </Box>
-
-                                                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                                <Box
-                                                                    sx={{
-                                                                        bgcolor: 'action.selected',
-                                                                        borderRadius: 2,
-                                                                        px: 1.5,
-                                                                        pt: 0.25,
-                                                                        pb: 1,
-                                                                    }}
-                                                                >
-                                                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-                                                                        <Typography
-                                                                            component="button"
-                                                                            type="button"
-                                                                            variant="caption"
-                                                                            fontWeight={600}
-                                                                            onClick={() => goToProfile(reply.author.id)}
-                                                                            sx={{
-                                                                                p: 0,
-                                                                                m: 0,
-                                                                                border: 'none',
-                                                                                background: 'none',
-                                                                                cursor: 'pointer',
-                                                                                textAlign: 'left',
-                                                                                display: 'block',
-                                                                                '&:hover': { textDecoration: 'underline' },
-                                                                            }}
-                                                                        >
-                                                                            {reply.author.name}
-                                                                        </Typography>
-                                                                        {(reply.author.role === 'moderator' || reply.author.role === 'admin' || reply.author.role === 'criador') && (
-                                                                            <Tooltip
-                                                                                title={
-                                                                                    reply.author.role === 'admin'
-                                                                                        ? 'Administrador(a) Dome'
-                                                                                        : reply.author.role === 'moderator'
-                                                                                            ? 'Moderador(a) Dome'
-                                                                                            : 'Criador(a) Dome'
-                                                                                }
-                                                                                arrow
-                                                                                placement="top"
-                                                                                enterDelay={300}
-                                                                                leaveDelay={0}
-                                                                                enterTouchDelay={0}
-                                                                            >
-                                                                                <Box
-                                                                                    component="span"
-                                                                                    tabIndex={0}
-                                                                                    role="img"
-                                                                                    aria-label={
-                                                                                        reply.author.role === 'admin'
-                                                                                            ? 'Administrador(a) Dome'
-                                                                                            : reply.author.role === 'moderator'
-                                                                                                ? 'Moderador(a) Dome'
-                                                                                                : 'Criador(a) Dome'
-                                                                                    }
-                                                                                    sx={{
-                                                                                        display: 'inline-flex',
-                                                                                        alignItems: 'center',
-                                                                                        cursor: 'help',
-                                                                                        outline: 'none',
-                                                                                        '&:focus-visible': { opacity: 0.9 },
-                                                                                    }}
-                                                                                >
-                                                                                    <Box
-                                                                                        component="img"
-                                                                                        src={reply.author.role === 'admin' ? '/moderador.png' : reply.author.role === 'moderator' ? '/coroa.png' : '/verificado.png'}
-                                                                                        alt=""
-                                                                                        sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }}
-                                                                                />
-                                                                                </Box>
-                                                                            </Tooltip>
-                                                                        )}
-                                                                        {reply.author.is_founding_member && (
-                                                                            <Tooltip title="Membro Fundador" arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
-                                                                                <Box component="span" tabIndex={0} role="img" aria-label="Membro Fundador" sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}>
-                                                                                    <Box component="img" src="/moderador.png" alt="" sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }} />
-                                                                                </Box>
-                                                                            </Tooltip>
-                                                                        )}
-                                                                    </Stack>
-                                                                    {editingComment?.id === reply._id && editingComment.isReply ? (
-                                                                        <Box sx={{ mt: 0.75 }}>
-                                                                            <TextField
-                                                                                fullWidth
-                                                                                size="small"
-                                                                                multiline
-                                                                                minRows={1}
-                                                                                value={editingComment.content}
-                                                                                onChange={(e) =>
-                                                                                    setEditingComment(prev =>
-                                                                                        prev ? { ...prev, content: e.target.value } : null
-                                                                                    )
-                                                                                }
-                                                                                placeholder="Editar resposta..."
-                                                                                sx={{
-                                                                                    '& .MuiInputBase-root': { bgcolor: 'background.paper' },
-                                                                                    '& .MuiInputBase-input': { fontSize: '0.75rem' },
-                                                                                }}
-                                                                                autoFocus
-                                                                            />
-                                                                            <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
-                                                                                <Button
-                                                                                    size="small"
-                                                                                    variant="contained"
-                                                                                    onClick={handleSaveEdit}
-                                                                                    disabled={!editingComment.content.trim() || isSavingEdit}
-                                                                                    sx={{ fontSize: '0.6875rem' }}
-                                                                                >
-                                                                                    {isSavingEdit ? <CircularProgress size={14} /> : 'Salvar'}
-                                                                                </Button>
-                                                                                <Button
-                                                                                    size="small"
-                                                                                    onClick={handleCancelEdit}
-                                                                                    disabled={isSavingEdit}
-                                                                                    sx={{ fontSize: '0.6875rem' }}
-                                                                                >
-                                                                                    Cancelar
-                                                                                </Button>
-                                                                            </Stack>
-                                                                        </Box>
-                                                                    ) : (
-                                                                        <Typography
-                                                                            variant="caption"
-                                                                            display="block"
-                                                                            sx={{ wordBreak: 'break-word' }}
-                                                                        >
-                                                                            <CommentContent content={reply.content} mentions={reply.mentions} />
-                                                                        </Typography>
-                                                                    )}
-                                                                    {reply.moderation_status === 'pending' && (
-                                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: '0.65rem' }}>
-                                                                            Aguardando moderação
-                                                                        </Typography>
-                                                                    )}
-                                                                </Box>
-                                                                <Stack direction="row" spacing={1.5} sx={{ mt: 0.5, pl: 1 }} alignItems="center" flexWrap="wrap">
-                                                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
-                                                                        {formatTimeAgo(reply.created_at)}
-                                                                    </Typography>
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        onClick={() => handleLikeComment(reply._id, true, comment._id)}
-                                                                        sx={{
-                                                                            p: 0.25,
-                                                                            color: reply.liked ? 'error.main' : 'text.secondary',
-                                                                            '&:hover': { color: 'error.main' },
-                                                                        }}
-                                                                    >
-                                                                        {reply.liked ? (
-                                                                            <FavoriteIcon sx={{ fontSize: '0.75rem' }} />
-                                                                        ) : (
-                                                                            <FavoriteBorderIcon sx={{ fontSize: '0.75rem' }} />
-                                                                        )}
-                                                                    </IconButton>
-                                                                    {(reply.likes_count || 0) > 0 && (
-                                                                        <Typography
-                                                                            variant="caption"
-                                                                            color={reply.liked ? 'error.main' : 'text.secondary'}
-                                                                            fontWeight={600}
-                                                                            sx={{ ml: -1, fontSize: '0.6875rem' }}
-                                                                        >
-                                                                            {reply.likes_count}
-                                                                        </Typography>
-                                                                    )}
-                                                                    {viewerIsModerator && reply.moderation_status === 'pending' && (
-                                                                        <Button
-                                                                            size="small"
-                                                                            variant="outlined"
-                                                                            color="primary"
-                                                                            onClick={() => handleApproveComment(reply._id, true, comment._id)}
-                                                                            disabled={approvingId === reply._id}
-                                                                            sx={{
-                                                                                p: 0,
-                                                                                minWidth: 'auto',
-                                                                                fontSize: '0.6875rem',
-                                                                                fontWeight: 600,
-                                                                                textTransform: 'none',
-                                                                            }}
-                                                                        >
-                                                                            {approvingId === reply._id ? <CircularProgress size={12} /> : 'Aprovar'}
-                                                                        </Button>
-                                                                    )}
-                                                                    {isMyComment(reply.author.id) && (
-                                                                        <>
-                                                                            <Button
-                                                                                size="small"
-                                                                                onClick={() =>
-                                                                                    handleStartEdit(
-                                                                                        reply._id,
-                                                                                        reply.content,
-                                                                                        true,
-                                                                                        comment._id
-                                                                                    )
-                                                                                }
-                                                                                disabled={!!editingComment}
-                                                                                sx={{
-                                                                                    p: 0,
-                                                                                    minWidth: 'auto',
-                                                                                    fontSize: '0.6875rem',
-                                                                                    fontWeight: 600,
-                                                                                    textTransform: 'none',
-                                                                                }}
-                                                                            >
-                                                                                Editar
-                                                                            </Button>
-                                                                            <Button
-                                                                                size="small"
-                                                                                color="error"
-                                                                                onClick={() => handleDeleteCommentClick(reply._id, true, comment._id)}
-                                                                                sx={{
-                                                                                    p: 0,
-                                                                                    minWidth: 'auto',
-                                                                                    fontSize: '0.6875rem',
-                                                                                    fontWeight: 600,
-                                                                                    textTransform: 'none',
-                                                                                }}
-                                                                            >
-                                                                                Excluir
-                                                                            </Button>
-                                                                        </>
-                                                                    )}
-                                                                    {viewerIsModerator && !isMyComment(reply.author.id) && (
-                                                                        <Button
-                                                                            size="small"
-                                                                            onClick={() => handleOpenPrivateMessage(reply.author.id)}
-                                                                            sx={{
-                                                                                p: 0,
-                                                                                minWidth: 'auto',
-                                                                                fontSize: '0.6875rem',
-                                                                                fontWeight: 600,
-                                                                                textTransform: 'none',
-                                                                                display: 'inline-flex',
-                                                                                alignItems: 'center',
-                                                                                gap: 0.25,
-                                                                            }}
-                                                                        >
-                                                                            <MailOutlineIcon sx={{ fontSize: '0.75rem' }} />
-                                                                            Mensagem privada
-                                                                        </Button>
-                                                                    )}
-                                                                    {viewerIsModerator && !isMyComment(reply.author.id) && (
-                                                                        <Button
-                                                                            size="small"
-                                                                            color="error"
-                                                                            onClick={() => handleDeleteCommentClick(reply._id, true, comment._id)}
-                                                                            sx={{
-                                                                                p: 0,
-                                                                                minWidth: 'auto',
-                                                                                fontSize: '0.6875rem',
-                                                                                fontWeight: 600,
-                                                                                textTransform: 'none',
-                                                                            }}
-                                                                        >
-                                                                            Excluir
-                                                                        </Button>
-                                                                    )}
-                                                                </Stack>
-                                                            </Box>
-                                                        </Stack>
-                                                    ))}
+                                                    {comment.replies.map(reply => renderNestedReply(reply, comment._id))}
                                                 </Stack>
                                             )}
                                         </Collapse>

@@ -132,20 +132,27 @@ export async function GET(
             ]
         });
 
-        // Buscar replies (ocultar pendentes para não-moderadores)
-        const commentIds = comments.map((c: any) => c._id);
-        const replies = await Comment.find({
-            parent_id: { $in: commentIds },
-            is_deleted: { $ne: true },
-            ...moderationFilter,
-        })
-            .sort({ created_at: 1 })
-            .populate('author_id', 'first_name last_name avatar_url role is_founding_member')
-            .lean();
+        // Buscar replies em todos os níveis (resposta → resposta → …)
+        let currentParentIds: mongoose.Types.ObjectId[] = comments.map((c: any) => c._id);
+        const allReplyDocs: any[] = [];
+        const maxReplyDepth = 30;
+        for (let d = 0; d < maxReplyDepth && currentParentIds.length > 0; d += 1) {
+            const batch = await Comment.find({
+                parent_id: { $in: currentParentIds },
+                is_deleted: { $ne: true },
+                ...moderationFilter,
+            })
+                .sort({ created_at: 1 })
+                .populate('author_id', 'first_name last_name avatar_url role is_founding_member')
+                .lean();
+            if (batch.length === 0) break;
+            allReplyDocs.push(...batch);
+            currentParentIds = batch.map((r: any) => r._id);
+        }
 
         // Agrupar replies por parent_id
         const repliesByParent: Record<string, any[]> = {};
-        replies.forEach((reply: any) => {
+        allReplyDocs.forEach((reply: any) => {
             const parentId = reply.parent_id.toString();
             if (!repliesByParent[parentId]) {
                 repliesByParent[parentId] = [];
@@ -158,7 +165,7 @@ export async function GET(
         if (currentAccountId) {
             const allCommentIds = [
                 ...comments.map((c: any) => c._id),
-                ...replies.map((r: any) => r._id)
+                ...allReplyDocs.map((r: any) => r._id),
             ];
             const userLikes = await Like.find({
                 user_id: currentAccountId,
@@ -176,7 +183,30 @@ export async function GET(
             return out;
         }
 
-        // Formatar comentários com replies
+        function formatReplyDoc(reply: any): Record<string, unknown> {
+            const replyAuthor = reply.author_id;
+            const children = (repliesByParent[reply._id.toString()] || []).map(formatReplyDoc);
+            return {
+                _id: reply._id.toString(),
+                author: {
+                    id: replyAuthor?._id?.toString() || '',
+                    name: replyAuthor ? `${replyAuthor.first_name || ''} ${replyAuthor.last_name || ''}`.trim() : 'Usuário',
+                    avatar_url: replyAuthor?.avatar_url || null,
+                    role: replyAuthor?.role,
+                    is_founding_member: replyAuthor?.is_founding_member === true,
+                },
+                content: reply.content,
+                likes_count: reply.likes_count || 0,
+                liked: userLikedComments.has(reply._id.toString()),
+                replies_count: reply.replies_count || 0,
+                created_at: reply.created_at,
+                mentions: buildMentions(reply.mention_accounts),
+                moderation_status: reply.moderation_status || 'approved',
+                replies: children,
+            };
+        }
+
+        // Formatar comentários com replies (árvore)
         const formattedComments = comments.map((comment: any) => {
             const author = comment.author_id;
             const commentReplies = repliesByParent[comment._id.toString()] || [];
@@ -197,25 +227,7 @@ export async function GET(
                 created_at: comment.created_at,
                 mentions: buildMentions(comment.mention_accounts),
                 moderation_status: comment.moderation_status || 'approved',
-                replies: commentReplies.map((reply: any) => {
-                    const replyAuthor = reply.author_id;
-                    return {
-                        _id: reply._id.toString(),
-                        author: {
-                            id: replyAuthor?._id?.toString() || '',
-                            name: replyAuthor ? `${replyAuthor.first_name || ''} ${replyAuthor.last_name || ''}`.trim() : 'Usuário',
-                            avatar_url: replyAuthor?.avatar_url || null,
-                            role: replyAuthor?.role,
-                            is_founding_member: replyAuthor?.is_founding_member === true,
-                        },
-                        content: reply.content,
-                        likes_count: reply.likes_count || 0,
-                        liked: userLikedComments.has(reply._id.toString()),
-                        created_at: reply.created_at,
-                        mentions: buildMentions(reply.mention_accounts),
-                        moderation_status: reply.moderation_status || 'approved',
-                    };
-                }),
+                replies: commentReplies.map(formatReplyDoc),
             };
         });
 
@@ -386,6 +398,7 @@ export async function POST(
             content: comment.content,
             likes_count: 0,
             replies_count: 0,
+            replies: [] as unknown[],
             created_at: comment.created_at,
             mentions: mentionsMap,
             moderation_status: comment.moderation_status || 'approved',
