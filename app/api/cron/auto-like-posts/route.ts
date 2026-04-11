@@ -18,6 +18,23 @@ const BATCH_LIMIT = 150;
 /** Idade mínima do post (minutos) antes do auto-like, quando `POST_AUTO_LIKE_MIN_AGE_MINUTES` não está definida ou é inválida. */
 const DEFAULT_POST_MIN_AGE_MINUTES = 30;
 
+/**
+ * Só posts criados a partir desta data entram no auto-like (backlog anterior ignora).
+ * Sobrescreva com `POST_AUTO_LIKE_EFFECTIVE_FROM` (ISO 8601), ex.: go-live em produção.
+ */
+const DEFAULT_POST_AUTO_LIKE_EFFECTIVE_FROM_ISO = '2026-04-08T00:00:00.000Z';
+
+function resolveEffectiveFrom(): Date {
+    const raw = process.env.POST_AUTO_LIKE_EFFECTIVE_FROM?.trim();
+    if (raw) {
+        const d = new Date(raw);
+        if (!Number.isNaN(d.getTime())) {
+            return d;
+        }
+    }
+    return new Date(DEFAULT_POST_AUTO_LIKE_EFFECTIVE_FROM_ISO);
+}
+
 function resolveMinAgeMinutes(): number {
     const raw = process.env.POST_AUTO_LIKE_MIN_AGE_MINUTES;
     if (raw === undefined || raw === '') {
@@ -40,7 +57,8 @@ function ageCutoff(): { cutoff: Date; minAgeMinutes: number } {
 }
 
 /**
- * Garante um like do bot em posts publicados já “velhos” o suficiente.
+ * Garante um like do bot em posts publicados já “velhos” o suficiente e criados a partir da data de ativação
+ * (`POST_AUTO_LIKE_EFFECTIVE_FROM` ou padrão no código — posts mais antigos que isso não entram).
  * Cria notificação de like para o autor (igual ao like manual), com falha isolada se o push falhar.
  * Protegido por CRON_SECRET (igual aos outros crons).
  */
@@ -77,6 +95,7 @@ export async function GET(request: Request) {
         }
 
         const { cutoff, minAgeMinutes } = ageCutoff();
+        const effectiveFrom = resolveEffectiveFrom();
 
         const likesCollection = Like.collection.collectionName;
 
@@ -91,7 +110,10 @@ export async function GET(request: Request) {
                 $match: {
                     status: 'published',
                     author_id: { $ne: botObjectId },
-                    created_at: { $lte: cutoff },
+                    created_at: {
+                        $gte: effectiveFrom,
+                        $lte: cutoff,
+                    },
                 },
             },
             {
@@ -123,6 +145,7 @@ export async function GET(request: Request) {
         if (postsToLike.length === 0) {
             return NextResponse.json({
                 message: 'Nenhum post elegível sem like do bot',
+                effectiveFrom: effectiveFrom.toISOString(),
                 cutoff: cutoff.toISOString(),
                 minAgeMinutes,
                 likesCollection,
@@ -165,6 +188,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             message: 'Auto-like concluído',
+            effectiveFrom: effectiveFrom.toISOString(),
             cutoff: cutoff.toISOString(),
             minAgeMinutes,
             likesCollection,
