@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
 import { getPhoneDigitsRange } from '@/components/ui/PhoneInput';
 import { readPhoneDraft, clearPhoneDraft, subscribePhoneDraftChanged } from '@/lib/profile-phone-draft';
+import { CAMPAIGN_14_DAYS_PRODUCT_NAME } from '@/lib/campaign-product';
 
 export interface Account {
     id: string;
@@ -114,16 +114,8 @@ interface AccountContextType {
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
-/** Plano da campanha 14 dias grátis: exceção que libera IA e Vitrine de campanhas na hora (sem esperar 7 dias). */
-const CAMPAIGN_14_DAYS_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
-
-// Rotas que não requerem assinatura ativa
-const PUBLIC_ROUTES = ['/dashboard/assinatura', '/dashboard/perfil'];
-
 export function AccountProvider({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();
-    const router = useRouter();
-    const pathname = usePathname();
     const [account, setAccount] = useState<Account | null>(null);
     const [subscription, setSubscription] = useState<Subscription | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -178,27 +170,6 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
             setIsLoading(false);
         }
     }, [status, fetchAccount]);
-
-    // Redirecionar para página de assinatura se subscription estiver inativa
-    useEffect(() => {
-        if (isLoading || !account) return;
-
-        const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
-        const isDashboardRoute = pathname?.startsWith('/dashboard');
-
-        // Só redireciona se status for explicitamente 'inactive' ou 'expired' e não houver acesso efetivo (graça por idade da conta)
-        const isInactive = subscription?.status === 'inactive' || subscription?.status === 'expired';
-        const hasGrace = account.signup_grace_active === true;
-        const isSubscriptionEffective =
-            subscription?.status === 'active' || hasGrace;
-
-        if (isDashboardRoute && !isPublicRoute && isInactive && !isSubscriptionEffective) {
-            const isCampaignUser = subscription?.product_name === CAMPAIGN_14_DAYS_PRODUCT_NAME;
-            const destination = isCampaignUser ? '/precos' : '/dashboard/assinatura';
-            console.log('🔴 Assinatura inativa - redirecionando para', destination);
-            router.push(destination);
-        }
-    }, [isLoading, account, subscription, pathname, router]);
 
     const refreshAccount = useCallback(async () => {
         await fetchAccount();

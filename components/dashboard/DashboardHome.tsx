@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useAccount } from '@/contexts/AccountContext';
 import { Box, Paper, Grid, Typography, useTheme, alpha } from '@mui/material';
+import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 import {
   Group as GroupIcon,
   Chat as ChatIcon,
@@ -68,6 +69,7 @@ function getCards(): HomeCard[] {
 export function DashboardHome() {
   const theme = useTheme();
   const { account } = useAccount();
+  const { interceptLinkClick } = useDashboardPaywall();
   const firstName = account?.first_name?.trim() || '';
   const greeting = firstName ? `Olá, ${firstName}` : 'Olá';
   const cards = getCards();
@@ -124,6 +126,7 @@ export function DashboardHome() {
             <Paper
               component={Link}
               href={card.href}
+              onClick={(e) => interceptLinkClick(e, card.href)}
               elevation={0}
               sx={{
                 display: 'flex',

@@ -9,14 +9,13 @@ import Account from '@/models/Account';
 import BusinessAccount from '@/models/BusinessAccount';
 import AccountPayment from '@/models/AccountPayment';
 import { CAMPAIGN_TRIAL_MS } from '@/lib/campaign-trial';
+import { CAMPAIGN_14_DAYS_PRODUCT_NAME } from '@/lib/campaign-product';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const FOUNDING_START = new Date('2026-02-23T00:00:00.000Z');
 const FOUNDING_END = new Date('2026-03-09T00:00:00.000Z');
-
-const CAMPAIGN_14_DAYS_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
 
 async function checkFoundingMember(email: string): Promise<boolean> {
     if (!email?.trim()) return false;

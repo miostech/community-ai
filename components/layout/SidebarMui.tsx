@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useAccount } from '@/contexts/AccountContext';
+import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 import { DomeLogo } from '@/components/ui/DomeLogo';
 import {
     Drawer,
@@ -188,6 +189,7 @@ const adminNavItems: NavItem[] = [
 export function SidebarMui() {
     const pathname = usePathname();
     const { account, fullName } = useAccount();
+    const { interceptLinkClick } = useDashboardPaywall();
     const { theme, setTheme, resolvedTheme } = useAppTheme();
     const { openAddToDesktopModal } = useAddToDesktop();
     const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
@@ -246,7 +248,9 @@ export function SidebarMui() {
                         component={Link}
                         href={item.href}
                         selected={isItemSelected}
-                        onClick={() => {
+                        onClick={(e) => {
+                            interceptLinkClick(e, item.href);
+                            if (e.defaultPrevented) return;
                             if (hasChildren && !submenuOpen) {
                                 openSubmenu(item.label);
                             }
@@ -314,6 +318,7 @@ export function SidebarMui() {
                                             component={Link}
                                             href={child.href}
                                             selected={isChildItemActive}
+                                            onClick={(e) => interceptLinkClick(e, child.href)}
                                             sx={{
                                                 borderRadius: 2,
                                                 pl: 6,
@@ -382,7 +387,11 @@ export function SidebarMui() {
                     borderColor: 'divider',
                 }}
             >
-                <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                <Link
+                    href="/dashboard"
+                    onClick={(e) => interceptLinkClick(e, '/dashboard')}
+                    style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+                >
                     <DomeLogo style={{ fontSize: 20, fontWeight: 600 }} />
                 </Link>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -412,6 +421,7 @@ export function SidebarMui() {
                         component={Link}
                         href="/dashboard/perfil"
                         selected={pathname === '/dashboard/perfil'}
+                        onClick={(e) => interceptLinkClick(e, '/dashboard/perfil')}
                         sx={{
                             borderRadius: 2,
                             '&.Mui-selected': {

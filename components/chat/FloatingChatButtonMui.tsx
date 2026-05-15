@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     Fab,
@@ -12,9 +11,11 @@ import {
     Zoom,
 } from '@mui/material';
 import { TextsmsOutlined as ChatIcon } from '@mui/icons-material';
+import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 
 export function FloatingChatButtonMui() {
     const pathname = usePathname();
+    const { requestNavigation } = useDashboardPaywall();
     const [showPulse, setShowPulse] = useState(true);
 
     useEffect(() => {
@@ -58,7 +59,20 @@ export function FloatingChatButtonMui() {
                     placement="left"
                     arrow
                 >
-                    <Link href="/dashboard/chat">
+                    <Box
+                        component="button"
+                        type="button"
+                        onClick={() => requestNavigation('/dashboard/chat')}
+                        sx={{
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            background: 'none',
+                            font: 'inherit',
+                            borderRadius: '50%',
+                        }}
+                        aria-label="Falar com a IA treinada pela Nat e o Luigi"
+                    >
                         <Badge
                             overlap="circular"
                             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -120,7 +134,9 @@ export function FloatingChatButtonMui() {
                                         position: 'relative',
                                         overflow: 'visible',
                                     }}
-                                    aria-label="Falar com a IA treinada pela Nat e o Luigi"
+                                    component="span"
+                                    tabIndex={-1}
+                                    aria-hidden
                                 >
                                     <ChatIcon sx={{ color: 'white', fontSize: { xs: 24, sm: 28 } }} />
 
@@ -146,7 +162,7 @@ export function FloatingChatButtonMui() {
                                 </Fab>
                             </Badge>
                         </Badge>
-                    </Link>
+                    </Box>
                 </Tooltip>
             </Box>
         </Zoom>

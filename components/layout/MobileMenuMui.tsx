@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAccount } from '@/contexts/AccountContext';
+import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 import {
     BottomNavigation,
     BottomNavigationAction,
@@ -63,6 +64,7 @@ const bottomNavItems: NavItem[] = [
 export function MobileMenuMui() {
     const pathname = usePathname();
     const { account } = useAccount();
+    const { interceptLinkClick } = useDashboardPaywall();
     const canAccessAdmin = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
     const isModerator = account?.role === 'moderator';
     const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -159,6 +161,7 @@ export function MobileMenuMui() {
                                 key={item.href}
                                 component={Link}
                                 href={itemHref}
+                                onClick={(e) => interceptLinkClick(e, itemHref)}
                                 icon={
                                     <Box
                                         sx={{
@@ -209,6 +212,7 @@ export function MobileMenuMui() {
                                 key={item.href}
                                 component={Link}
                                 href={itemHref}
+                                onClick={(e) => interceptLinkClick(e, itemHref)}
                                 icon={<SettingsIcon />}
                                 sx={{
                                     opacity: isActive ? 1 : 0.6,
@@ -222,6 +226,7 @@ export function MobileMenuMui() {
                             key={item.href}
                             component={Link}
                             href={itemHref}
+                            onClick={(e) => interceptLinkClick(e, itemHref)}
                             icon={item.icon}
                             sx={{
                                 opacity: isActive ? 1 : 0.6,
@@ -246,7 +251,10 @@ export function MobileMenuMui() {
                     <MenuItem
                         component={Link}
                         href="/dashboard/perfil"
-                        onClick={handleProfileMenuClose}
+                        onClick={(e) => {
+                            interceptLinkClick(e, '/dashboard/perfil');
+                            handleProfileMenuClose();
+                        }}
                         selected={pathname === '/dashboard/perfil'}
                     >
                         <ListItemIcon>
@@ -259,7 +267,10 @@ export function MobileMenuMui() {
                                 key="painel-admin"
                                 component={Link}
                                 href="/dashboard/admin"
-                                onClick={handleProfileMenuClose}
+                                onClick={(e) => {
+                                    interceptLinkClick(e, '/dashboard/admin');
+                                    handleProfileMenuClose();
+                                }}
                                 selected={pathname?.startsWith('/dashboard/admin')}
                             >
                                 <ListItemIcon>
@@ -271,7 +282,10 @@ export function MobileMenuMui() {
                                 key="dm-privada"
                                 component={Link}
                                 href="/dashboard/mensagens"
-                                onClick={handleProfileMenuClose}
+                                onClick={(e) => {
+                                    interceptLinkClick(e, '/dashboard/mensagens');
+                                    handleProfileMenuClose();
+                                }}
                                 selected={pathname?.startsWith('/dashboard/mensagens')}
                             >
                                 <ListItemIcon>
@@ -285,7 +299,10 @@ export function MobileMenuMui() {
                                           key="influenciadores"
                                           component={Link}
                                           href="/dashboard/influenciadores"
-                                          onClick={handleProfileMenuClose}
+                                          onClick={(e) => {
+                                              interceptLinkClick(e, '/dashboard/influenciadores');
+                                              handleProfileMenuClose();
+                                          }}
                                           selected={
                                               pathname === '/dashboard/influenciadores' ||
                                               pathname?.startsWith('/dashboard/influenciadores/')
@@ -300,7 +317,10 @@ export function MobileMenuMui() {
                                           key="apresentacao"
                                           component={Link}
                                           href="/dashboard/influenciadores/apresentacao"
-                                          onClick={handleProfileMenuClose}
+                                          onClick={(e) => {
+                                              interceptLinkClick(e, '/dashboard/influenciadores/apresentacao');
+                                              handleProfileMenuClose();
+                                          }}
                                           selected={pathname?.startsWith('/dashboard/influenciadores/apresentacao')}
                                       >
                                           <ListItemIcon>

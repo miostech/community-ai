@@ -8,6 +8,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useAddToDesktop } from '@/contexts/AddToDesktopContext';
 import { Box, IconButton, Avatar, Stack, Tooltip } from '@mui/material';
 import { DomeLogo } from '@/components/ui/DomeLogo';
+import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 import { NotificationsButtonMui } from '@/components/community/NotificationsButtonMui';
 import { InstallDesktop as InstallDesktopIcon } from '@mui/icons-material';
 
@@ -20,7 +21,8 @@ export function MobileHeaderMui() {
   const { account, fullName } = useAccount();
   const { user } = useUser();
   const { openAddToDesktopModal } = useAddToDesktop();
-  const profileHref = account?.id ? `/dashboard/comunidade/perfil/${account.id}` : '/dashboard/perfil';
+  const { interceptLinkClick } = useDashboardPaywall();
+  const profileHref = '/dashboard/perfil';
   const isActive = pathname === profileHref;
 
   const getInitials = (name: string) => name.charAt(0).toUpperCase();
@@ -45,7 +47,11 @@ export function MobileHeaderMui() {
         pt: 'env(safe-area-inset-top)',
       }}
     >
-      <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+      <Link
+        href="/dashboard"
+        onClick={(e) => interceptLinkClick(e, '/dashboard')}
+        style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+      >
         <DomeLogo style={{ fontSize: 22, fontWeight: 600 }} />
       </Link>
 
@@ -59,6 +65,7 @@ export function MobileHeaderMui() {
         <IconButton
         component={Link}
         href={profileHref}
+        onClick={(e) => interceptLinkClick(e, profileHref)}
         aria-label="Meu perfil"
         sx={{
           p: 0.5,

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 import {
     IconButton,
     Badge,
@@ -128,7 +129,25 @@ function getNotificationIcon(type: NotificationType) {
     }
 }
 
+function getNotificationHref(n: NotificationItem): string {
+    if (n.type === 'new_campaign') return '/dashboard/trabalhos/vitrine';
+    if (n.type === 'subscription_cancel_request') return `/dashboard/comunidade/perfil/${n.actor.id}`;
+    if (n.type === 'story_comment' && n.story_owner_id) {
+        return `/dashboard/comunidade/perfil/${n.story_owner_id}`;
+    }
+    if (n.type === 'dm_new_message') {
+        return n.conversation_id
+            ? `/dashboard/mensagens?conversation=${n.conversation_id}`
+            : '/dashboard/mensagens';
+    }
+    if (n.post_id) {
+        return `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`;
+    }
+    return '#';
+}
+
 export function NotificationsButtonMui() {
+    const { interceptLinkClick } = useDashboardPaywall();
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -231,26 +250,17 @@ export function NotificationsButtonMui() {
                         </Typography>
                     </Box>
                 ) : (
-                    notifications.map((n) => (
+                    notifications.map((n) => {
+                        const itemHref = getNotificationHref(n);
+                        return (
                         <MenuItem
                             key={n.id}
                             component={Link}
-                            href={
-                                n.type === 'new_campaign'
-                                    ? '/dashboard/trabalhos/vitrine'
-                                    : n.type === 'subscription_cancel_request'
-                                        ? `/dashboard/comunidade/perfil/${n.actor.id}`
-                                        : n.type === 'story_comment' && n.story_owner_id
-                                            ? `/dashboard/comunidade/perfil/${n.story_owner_id}`
-                                            : n.type === 'dm_new_message'
-                                                ? (n.conversation_id
-                                                    ? `/dashboard/mensagens?conversation=${n.conversation_id}`
-                                                    : '/dashboard/mensagens')
-                                            : n.post_id
-                                                ? `/dashboard/comunidade/${n.post_id}${n.type === 'moderation' ? '?openComments=1' : ''}`
-                                                : '#'
-                            }
-                            onClick={handleClose}
+                            href={itemHref}
+                            onClick={(e) => {
+                                interceptLinkClick(e, itemHref);
+                                handleClose();
+                            }}
                             sx={{
                                 py: 1.5,
                                 alignItems: 'flex-start',
@@ -328,7 +338,8 @@ export function NotificationsButtonMui() {
                                 }
                             />
                         </MenuItem>
-                    ))
+                        );
+                    })
                 )}
             </Menu>
         </>

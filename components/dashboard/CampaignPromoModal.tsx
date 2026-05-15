@@ -11,8 +11,8 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, LocalOffer as OfferIcon } from '@mui/icons-material';
 import { useAccount } from '@/contexts/AccountContext';
+import { CAMPAIGN_14_DAYS_PRODUCT_NAME } from '@/lib/campaign-product';
 
-const CAMPAIGN_PRODUCT_NAME = 'Dome - Campanha 14 dias grátis';
 const KIWIFY_URL = 'https://pay.kiwify.com.br/tuxuXlK';
 const DELAY_SECONDS = 10;
 
@@ -23,7 +23,7 @@ export function CampaignPromoModal() {
     const [open, setOpen] = useState(false);
     const [dismissing, setDismissing] = useState(false);
 
-    const isCampaignUser = subscription?.product_name === CAMPAIGN_PRODUCT_NAME;
+    const isCampaignUser = subscription?.product_name === CAMPAIGN_14_DAYS_PRODUCT_NAME;
     const isActive = subscription?.status === 'active';
     const alreadyDismissed = Boolean(account?.campaign_promo_dismissed_at);
 
