@@ -10,7 +10,7 @@ import { normalizeBudgetTotalCentsInput } from '@/lib/campaign-budget-total';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET - Listar campanhas ativas (para a vitrine de creators) ou todas (para admin/moderador)
+// GET - Listar campanhas abertas à candidatura na vitrine (creators); admin/marca veem listagens próprias
 export async function GET(request: NextRequest) {
     try {
         const session = await auth();
@@ -30,7 +30,21 @@ export async function GET(request: NextRequest) {
         const statusFilter = searchParams.get('status');
         const skip = (page - 1) * limit;
 
-        let filter: Record<string, unknown> = { status: 'active' };
+        const now = new Date();
+        /** Vitrine (creators): só campanhas em que ainda dá para se candidatar — alinhado a POST …/applications */
+        const vitrineOpenFilter = {
+            status: 'active' as const,
+            $and: [
+                {
+                    $or: [{ application_deadline: null }, { application_deadline: { $gte: now } }],
+                },
+                {
+                    $or: [{ slots_unlimited: true }, { $expr: { $lt: ['$slots_filled', '$slots'] } }],
+                },
+            ],
+        };
+
+        let filter: Record<string, unknown> = vitrineOpenFilter;
 
         if (isBrandView) {
             const authUserId = (session.user as { auth_user_id?: string }).auth_user_id || session.user.id;
