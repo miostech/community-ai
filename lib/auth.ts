@@ -111,19 +111,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: 'Login de teste',
             credentials: {
                 auth_user_id: { label: 'Auth User ID', type: 'text' },
+                email: { label: 'Email', type: 'email' },
             },
             async authorize(credentials) {
                 const authUserId = credentials?.auth_user_id as string | undefined;
-                console.log('🧪 Tentativa de login de teste:', { authUserId });
+                const email = credentials?.email as string | undefined;
+                console.log('🧪 Tentativa de login de teste:', { authUserId, email });
 
-                if (!authUserId) {
-                    console.log('❌ auth_user_id não fornecido');
+                if (!authUserId && !email) {
+                    console.log('❌ auth_user_id ou email não fornecido');
                     return null;
                 }
 
                 try {
                     await connectMongo();
-                    const account = await Account.findOne({ auth_user_id: authUserId });
+                    const account = authUserId
+                        ? await Account.findOne({ auth_user_id: authUserId })
+                        : await Account.findOne({ email: email!.trim().toLowerCase() });
                     console.log('🔍 Conta encontrada:', account ? account._id : 'NÃO ENCONTRADA');
 
                     if (!account) {
@@ -132,7 +136,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     }
 
                     await Account.updateOne(
-                        { auth_user_id: authUserId },
+                        { _id: account._id },
                         { $set: { last_access_at: new Date() } }
                     );
                     return {
@@ -241,7 +245,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (
                 (account?.provider === 'credentials' ||
                     account?.provider === 'kiwify' ||
-                    account?.provider === 'marca-credentials') &&
+                    account?.provider === 'marca-credentials' ||
+                    account?.provider === 'test') &&
                 user &&
                 'auth_user_id' in user &&
                 (user as { auth_user_id?: string }).auth_user_id

@@ -3,7 +3,7 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -14,6 +14,8 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
   const { status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [devEmail, setDevEmail] = useState('');
+  const [devError, setDevError] = useState('');
   const [kiwifyModalOpen, setKiwifyModalOpen] = useState(false);
   const [kiwifyStep, setKiwifyStep] = useState<1 | 2>(1);
   const [kiwifyEmail, setKiwifyEmail] = useState('');
@@ -44,6 +46,27 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
     setKiwifyPassword('');
     setKiwifyHasPassword(false);
     setKiwifyError('');
+  };
+
+  const handleDevImpersonate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDevError('');
+    setIsLoading(true);
+    try {
+      // Limpa sessão e cookies OAuth acumulados antes de impersonar
+      await signOut({ redirect: false });
+      const result = await signIn('test', { email: devEmail.trim().toLowerCase(), redirect: false });
+      if (result?.error) {
+        setDevError('Usuário não encontrado para este email.');
+        setIsLoading(false);
+      } else if (result?.ok) {
+        // Força reload completo para garantir cookies limpos
+        window.location.href = '/dashboard';
+      }
+    } catch {
+      setDevError('Erro ao impersonar. Tente novamente.');
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
@@ -198,6 +221,31 @@ function LoginContent({ messageEmailJaVinculado }: { messageEmailJaVinculado: bo
         </div>
 
         <div className="w-full max-w-md relative z-10">
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-6 rounded-xl border-2 border-dashed border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 p-4">
+              <p className="text-xs font-bold text-yellow-700 dark:text-yellow-400 mb-2">
+                DEV — Impersonar usuário
+              </p>
+              <form onSubmit={handleDevImpersonate} className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="email@usuario.com"
+                  value={devEmail}
+                  onChange={(e) => { setDevEmail(e.target.value); setDevError(''); }}
+                  className="flex-1 text-sm px-3 py-1.5 rounded-lg border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !devEmail}
+                  className="text-sm px-3 py-1.5 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-medium disabled:opacity-50 transition-colors"
+                >
+                  Entrar
+                </button>
+              </form>
+              {devError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{devError}</p>}
+            </div>
+          )}
           <div className="text-center mb-6 sm:mb-8">
             <Link href="/" className="inline-flex items-center mb-3 sm:mb-4">
               <DomeLogo className="text-lg sm:text-xl" />
