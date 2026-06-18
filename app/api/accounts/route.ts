@@ -197,7 +197,8 @@ export async function GET() {
 
         if (lastPayment) {
             const payment = lastPayment as any;
-            if (payment.order_status === 'refunded') {
+            const isActualRefund = ['refunded', 'chargeback'].includes(payment.order_status);
+            if (isActualRefund) {
                 subscriptionStatus = 'inactive';
                 subscriptionExpiresAt = null;
             } else if (payment.subscription?.next_payment) {
@@ -205,7 +206,10 @@ export async function GET() {
                 subscriptionStatus = subscriptionExpiresAt > new Date() ? 'active' : 'expired';
             } else if (
                 payment.order_status === 'paid' &&
-                ['order_approved', 'paid'].includes(payment.webhook_event_type)
+                // subscription_canceled com order_status='paid' mas sem next_payment (raro):
+                // considera ativo para não cortar acesso indevidamente. O webhook agora
+                // garante next_payment, mas documentos legados podem não ter o campo.
+                ['order_approved', 'paid', 'subscription_renewed', 'subscription_canceled'].includes(payment.webhook_event_type)
             ) {
                 subscriptionStatus = 'active';
                 subscriptionExpiresAt = null;

@@ -226,13 +226,29 @@ async function savePaymentRecord(
             }
         }
 
+        // subscription_canceled = a assinatura não vai renovar, mas o pagamento do período corrente
+        // foi aprovado. Se a Kiwify não enviou next_payment, calculamos a partir do start_date +
+        // frequência para que o acesso seja mantido até o fim do período pago.
+        if (eventType === 'subscription_canceled' && !effectiveNextPayment && rawStartDate && subscription?.plan?.frequency) {
+            effectiveNextPayment = addByFrequency(rawStartDate, subscription.plan.frequency);
+        }
+
+        // Para subscription_canceled, o pedido em si foi pago (não reembolsado).
+        // Preservamos 'paid' para que o GET /api/accounts compute acesso até next_payment.
+        // Reembolsos e chargebacks reais chegam via order_refunded/refunded/chargeback.
+        const effectiveOrderStatus =
+            eventType === 'subscription_canceled' &&
+            !['refunded', 'chargeback'].includes(payload.order_status)
+                ? 'paid'
+                : payload.order_status;
+
         const paymentData = {
             email,
 
             // Dados do pedido
             order_id: payload.order_id,
             order_ref: payload.order_ref || '',
-            order_status: payload.order_status,
+            order_status: effectiveOrderStatus,
             webhook_event_type: payload.webhook_event_type,
             product_type: payload.product_type || 'membership',
             payment_method: payload.payment_method,
