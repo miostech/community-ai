@@ -7,6 +7,7 @@ export interface StoryUser {
     name: string;
     avatar: string | null;
     initials: string;
+    role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
     interactionCount: number;
     rankingWins: number;
     /** Timestamp (ms) do story mais recente — usado no feed para borda "não visto". */

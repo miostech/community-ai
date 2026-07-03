@@ -48,7 +48,9 @@ export default function RankingPage() {
       .catch(() => {});
   }, []);
 
-  const userPosition = account?.id ? users.findIndex((u) => u.id === account.id) + 1 : 0;
+  // Criadores nunca aparecem no ranking (mas continuam na barra de stories do feed).
+  const rankedUsers = users.filter((u) => u.role !== 'criador');
+  const userPosition = account?.id ? rankedUsers.findIndex((u) => u.id === account.id) + 1 : 0;
   const userInRanking = account?.id && userPosition > 0;
 
   if (isLoading) {
@@ -67,8 +69,8 @@ export default function RankingPage() {
     );
   }
 
-  const destaque = users[0];
-  const ranking = users.slice(0, 10);
+  const destaque = rankedUsers[0];
+  const ranking = rankedUsers.slice(0, 10);
 
   return (
     <Box

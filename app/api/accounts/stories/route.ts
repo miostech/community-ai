@@ -40,11 +40,12 @@ export async function GET() {
         accountIdsWithStories.forEach((id) => topIds.add(id.toString()));
         const accountIds = Array.from(topIds).map((id) => new mongoose.Types.ObjectId(id));
 
+        // Criadores continuam na barra de stories; a exclusao do ranking e feita no cliente (pagina de ranking).
         const accounts = await AccountModel.find({ _id: { $in: accountIds } })
-            .select('_id first_name last_name email avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at')
+            .select('_id first_name last_name email avatar_url link_instagram link_tiktok link_youtube primary_social_link last_access_at role')
             .lean();
 
-        // 1. Likes dados na semana: só em posts, excluir auto-curtida
+        // 1. Likes dados na semana: so em posts, excluir auto-curtida
         const likesGivenAgg = await Like.aggregate([
             { $match: { user_id: { $in: accountIds }, target_type: 'post', created_at: weekDateFilter } },
             { $lookup: { from: 'posts', localField: 'target_id', foreignField: '_id', as: 'postDoc' } },
@@ -57,7 +58,7 @@ export async function GET() {
             likesGivenMap.set(item._id.toString(), item.count);
         });
 
-        // 2. Likes recebidos na semana: só em posts do usuário, curtidos por outro
+        // 2. Likes recebidos na semana: so em posts do usuario, curtidos por outro
         const likesReceivedAgg = await Like.aggregate([
             { $match: { target_type: 'post', created_at: weekDateFilter } },
             { $lookup: { from: 'posts', localField: 'target_id', foreignField: '_id', as: 'postDoc' } },
@@ -70,7 +71,7 @@ export async function GET() {
             likesReceivedMap.set(item._id.toString(), item.count);
         });
 
-        // 3. Posts criados na semana — separados por categoria (resultado = 4pts, outros = 2pts)
+        // 3. Posts criados na semana - separados por categoria (resultado = 4pts, outros = 2pts)
         const postsCountAgg = await Post.aggregate([
             { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true }, created_at: weekDateFilter } },
             {
@@ -88,7 +89,7 @@ export async function GET() {
             postsOtherMap.set(item._id.toString(), item.otherCount);
         });
 
-        // 4. Comentários na semana: só em posts de outros
+        // 4. Comentarios na semana: so em posts de outros
         const commentsCountAgg = await Comment.aggregate([
             { $match: { author_id: { $in: accountIds }, is_deleted: { $ne: true }, created_at: weekDateFilter } },
             { $lookup: { from: 'posts', localField: 'post_id', foreignField: '_id', as: 'postDoc' } },
@@ -111,7 +112,7 @@ export async function GET() {
             storiesPostedMap.set(item._id.toString(), item.count);
         });
 
-        // 6. Comentários em stories de outros (excluir comentário no próprio story)
+        // 6. Comentarios em stories de outros (excluir comentario no proprio story)
         const storyCommentsAgg = await StoryCommentModel.aggregate([
             { $match: { author_id: { $in: accountIds }, created_at: weekDateFilter } },
             { $lookup: { from: 'stories', localField: 'story_id', foreignField: '_id', as: 'storyDoc' } },
@@ -124,7 +125,7 @@ export async function GET() {
             storyCommentsMap.set(item._id.toString(), item.count);
         });
 
-        // 7. Likes dados em comentários de stories (excluir auto-like no próprio comentário)
+        // 7. Likes dados em comentarios de stories (excluir auto-like no proprio comentario)
         const storyCommentLikesAgg = await StoryCommentModel.aggregate([
             { $match: { created_at: weekDateFilter } },
             { $unwind: '$likes' },
@@ -146,7 +147,7 @@ export async function GET() {
             socialFollowsMap.set(item._id.toString(), item.count);
         });
 
-        // Buscar quantas vezes o #1 atual já venceu (position === 1)
+        // Buscar quantas vezes o #1 atual ja venceu (position === 1)
         const winsAgg = await WeeklyRankingModel.aggregate([
             { $match: { position: 1 } },
             { $group: { _id: '$account_id', totalWins: { $sum: 1 } } },
@@ -156,7 +157,7 @@ export async function GET() {
             winsMap.set(item._id.toString(), item.totalWins);
         });
 
-        // Verificar quais contas têm o último pagamento com status "refunded" (busca por email, pois o webhook não preenche account_id)
+        // Verificar quais contas tem o ultimo pagamento com status "refunded" (busca por email, pois o webhook nao preenche account_id)
         const accountEmails = accounts
             .map((a) => (a as any).email?.toLowerCase?.().trim())
             .filter(Boolean) as string[];
@@ -218,6 +219,7 @@ export async function GET() {
                 name: fullName,
                 avatar: account.avatar_url || null,
                 initials,
+                role: (account as { role?: string }).role || 'user',
                 interactionCount: interactionScore,
                 rankingWins: winsMap.get(accountIdStr) || 0,
                 latestStoryAt: latestStoryAt ? new Date(latestStoryAt).getTime() : undefined,
@@ -247,7 +249,7 @@ export async function GET() {
     } catch (error) {
         console.error('Erro ao buscar accounts para stories:', error);
         return NextResponse.json(
-            { error: 'Erro ao buscar usuários' },
+            { error: 'Erro ao buscar usuarios' },
             { status: 500 }
         );
     }

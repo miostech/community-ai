@@ -29,7 +29,8 @@ export async function GET(request: Request) {
             return NextResponse.json({ message: 'Snapshot already exists for this week', weekStart });
         }
 
-        const accounts = await AccountModel.find({})
+        // Criadores (role 'criador') nunca entram no ranking semanal.
+        const accounts = await AccountModel.find({ role: { $ne: 'criador' } })
             .select('_id first_name last_name email avatar_url')
             .lean();
 
