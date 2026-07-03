@@ -19,14 +19,14 @@ import { AddToDesktopProvider } from '@/contexts/AddToDesktopContext';
 import { MuiProvider } from '@/components/providers/MuiProvider';
 import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
 import { Phone as PhoneIcon, Share as ShareIcon } from '@mui/icons-material';
-import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
+// import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
 import { CampaignPromoModal } from '@/components/dashboard/CampaignPromoModal';
 import { PushServiceWorkerRegistration } from '@/components/push/PushServiceWorkerRegistration';
 import { PushPromptBanner } from '@/components/push/PushPromptBanner';
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { account, hasPhone, isLoading, isSubscriptionActive } = useAccount();
+  const { account, hasPhone, isLoading } = useAccount();
 
   const hasAtLeastOneSocial = Boolean(
     account?.link_instagram?.trim() ||
@@ -34,8 +34,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     account?.link_youtube?.trim()
   );
 
-  // Modal de telefone só aparece se tiver assinatura ativa e não tiver telefone
-  const showPhoneModal = !isLoading && isSubscriptionActive && !hasPhone && pathname !== '/dashboard/perfil';
+  // Modal de telefone aparece para qualquer usuário logado sem telefone (inclusive feed grátis)
+  const showPhoneModal = !isLoading && !hasPhone && pathname !== '/dashboard/perfil';
 
   // Modal de redes sociais: quem já usa a plataforma mas não preencheu nenhuma rede é direcionado ao perfil
   // Não bloquear na página de planos: o usuário precisa poder abrir Meu Perfil pelo header/menu
@@ -114,7 +114,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     pt: isComunidadePage || isChatPage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
                   }}
                 >
-                  {!isComunidadePage && <UpgradeBanner />}
+                  {/* {!isComunidadePage && <UpgradeBanner />} */}
                   {isComunidadePage ? (
                     children
                   ) : isChatPage ? (

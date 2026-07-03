@@ -45,8 +45,8 @@ function DashboardPaywallModal({
             <DialogTitle>Plano necessário</DialogTitle>
             <DialogContent>
                 <Typography variant="body2" color="text.secondary">
-                    Para acessar esta área, é preciso ter um plano ativo. Adquira um plano para usar o feed, chat,
-                    trabalhos e demais recursos da comunidade.
+                    O feed é gratuito, mas esta área faz parte do plano. Adquira um plano para usar o chat com IA,
+                    Top Trends, trabalhos com marcas, cursos e demais recursos da comunidade.
                 </Typography>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>

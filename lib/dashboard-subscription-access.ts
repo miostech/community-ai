@@ -27,7 +27,7 @@ function hasStaffRole(account: Pick<Account, 'role'> | null): boolean {
 }
 
 /**
- * Hub, perfil, assinatura e (para staff) admin/DM/influenciadores ficam sem exigência de plano da comunidade.
+ * Hub, perfil, assinatura, feed da comunidade e (para staff) admin/DM/influenciadores ficam sem exigência de plano da comunidade.
  */
 export function isDashboardRouteAccessibleWithoutSubscription(
     hrefOrPathname: string | null | undefined,
@@ -40,6 +40,8 @@ export function isDashboardRouteAccessibleWithoutSubscription(
     if (p === '/dashboard') return true;
     if (p === '/dashboard/perfil' || p.startsWith('/dashboard/perfil/')) return true;
     if (p === '/dashboard/assinatura' || p.startsWith('/dashboard/assinatura/')) return true;
+    // Feed da comunidade liberado para qualquer cadastrado (modelo freemium).
+    if (p === '/dashboard/comunidade' || p.startsWith('/dashboard/comunidade/')) return true;
 
     if (hasStaffRole(account) && isStaffBypassRoute(p)) return true;
 

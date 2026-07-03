@@ -33,7 +33,8 @@ import { DomeLogo } from '@/components/ui/DomeLogo';
 import { usePosts, Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { useAccount } from '@/contexts/AccountContext';
-import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
+// import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
+import { FreeUpgradeBanner } from '@/components/dashboard/FreeUpgradeBanner';
 
 export default function ComunidadePageMui() {
   const router = useRouter();
@@ -348,8 +349,11 @@ export default function ComunidadePageMui() {
           </Box>
         )}
 
-        {/* Banner de upgrade */}
-        <UpgradeBanner />
+        {/* Banner de upgrade (desativado por enquanto) */}
+        {/* <UpgradeBanner /> */}
+
+        {/* Banner de conversão para usuários sem plano (feed grátis) */}
+        <FreeUpgradeBanner />
 
         {/* Stories (Ranking) */}
         {storyUsers.length > 0 && (
