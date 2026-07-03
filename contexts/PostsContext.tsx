@@ -10,6 +10,7 @@ export interface PostAuthor {
   avatar_url?: string;
   role?: 'user' | 'moderator' | 'admin' | 'criador';
   is_founding_member?: boolean;
+  subscription_active?: boolean;
 }
 
 export interface PostPollOption {

@@ -42,6 +42,8 @@ export interface Account {
     role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
     /** Membro fundador: assinou entre 23/02/2026 e 08/03/2026, sem cancelamento nem reembolso */
     is_founding_member?: boolean;
+    /** Assinatura paga ativa (denormalizado). Atualizado de forma preguiçosa no GET /api/accounts a partir do AccountPayment. Usado para exibir o badge de assinante na comunidade. */
+    subscription_active?: boolean;
     /** Data em que o usuário solicitou o cancelamento da assinatura (apenas registro; cancelamento efetivo é externo). */
     request_cancel_at?: Date;
     /** Geolocalização por IP (atualizada ao entrar na comunidade, no máx. a cada 24h) */
@@ -136,6 +138,7 @@ const AccountSchema = new Schema(
         cached_engagement_score: { type: Number, default: null },
         role: { type: String, enum: ['user', 'moderator', 'admin', 'criador', 'marca'], default: 'user' },
         is_founding_member: { type: Boolean, default: false },
+        subscription_active: { type: Boolean, default: false },
         request_cancel_at: { type: Date },
         geo_country: { type: String, trim: true },
         geo_region: { type: String, trim: true },

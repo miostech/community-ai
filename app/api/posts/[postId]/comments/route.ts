@@ -119,7 +119,7 @@ export async function GET(
             .sort({ created_at: -1 })
             .skip(skip)
             .limit(limit)
-            .populate('author_id', 'first_name last_name avatar_url role is_founding_member')
+            .populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active')
             .lean();
 
         const total = await Comment.countDocuments({
@@ -143,7 +143,7 @@ export async function GET(
                 ...moderationFilter,
             })
                 .sort({ created_at: 1 })
-                .populate('author_id', 'first_name last_name avatar_url role is_founding_member')
+                .populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active')
                 .lean();
             if (batch.length === 0) break;
             allReplyDocs.push(...batch);
@@ -194,6 +194,7 @@ export async function GET(
                     avatar_url: replyAuthor?.avatar_url || null,
                     role: replyAuthor?.role,
                     is_founding_member: replyAuthor?.is_founding_member === true,
+                    subscription_active: replyAuthor?.subscription_active === true,
                 },
                 content: reply.content,
                 likes_count: reply.likes_count || 0,
@@ -219,6 +220,7 @@ export async function GET(
                     avatar_url: author?.avatar_url || null,
                     role: author?.role,
                     is_founding_member: author?.is_founding_member === true,
+                    subscription_active: author?.subscription_active === true,
                 },
                 content: comment.content,
                 likes_count: comment.likes_count || 0,
@@ -379,7 +381,7 @@ export async function POST(
         }
 
         // Popular author para retornar
-        await comment.populate('author_id', 'first_name last_name avatar_url role is_founding_member');
+        await comment.populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active');
 
         const author = comment.author_id as any;
         const mentionsMap: Record<string, string> = {};
@@ -394,6 +396,7 @@ export async function POST(
                 avatar_url: author?.avatar_url || null,
                 role: author?.role,
                 is_founding_member: author?.is_founding_member === true,
+                subscription_active: author?.subscription_active === true,
             },
             content: comment.content,
             likes_count: 0,
@@ -462,7 +465,7 @@ export async function PATCH(
             }
             comment.moderation_status = 'approved';
             await comment.save();
-            await comment.populate('author_id', 'first_name last_name avatar_url role is_founding_member');
+            await comment.populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active');
             const author = comment.author_id as any;
             const mentionsMap: Record<string, string> = {};
             (comment.mention_accounts || []).forEach((m: { handle: string; account_id: mongoose.Types.ObjectId }) => {
@@ -478,6 +481,7 @@ export async function PATCH(
                         avatar_url: author?.avatar_url || null,
                         role: author?.role,
                         is_founding_member: author?.is_founding_member === true,
+                        subscription_active: author?.subscription_active === true,
                     },
                     content: comment.content,
                     likes_count: comment.likes_count || 0,
@@ -512,7 +516,7 @@ export async function PATCH(
         comment.updated_at = new Date();
         await comment.save();
 
-        await comment.populate('author_id', 'first_name last_name avatar_url role is_founding_member');
+        await comment.populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active');
         const author = comment.author_id as any;
         const mentionsMap: Record<string, string> = {};
         (comment.mention_accounts || []).forEach((m: { handle: string; account_id: mongoose.Types.ObjectId }) => {
@@ -529,6 +533,7 @@ export async function PATCH(
                     avatar_url: author?.avatar_url || null,
                     role: author?.role,
                     is_founding_member: author?.is_founding_member === true,
+                    subscription_active: author?.subscription_active === true,
                 },
                 content: comment.content,
                 likes_count: comment.likes_count || 0,

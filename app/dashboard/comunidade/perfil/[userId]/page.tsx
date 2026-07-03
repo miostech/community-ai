@@ -14,6 +14,11 @@ import {
 } from '@/lib/community-users';
 import { useUser } from '@/contexts/UserContext';
 import { useAccount } from '@/contexts/AccountContext';
+import {
+    showSubscriberBadge,
+    SUBSCRIBER_BADGE_LABEL,
+    SUBSCRIBER_BADGE_ICON,
+} from '@/lib/subscriber-badge';
 import { usePosts, type Post } from '@/contexts/PostsContext';
 import { useStories } from '@/contexts/StoriesContext';
 import { ImageCarousel } from '@/components/community/ImageCarousel';
@@ -79,6 +84,7 @@ type ProfileDisplay = CommunityUser | {
   courseIds?: string[];
   role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
   is_founding_member?: boolean;
+  subscription_active?: boolean;
 };
 
 
@@ -464,6 +470,7 @@ export default function PerfilComunidadePage() {
           courseIds: Array.isArray(profile?.courseIds) ? profile.courseIds : undefined,
           role: profile?.role,
           is_founding_member: profile?.is_founding_member === true,
+          subscription_active: profile?.subscription_active === true,
         };
         const mappedPosts = posts.map(mapApiPostToProfilePost);
         setOtherProfileData({ profileUser, posts: mappedPosts });
@@ -505,6 +512,7 @@ export default function PerfilComunidadePage() {
         courseIds: ownCourseIds.length > 0 ? ownCourseIds : undefined,
         role: account?.role,
         is_founding_member: account?.is_founding_member === true,
+        subscription_active: account?.subscription_active === true,
       };
     }
     return resolvedFromList;
@@ -1101,6 +1109,37 @@ export default function PerfilComunidadePage() {
                     <Box
                       component="img"
                       src="/moderador.png"
+                      alt=""
+                      sx={{ width: 20, height: 20, verticalAlign: 'middle', pointerEvents: 'none' }}
+                    />
+                  </Box>
+                </Tooltip>
+              )}
+              {'subscription_active' in profileUser && showSubscriberBadge(profileUser) && (
+                <Tooltip
+                  title={SUBSCRIBER_BADGE_LABEL}
+                  arrow
+                  placement="top"
+                  enterDelay={300}
+                  leaveDelay={0}
+                  enterTouchDelay={0}
+                >
+                  <Box
+                    component="span"
+                    tabIndex={0}
+                    role="img"
+                    aria-label={SUBSCRIBER_BADGE_LABEL}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      cursor: 'help',
+                      outline: 'none',
+                      '&:focus-visible': { opacity: 0.9 },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={SUBSCRIBER_BADGE_ICON}
                       alt=""
                       sx={{ width: 20, height: 20, verticalAlign: 'middle', pointerEvents: 'none' }}
                     />

@@ -34,6 +34,11 @@ import {
 import { ImageCarousel } from './ImageCarousel';
 import { PostContentText } from './PostContentText';
 import { Post } from '@/contexts/PostsContext';
+import {
+    showSubscriberBadge,
+    SUBSCRIBER_BADGE_LABEL,
+    SUBSCRIBER_BADGE_ICON,
+} from '@/lib/subscriber-badge';
 
 type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
 
@@ -386,6 +391,19 @@ export function PostCardMui({
                                     sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
                                 >
                                     <Box component="img" src="/moderador.png" alt="" sx={{ width: 16, height: 16, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                </Box>
+                            </Tooltip>
+                        )}
+                        {showSubscriberBadge(post.author) && (
+                            <Tooltip title={SUBSCRIBER_BADGE_LABEL} arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                <Box
+                                    component="span"
+                                    tabIndex={0}
+                                    role="img"
+                                    aria-label={SUBSCRIBER_BADGE_LABEL}
+                                    sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
+                                >
+                                    <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 16, height: 16, verticalAlign: 'middle', pointerEvents: 'none' }} />
                                 </Box>
                             </Tooltip>
                         )}

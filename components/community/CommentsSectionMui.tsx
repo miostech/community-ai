@@ -40,6 +40,11 @@ import {
     MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 import { useAccount } from '@/contexts/AccountContext';
+import {
+    showSubscriberBadge,
+    SUBSCRIBER_BADGE_LABEL,
+    SUBSCRIBER_BADGE_ICON,
+} from '@/lib/subscriber-badge';
 
 interface CommentAuthor {
     id: string;
@@ -47,6 +52,7 @@ interface CommentAuthor {
     avatar_url?: string;
     role?: 'user' | 'moderator' | 'admin' | 'criador';
     is_founding_member?: boolean;
+    subscription_active?: boolean;
 }
 
 interface Reply {
@@ -802,6 +808,19 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                         </Box>
                                     </Tooltip>
                                 )}
+                                {showSubscriberBadge(reply.author) && (
+                                    <Tooltip title={SUBSCRIBER_BADGE_LABEL} arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                        <Box
+                                            component="span"
+                                            tabIndex={0}
+                                            role="img"
+                                            aria-label={SUBSCRIBER_BADGE_LABEL}
+                                            sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
+                                        >
+                                            <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                        </Box>
+                                    </Tooltip>
+                                )}
                             </Stack>
                             {editingComment?.id === reply._id && editingComment.isReply ? (
                                 <Box sx={{ mt: 0.75 }}>
@@ -1187,6 +1206,13 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                     <Tooltip title="Membro Fundador" arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
                                                         <Box component="span" tabIndex={0} role="img" aria-label="Membro Fundador" sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}>
                                                             <Box component="img" src="/moderador.png" alt="" sx={{ width: 14, height: 14, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                                        </Box>
+                                                    </Tooltip>
+                                                )}
+                                                {showSubscriberBadge(comment.author) && (
+                                                    <Tooltip title={SUBSCRIBER_BADGE_LABEL} arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
+                                                        <Box component="span" tabIndex={0} role="img" aria-label={SUBSCRIBER_BADGE_LABEL} sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}>
+                                                            <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 14, height: 14, verticalAlign: 'middle', pointerEvents: 'none' }} />
                                                         </Box>
                                                     </Tooltip>
                                                 )}

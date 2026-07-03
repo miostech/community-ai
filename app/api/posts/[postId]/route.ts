@@ -21,7 +21,7 @@ export async function GET(
         await connectMongo();
 
         const post = await Post.findById(postId)
-            .populate('author_id', 'first_name last_name avatar_url role')
+            .populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active')
             .lean();
 
         if (!post) {
@@ -37,6 +37,8 @@ export async function GET(
                 name: author ? `${author.first_name || ''} ${author.last_name || ''}`.trim() : 'Usuário',
                 avatar_url: author?.avatar_url || null,
                 role: author?.role,
+                is_founding_member: author?.is_founding_member === true,
+                subscription_active: author?.subscription_active === true,
             },
             content: post.content || '',
             images: post.images || [],

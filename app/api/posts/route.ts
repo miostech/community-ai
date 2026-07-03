@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         await connectMongo();
 
         // Buscar o account do usuário (com role para validar categoria atualização)
-        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id first_name last_name avatar_url role is_founding_member').lean();
+        const account = await Account.findOne({ auth_user_id: authUserId }).select('_id first_name last_name avatar_url role is_founding_member subscription_active').lean();
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
@@ -157,9 +157,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Popular author para retornar dados completos
-        await post.populate('author_id', 'first_name last_name avatar_url role is_founding_member');
+        await post.populate('author_id', 'first_name last_name avatar_url role is_founding_member subscription_active');
 
-        const authorPop = post.author_id as { _id: { toString: () => string }; first_name?: string; last_name?: string; avatar_url?: string; role?: string; is_founding_member?: boolean };
+        const authorPop = post.author_id as { _id: { toString: () => string }; first_name?: string; last_name?: string; avatar_url?: string; role?: string; is_founding_member?: boolean; subscription_active?: boolean };
         return NextResponse.json({
             success: true,
             post: {
@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
                     avatar_url: authorPop?.avatar_url ?? (account as { avatar_url?: string }).avatar_url,
                     role: authorPop?.role,
                     is_founding_member: authorPop?.is_founding_member === true,
+                    subscription_active: authorPop?.subscription_active === true,
                 },
                 content: post.content,
                 images: post.images,
@@ -268,7 +269,7 @@ export async function GET(request: NextRequest) {
                     localField: 'author_id',
                     foreignField: '_id',
                     as: 'author_doc',
-                    pipeline: [{ $project: { first_name: 1, last_name: 1, avatar_url: 1, link_instagram: 1, link_tiktok: 1, link_youtube: 1, role: 1, is_founding_member: 1 } }],
+                    pipeline: [{ $project: { first_name: 1, last_name: 1, avatar_url: 1, link_instagram: 1, link_tiktok: 1, link_youtube: 1, role: 1, is_founding_member: 1, subscription_active: 1 } }],
                 },
             },
             { $unwind: { path: '$author_doc', preserveNullAndEmptyArrays: true } },
@@ -345,6 +346,7 @@ export async function GET(request: NextRequest) {
                 link_youtube: authorDoc(post)?.link_youtube,
                 role: authorDoc(post)?.role,
                 is_founding_member: authorDoc(post)?.is_founding_member === true,
+                subscription_active: authorDoc(post)?.subscription_active === true,
             },
             content: post.content,
             images: post.images,

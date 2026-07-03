@@ -235,6 +235,15 @@ export async function GET() {
             ).catch(() => {});
         }
 
+        // Denormaliza "assinatura ativa" para exibir o badge de assinante na comunidade.
+        const subscriptionActive = subscriptionStatus === 'active';
+        if ((account.subscription_active ?? false) !== subscriptionActive) {
+            Account.collection.updateOne(
+                { _id: account._id },
+                { $set: { subscription_active: subscriptionActive } }
+            ).catch(() => {});
+        }
+
         const business = await BusinessAccount.findOne({ account_id: account._id }).lean();
         const brand_logo_url_merged = business?.brand_logo_url ?? account.brand_logo_url ?? null;
         const brand_description_merged = business?.brand_description ?? account.brand_description ?? null;
@@ -270,6 +279,7 @@ export async function GET() {
                 code_invite: account.code_invite,
                 role: account.role || 'user',
                 is_founding_member: isFoundingMember,
+                subscription_active: subscriptionActive,
                 request_cancel_at: account.request_cancel_at
                     ? new Date(account.request_cancel_at).toISOString()
                     : null,

@@ -26,6 +26,8 @@ export interface Account {
     code_invite: string | null;
     role?: 'user' | 'moderator' | 'admin' | 'criador' | 'marca';
     is_founding_member?: boolean;
+    /** Assinatura paga ativa (denormalizado) — usado para exibir o badge de assinante. */
+    subscription_active?: boolean;
     /** ISO date em que o usuário solicitou o cancelamento da assinatura. */
     request_cancel_at: string | null;
     /** Geolocalização por IP (atualizada ao entrar na comunidade, no máx. a cada 24h) */
