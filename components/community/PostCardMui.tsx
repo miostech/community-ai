@@ -403,7 +403,7 @@ export function PostCardMui({
                                     aria-label={SUBSCRIBER_BADGE_LABEL}
                                     sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
                                 >
-                                    <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 16, height: 16, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                    <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 13, height: 13, verticalAlign: 'middle', pointerEvents: 'none' }} />
                                 </Box>
                             </Tooltip>
                         )}

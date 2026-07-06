@@ -817,7 +817,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                             aria-label={SUBSCRIBER_BADGE_LABEL}
                                             sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}
                                         >
-                                            <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 12, height: 12, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                            <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 10, height: 10, verticalAlign: 'middle', pointerEvents: 'none' }} />
                                         </Box>
                                     </Tooltip>
                                 )}
@@ -1212,7 +1212,7 @@ export function CommentsSectionMui({ postId, isOpen, onClose, onCommentAdded }: 
                                                 {showSubscriberBadge(comment.author) && (
                                                     <Tooltip title={SUBSCRIBER_BADGE_LABEL} arrow placement="top" enterDelay={300} leaveDelay={0} enterTouchDelay={0}>
                                                         <Box component="span" tabIndex={0} role="img" aria-label={SUBSCRIBER_BADGE_LABEL} sx={{ display: 'inline-flex', alignItems: 'center', cursor: 'help', outline: 'none', '&:focus-visible': { opacity: 0.9 } }}>
-                                                            <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 14, height: 14, verticalAlign: 'middle', pointerEvents: 'none' }} />
+                                                            <Box component="img" src={SUBSCRIBER_BADGE_ICON} alt="" sx={{ width: 11, height: 11, verticalAlign: 'middle', pointerEvents: 'none' }} />
                                                         </Box>
                                                     </Tooltip>
                                                 )}

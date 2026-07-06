@@ -1141,7 +1141,7 @@ export default function PerfilComunidadePage() {
                       component="img"
                       src={SUBSCRIBER_BADGE_ICON}
                       alt=""
-                      sx={{ width: 20, height: 20, verticalAlign: 'middle', pointerEvents: 'none' }}
+                      sx={{ width: 16, height: 16, verticalAlign: 'middle', pointerEvents: 'none' }}
                     />
                   </Box>
                 </Tooltip>
