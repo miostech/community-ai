@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
         const description = typeof body.description === 'string' ? body.description.trim() : undefined;
         const cover_image_url = typeof body.cover_image_url === 'string' ? body.cover_image_url.trim() : undefined;
         const scheduled_at = typeof body.scheduled_at === 'string' ? new Date(body.scheduled_at) : undefined;
+        const members_only = body.members_only === true;
 
         const roomId = new mongoose.Types.ObjectId();
         const liveEvent = new LiveEvent({
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
             room_name: `live-${roomId.toString()}`,
             status: 'scheduled',
             scheduled_at,
+            members_only,
         });
 
         await liveEvent.save();

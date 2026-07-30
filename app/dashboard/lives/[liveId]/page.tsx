@@ -112,11 +112,17 @@ export default function LiveRoomPage() {
         }
     }, [liveId]);
 
+    const [membersOnly, setMembersOnly] = useState(false);
+
     const fetchToken = useCallback(async () => {
         try {
             const res = await fetch(`/api/lives/${liveId}/token`, { method: 'POST' });
             if (!res.ok) {
                 const data = await res.json();
+                if (data.error === 'members_only') {
+                    setMembersOnly(true);
+                    return;
+                }
                 setError(data.error || 'Erro ao entrar na live');
                 return;
             }
@@ -149,6 +155,50 @@ export default function LiveRoomPage() {
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 2 }}>
                 <Typography color="error">{error}</Typography>
                 <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
+                    Voltar
+                </Button>
+            </Box>
+        );
+    }
+
+    if (membersOnly && event) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3, px: 2 }}>
+                {event.cover_image_url ? (
+                    <Box
+                        component="img"
+                        src={event.cover_image_url}
+                        alt={event.title}
+                        sx={{ width: '100%', maxWidth: 500, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2, opacity: 0.7 }}
+                    />
+                ) : (
+                    <Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 80, height: 80 }} />
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 20, height: 20 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#f59e0b' }}>
+                        Exclusiva para Premium
+                    </Typography>
+                </Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, textAlign: 'center' }}>
+                    {event.title}
+                </Typography>
+                <Typography color="text.secondary" sx={{ textAlign: 'center', maxWidth: 450 }}>
+                    Esta live é exclusiva para membros Premium. Faça upgrade para assistir e participar de conteúdos exclusivos.
+                </Typography>
+                <Button
+                    variant="contained"
+                    size="large"
+                    onClick={() => router.push('/dashboard/assinatura')}
+                    sx={{
+                        background: 'linear-gradient(135deg, #f59e0b, #f97316)',
+                        fontWeight: 600,
+                        '&:hover': { background: 'linear-gradient(135deg, #d97706, #ea580c)' },
+                    }}
+                >
+                    Fazer upgrade
+                </Button>
+                <Button variant="text" onClick={() => router.push('/dashboard/lives')}>
                     Voltar
                 </Button>
             </Box>

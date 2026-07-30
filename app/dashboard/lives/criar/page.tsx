@@ -13,6 +13,8 @@ import {
     IconButton,
     CircularProgress,
     Alert,
+    FormControlLabel,
+    Switch,
 } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
@@ -29,6 +31,7 @@ export default function CriarLivePage() {
     const [description, setDescription] = useState('');
     const [scheduledAt, setScheduledAt] = useState('');
     const [coverUrl, setCoverUrl] = useState('');
+    const [membersOnly, setMembersOnly] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -89,6 +92,7 @@ export default function CriarLivePage() {
             if (description.trim()) body.description = description.trim();
             if (scheduledAt) body.scheduled_at = new Date(scheduledAt).toISOString();
             if (coverUrl) body.cover_image_url = coverUrl;
+            if (membersOnly) body.members_only = true;
 
             const res = await fetch('/api/lives', {
                 method: 'POST',
@@ -182,7 +186,19 @@ export default function CriarLivePage() {
                     onChange={(e) => setScheduledAt(e.target.value)}
                     fullWidth
                     slotProps={{ inputLabel: { shrink: true } }}
-                    sx={{ mb: 4 }}
+                    sx={{ mb: 3 }}
+                />
+
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={membersOnly}
+                            onChange={(e) => setMembersOnly(e.target.checked)}
+                            color="warning"
+                        />
+                    }
+                    label="Exclusiva para membros Premium"
+                    sx={{ mb: 3 }}
                 />
 
                 <Box sx={{ mb: 4 }}>

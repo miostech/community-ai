@@ -56,12 +56,12 @@ export async function GET(
             poll_options: (post as { poll_options?: { text: string; votes_count: number }[] }).poll_options ?? null,
             poll_vote_index: null as number | null,
             live_event_id: (post as any).live_event_id?.toString() || null,
-            live_event: null as { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string } | null,
+            live_event: null as { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string; members_only?: boolean } | null,
         };
 
         // Buscar dados da live vinculada
         if ((post as any).live_event_id) {
-            const le = await LiveEvent.findById((post as any).live_event_id).select('status reservations scheduled_at').lean() as any;
+            const le = await LiveEvent.findById((post as any).live_event_id).select('status reservations scheduled_at members_only').lean() as any;
             if (le) {
                 const reservations: any[] = le.reservations || [];
                 formattedPost.live_event = {
@@ -69,6 +69,7 @@ export async function GET(
                     reservations_count: reservations.length,
                     user_reserved: false,
                     scheduled_at: le.scheduled_at?.toISOString?.() || undefined,
+                    members_only: le.members_only === true,
                 };
             }
         }

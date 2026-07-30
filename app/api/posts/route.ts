@@ -337,10 +337,10 @@ export async function GET(request: NextRequest) {
 
         // Buscar dados de lives vinculadas (reservas)
         const livePostIds = posts.filter((p: any) => p.live_event_id).map((p: any) => p.live_event_id);
-        const liveEventsMap = new Map<string, { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string }>();
+        const liveEventsMap = new Map<string, { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string; members_only?: boolean }>();
         if (livePostIds.length > 0) {
             const liveEvents = await LiveEvent.find({ _id: { $in: livePostIds } })
-                .select('_id status reservations scheduled_at')
+                .select('_id status reservations scheduled_at members_only')
                 .lean();
             for (const le of liveEvents) {
                 const leAny = le as any;
@@ -350,6 +350,7 @@ export async function GET(request: NextRequest) {
                     reservations_count: reservations.length,
                     user_reserved: currentAccount ? reservations.some((r: any) => r.toString() === (currentAccount as any)._id.toString()) : false,
                     scheduled_at: leAny.scheduled_at?.toISOString?.() || undefined,
+                    members_only: leAny.members_only === true,
                 });
             }
         }

@@ -23,6 +23,7 @@ export interface PostLiveEvent {
   reservations_count: number;
   user_reserved: boolean;
   scheduled_at?: string;
+  members_only?: boolean;
 }
 
 export interface Post {

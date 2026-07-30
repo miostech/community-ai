@@ -448,6 +448,7 @@ export default function ComunidadePageMui() {
                 isTogglingPin={togglingPinPostId === post.id}
                 videoReloadTrigger={videoReloadTrigger}
                 onVotePoll={(optionIndex) => votePoll(post.id, optionIndex)}
+                isSubscriptionActive={isSubscriptionActive}
               />
             ))
           )}

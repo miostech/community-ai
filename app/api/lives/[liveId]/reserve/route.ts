@@ -27,8 +27,8 @@ export async function POST(
         await connectMongo();
 
         const account = await Account.findOne({ auth_user_id: authUserId })
-            .select('_id')
-            .lean() as { _id: mongoose.Types.ObjectId } | null;
+            .select('_id role subscription_active')
+            .lean() as { _id: mongoose.Types.ObjectId; role?: string; subscription_active?: boolean } | null;
 
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
@@ -41,6 +41,13 @@ export async function POST(
 
         if (event.status === 'ended' || event.status === 'cancelled') {
             return NextResponse.json({ error: 'Esta live já foi encerrada' }, { status: 400 });
+        }
+
+        if (event.members_only && !account.subscription_active) {
+            const staffRoles = ['moderator', 'admin', 'criador'];
+            if (!staffRoles.includes(account.role || '')) {
+                return NextResponse.json({ error: 'members_only' }, { status: 403 });
+            }
         }
 
         if (!event.reservations) event.reservations = [] as any;

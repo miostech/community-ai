@@ -90,6 +90,8 @@ interface PostCardMuiProps {
     videoReloadTrigger?: number;
     /** Callback ao votar na enquete (optionIndex 0-based) */
     onVotePoll?: (optionIndex: number) => void;
+    /** Se o usuário logado tem assinatura ativa */
+    isSubscriptionActive?: boolean;
 }
 
 export function PostCardMui({
@@ -109,6 +111,7 @@ export function PostCardMui({
     isTogglingPin = false,
     videoReloadTrigger = 0,
     onVotePoll,
+    isSubscriptionActive = false,
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [isVotingPoll, setIsVotingPoll] = useState(false);
@@ -465,6 +468,14 @@ export function PostCardMui({
                                 <Typography variant="subtitle2" fontWeight={700} color={post.live_event.status === 'live' ? 'error.main' : 'primary.main'}>
                                     {post.live_event.status === 'live' ? 'AO VIVO AGORA' : 'LIVE'}
                                 </Typography>
+                                {post.live_event.members_only && (
+                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                        <Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 16, height: 16 }} />
+                                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.7rem' }}>
+                                            Premium
+                                        </Typography>
+                                    </Stack>
+                                )}
                             </Stack>
                             {liveReservationsCount > 0 && (
                                 <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -474,17 +485,51 @@ export function PostCardMui({
                                     </Typography>
                                 </Stack>
                             )}
-                            <Stack direction="row" spacing={1}>
+                            <Stack direction="row" spacing={1} alignItems="center">
                                 {post.live_event.status === 'live' ? (
+                                    post.live_event.members_only && !isSubscriptionActive ? (
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            startIcon={<Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 18, height: 18 }} />}
+                                            href="/dashboard/assinatura"
+                                            sx={{
+                                                fontWeight: 600,
+                                                textTransform: 'none',
+                                                borderRadius: 2,
+                                                background: 'linear-gradient(135deg, #f59e0b, #f97316)',
+                                                '&:hover': { background: 'linear-gradient(135deg, #d97706, #ea580c)' },
+                                            }}
+                                        >
+                                            Seja Premium para assistir
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="contained"
+                                            color="error"
+                                            size="small"
+                                            startIcon={<VideocamIcon />}
+                                            href={`/dashboard/lives/${post.live_event_id}`}
+                                            sx={{ fontWeight: 600, textTransform: 'none', borderRadius: 2 }}
+                                        >
+                                            Assistir agora
+                                        </Button>
+                                    )
+                                ) : post.live_event.members_only && !isSubscriptionActive ? (
                                     <Button
                                         variant="contained"
-                                        color="error"
                                         size="small"
-                                        startIcon={<VideocamIcon />}
-                                        href={`/dashboard/lives/${post.live_event_id}`}
-                                        sx={{ fontWeight: 600, textTransform: 'none', borderRadius: 2 }}
+                                        startIcon={<Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 18, height: 18 }} />}
+                                        href="/dashboard/assinatura"
+                                        sx={{
+                                            fontWeight: 600,
+                                            textTransform: 'none',
+                                            borderRadius: 2,
+                                            background: 'linear-gradient(135deg, #f59e0b, #f97316)',
+                                            '&:hover': { background: 'linear-gradient(135deg, #d97706, #ea580c)' },
+                                        }}
                                     >
-                                        Assistir agora
+                                        Seja Premium para reservar
                                     </Button>
                                 ) : (
                                     <>

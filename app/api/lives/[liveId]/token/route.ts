@@ -31,13 +31,14 @@ export async function POST(
         await connectMongo();
 
         const account = await Account.findOne({ auth_user_id: authUserId })
-            .select('_id first_name last_name avatar_url role')
+            .select('_id first_name last_name avatar_url role subscription_active')
             .lean() as {
                 _id: mongoose.Types.ObjectId;
                 first_name?: string;
                 last_name?: string;
                 avatar_url?: string;
                 role?: string;
+                subscription_active?: boolean;
             } | null;
 
         if (!account) {
@@ -51,6 +52,14 @@ export async function POST(
 
         if (event.status === 'ended' || event.status === 'cancelled') {
             return NextResponse.json({ error: 'Esta live já foi encerrada' }, { status: 400 });
+        }
+
+        const isCreator = event.creator_id.toString() === account._id.toString();
+        if (event.members_only && !account.subscription_active && !isCreator) {
+            const staffRoles = ['moderator', 'admin', 'criador'];
+            if (!staffRoles.includes(account.role || '')) {
+                return NextResponse.json({ error: 'members_only' }, { status: 403 });
+            }
         }
 
         if (event.status === 'live' && event.started_at) {

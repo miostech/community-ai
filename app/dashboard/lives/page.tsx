@@ -51,6 +51,7 @@ interface LiveEvent {
     max_viewer_count: number;
     creator: LiveEventCreator | null;
     recording_url?: string;
+    members_only?: boolean;
     created_at: string;
 }
 
@@ -244,6 +245,14 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                                 <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }} noWrap>
                                     {event.title}
                                 </Typography>
+                                {event.members_only && (
+                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                        <Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 16, height: 16 }} />
+                                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.7rem' }}>
+                                            Premium
+                                        </Typography>
+                                    </Stack>
+                                )}
                                 {isLive && (
                                     <Chip
                                         icon={<DotIcon sx={{ fontSize: 10, animation: 'pulse 1.5s infinite' }} />}
