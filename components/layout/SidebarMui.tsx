@@ -25,6 +25,7 @@ import {
     Add as AddIcon,
     Chat as ChatIcon,
     TrendingUp as TrendingUpIcon,
+    Videocam as VideocamIcon,
     Group as GroupIcon,
     History as HistoryIcon,
     MenuBook as MenuBookIcon,
@@ -132,7 +133,11 @@ const navItems: NavItem[] = [
     //     href: '/dashboard/trends',
     //     icon: <TrendingUpIcon />,
     // },
-    
+    {
+        label: 'Lives',
+        href: '/dashboard/lives',
+        icon: <VideocamIcon />,
+    },
     {
         label: 'Cursos',
         href: '/dashboard/cursos',

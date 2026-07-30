@@ -129,6 +129,7 @@ export interface SendPushForNotificationParams {
   storyOwnerId?: mongoose.Types.ObjectId | string | null;
   campaignId?: mongoose.Types.ObjectId | string | null;
   conversationId?: mongoose.Types.ObjectId | string | null;
+  liveEventId?: mongoose.Types.ObjectId | string | null;
 }
 
 /**
@@ -148,6 +149,7 @@ export async function sendPushForNotification(
     storyOwnerId: storyOwnerIdParam,
     campaignId,
     conversationId,
+    liveEventId,
   } = params;
 
   await connectMongo();
@@ -234,6 +236,16 @@ export async function sendPushForNotification(
       url = conversationId
         ? `/dashboard/mensagens?conversation=${conversationId.toString()}`
         : '/dashboard/mensagens';
+      break;
+    case 'live_started':
+      title = 'Live ao vivo!';
+      body = contentPreview
+        ? `${actorName} está ao vivo: ${contentPreview.slice(0, 80)}`
+        : `${actorName} está ao vivo na comunidade`;
+      url = liveEventId
+        ? `/dashboard/lives/${liveEventId.toString()}`
+        : '/dashboard/lives';
+      tag = `live-started-${liveEventId}`;
       break;
     default:
       title = 'Nova notificação';

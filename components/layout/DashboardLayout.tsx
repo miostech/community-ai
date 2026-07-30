@@ -50,6 +50,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const isComunidadePage = pathname === '/dashboard/comunidade' || pathname?.startsWith('/dashboard/comunidade/');
   const isCriarPostPage = pathname === '/dashboard/comunidade/criar';
   const isChatPage = pathname === '/dashboard/chat';
+  const isLiveRoomPage = !!(pathname?.match(/^\/dashboard\/lives\/[^/]+$/) && pathname !== '/dashboard/lives/criar');
   const hideBlobs = isComunidadePage || isCriarPostPage;
 
   return (
@@ -102,7 +103,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 )}
 
                 <SidebarMui />
-                {!isComunidadePage && !isChatPage && <MobileHeaderMui />}
+                {!isComunidadePage && !isChatPage && !isLiveRoomPage && <MobileHeaderMui />}
                 <MobileMenuMui />
                 <Box
                   component="main"
@@ -111,14 +112,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                     position: 'relative',
                     zIndex: 10,
                     overflowX: 'hidden',
-                    pt: isComunidadePage || isChatPage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
+                    pt: isComunidadePage || isChatPage || isLiveRoomPage ? 0 : { xs: MOBILE_HEADER_OFFSET, md: 0 },
                   }}
                 >
                   {/* {!isComunidadePage && <UpgradeBanner />} */}
                   {isComunidadePage ? (
                     children
-                  ) : isChatPage ? (
-                    <Box sx={{ px: { xs: 0, md: 0 }, pt: 0, pb: { xs: 12, md: 0 } }}>
+                  ) : isChatPage || isLiveRoomPage ? (
+                    <Box sx={{ px: { xs: 0, md: 0 }, pt: 0, pb: { xs: 0, md: 0 } }}>
                       {children}
                     </Box>
                   ) : (

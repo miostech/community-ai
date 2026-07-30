@@ -30,7 +30,7 @@ import {
     MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started';
 
 export interface NotificationItem {
     id: string;
@@ -48,6 +48,7 @@ export interface NotificationItem {
     story_owner_id?: string;
     campaign_id?: string;
     conversation_id?: string;
+    live_event_id?: string;
     content_preview?: string;
     likes_count?: number;
 }
@@ -97,6 +98,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'publicou um novo post';
         case 'dm_new_message':
             return 'enviou uma mensagem privada';
+        case 'live_started':
+            return 'está ao vivo!';
         default:
             return 'interagiu';
     }
@@ -124,12 +127,16 @@ function getNotificationIcon(type: NotificationType) {
             return <NewPostIcon sx={{ fontSize: 14, color: 'primary.main' }} />;
         case 'dm_new_message':
             return <MailOutlineIcon sx={{ fontSize: 14, color: 'info.main' }} />;
+        case 'live_started':
+            return <CampaignIcon sx={{ fontSize: 14, color: 'error.main' }} />;
         default:
             return null;
     }
 }
 
 function getNotificationHref(n: NotificationItem): string {
+    if (n.type === 'live_started' && n.live_event_id) return `/dashboard/lives/${n.live_event_id}`;
+    if (n.type === 'live_started') return '/dashboard/lives';
     if (n.type === 'new_campaign') return '/dashboard/trabalhos/vitrine';
     if (n.type === 'subscription_cancel_request') return `/dashboard/comunidade/perfil/${n.actor.id}`;
     if (n.type === 'story_comment' && n.story_owner_id) {

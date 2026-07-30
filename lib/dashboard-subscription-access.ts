@@ -42,6 +42,8 @@ export function isDashboardRouteAccessibleWithoutSubscription(
     if (p === '/dashboard/assinatura' || p.startsWith('/dashboard/assinatura/')) return true;
     // Feed da comunidade liberado para qualquer cadastrado (modelo freemium).
     if (p === '/dashboard/comunidade' || p.startsWith('/dashboard/comunidade/')) return true;
+    // Lives acessíveis para todos os usuários.
+    if (p === '/dashboard/lives' || p.startsWith('/dashboard/lives/')) return true;
 
     if (hasStaffRole(account) && isStaffBypassRoute(p)) return true;
 

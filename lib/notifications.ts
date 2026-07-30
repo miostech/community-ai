@@ -11,6 +11,7 @@ interface CreateNotificationParams {
     storyId?: mongoose.Types.ObjectId | string | null;
     campaignId?: mongoose.Types.ObjectId | string | null;
     conversationId?: mongoose.Types.ObjectId | string | null;
+    liveEventId?: mongoose.Types.ObjectId | string | null;
     contentPreview?: string | null;
 }
 
@@ -28,6 +29,7 @@ export async function createNotification({
     storyId,
     campaignId,
     conversationId,
+    liveEventId,
     contentPreview,
 }: CreateNotificationParams): Promise<void> {
     try {
@@ -52,6 +54,9 @@ export async function createNotification({
             campaign_id: campaignId ? new mongoose.Types.ObjectId(campaignId.toString()) : null,
             conversation_id: conversationId
                 ? new mongoose.Types.ObjectId(conversationId.toString())
+                : null,
+            live_event_id: liveEventId
+                ? new mongoose.Types.ObjectId(liveEventId.toString())
                 : null,
             content_preview: contentPreview?.slice(0, 150) || null,
             is_read: false,
@@ -78,6 +83,7 @@ export async function createNotification({
                       story_id: notificationData.story_id,
                       campaign_id: notificationData.campaign_id,
                       conversation_id: notificationData.conversation_id,
+                      live_event_id: notificationData.live_event_id,
                   };
 
         const result = await Notification.findOneAndUpdate(
@@ -107,6 +113,7 @@ export async function createNotification({
             storyId,
             campaignId,
             conversationId,
+            liveEventId,
         }).catch((err) => console.error('Push notification error:', err));
     } catch (error) {
         // Log do erro mas não interrompe o fluxo principal
