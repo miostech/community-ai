@@ -11,6 +11,7 @@ import {
   Work as WorkIcon,
   MenuBook as MenuBookIcon,
   Person as PersonIcon,
+  Videocam as VideocamIcon,
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 
@@ -36,7 +37,13 @@ function getCards(): HomeCard[] {
       href: '/dashboard/trabalhos',
       icon: <WorkIcon />,
     },
-    // Linha 2: Chat com IA e Cursos
+    // Linha 2: Lives e Chat com IA
+    {
+      title: 'Lives',
+      description: 'Assista e participe de lives ao vivo',
+      href: '/dashboard/lives',
+      icon: <VideocamIcon />,
+    },
     {
       title: 'Chat com IA',
       description: 'Tire dúvidas e crie conteúdo com IA',

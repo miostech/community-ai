@@ -28,8 +28,9 @@ export function FloatingChatButtonMui() {
     const isChatPage = pathname === '/dashboard/chat';
     const isPrivateMessagesPage = pathname === '/dashboard/mensagens';
     const isAssinaturaPage = pathname === '/dashboard/assinatura';
+    const isLivePage = pathname?.startsWith('/dashboard/lives');
 
-    if (isChatPage || isPrivateMessagesPage || isAssinaturaPage) {
+    if (isChatPage || isPrivateMessagesPage || isAssinaturaPage || isLivePage) {
         return null;
     }
 

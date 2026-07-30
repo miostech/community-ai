@@ -243,12 +243,12 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                             {creatorName(event.creator).charAt(0)}
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }} noWrap>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, minWidth: 0 }}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3, minWidth: 0, flex: 1 }} noWrap>
                                     {event.title}
                                 </Typography>
                                 {event.members_only && (
-                                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexShrink: 0 }}>
                                         <Box component="img" src="/images/cursos/premium-account.png" alt="" sx={{ width: 16, height: 16 }} />
                                         <Typography variant="caption" sx={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.7rem' }}>
                                             Premium
@@ -262,6 +262,7 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                                         size="small"
                                         color="error"
                                         sx={{
+                                            flexShrink: 0,
                                             fontWeight: 700,
                                             fontSize: '0.7rem',
                                             height: 22,
@@ -291,7 +292,7 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                                     </Box>
                                 )}
                                 {event.status === 'scheduled' && event.scheduled_at && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
                                         <CalendarIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                                         <Typography variant="caption" color="text.secondary">
                                             {formatDate(event.scheduled_at)}
@@ -316,10 +317,10 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                         {event.status === 'scheduled' && event.scheduled_at && (
                             <Chip
                                 icon={<CalendarIcon sx={{ fontSize: 14 }} />}
-                                label={`Inicia ${formatDate(event.scheduled_at)}`}
+                                label={formatDate(event.scheduled_at)}
                                 variant="outlined"
                                 size="small"
-                                sx={{ flexShrink: 0, alignSelf: 'center', fontWeight: 600 }}
+                                sx={{ flexShrink: 0, alignSelf: 'center', fontWeight: 600, display: { xs: 'none', sm: 'flex' } }}
                             />
                         )}
                         {isEnded && event.recording_url && (

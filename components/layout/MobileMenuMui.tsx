@@ -20,11 +20,12 @@ import {
     Group as FeedIcon,
     Add as AddIcon,
     Settings as SettingsIcon,
-    Work as WorkIcon,
+    Videocam as VideocamIcon,
     AdminPanelSettings as AdminIcon,
     PersonSearch as InfluencersIcon,
     Slideshow as PresentationIcon,
     MailOutline as MailOutlineIcon,
+    Work as WorkIcon,
 } from '@mui/icons-material';
 
 interface NavItem {
@@ -50,9 +51,9 @@ const bottomNavItems: NavItem[] = [
         icon: <AddIcon />,
     },
     {
-        label: 'Trabalhos',
-        href: '/dashboard/trabalhos',
-        icon: <WorkIcon />,
+        label: 'Lives',
+        href: '/dashboard/lives',
+        icon: <VideocamIcon />,
     },
     {
         label: 'Perfil',
@@ -103,7 +104,8 @@ export function MobileMenuMui() {
             canAccessAdmin &&
             (pathname?.startsWith('/dashboard/admin') ||
                 pathname?.startsWith('/dashboard/influenciadores') ||
-                pathname?.startsWith('/dashboard/mensagens'))
+                pathname?.startsWith('/dashboard/mensagens') ||
+                pathname?.startsWith('/dashboard/trabalhos'))
         ) {
             const profileIndex = bottomNavItems.findIndex((i) => i.label === 'Perfil');
             return profileIndex >= 0 ? profileIndex : 0;
@@ -193,7 +195,8 @@ export function MobileMenuMui() {
                             isActive ||
                             pathname?.startsWith('/dashboard/admin') ||
                             pathname?.startsWith('/dashboard/influenciadores') ||
-                            pathname?.startsWith('/dashboard/mensagens');
+                            pathname?.startsWith('/dashboard/mensagens') ||
+                            pathname?.startsWith('/dashboard/trabalhos');
                         return (
                             <BottomNavigationAction
                                 key={item.href}
@@ -261,6 +264,20 @@ export function MobileMenuMui() {
                             <SettingsIcon fontSize="small" />
                         </ListItemIcon>
                         <ListItemText>Meu perfil</ListItemText>
+                    </MenuItem>
+                    <MenuItem
+                        component={Link}
+                        href="/dashboard/trabalhos"
+                        onClick={(e) => {
+                            interceptLinkClick(e, '/dashboard/trabalhos');
+                            handleProfileMenuClose();
+                        }}
+                        selected={pathname?.startsWith('/dashboard/trabalhos')}
+                    >
+                        <ListItemIcon>
+                            <WorkIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Trabalhos</ListItemText>
                     </MenuItem>
                     {[
                             <MenuItem
