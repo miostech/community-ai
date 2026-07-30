@@ -17,6 +17,8 @@ import {
     Avatar,
     Fab,
     Stack,
+    IconButton,
+    Tooltip,
 } from '@mui/material';
 import {
     Videocam as VideocamIcon,
@@ -25,6 +27,7 @@ import {
     CalendarToday as CalendarIcon,
     Visibility as ViewersIcon,
     PlayCircleOutline as PlayIcon,
+    Delete as DeleteIcon,
 } from '@mui/icons-material';
 
 interface LiveEventCreator {
@@ -144,13 +147,13 @@ export default function LivesPage() {
                 ) : (
                     <>
                         {liveNow.length > 0 && (
-                            <Section title="Ao Vivo Agora" events={liveNow} router={router} />
+                            <Section title="Ao Vivo Agora" events={liveNow} router={router} accountId={account?.id} accountRole={account?.role} onRefresh={fetchEvents} />
                         )}
                         {scheduled.length > 0 && (
-                            <Section title="Agendadas" events={scheduled} router={router} />
+                            <Section title="Agendadas" events={scheduled} router={router} accountId={account?.id} accountRole={account?.role} onRefresh={fetchEvents} />
                         )}
                         {ended.length > 0 && (
-                            <Section title="Encerradas" events={ended} router={router} />
+                            <Section title="Encerradas" events={ended} router={router} accountId={account?.id} accountRole={account?.role} onRefresh={fetchEvents} />
                         )}
                         {events.length === 0 && (
                             <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -189,10 +192,16 @@ function Section({
     title,
     events,
     router,
+    accountId,
+    accountRole,
+    onRefresh,
 }: {
     title: string;
     events: LiveEvent[];
     router: ReturnType<typeof useRouter>;
+    accountId?: string;
+    accountRole?: string;
+    onRefresh: () => void;
 }) {
     return (
         <Box sx={{ mb: 4, px: 2 }}>
@@ -201,14 +210,20 @@ function Section({
             </Typography>
             <Stack spacing={2}>
                 {events.map((event) => (
-                    <LiveEventCard key={event._id} event={event} onClick={() => router.push(`/dashboard/lives/${event._id}`)} />
+                    <LiveEventCard
+                        key={event._id}
+                        event={event}
+                        onClick={() => router.push(`/dashboard/lives/${event._id}`)}
+                        canDelete={accountRole === 'admin' || event.creator?._id === accountId}
+                        onRefresh={onRefresh}
+                    />
                 ))}
             </Stack>
         </Box>
     );
 }
 
-function LiveEventCard({ event, onClick }: { event: LiveEvent; onClick: () => void }) {
+function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEvent; onClick: () => void; canDelete?: boolean; onRefresh: () => void }) {
     const isLive = event.status === 'live';
     const isEnded = event.status === 'ended';
 
@@ -306,6 +321,26 @@ function LiveEventCard({ event, onClick }: { event: LiveEvent; onClick: () => vo
                     </Box>
                 </CardContent>
             </CardActionArea>
+            {canDelete && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pb: 1 }}>
+                    <Tooltip title="Excluir live">
+                        <IconButton
+                            size="small"
+                            color="error"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!confirm('Tem certeza que deseja excluir esta live?')) return;
+                                try {
+                                    await fetch(`/api/lives/${event._id}`, { method: 'DELETE' });
+                                    onRefresh();
+                                } catch {}
+                            }}
+                        >
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            )}
         </Card>
     );
 }

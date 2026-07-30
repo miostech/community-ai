@@ -8,7 +8,6 @@ import { useDashboardPaywall } from '@/contexts/DashboardPaywallContext';
 import {
   Group as GroupIcon,
   Chat as ChatIcon,
-  TrendingUp as TrendingUpIcon,
   Work as WorkIcon,
   MenuBook as MenuBookIcon,
   Person as PersonIcon,
@@ -49,13 +48,6 @@ function getCards(): HomeCard[] {
       description: 'Aprenda a criar videos virais',
       href: '/dashboard/cursos',
       icon: <MenuBookIcon />,
-    },
-    // Linha 3: Top Trends e Meu perfil
-    {
-      title: 'Top Trends',
-      description: 'Temas em alta para se inspirar',
-      href: '/dashboard/trends',
-      icon: <TrendingUpIcon />,
     },
     {
       title: 'Meu Perfil',

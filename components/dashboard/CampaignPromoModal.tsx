@@ -294,7 +294,7 @@ export function CampaignPromoModal() {
                     </Box>
 
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                    Inclui acesso a IA treinada pela Nat e Luigi, Top Trends e oportunidades com marcas. Quando a oferta terminar, este preço deixará de estar disponível.
+                    Inclui acesso a IA treinada pela Nat e Luigi e oportunidades com marcas. Quando a oferta terminar, este preço deixará de estar disponível.
 
                     </Typography>
 

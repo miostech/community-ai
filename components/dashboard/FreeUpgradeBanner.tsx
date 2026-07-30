@@ -35,7 +35,7 @@ function isDismissedToday(): boolean {
 
 /**
  * Banner de conversão para usuários cadastrados SEM plano ativo (feed grátis).
- * Promove os recursos pagos (chat com IA, Top Trends, trabalhos) com CTA para assinatura.
+ * Promove os recursos pagos (chat com IA, trabalhos) com CTA para assinatura.
  */
 export function FreeUpgradeBanner() {
     const router = useRouter();
@@ -95,7 +95,7 @@ export function FreeUpgradeBanner() {
     };
 
     const message =
-        'Você tem o feed liberado. Desbloqueie o chat com IA, o Top Trends e trabalhos remunerados com marcas.';
+        'Desbloqueie o Premium e acesse o chat com IA treinada pela Nat e pelo Luigi para ajudar você a criar conteúdos.';
 
     return (
         <Box

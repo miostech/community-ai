@@ -45,8 +45,7 @@ function DashboardPaywallModal({
             <DialogTitle>Plano necessário</DialogTitle>
             <DialogContent>
                 <Typography variant="body2" color="text.secondary">
-                    O feed é gratuito, mas esta área faz parte do plano. Adquira um plano para usar o chat com IA,
-                    Top Trends, trabalhos com marcas, cursos e demais recursos da comunidade.
+                    O feed é gratuito, mas esta área faz parte do plano Premium. Desbloqueie o chat com IA treinada pela Nat e pelo Luigi para ajudar você a criar conteúdos.
                 </Typography>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
