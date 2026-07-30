@@ -28,6 +28,7 @@ import {
     Visibility as ViewersIcon,
     PlayCircleOutline as PlayIcon,
     Delete as DeleteIcon,
+    Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 
 interface LiveEventCreator {
@@ -301,9 +302,10 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                                 sx={{ flexShrink: 0, alignSelf: 'center', fontWeight: 600 }}
                             />
                         )}
-                        {event.status === 'scheduled' && (
+                        {event.status === 'scheduled' && event.scheduled_at && (
                             <Chip
-                                label="Entrar"
+                                icon={<CalendarIcon sx={{ fontSize: 14 }} />}
+                                label={`Inicia ${formatDate(event.scheduled_at)}`}
                                 variant="outlined"
                                 size="small"
                                 sx={{ flexShrink: 0, alignSelf: 'center', fontWeight: 600 }}
@@ -322,7 +324,32 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                 </CardContent>
             </CardActionArea>
             {canDelete && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pb: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, px: 1, pb: 1 }}>
+                    {!isEnded && (
+                        <Tooltip title="Notificar todos os usuários sobre esta live">
+                            <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!confirm('Enviar notificação sobre esta live para todos os usuários?')) return;
+                                    try {
+                                        const res = await fetch(`/api/lives/${event._id}/notify`, { method: 'POST' });
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            alert(`Notificação enviada para ${data.notified} usuários!`);
+                                        } else {
+                                            alert('Erro ao enviar notificação.');
+                                        }
+                                    } catch {
+                                        alert('Erro ao enviar notificação.');
+                                    }
+                                }}
+                            >
+                                <NotificationsIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title="Excluir live">
                         <IconButton
                             size="small"

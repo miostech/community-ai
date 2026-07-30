@@ -30,7 +30,12 @@ import {
     Delete as DeleteIcon,
     OpenInNew as OpenInNewIcon,
     PushPin as PushPinIcon,
+    EventAvailable as EventAvailableIcon,
+    CheckCircle as CheckCircleIcon,
+    People as PeopleIcon,
+    Videocam as VideocamIcon,
 } from '@mui/icons-material';
+import Button from '@mui/material/Button';
 import { ImageCarousel } from './ImageCarousel';
 import { PostContentText } from './PostContentText';
 import { Post } from '@/contexts/PostsContext';
@@ -107,6 +112,9 @@ export function PostCardMui({
 }: PostCardMuiProps) {
     const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
     const [isVotingPoll, setIsVotingPoll] = useState(false);
+    const [liveReserved, setLiveReserved] = useState(post.live_event?.user_reserved ?? false);
+    const [liveReservationsCount, setLiveReservationsCount] = useState(post.live_event?.reservations_count ?? 0);
+    const [isReserving, setIsReserving] = useState(false);
     const [isVerticalVideo, setIsVerticalVideo] = useState(false);
     const [videoError, setVideoError] = useState(false);
     const [videoReady, setVideoReady] = useState(false);
@@ -257,14 +265,16 @@ export function PostCardMui({
                             </IconButton>
                         ) : (
                             <Chip
-                                label={categoryLabels[post.category] || 'Geral'}
+                                label={post.live_event_id ? 'Live' : (categoryLabels[post.category] || 'Geral')}
                                 size="small"
                                 sx={{
                                     height: 24,
                                     fontSize: '0.625rem',
                                     fontWeight: 500,
-                                    ...(post.category === 'atualizacao' && {
-                                        background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 50%, #ec4899 100%)',
+                                    ...((post.category === 'atualizacao' || post.live_event_id) && {
+                                        background: post.live_event_id
+                                            ? 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)'
+                                            : 'linear-gradient(135deg, #9333ea 0%, #3b82f6 50%, #ec4899 100%)',
                                         color: '#fff',
                                         fontWeight: 600,
                                         '& .MuiChip-label': { color: '#fff' },
@@ -431,6 +441,98 @@ export function PostCardMui({
                     >
                         <PostContentText content={post.content} />
                     </Typography>
+                </CardContent>
+            )}
+
+            {/* Card de Live - Reservar lugar */}
+            {post.live_event_id && post.live_event && post.live_event.status !== 'ended' && post.live_event.status !== 'cancelled' && (
+                <CardContent sx={{ pt: 0, pb: 1.5 }}>
+                    <Box
+                        sx={{
+                            border: '1px solid',
+                            borderColor: post.live_event.status === 'live' ? 'error.main' : 'primary.main',
+                            borderRadius: 2,
+                            p: 2,
+                            bgcolor: post.live_event.status === 'live' ? 'error.50' : 'primary.50',
+                            background: post.live_event.status === 'live'
+                                ? 'linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)'
+                                : 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(147,51,234,0.02) 100%)',
+                        }}
+                    >
+                        <Stack spacing={1.5}>
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                                <VideocamIcon sx={{ fontSize: 20, color: post.live_event.status === 'live' ? 'error.main' : 'primary.main' }} />
+                                <Typography variant="subtitle2" fontWeight={700} color={post.live_event.status === 'live' ? 'error.main' : 'primary.main'}>
+                                    {post.live_event.status === 'live' ? 'AO VIVO AGORA' : 'LIVE'}
+                                </Typography>
+                            </Stack>
+                            {liveReservationsCount > 0 && (
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <PeopleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                    <Typography variant="caption" color="text.secondary">
+                                        {liveReservationsCount} {liveReservationsCount === 1 ? 'pessoa reservou' : 'pessoas reservaram'}
+                                    </Typography>
+                                </Stack>
+                            )}
+                            <Stack direction="row" spacing={1}>
+                                {post.live_event.status === 'live' ? (
+                                    <Button
+                                        variant="contained"
+                                        color="error"
+                                        size="small"
+                                        startIcon={<VideocamIcon />}
+                                        href={`/dashboard/lives/${post.live_event_id}`}
+                                        sx={{ fontWeight: 600, textTransform: 'none', borderRadius: 2 }}
+                                    >
+                                        Assistir agora
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button
+                                            variant={liveReserved ? 'outlined' : 'contained'}
+                                            size="small"
+                                            startIcon={liveReserved ? <CheckCircleIcon /> : <EventAvailableIcon />}
+                                            disabled={isReserving}
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                setIsReserving(true);
+                                                try {
+                                                    const method = liveReserved ? 'DELETE' : 'POST';
+                                                    const res = await fetch(`/api/lives/${post.live_event_id}/reserve`, { method });
+                                                    if (res.ok) {
+                                                        const data = await res.json();
+                                                        setLiveReserved(data.reserved);
+                                                        setLiveReservationsCount(data.count);
+                                                    }
+                                                } catch {} finally {
+                                                    setIsReserving(false);
+                                                }
+                                            }}
+                                            sx={{
+                                                fontWeight: 600,
+                                                textTransform: 'none',
+                                                borderRadius: 2,
+                                                ...(!liveReserved && {
+                                                    background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                                                    '&:hover': { background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)' },
+                                                }),
+                                            }}
+                                        >
+                                            {liveReserved ? 'Lugar reservado' : 'Reservar lugar'}
+                                        </Button>
+                                        <Button
+                                            variant="text"
+                                            size="small"
+                                            href={`/dashboard/lives/${post.live_event_id}`}
+                                            sx={{ fontWeight: 600, textTransform: 'none', borderRadius: 2 }}
+                                        >
+                                            Ver live
+                                        </Button>
+                                    </>
+                                )}
+                            </Stack>
+                        </Stack>
+                    </Box>
                 </CardContent>
             )}
 

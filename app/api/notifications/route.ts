@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started' | 'live_scheduled';
 
 export interface NotificationItem {
   id: string;

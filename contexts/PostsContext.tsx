@@ -18,6 +18,13 @@ export interface PostPollOption {
   votes_count: number;
 }
 
+export interface PostLiveEvent {
+  status: string;
+  reservations_count: number;
+  user_reserved: boolean;
+  scheduled_at?: string;
+}
+
 export interface Post {
   id: string;
   author: PostAuthor;
@@ -35,6 +42,8 @@ export interface Post {
   poll_question?: string;
   poll_options?: PostPollOption[];
   poll_vote_index?: number | null;
+  live_event_id?: string | null;
+  live_event?: PostLiveEvent | null;
 }
 
 interface PostsContextType {

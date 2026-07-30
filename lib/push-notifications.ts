@@ -247,6 +247,16 @@ export async function sendPushForNotification(
         : '/dashboard/lives';
       tag = `live-started-${liveEventId}`;
       break;
+    case 'live_scheduled':
+      title = 'Nova live agendada!';
+      body = contentPreview
+        ? `${actorName} criou uma live: ${contentPreview.slice(0, 80)}`
+        : `${actorName} agendou uma nova live`;
+      url = liveEventId
+        ? `/dashboard/lives/${liveEventId.toString()}`
+        : '/dashboard/lives';
+      tag = `live-scheduled-${liveEventId}`;
+      break;
     default:
       title = 'Nova notificação';
       body = contentPreview?.slice(0, 100) ?? 'Você tem uma nova notificação';

@@ -30,7 +30,7 @@ import {
     MailOutline as MailOutlineIcon,
 } from '@mui/icons-material';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started' | 'live_scheduled';
 
 export interface NotificationItem {
     id: string;
@@ -100,6 +100,8 @@ function getNotificationLabel(notification: NotificationItem): string {
             return 'enviou uma mensagem privada';
         case 'live_started':
             return 'está ao vivo!';
+        case 'live_scheduled':
+            return 'agendou uma nova live';
         default:
             return 'interagiu';
     }
@@ -129,14 +131,16 @@ function getNotificationIcon(type: NotificationType) {
             return <MailOutlineIcon sx={{ fontSize: 14, color: 'info.main' }} />;
         case 'live_started':
             return <CampaignIcon sx={{ fontSize: 14, color: 'error.main' }} />;
+        case 'live_scheduled':
+            return <CampaignIcon sx={{ fontSize: 14, color: 'primary.main' }} />;
         default:
             return null;
     }
 }
 
 function getNotificationHref(n: NotificationItem): string {
-    if (n.type === 'live_started' && n.live_event_id) return `/dashboard/lives/${n.live_event_id}`;
-    if (n.type === 'live_started') return '/dashboard/lives';
+    if ((n.type === 'live_started' || n.type === 'live_scheduled') && n.live_event_id) return `/dashboard/lives/${n.live_event_id}`;
+    if (n.type === 'live_started' || n.type === 'live_scheduled') return '/dashboard/lives';
     if (n.type === 'new_campaign') return '/dashboard/trabalhos/vitrine';
     if (n.type === 'subscription_cancel_request') return `/dashboard/comunidade/perfil/${n.actor.id}`;
     if (n.type === 'story_comment' && n.story_owner_id) {

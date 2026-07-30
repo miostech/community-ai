@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
 import Account from '@/models/Account';
+import Post from '@/models/Post';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,8 +46,10 @@ export async function GET(request: NextRequest) {
 
         const formatted = events.map((e) => {
             const creator = creatorsMap.get(e.creator_id.toString());
+            const { reservations, ...rest } = e as any;
             return {
-                ...e,
+                ...rest,
+                reservations_count: Array.isArray(reservations) ? reservations.length : 0,
                 creator: creator
                     ? {
                           _id: creator._id,
@@ -126,6 +129,24 @@ export async function POST(request: NextRequest) {
         });
 
         await liveEvent.save();
+
+        const scheduledLabel = scheduled_at
+            ? ` em ${new Date(scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+            : '';
+        const postContent = `📡 **${title}**${scheduledLabel}\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
+
+        const post = new Post({
+            author_id: (account as any)._id,
+            content: postContent,
+            category: 'atualizacao',
+            media_type: 'text',
+            status: 'published',
+            visibility: 'public',
+            is_approved: true,
+            live_event_id: roomId,
+            published_at: new Date(),
+        });
+        await post.save();
 
         return NextResponse.json({ success: true, event: liveEvent.toObject() }, { status: 201 });
     } catch (error) {

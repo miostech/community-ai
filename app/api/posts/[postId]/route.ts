@@ -6,6 +6,7 @@ import Account from '@/models/Account';
 import Like from '@/models/Like';
 import SavedPost from '@/models/SavedPost';
 import PollVote from '@/models/PollVote';
+import LiveEvent from '@/models/LiveEvent';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,7 +55,23 @@ export async function GET(
             poll_question: (post as { poll_question?: string }).poll_question ?? null,
             poll_options: (post as { poll_options?: { text: string; votes_count: number }[] }).poll_options ?? null,
             poll_vote_index: null as number | null,
+            live_event_id: (post as any).live_event_id?.toString() || null,
+            live_event: null as { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string } | null,
         };
+
+        // Buscar dados da live vinculada
+        if ((post as any).live_event_id) {
+            const le = await LiveEvent.findById((post as any).live_event_id).select('status reservations scheduled_at').lean() as any;
+            if (le) {
+                const reservations: any[] = le.reservations || [];
+                formattedPost.live_event = {
+                    status: le.status,
+                    reservations_count: reservations.length,
+                    user_reserved: false,
+                    scheduled_at: le.scheduled_at?.toISOString?.() || undefined,
+                };
+            }
+        }
 
         // Verificar se usuário logado deu like/salvou e votou na enquete
         const session = await auth();
@@ -84,6 +101,12 @@ export async function GET(
                 formattedPost.saved = !!userSaved;
                 if (userPollVote && typeof (userPollVote as { option_index: number }).option_index === 'number') {
                     formattedPost.poll_vote_index = (userPollVote as { option_index: number }).option_index;
+                }
+                if (formattedPost.live_event) {
+                    const le = await LiveEvent.findById((post as any).live_event_id).select('reservations').lean() as any;
+                    if (le) {
+                        formattedPost.live_event.user_reserved = (le.reservations || []).some((r: any) => r.toString() === account._id.toString());
+                    }
                 }
             }
         }

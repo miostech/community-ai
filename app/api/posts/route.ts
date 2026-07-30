@@ -7,6 +7,7 @@ import Account from '@/models/Account';
 import Like from '@/models/Like';
 import SavedPost from '@/models/SavedPost';
 import PollVote from '@/models/PollVote';
+import LiveEvent from '@/models/LiveEvent';
 import { createNotification } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
@@ -294,6 +295,7 @@ export async function GET(request: NextRequest) {
                     published_at: 1,
                     poll_question: 1,
                     poll_options: 1,
+                    live_event_id: 1,
                     author_doc: 1,
                 },
             },
@@ -333,6 +335,25 @@ export async function GET(request: NextRequest) {
             }
         }
 
+        // Buscar dados de lives vinculadas (reservas)
+        const livePostIds = posts.filter((p: any) => p.live_event_id).map((p: any) => p.live_event_id);
+        const liveEventsMap = new Map<string, { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string }>();
+        if (livePostIds.length > 0) {
+            const liveEvents = await LiveEvent.find({ _id: { $in: livePostIds } })
+                .select('_id status reservations scheduled_at')
+                .lean();
+            for (const le of liveEvents) {
+                const leAny = le as any;
+                const reservations: any[] = leAny.reservations || [];
+                liveEventsMap.set(leAny._id.toString(), {
+                    status: leAny.status,
+                    reservations_count: reservations.length,
+                    user_reserved: currentAccount ? reservations.some((r: any) => r.toString() === (currentAccount as any)._id.toString()) : false,
+                    scheduled_at: leAny.scheduled_at?.toISOString?.() || undefined,
+                });
+            }
+        }
+
         // Formatar posts para resposta (author_doc vem da agregação)
         const authorDoc = (post: any) => post.author_doc || post.author_id;
         const formattedPosts = posts.map((post: any) => ({
@@ -368,6 +389,8 @@ export async function GET(request: NextRequest) {
             poll_question: post.poll_question ?? null,
             poll_options: Array.isArray(post.poll_options) ? post.poll_options : null,
             poll_vote_index: post.poll_question ? (userPollVotes[post._id.toString()] ?? null) : null,
+            live_event_id: post.live_event_id?.toString() || null,
+            live_event: post.live_event_id ? (liveEventsMap.get(post.live_event_id.toString()) || null) : null,
         }));
 
         return NextResponse.json({

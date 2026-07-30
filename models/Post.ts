@@ -25,6 +25,9 @@ export interface IPost extends Document {
     tags: string[];
     is_pinned: boolean;
 
+    // Live vinculada (opcional)
+    live_event_id?: Types.ObjectId;
+
     // Enquete (opcional)
     poll_question?: string;
     poll_options?: { text: string; votes_count: number }[];
@@ -145,6 +148,12 @@ const PostSchema = new Schema<IPost>(
             default: false,
         },
 
+        live_event_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'LiveEvent',
+            default: null,
+        },
+
         // Enquete (opcional)
         poll_question: {
             type: String,
@@ -233,8 +242,9 @@ if (process.env.NODE_ENV === 'development' && mongoose.models.Post) {
     const schema = mongoose.models.Post.schema;
     const categoryPath = schema.path('category') as { enumValues?: string[] };
     const hasPoll = schema.paths['poll_question'] != null;
+    const hasLiveEvent = schema.paths['live_event_id'] != null;
     const needsReload =
-        !categoryPath?.enumValues?.includes('atualizacao') || !hasPoll;
+        !categoryPath?.enumValues?.includes('atualizacao') || !hasPoll || !hasLiveEvent;
     if (needsReload) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).Post;
     }

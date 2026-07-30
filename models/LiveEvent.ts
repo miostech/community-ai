@@ -16,6 +16,7 @@ export interface ILiveEvent extends Document {
     viewer_count: number;
     max_viewer_count: number;
     promoted_speakers: Types.ObjectId[];
+    reservations: Types.ObjectId[];
     egress_id?: string;
     recording_url?: string;
     created_at: Date;
@@ -68,6 +69,12 @@ const LiveEventSchema = new Schema<ILiveEvent>(
                 ref: 'Account',
             },
         ],
+        reservations: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Account',
+            },
+        ],
         egress_id: { type: String },
         recording_url: { type: String },
     },
@@ -79,6 +86,13 @@ const LiveEventSchema = new Schema<ILiveEvent>(
 
 LiveEventSchema.index({ status: 1, scheduled_at: -1 });
 LiveEventSchema.index({ creator_id: 1, created_at: -1 });
+
+if (process.env.NODE_ENV === 'development' && mongoose.models.LiveEvent) {
+    const schema = mongoose.models.LiveEvent.schema;
+    if (!schema.paths['reservations']) {
+        delete (mongoose.models as Record<string, mongoose.Model<unknown>>).LiveEvent;
+    }
+}
 
 const LiveEvent: Model<ILiveEvent> =
     mongoose.models.LiveEvent || mongoose.model<ILiveEvent>('LiveEvent', LiveEventSchema);

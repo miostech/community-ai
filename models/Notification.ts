@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started';
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow' | 'mention' | 'moderation' | 'subscription_cancel_request' | 'story_comment' | 'new_campaign' | 'new_post' | 'dm_new_message' | 'live_started' | 'live_scheduled';
 
 export interface INotification extends Document {
     _id: mongoose.Types.ObjectId;
@@ -34,7 +34,7 @@ const NotificationSchema = new Schema<INotification>(
         },
         type: {
             type: String,
-            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment', 'new_campaign', 'new_post', 'dm_new_message', 'live_started'],
+            enum: ['like', 'comment', 'reply', 'follow', 'mention', 'moderation', 'subscription_cancel_request', 'story_comment', 'new_campaign', 'new_post', 'dm_new_message', 'live_started', 'live_scheduled'],
             required: true,
         },
         post_id: {
