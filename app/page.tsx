@@ -277,437 +277,13 @@ export default function Home() {
 
       <Header />
 
-      {/* Hero Section */}
-      <Container
-        maxWidth="md"
-        component="section"
-        sx={{
-          position: 'relative',
-          pt: { xs: 12, sm: 16, md: 20 },
-          pb: { xs: 6, sm: 10, md: 16 },
-        }}
-      >
-        <Stack alignItems="center" spacing={{ xs: 3, sm: 4 }}>
-          {/* Logo + Slogan do Método */}
-          <Stack alignItems="center" spacing={1.5}>
-            <DomeLogo
-              style={{
-                fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-                fontWeight: 700,
-              }}
-            />
-            <Typography
-              variant="overline"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 600,
-                letterSpacing: '0.12em',
-                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
-              }}
-            >
-              Agência de Criação de Conteúdo            </Typography>
-          </Stack>
-
-          {/* Headline */}
-          <Stack spacing={1.5} alignItems="center" sx={{ px: 1 }}>
-            <Typography
-              variant="h1"
-              sx={{
-                fontSize: { xs: '1.875rem', sm: '2.25rem', md: '3rem', lg: '3.75rem' },
-                fontWeight: 700,
-                textAlign: 'center',
-                lineHeight: 1.15,
-                color: 'text.primary',
-              }}
-            >
-              A primeira cúpula de criadores de conteúdo
-            </Typography>
-            <Typography
-              variant="h5"
-              sx={{
-                fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
-                color: 'text.secondary',
-                maxWidth: 720,
-                textAlign: 'center',
-                lineHeight: 1.6,
-                fontWeight: 400,
-                px: { xs: 1, sm: 2 },
-              }}
-            >
-              A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Aqui você troca estratégias com criadores comprometidos e acessa uma IA exclusiva, treinada por eles, para orientar ideias, posicionamento e evolução.
-              <br />
-              Construa autoridade de forma intencional.
-            </Typography>
-          </Stack>
-
-          {/* Main Input */}
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            suppressHydrationWarning
-            sx={{ width: '100%', maxWidth: 720, mt: { xs: 2, sm: 4 }, px: { xs: 1, sm: 0 } }}
-          >
-            <Paper
-              elevation={4}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                p: { xs: 0.5, sm: 0.75 },
-                borderRadius: { xs: 3, sm: 4 },
-                border: 2,
-                borderColor: 'divider',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: alpha(theme.palette.text.secondary, 0.3),
-                },
-                '&:focus-within': {
-                  borderColor: 'primary.main',
-                  boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.15)}`,
-                },
-              }}
-            >
-              <TextField
-                fullWidth
-                variant="standard"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={placeholderText || 'Crie ideias de conteúdo para Instagram'}
-                suppressHydrationWarning
-                InputProps={{
-                  disableUnderline: true,
-                  sx: {
-                    fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
-                    px: { xs: 1.5, sm: 3 },
-                    py: { xs: 1.5, sm: 2 },
-                  },
-                }}
-              />
-              <IconButton
-                type="submit"
-                sx={{
-                  width: { xs: 40, sm: 48 },
-                  height: { xs: 40, sm: 48 },
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  borderRadius: { xs: 2, sm: 3 },
-                  mr: 0.5,
-                  flexShrink: 0,
-                  boxShadow: 2,
-                  '&:hover': {
-                    bgcolor: 'primary.dark',
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                <ArrowForwardIcon />
-              </IconButton>
-            </Paper>
-          </Box>
-
-          {/* Suggested Prompts */}
-          <Stack spacing={1} sx={{ mt: 1, width: '100%', maxWidth: 720, px: { xs: 1, sm: 0 } }}>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
-              Sem ideias? Tente uma destas opções:
-            </Typography>
-            <Box sx={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
-              <Box
-                ref={scrollContainerRef}
-                className="animate-scroll"
-                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                {[...suggestedPrompts, ...suggestedPrompts].map((prompt, index) => (
-                  <Chip
-                    key={index}
-                    label={prompt}
-                    variant="outlined"
-                    onClick={() => handlePromptClick(prompt)}
-                    sx={{
-                      borderColor: 'divider',
-                      bgcolor: alpha(theme.palette.text.primary, 0.02),
-                      fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                      height: { xs: 30, sm: 34 },
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      '&:hover': {
-                        bgcolor: alpha(theme.palette.text.primary, 0.06),
-                      },
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>
-          </Stack>
-
-          {/* Social Proof */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1.5}
-            sx={{ mt: { xs: 3, sm: 5, md: 7 } }}
-          >
-            <AvatarGroup
-              max={3}
-              sx={{
-                '& .MuiAvatar-root': {
-                  width: { xs: 32, sm: 40 },
-                  height: { xs: 32, sm: 40 },
-                  border: `2px solid ${theme.palette.background.default}`,
-                  fontSize: 14,
-                },
-              }}
-            >
-              <Avatar sx={{ background: 'linear-gradient(135deg, #60a5fa, #2563eb)' }} />
-              <Avatar sx={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)' }} />
-              <Avatar sx={{ background: 'linear-gradient(135deg, #f472b6, #db2777)' }} />
-            </AvatarGroup>
-            <Box>
-              <Typography variant="body2" fontWeight={600} color="text.primary">
-                +24 mil
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Alunos criando conteúdo
-              </Typography>
-            </Box>
-          </Stack>
-        </Stack>
-      </Container>
-
-      {/* Criadores Section */}
-      <Container
-        maxWidth="md"
-        component="section"
-        id="criadores"
-        sx={{ position: 'relative', pt: { xs: 3, sm: 4 }, pb: { xs: 4, sm: 6 } }}
-      >
-        <Stack alignItems="center" spacing={1.5} sx={{ mb: { xs: 4, sm: 6 } }}>
-          <Typography
-            variant="h3"
-            sx={{
-              fontSize: { xs: '1.5rem', sm: '1.875rem', md: '2.25rem' },
-              fontWeight: 700,
-              textAlign: 'center',
-              color: 'text.primary',
-            }}
-          >
-            Criado por especialistas em conteúdo
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              fontSize: { xs: '1rem', sm: '1.125rem' },
-              color: 'text.secondary',
-              maxWidth: 560,
-              textAlign: 'center',
-            }}
-          >
-            Que já alcançaram mais de 1 milhão de seguidores e estão dispostos a compartilhar seus conhecimentos com você.
-          </Typography>
-        </Stack>
-
-        <Grid container spacing={{ xs: 3, sm: 4 }} sx={{ maxWidth: 900, mx: 'auto' }}>
-          {criadores.map((criador) => (
-            <Grid size={{ xs: 12, md: 6 }} key={criador.nome}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: { xs: 3, sm: 4 },
-                  borderRadius: 3,
-                  textAlign: 'center',
-                  border: 1,
-                  borderColor: 'divider',
-                  backdropFilter: 'blur(12px)',
-                  bgcolor: alpha(theme.palette.background.paper, 0.8),
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    boxShadow: theme.shadows[6],
-                  },
-                }}
-              >
-                <Stack alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
-                  <Box
-                    sx={{
-                      width: { xs: 80, sm: 96 },
-                      height: { xs: 80, sm: 96 },
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: `2px solid ${theme.palette.divider}`,
-                      mb: 0.5,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={criador.foto}
-                      alt={criador.nome}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'block',
-                        objectFit: 'cover',
-                        objectPosition: criador.imgPosition ?? 'center center',
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="h6" fontWeight={700} color="text.primary">
-                    {criador.nome}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {criador.usuario}
-                  </Typography>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <PersonIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                    <Typography variant="body2" fontWeight={600} color="text.primary">
-                      {followersMap[criador.igUser] ?? criador.seguidoresFallback}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      seguidores
-                    </Typography>
-                  </Stack>
-                </Stack>
-
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.7, mb: { xs: 2, sm: 3 } }}
-                >
-                  {criador.descricao}
-                </Typography>
-
-                <Stack direction="row" justifyContent="center" spacing={2}>
-                  <IconButton
-                    component="a"
-                    href={criador.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    sx={{
-                      color: 'text.disabled',
-                      '&:hover': { color: 'primary.main' },
-                    }}
-                  >
-                    <InstagramIcon />
-                  </IconButton>
-                  <IconButton
-                    component="a"
-                    href={criador.tiktok}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    sx={{
-                      color: 'text.disabled',
-                      '&:hover': { color: 'primary.main' },
-                    }}
-                  >
-                    <TikTokIcon />
-                  </IconButton>
-                </Stack>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-
-      {/* Recursos Section */}
-      <Container
-        maxWidth="lg"
-        component="section"
-        id="recursos"
-        sx={{ position: 'relative', py: { xs: 6, sm: 8, md: 10 } }}
-      >
-        <Stack alignItems="center" spacing={1.5} sx={{ mb: { xs: 4, sm: 6, md: 8 } }}>
-          <Typography
-            variant="h3"
-            sx={{
-              fontSize: { xs: '1.5rem', sm: '1.875rem', md: '2.25rem' },
-              fontWeight: 700,
-              textAlign: 'center',
-              color: 'text.primary',
-            }}
-          >
-            Recursos
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              fontSize: { xs: '1rem', sm: '1.125rem' },
-              color: 'text.secondary',
-              maxWidth: 560,
-              textAlign: 'center',
-            }}
-          >
-            Tudo que você precisa para criar conteúdo que converte e gera resultados.
-          </Typography>
-        </Stack>
-
-        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
-          {recursos.map((recurso) => (
-            <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={recurso.title}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: { xs: 2.5, sm: 3 },
-                  borderRadius: 3,
-                  border: 1,
-                  borderColor: 'divider',
-                  backdropFilter: 'blur(12px)',
-                  bgcolor: alpha(theme.palette.background.paper, 0.8),
-                  height: '100%',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    boxShadow: theme.shadows[6],
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    width: { xs: 40, sm: 48 },
-                    height: { xs: 40, sm: 48 },
-                    borderRadius: 3,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mb: { xs: 1.5, sm: 2 },
-                    bgcolor: alpha(
-                      typeof recurso.bgColor === 'string' && recurso.bgColor.includes('.')
-                        ? theme.palette[recurso.color]?.main || recurso.bgColor
-                        : recurso.bgColor,
-                      0.12
-                    ),
-                    color: typeof recurso.bgColor === 'string' && recurso.bgColor.includes('.')
-                      ? `${recurso.color}.main`
-                      : recurso.bgColor,
-                  }}
-                >
-                  {recurso.icon}
-                </Box>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={600}
-                  color="text.primary"
-                  sx={{ mb: 0.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}
-                >
-                  {recurso.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.7, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
-                >
-                  {recurso.description}
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-
-      {/* Para Marcas — Hero */}
+      {/* ===== PARA MARCAS — Hero principal ===== */}
       <Box
         component="section"
         id="marcas"
         sx={{
           position: 'relative',
-          pt: { xs: 8, sm: 10, md: 14 },
+          pt: { xs: 12, sm: 14, md: 18 },
           pb: { xs: 4, sm: 6, md: 8 },
           overflow: 'hidden',
         }}
@@ -1416,6 +992,500 @@ export default function Home() {
           </Stack>
         </Container>
       </Box>
+
+      {/* ===== PARA CRIADORES ===== */}
+      <Container
+        maxWidth="md"
+        component="section"
+        id="criadores"
+        sx={{
+          position: 'relative',
+          pt: { xs: 8, sm: 10, md: 14 },
+          pb: { xs: 4, sm: 6 },
+        }}
+      >
+        <Stack alignItems="center" spacing={{ xs: 3, sm: 4 }}>
+          <Chip
+            label="Para Criadores"
+            sx={{
+              bgcolor: alpha('#ec4899', 0.1),
+              color: '#ec4899',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              letterSpacing: '0.04em',
+              height: 32,
+            }}
+          />
+          <Stack spacing={1.5} alignItems="center" sx={{ px: 1 }}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' },
+                fontWeight: 700,
+                textAlign: 'center',
+                lineHeight: 1.15,
+                color: 'text.primary',
+              }}
+            >
+              A primeira cúpula de{' '}
+              <Box
+                component="span"
+                sx={{
+                  background: 'linear-gradient(135deg, #ec4899, #f59e0b)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                criadores de conteúdo
+              </Box>
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+                color: 'text.secondary',
+                maxWidth: 720,
+                textAlign: 'center',
+                lineHeight: 1.6,
+                fontWeight: 400,
+                px: { xs: 1, sm: 2 },
+              }}
+            >
+              A Dome é uma comunidade exclusiva para criadores que querem crescer com estratégia, consistência e autoridade nas redes. Troque estratégias com criadores comprometidos e acesse uma IA exclusiva, treinada por especialistas, para orientar ideias, posicionamento e evolução.
+            </Typography>
+          </Stack>
+
+          {/* Main Input */}
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            suppressHydrationWarning
+            sx={{ width: '100%', maxWidth: 720, mt: { xs: 2, sm: 4 }, px: { xs: 1, sm: 0 } }}
+          >
+            <Paper
+              elevation={4}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                p: { xs: 0.5, sm: 0.75 },
+                borderRadius: { xs: 3, sm: 4 },
+                border: 2,
+                borderColor: 'divider',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: alpha(theme.palette.text.secondary, 0.3),
+                },
+                '&:focus-within': {
+                  borderColor: 'primary.main',
+                  boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.15)}`,
+                },
+              }}
+            >
+              <TextField
+                fullWidth
+                variant="standard"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={placeholderText || 'Crie ideias de conteúdo para Instagram'}
+                suppressHydrationWarning
+                InputProps={{
+                  disableUnderline: true,
+                  sx: {
+                    fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' },
+                    px: { xs: 1.5, sm: 3 },
+                    py: { xs: 1.5, sm: 2 },
+                  },
+                }}
+              />
+              <IconButton
+                type="submit"
+                sx={{
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  borderRadius: { xs: 2, sm: 3 },
+                  mr: 0.5,
+                  flexShrink: 0,
+                  boxShadow: 2,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                    boxShadow: 4,
+                  },
+                }}
+              >
+                <ArrowForwardIcon />
+              </IconButton>
+            </Paper>
+          </Box>
+
+          {/* Suggested Prompts */}
+          <Stack spacing={1} sx={{ mt: 1, width: '100%', maxWidth: 720, px: { xs: 1, sm: 0 } }}>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              Sem ideias? Tente uma destas opções:
+            </Typography>
+            <Box sx={{ position: 'relative', overflow: 'hidden', width: '100%' }}>
+              <Box
+                ref={scrollContainerRef}
+                className="animate-scroll"
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                {[...suggestedPrompts, ...suggestedPrompts].map((prompt, index) => (
+                  <Chip
+                    key={index}
+                    label={prompt}
+                    variant="outlined"
+                    onClick={() => handlePromptClick(prompt)}
+                    sx={{
+                      borderColor: 'divider',
+                      bgcolor: alpha(theme.palette.text.primary, 0.02),
+                      fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                      height: { xs: 30, sm: 34 },
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.text.primary, 0.06),
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          </Stack>
+
+          {/* Social Proof */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1.5}
+            sx={{ mt: { xs: 3, sm: 5 } }}
+          >
+            <AvatarGroup
+              max={3}
+              sx={{
+                '& .MuiAvatar-root': {
+                  width: { xs: 32, sm: 40 },
+                  height: { xs: 32, sm: 40 },
+                  border: `2px solid ${theme.palette.background.default}`,
+                  fontSize: 14,
+                },
+              }}
+            >
+              <Avatar sx={{ background: 'linear-gradient(135deg, #60a5fa, #2563eb)' }} />
+              <Avatar sx={{ background: 'linear-gradient(135deg, #a78bfa, #7c3aed)' }} />
+              <Avatar sx={{ background: 'linear-gradient(135deg, #f472b6, #db2777)' }} />
+            </AvatarGroup>
+            <Box>
+              <Typography variant="body2" fontWeight={600} color="text.primary">
+                +24 mil
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Alunos criando conteúdo
+              </Typography>
+            </Box>
+          </Stack>
+        </Stack>
+      </Container>
+
+      {/* Criado por especialistas */}
+      <Container
+        maxWidth="md"
+        component="section"
+        sx={{ position: 'relative', pt: { xs: 3, sm: 4 }, pb: { xs: 4, sm: 6 } }}
+      >
+        <Stack alignItems="center" spacing={1.5} sx={{ mb: { xs: 4, sm: 6 } }}>
+          <Typography
+            variant="h3"
+            sx={{
+              fontSize: { xs: '1.5rem', sm: '1.875rem', md: '2.25rem' },
+              fontWeight: 700,
+              textAlign: 'center',
+              color: 'text.primary',
+            }}
+          >
+            Criado por especialistas em conteúdo
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: { xs: '1rem', sm: '1.125rem' },
+              color: 'text.secondary',
+              maxWidth: 560,
+              textAlign: 'center',
+            }}
+          >
+            Que já alcançaram mais de 1 milhão de seguidores e estão dispostos a compartilhar seus conhecimentos com você.
+          </Typography>
+        </Stack>
+
+        <Grid container spacing={{ xs: 3, sm: 4 }} sx={{ maxWidth: 900, mx: 'auto' }}>
+          {criadores.map((criador) => (
+            <Grid size={{ xs: 12, md: 6 }} key={criador.nome}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: { xs: 3, sm: 4 },
+                  borderRadius: 3,
+                  textAlign: 'center',
+                  border: 1,
+                  borderColor: 'divider',
+                  backdropFilter: 'blur(12px)',
+                  bgcolor: alpha(theme.palette.background.paper, 0.8),
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    boxShadow: theme.shadows[6],
+                  },
+                }}
+              >
+                <Stack alignItems="center" spacing={1} sx={{ mb: { xs: 2, sm: 3 } }}>
+                  <Box
+                    sx={{
+                      width: { xs: 80, sm: 96 },
+                      height: { xs: 80, sm: 96 },
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: `2px solid ${theme.palette.divider}`,
+                      mb: 0.5,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src={criador.foto}
+                      alt={criador.nome}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'block',
+                        objectFit: 'cover',
+                        objectPosition: criador.imgPosition ?? 'center center',
+                      }}
+                    />
+                  </Box>
+                  <Typography variant="h6" fontWeight={700} color="text.primary">
+                    {criador.nome}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {criador.usuario}
+                  </Typography>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <PersonIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                    <Typography variant="body2" fontWeight={600} color="text.primary">
+                      {followersMap[criador.igUser] ?? criador.seguidoresFallback}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      seguidores
+                    </Typography>
+                  </Stack>
+                </Stack>
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.7, mb: { xs: 2, sm: 3 } }}
+                >
+                  {criador.descricao}
+                </Typography>
+
+                <Stack direction="row" justifyContent="center" spacing={2}>
+                  <IconButton
+                    component="a"
+                    href={criador.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{
+                      color: 'text.disabled',
+                      '&:hover': { color: 'primary.main' },
+                    }}
+                  >
+                    <InstagramIcon />
+                  </IconButton>
+                  <IconButton
+                    component="a"
+                    href={criador.tiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="small"
+                    sx={{
+                      color: 'text.disabled',
+                      '&:hover': { color: 'primary.main' },
+                    }}
+                  >
+                    <TikTokIcon />
+                  </IconButton>
+                </Stack>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      {/* CTA Criadores */}
+      <Container
+        maxWidth="md"
+        component="section"
+        sx={{ position: 'relative', py: { xs: 4, sm: 6, md: 8 } }}
+      >
+        <Stack alignItems="center">
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 4, sm: 5, md: 6 },
+              borderRadius: 4,
+              border: 1,
+              borderColor: alpha('#ec4899', 0.15),
+              background: `linear-gradient(135deg, ${alpha('#ec4899', 0.05)}, ${alpha('#f59e0b', 0.05)})`,
+              backdropFilter: 'blur(16px)',
+              maxWidth: 760,
+              width: '100%',
+              textAlign: 'center',
+            }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                mb: 1.5,
+                fontSize: { xs: '1.2rem', sm: '1.5rem', md: '1.75rem' },
+                color: 'text.primary',
+              }}
+            >
+              Pronto para crescer como criador?
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: 'text.secondary',
+                mb: 3.5,
+                fontSize: { xs: '0.9rem', sm: '1rem' },
+                lineHeight: 1.7,
+                maxWidth: 560,
+                mx: 'auto',
+              }}
+            >
+              Cadastre-se na Dome e tenha acesso à comunidade, IA exclusiva, campanhas com marcas e tudo que você precisa para evoluir seu conteúdo.
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              component={Link}
+              href="/cadastro"
+              sx={{
+                px: { xs: 4, sm: 5 },
+                py: { xs: 1.2, sm: 1.5 },
+                borderRadius: 3,
+                fontSize: { xs: '0.9rem', sm: '1rem' },
+                fontWeight: 600,
+                textTransform: 'none',
+                background: 'linear-gradient(135deg, #ec4899, #f59e0b)',
+                boxShadow: `0 4px 20px ${alpha('#ec4899', 0.35)}`,
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #db2777, #d97706)',
+                  boxShadow: `0 6px 28px ${alpha('#ec4899', 0.45)}`,
+                },
+              }}
+            >
+              Cadastrar como criador
+            </Button>
+          </Paper>
+        </Stack>
+      </Container>
+
+      {/* ===== RECURSOS ===== */}
+      <Container
+        maxWidth="lg"
+        component="section"
+        id="recursos"
+        sx={{ position: 'relative', py: { xs: 6, sm: 8, md: 10 } }}
+      >
+        <Stack alignItems="center" spacing={1.5} sx={{ mb: { xs: 4, sm: 6, md: 8 } }}>
+          <Typography
+            variant="h3"
+            sx={{
+              fontSize: { xs: '1.5rem', sm: '1.875rem', md: '2.25rem' },
+              fontWeight: 700,
+              textAlign: 'center',
+              color: 'text.primary',
+            }}
+          >
+            Recursos
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontSize: { xs: '1rem', sm: '1.125rem' },
+              color: 'text.secondary',
+              maxWidth: 560,
+              textAlign: 'center',
+            }}
+          >
+            Tudo que você precisa para criar conteúdo que converte e gera resultados.
+          </Typography>
+        </Stack>
+
+        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
+          {recursos.map((recurso) => (
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={recurso.title}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: { xs: 2.5, sm: 3 },
+                  borderRadius: 3,
+                  border: 1,
+                  borderColor: 'divider',
+                  backdropFilter: 'blur(12px)',
+                  bgcolor: alpha(theme.palette.background.paper, 0.8),
+                  height: '100%',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    boxShadow: theme.shadows[6],
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    width: { xs: 40, sm: 48 },
+                    height: { xs: 40, sm: 48 },
+                    borderRadius: 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: { xs: 1.5, sm: 2 },
+                    bgcolor: alpha(
+                      typeof recurso.bgColor === 'string' && recurso.bgColor.includes('.')
+                        ? theme.palette[recurso.color]?.main || recurso.bgColor
+                        : recurso.bgColor,
+                      0.12
+                    ),
+                    color: typeof recurso.bgColor === 'string' && recurso.bgColor.includes('.')
+                      ? `${recurso.color}.main`
+                      : recurso.bgColor,
+                  }}
+                >
+                  {recurso.icon}
+                </Box>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  color="text.primary"
+                  sx={{ mb: 0.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}
+                >
+                  {recurso.title}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.7, fontSize: { xs: '0.75rem', sm: '0.8rem' } }}
+                >
+                  {recurso.description}
+                </Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
 
       <MarcaApresentacaoLeadDialog open={apresentacaoOpen} onClose={() => setApresentacaoOpen(false)} />
     </Box>

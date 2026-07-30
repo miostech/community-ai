@@ -21,26 +21,23 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <Link 
-              href={isHomePage ? "#" : "/"} 
+            <Link
+              href={isHomePage ? "#marcas" : "/#marcas"}
               className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
             >
               Início
             </Link>
-            <Link 
-              href={isHomePage ? "#recursos" : "/#recursos"} 
+            <Link
+              href={isHomePage ? "#criadores" : "/#criadores"}
+              className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
+            >
+              Para Criadores
+            </Link>
+            <Link
+              href={isHomePage ? "#recursos" : "/#recursos"}
               className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
             >
               Recursos
-            </Link>
-            <Link 
-              href={isHomePage ? "#marcas" : "/#marcas"} 
-              className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
-            >
-              Para Marcas
-            </Link>
-            <Link href="/cadastro" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium">
-              Para Criadores
             </Link>
           </nav>
 
