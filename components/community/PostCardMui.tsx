@@ -678,7 +678,7 @@ export function PostCardMui({
                         alt="Post image"
                         sx={{
                             width: '100%',
-                            aspectRatio: '4/5',
+                            aspectRatio: post.live_event_id ? '16/9' : '4/5',
                             maxHeight: 600,
                             objectFit: 'cover',
                             bgcolor: 'action.hover',

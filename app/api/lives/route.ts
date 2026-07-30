@@ -133,13 +133,14 @@ export async function POST(request: NextRequest) {
         const scheduledLabel = scheduled_at
             ? ` em ${new Date(scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
             : '';
-        const postContent = `📡 **${title}**${scheduledLabel}\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
+        const postContent = `‼️ **${title}**${scheduledLabel}\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
 
         const post = new Post({
             author_id: (account as any)._id,
             content: postContent,
             category: 'atualizacao',
-            media_type: 'text',
+            media_type: cover_image_url ? 'image' : 'text',
+            images: cover_image_url ? [cover_image_url] : [],
             status: 'published',
             visibility: 'public',
             is_approved: true,

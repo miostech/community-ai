@@ -59,6 +59,7 @@ interface LiveEventData {
     _id: string;
     title: string;
     description?: string;
+    cover_image_url?: string;
     status: 'scheduled' | 'live' | 'ended' | 'cancelled';
     started_at?: string;
     creator: {
@@ -198,7 +199,16 @@ export default function LiveRoomPage() {
     if (event.status === 'scheduled' && !isHost) {
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 2 }}>
-                <VideocamIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                {event.cover_image_url ? (
+                    <Box
+                        component="img"
+                        src={event.cover_image_url}
+                        alt={event.title}
+                        sx={{ width: '100%', maxWidth: 500, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2 }}
+                    />
+                ) : (
+                    <VideocamIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                )}
                 <Typography variant="h6">{event.title}</Typography>
                 <Typography color="text.secondary">A live ainda não começou. Aguarde o host iniciar.</Typography>
                 <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
@@ -260,7 +270,16 @@ function PreLiveView({
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3 }}>
-            <VideocamIcon sx={{ fontSize: 80, color: 'primary.main' }} />
+            {event.cover_image_url ? (
+                <Box
+                    component="img"
+                    src={event.cover_image_url}
+                    alt={event.title}
+                    sx={{ width: '100%', maxWidth: 600, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2 }}
+                />
+            ) : (
+                <VideocamIcon sx={{ fontSize: 80, color: 'primary.main' }} />
+            )}
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
                 {event.title}
             </Typography>

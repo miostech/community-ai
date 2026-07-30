@@ -14,7 +14,11 @@ import {
     CircularProgress,
     Alert,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import {
+    ArrowBack as ArrowBackIcon,
+    AddPhotoAlternate as AddPhotoIcon,
+    Close as CloseIcon,
+} from '@mui/icons-material';
 
 const CREATOR_ROLES = ['moderator', 'admin', 'criador'];
 
@@ -24,15 +28,51 @@ export default function CriarLivePage() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [scheduledAt, setScheduledAt] = useState('');
+    const [coverUrl, setCoverUrl] = useState('');
+    const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setError('Selecione uma imagem (JPG, PNG, WebP ou GIF).');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setError('Imagem muito grande. Máximo 10MB.');
+            return;
+        }
+        setError('');
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('type', 'image');
+            formData.append('files', file);
+            const res = await fetch('/api/posts/media', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erro no upload');
+            const url = data.urls?.[0];
+            if (url) setCoverUrl(url);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erro ao enviar imagem');
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
 
     const canCreate = CREATOR_ROLES.includes(account?.role || '');
 
-    if (!canCreate) {
-        router.replace('/dashboard/lives');
-        return null;
-    }
+    React.useEffect(() => {
+        if (account && !canCreate) {
+            router.replace('/dashboard/lives');
+        }
+    }, [account, canCreate, router]);
+
+    if (!canCreate) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,6 +88,7 @@ export default function CriarLivePage() {
             const body: Record<string, unknown> = { title: title.trim() };
             if (description.trim()) body.description = description.trim();
             if (scheduledAt) body.scheduled_at = new Date(scheduledAt).toISOString();
+            if (coverUrl) body.cover_image_url = coverUrl;
 
             const res = await fetch('/api/lives', {
                 method: 'POST',
@@ -144,12 +185,61 @@ export default function CriarLivePage() {
                     sx={{ mb: 4 }}
                 />
 
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+
+                        Capa da live (opcional) — 16:9
+                    </Typography>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleCoverUpload}
+                        style={{ display: 'none' }}
+                    />
+                    {coverUrl ? (
+                        <Box sx={{ position: 'relative', borderRadius: 2, overflow: 'hidden' }}>
+                            <Box
+                                component="img"
+                                src={coverUrl}
+                                alt="Capa da live"
+                                sx={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
+                            />
+                            <IconButton
+                                size="small"
+                                onClick={() => setCoverUrl('')}
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    bgcolor: 'rgba(0,0,0,0.6)',
+                                    color: '#fff',
+                                    '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+                                }}
+                            >
+                                <CloseIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+                    ) : (
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            startIcon={uploading ? <CircularProgress size={20} /> : <AddPhotoIcon />}
+                            sx={{ py: 4, borderStyle: 'dashed' }}
+                        >
+                            {uploading ? 'Enviando...' : 'Adicionar capa'}
+                        </Button>
+                    )}
+                </Box>
+
                 <Button
                     type="submit"
                     variant="contained"
                     fullWidth
                     size="large"
-                    disabled={loading || !title.trim()}
+                    disabled={loading || uploading || !title.trim()}
                     startIcon={loading ? <CircularProgress size={20} /> : undefined}
                 >
                     {loading ? 'Criando...' : 'Criar Live'}

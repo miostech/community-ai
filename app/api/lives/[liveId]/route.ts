@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
 import Account from '@/models/Account';
+import Post from '@/models/Post';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -149,6 +150,8 @@ export async function DELETE(
 
         event.status = 'cancelled';
         await event.save();
+
+        await Post.deleteMany({ live_event_id: event._id });
 
         return NextResponse.json({ success: true });
     } catch (error) {
