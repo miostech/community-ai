@@ -39,6 +39,7 @@ import {
     People as PeopleIcon,
     Check as CheckIcon,
     Close as CloseIcon,
+    Share as ShareIcon,
 } from '@mui/icons-material';
 import {
     LiveKitRoom,
@@ -58,6 +59,7 @@ const MAX_DURATION_MS = 60 * 60 * 1000; // 1 hora
 interface LiveEventData {
     _id: string;
     title: string;
+    slug?: string;
     description?: string;
     cover_image_url?: string;
     status: 'scheduled' | 'live' | 'ended' | 'cancelled';
@@ -84,6 +86,22 @@ interface ChatMessage {
 
 const TEXT_ENCODER = new TextEncoder();
 const TEXT_DECODER = new TextDecoder();
+
+function getShareUrl(slug?: string) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return slug ? `${origin}/live/${slug}` : '';
+}
+
+async function copyShareLink(slug?: string) {
+    const url = getShareUrl(slug);
+    if (!url) return;
+    try {
+        await navigator.clipboard.writeText(url);
+        alert('Link copiado!');
+    } catch {
+        prompt('Copie o link:', url);
+    }
+}
 
 export default function LiveRoomPage() {
     const { liveId } = useParams<{ liveId: string }>();
@@ -261,9 +279,18 @@ export default function LiveRoomPage() {
                 )}
                 <Typography variant="h6">{event.title}</Typography>
                 <Typography color="text.secondary">A live ainda não começou. Aguarde o host iniciar.</Typography>
-                <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
-                    Voltar
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
+                        Voltar
+                    </Button>
+                    {event.slug && (
+                        <Tooltip title="Copiar link de compartilhamento">
+                            <IconButton onClick={() => copyShareLink(event.slug)} sx={{ border: 1, borderColor: 'divider' }}>
+                                <ShareIcon />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
             </Box>
         );
     }
@@ -338,16 +365,25 @@ function PreLiveView({
                     {event.description}
                 </Typography>
             )}
-            <Button
-                variant="contained"
-                color="error"
-                size="large"
-                onClick={handleStart}
-                disabled={starting}
-                startIcon={starting ? <CircularProgress size={20} /> : <VideocamIcon />}
-            >
-                {starting ? 'Iniciando...' : 'Iniciar Live'}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Button
+                    variant="contained"
+                    color="error"
+                    size="large"
+                    onClick={handleStart}
+                    disabled={starting}
+                    startIcon={starting ? <CircularProgress size={20} /> : <VideocamIcon />}
+                >
+                    {starting ? 'Iniciando...' : 'Iniciar Live'}
+                </Button>
+                {event.slug && (
+                    <Tooltip title="Copiar link de compartilhamento">
+                        <IconButton onClick={() => copyShareLink(event.slug)} sx={{ border: 1, borderColor: 'divider' }}>
+                            <ShareIcon />
+                        </IconButton>
+                    </Tooltip>
+                )}
+            </Box>
             <Button variant="text" onClick={onBack}>
                 Voltar
             </Button>
@@ -561,6 +597,13 @@ function RoomContent({
                         size="small"
                         variant="outlined"
                     />
+                    {event.slug && (
+                        <Tooltip title="Compartilhar">
+                            <IconButton size="small" onClick={() => copyShareLink(event.slug)}>
+                                <ShareIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     {isHost && (
                         <Tooltip title="Participantes">
                             <IconButton size="small" onClick={() => setShowParticipants(true)}>

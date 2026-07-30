@@ -118,9 +118,22 @@ export async function POST(request: NextRequest) {
         const members_only = body.members_only === true;
 
         const roomId = new mongoose.Types.ObjectId();
+
+        let slug = title
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '')
+            .slice(0, 80);
+        const existingSlug = await LiveEvent.findOne({ slug }).select('_id').lean();
+        if (existingSlug) {
+            slug = `${slug}-${roomId.toString().slice(-6)}`;
+        }
+
         const liveEvent = new LiveEvent({
             _id: roomId,
             title,
+            slug,
             description,
             cover_image_url,
             creator_id: (account as any)._id,

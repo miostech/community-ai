@@ -29,6 +29,7 @@ import {
     PlayCircleOutline as PlayIcon,
     Delete as DeleteIcon,
     Notifications as NotificationsIcon,
+    Share as ShareIcon,
 } from '@mui/icons-material';
 
 interface LiveEventCreator {
@@ -52,6 +53,7 @@ interface LiveEvent {
     creator: LiveEventCreator | null;
     recording_url?: string;
     members_only?: boolean;
+    slug?: string;
     created_at: string;
 }
 
@@ -332,8 +334,38 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                     </Box>
                 </CardContent>
             </CardActionArea>
+            {event.slug && !canDelete && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pb: 1 }}>
+                    <Tooltip title="Compartilhar">
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const url = `${window.location.origin}/live/${event.slug}`;
+                                navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url));
+                            }}
+                        >
+                            <ShareIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+            )}
             {canDelete && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, px: 1, pb: 1 }}>
+                    {event.slug && (
+                        <Tooltip title="Compartilhar">
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const url = `${window.location.origin}/live/${event.slug}`;
+                                    navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url));
+                                }}
+                            >
+                                <ShareIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     {!isEnded && (
                         <Tooltip title="Notificar todos os usuários sobre esta live">
                             <IconButton

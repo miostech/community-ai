@@ -5,6 +5,7 @@ export type LiveEventStatus = 'scheduled' | 'live' | 'ended' | 'cancelled';
 export interface ILiveEvent extends Document {
     _id: Types.ObjectId;
     title: string;
+    slug: string;
     description?: string;
     cover_image_url?: string;
     creator_id: Types.ObjectId;
@@ -31,6 +32,12 @@ const LiveEventSchema = new Schema<ILiveEvent>(
             required: true,
             trim: true,
             maxlength: 200,
+        },
+        slug: {
+            type: String,
+            unique: true,
+            trim: true,
+            lowercase: true,
         },
         description: {
             type: String,
@@ -91,7 +98,7 @@ LiveEventSchema.index({ creator_id: 1, created_at: -1 });
 
 if (process.env.NODE_ENV === 'development' && mongoose.models.LiveEvent) {
     const schema = mongoose.models.LiveEvent.schema;
-    if (!schema.paths['reservations'] || !schema.paths['members_only']) {
+    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['slug']) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).LiveEvent;
     }
 }
