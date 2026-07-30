@@ -40,6 +40,8 @@ import {
   SearchOutlined as SearchIcon,
   HowToRegOutlined as HowToRegIcon,
   BarChartOutlined as BarChartIcon,
+  FavoriteOutlined as FavoriteIcon,
+  VisibilityOutlined as VisibilityIcon,
 } from '@mui/icons-material';
 
 const suggestedPrompts = [
@@ -139,6 +141,7 @@ export default function Home() {
   const [placeholderText, setPlaceholderText] = useState('');
   const [followersMap, setFollowersMap] = useState<Record<string, string>>({});
   const [apresentacaoOpen, setApresentacaoOpen] = useState(false);
+  const [communityStats, setCommunityStats] = useState<{ totalCreators: number; totalFollowers: number; totalViews: number } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const fullPlaceholder = 'Crie ideias de conteúdo para Instagram';
@@ -149,6 +152,13 @@ export default function Home() {
       router.push('/dashboard');
     }
   }, [status, router]);
+
+  useEffect(() => {
+    fetch('/api/community-stats')
+      .then((r) => r.json())
+      .then((d) => { if (d.totalCreators) setCommunityStats(d); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const CACHE_KEY = 'criadores_followers';
@@ -758,9 +768,9 @@ export default function Home() {
                 fontWeight: 400,
               }}
             >
-              Conectamos sua marca com mais de{' '}
+              Conectamos sua marca com{' '}
               <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                20 mil criadores de conteúdo
+                criadores de conteúdo
               </Box>
               .{' '}Uma plataforma onde você cria campanhas, filtra creators e escolhe quem vai dar voz à sua marca.
             </Typography>
@@ -825,6 +835,81 @@ export default function Home() {
               </Button>
             </Stack>
           </Stack>
+
+          {/* Métricas da comunidade */}
+          {communityStats && (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: { xs: 6, sm: 8, md: 10 } }}>
+              {[
+                {
+                  icon: <GroupIcon sx={{ fontSize: 28 }} />,
+                  color: theme.palette.primary.main,
+                  value: communityStats.totalCreators.toLocaleString('pt-BR'),
+                  label: 'Creators na Dome',
+                },
+                {
+                  icon: <FavoriteIcon sx={{ fontSize: 28 }} />,
+                  color: '#a855f7',
+                  value: communityStats.totalFollowers >= 1_000_000
+                    ? `${(communityStats.totalFollowers / 1_000_000).toFixed(1).replace('.', ',')}M`
+                    : communityStats.totalFollowers >= 1_000
+                      ? `${(communityStats.totalFollowers / 1_000).toFixed(1).replace('.', ',')}k`
+                      : String(communityStats.totalFollowers),
+                  label: 'Base de seguidores',
+                },
+                {
+                  icon: <VisibilityIcon sx={{ fontSize: 28 }} />,
+                  color: theme.palette.info.main,
+                  value: communityStats.totalViews >= 1_000_000
+                    ? `${(communityStats.totalViews / 1_000_000).toFixed(1).replace('.', ',')}M`
+                    : communityStats.totalViews >= 1_000
+                      ? `${(communityStats.totalViews / 1_000).toFixed(1).replace('.', ',')}k`
+                      : String(communityStats.totalViews),
+                  label: 'Alcance nas redes sociais',
+                },
+              ].map((item) => (
+                <Paper
+                  key={item.label}
+                  elevation={0}
+                  sx={{
+                    flex: '1 1 200px',
+                    p: { xs: 2.5, sm: 3 },
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    bgcolor: alpha(theme.palette.background.paper, 0.6),
+                    backdropFilter: 'blur(12px)',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2,
+                      bgcolor: alpha(item.color, 0.12),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: item.color,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.icon}
+                  </Box>
+                  <Box>
+                    <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+                      {item.value}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {item.label}
+                    </Typography>
+                  </Box>
+                </Paper>
+              ))}
+            </Stack>
+          )}
 
           {/* Criação de conteúdo para... */}
           <Stack alignItems="center" spacing={1.5} sx={{ mb: { xs: 4, sm: 5 } }}>

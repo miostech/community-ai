@@ -39,7 +39,7 @@ export function Header() {
             >
               Para Marcas
             </Link>
-            <Link href="/precos" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium">
+            <Link href="/cadastro" className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium">
               Para Criadores
             </Link>
           </nav>
