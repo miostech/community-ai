@@ -35,15 +35,15 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
-  {
-    label: 'Top Trends',
-    href: '/dashboard/trends',
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-    ),
-  },
+  // {
+  //   label: 'Top Trends',
+  //   href: '/dashboard/trends',
+  //   icon: (
+  //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+  //     </svg>
+  //   ),
+  // },
   // Templates - código comentado, não está em uso no momento
   // {
   //   label: 'Templates',

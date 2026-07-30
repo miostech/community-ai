@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectMongo } from '@/lib/mongoose';
+import Account from '@/models/Account';
 import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeChannelIdForSearchApi } from '@/lib/normalize-social-handles';
 
 const SEARCHAPI_API_KEY = process.env.SEARCHAPI_API_KEY;
@@ -7,7 +9,6 @@ const SEARCHAPI_BASE = 'https://www.searchapi.io/api/v1/search';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** Resposta da SearchAPI para instagram_profile */
 interface InstagramProfileResponse {
   profile?: {
     followers?: number;
@@ -18,7 +19,6 @@ interface InstagramProfileResponse {
   };
 }
 
-/** Resposta da SearchAPI para tiktok_profile */
 interface TikTokProfileResponse {
   profile?: {
     followers?: number;
@@ -28,7 +28,6 @@ interface TikTokProfileResponse {
   };
 }
 
-/** Resposta da SearchAPI para youtube_channel (about ou channel) */
 interface YouTubeChannelResponse {
   about?: { subscribers?: number; videos?: number; views?: number };
   channel?: { subscribers?: number; videos?: number };
@@ -42,9 +41,7 @@ async function fetchInstagramProfile(username: string): Promise<{ followers: num
     username: handle,
     api_key: SEARCHAPI_API_KEY,
   });
-  const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24 horas
-  });
+  const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) return { followers: null, avatar: null };
   const data = (await res.json()) as InstagramProfileResponse;
   const profile = data?.profile;
@@ -66,16 +63,13 @@ async function fetchTikTokFollowers(username: string): Promise<number | null> {
     username: handle,
     api_key: SEARCHAPI_API_KEY,
   });
-  const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24 horas
-  });
+  const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) return null;
   const data = (await res.json()) as TikTokProfileResponse;
   const followers = data?.profile?.followers;
   return typeof followers === 'number' ? followers : null;
 }
 
-/** channelId: @handle (ex: @TaylorSwift) ou ID do canal */
 async function fetchYouTubeSubscribers(channelId: string): Promise<number | null> {
   if (!SEARCHAPI_API_KEY || !channelId?.trim()) return null;
   const normalized = normalizeYouTubeChannelIdForSearchApi(channelId);
@@ -85,9 +79,7 @@ async function fetchYouTubeSubscribers(channelId: string): Promise<number | null
     channel_id: normalized,
     api_key: SEARCHAPI_API_KEY,
   });
-  const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, {
-    next: { revalidate: 86400 }, // 24 horas
-  });
+  const res = await fetch(`${SEARCHAPI_BASE}?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) return null;
   const data = (await res.json()) as YouTubeChannelResponse;
   const subscribers =
@@ -104,6 +96,7 @@ export async function GET(request: NextRequest) {
   const instagram = searchParams.get('instagram')?.trim() || null;
   const tiktok = searchParams.get('tiktok')?.trim() || null;
   const youtube = searchParams.get('youtube')?.trim() || null;
+  const refresh = searchParams.get('refresh') === 'true';
 
   if (!instagram && !tiktok && !youtube) {
     return NextResponse.json(
@@ -112,14 +105,42 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!SEARCHAPI_API_KEY) {
-    return NextResponse.json(
-      { error: 'SEARCHAPI_API_KEY não configurada. Configure em .env.local.' },
-      { status: 503 }
-    );
-  }
-
   try {
+    await connectMongo();
+
+    if (!refresh) {
+      const query: Record<string, unknown> = {};
+      if (instagram) query.link_instagram = { $regex: new RegExp(normalizeInstagramHandle(instagram) || instagram, 'i') };
+      else if (tiktok) query.link_tiktok = { $regex: new RegExp(normalizeTikTokHandle(tiktok) || tiktok, 'i') };
+      else if (youtube) query.link_youtube = { $regex: new RegExp(youtube, 'i') };
+
+      const cached = await Account.findOne({
+        ...query,
+        cached_followers_total: { $ne: null },
+        cached_followers_updated_at: { $ne: null },
+      })
+        .select('cached_followers_total cached_followers_updated_at')
+        .lean() as { cached_followers_total?: number; cached_followers_updated_at?: Date } | null;
+
+      if (cached && cached.cached_followers_total != null) {
+        return NextResponse.json({
+          instagram: instagram ? { username: instagram, followers: null, avatar: null } : null,
+          tiktok: tiktok ? { username: tiktok, followers: null } : null,
+          youtube: youtube ? { channelId: youtube, subscribers: null } : null,
+          totalFollowers: cached.cached_followers_total,
+          cached: true,
+          cachedAt: cached.cached_followers_updated_at,
+        });
+      }
+    }
+
+    if (!SEARCHAPI_API_KEY) {
+      return NextResponse.json(
+        { error: 'SEARCHAPI_API_KEY não configurada. Configure em .env.local.' },
+        { status: 503 }
+      );
+    }
+
     const [instagramData, tiktokFollowers, youtubeSubscribers] = await Promise.all([
       instagram ? fetchInstagramProfile(instagram) : Promise.resolve({ followers: null, avatar: null }),
       tiktok ? fetchTikTokFollowers(tiktok) : Promise.resolve(null),
@@ -129,6 +150,18 @@ export async function GET(request: NextRequest) {
     const instagramFollowers = instagramData.followers;
     const totalFollowers =
       (instagramFollowers ?? 0) + (tiktokFollowers ?? 0) + (youtubeSubscribers ?? 0);
+
+    const updateQuery: Record<string, unknown> = {};
+    if (instagram) updateQuery.link_instagram = { $regex: new RegExp(normalizeInstagramHandle(instagram) || instagram, 'i') };
+    else if (tiktok) updateQuery.link_tiktok = { $regex: new RegExp(normalizeTikTokHandle(tiktok) || tiktok, 'i') };
+    else if (youtube) updateQuery.link_youtube = { $regex: new RegExp(youtube, 'i') };
+
+    await Account.updateOne(updateQuery, {
+      $set: {
+        cached_followers_total: totalFollowers,
+        cached_followers_updated_at: new Date(),
+      },
+    });
 
     return NextResponse.json({
       instagram: instagram !== null

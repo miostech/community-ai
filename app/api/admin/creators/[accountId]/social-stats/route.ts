@@ -35,7 +35,7 @@ interface TikTokProfileResponse {
         followers?: number;
         following?: number;
         posts?: number;
-        hearts?: number; // total de likes acumulados
+        hearts?: number;
         is_verified?: boolean;
         bio?: string;
         avatar?: string;
@@ -51,9 +51,7 @@ async function fetchInstagram(username: string): Promise<InstagramProfileRespons
             username: handle,
             api_key: SEARCHAPI_KEY,
         });
-        const res = await fetch(`${SEARCHAPI_BASE}?${params}`, {
-            next: { revalidate: 3600 }, // cache 1h
-        });
+        const res = await fetch(`${SEARCHAPI_BASE}?${params}`, { cache: 'no-store' });
         if (!res.ok) return null;
         return await res.json() as InstagramProfileResponse;
     } catch {
@@ -70,9 +68,7 @@ async function fetchTikTok(username: string): Promise<TikTokProfileResponse | nu
             username: handle,
             api_key: SEARCHAPI_KEY,
         });
-        const res = await fetch(`${SEARCHAPI_BASE}?${params}`, {
-            next: { revalidate: 3600 },
-        });
+        const res = await fetch(`${SEARCHAPI_BASE}?${params}`, { cache: 'no-store' });
         if (!res.ok) return null;
         return await res.json() as TikTokProfileResponse;
     } catch {
@@ -110,16 +106,34 @@ export async function GET(
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
 
-        if (!SEARCHAPI_KEY) {
-            return NextResponse.json({ error: 'SEARCHAPI_API_KEY não configurada' }, { status: 503 });
-        }
+        const { searchParams } = new URL(request.url);
+        const refresh = searchParams.get('refresh') === 'true';
 
         const creator = await Account.findById(accountId)
-            .select('link_instagram link_tiktok')
-            .lean() as { link_instagram?: string; link_tiktok?: string } | null;
+            .select('link_instagram link_tiktok cached_followers_total cached_followers_updated_at')
+            .lean() as {
+                link_instagram?: string;
+                link_tiktok?: string;
+                cached_followers_total?: number;
+                cached_followers_updated_at?: Date;
+            } | null;
 
         if (!creator) {
             return NextResponse.json({ error: 'Creator não encontrado' }, { status: 404 });
+        }
+
+        if (!refresh && creator.cached_followers_total != null && creator.cached_followers_updated_at) {
+            return NextResponse.json({
+                instagram: null,
+                tiktok: null,
+                totalFollowers: creator.cached_followers_total,
+                cached: true,
+                cachedAt: creator.cached_followers_updated_at,
+            });
+        }
+
+        if (!SEARCHAPI_KEY) {
+            return NextResponse.json({ error: 'SEARCHAPI_API_KEY não configurada' }, { status: 503 });
         }
 
         const [igData, ttData] = await Promise.all([
@@ -130,6 +144,18 @@ export async function GET(
         const igProfile = igData?.profile;
         const igPosts = igData?.posts ?? [];
         const ttProfile = ttData?.profile;
+
+        const totalFollowers = (igProfile?.followers ?? 0) + (ttProfile?.followers ?? 0);
+
+        await Account.updateOne(
+            { _id: accountId },
+            {
+                $set: {
+                    cached_followers_total: totalFollowers,
+                    cached_followers_updated_at: new Date(),
+                },
+            }
+        );
 
         return NextResponse.json({
             instagram: igProfile ? {

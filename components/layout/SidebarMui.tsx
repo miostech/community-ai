@@ -127,11 +127,11 @@ const navItems: NavItem[] = [
         href: '/dashboard/mensagens',
         icon: <MailOutlineIcon />,
     },
-    {
-        label: 'Top Trends',
-        href: '/dashboard/trends',
-        icon: <TrendingUpIcon />,
-    },
+    // {
+    //     label: 'Top Trends',
+    //     href: '/dashboard/trends',
+    //     icon: <TrendingUpIcon />,
+    // },
     
     {
         label: 'Cursos',
