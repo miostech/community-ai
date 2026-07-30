@@ -28,6 +28,12 @@ export function Header() {
               Início
             </Link>
             <Link
+              href={isHomePage ? "#marcas" : "/#marcas"}
+              className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
+            >
+              Para Marcas
+            </Link>
+            <Link
               href={isHomePage ? "#criadores" : "/#criadores"}
               className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
             >
