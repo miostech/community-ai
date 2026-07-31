@@ -40,6 +40,7 @@ import {
     Check as CheckIcon,
     Close as CloseIcon,
     Share as ShareIcon,
+    Fullscreen as FullscreenIcon,
 } from '@mui/icons-material';
 import {
     LiveKitRoom,
@@ -92,9 +93,15 @@ function getShareUrl(slug?: string) {
     return slug ? `${origin}/live/${slug}` : '';
 }
 
-async function copyShareLink(slug?: string) {
+async function shareOrCopyLink(slug?: string, title?: string) {
     const url = getShareUrl(slug);
     if (!url) return;
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: title || 'Live na Dome', url });
+            return;
+        } catch {}
+    }
     try {
         await navigator.clipboard.writeText(url);
         alert('Link copiado!');
@@ -266,26 +273,26 @@ export default function LiveRoomPage() {
 
     if (event.status === 'scheduled' && !isHost) {
         return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: { xs: '80dvh', md: '80vh' }, px: 2, pt: { xs: 'max(16px, env(safe-area-inset-top))', md: 0 }, gap: 2 }}>
                 {event.cover_image_url ? (
                     <Box
                         component="img"
                         src={event.cover_image_url}
                         alt={event.title}
-                        sx={{ width: '100%', maxWidth: 500, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2 }}
+                        sx={{ width: '100%', maxWidth: { xs: '100%', sm: 500 }, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2 }}
                     />
                 ) : (
-                    <VideocamIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                    <VideocamIcon sx={{ fontSize: { xs: 48, md: 64 }, color: 'text.disabled' }} />
                 )}
-                <Typography variant="h6">{event.title}</Typography>
-                <Typography color="text.secondary">A live ainda não começou. Aguarde o host iniciar.</Typography>
+                <Typography variant="h6" sx={{ textAlign: 'center' }}>{event.title}</Typography>
+                <Typography color="text.secondary" sx={{ textAlign: 'center' }}>A live ainda não começou. Aguarde o host iniciar.</Typography>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                     <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
                         Voltar
                     </Button>
                     {event.slug && (
                         <Tooltip title="Copiar link de compartilhamento">
-                            <IconButton onClick={() => copyShareLink(event.slug)} sx={{ border: 1, borderColor: 'divider' }}>
+                            <IconButton onClick={() => shareOrCopyLink(event.slug, event.title)} sx={{ border: 1, borderColor: 'divider' }}>
                                 <ShareIcon />
                             </IconButton>
                         </Tooltip>
@@ -346,18 +353,18 @@ function PreLiveView({
     };
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: { xs: '80dvh', md: '80vh' }, px: 2, pt: { xs: 'max(16px, env(safe-area-inset-top))', md: 0 }, gap: 3 }}>
             {event.cover_image_url ? (
                 <Box
                     component="img"
                     src={event.cover_image_url}
                     alt={event.title}
-                    sx={{ width: '100%', maxWidth: 600, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2 }}
+                    sx={{ width: '100%', maxWidth: { xs: '100%', sm: 600 }, aspectRatio: '16/9', objectFit: 'cover', borderRadius: 2 }}
                 />
             ) : (
-                <VideocamIcon sx={{ fontSize: 80, color: 'primary.main' }} />
+                <VideocamIcon sx={{ fontSize: { xs: 56, md: 80 }, color: 'primary.main' }} />
             )}
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, textAlign: 'center', fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
                 {event.title}
             </Typography>
             {event.description && (
@@ -378,7 +385,7 @@ function PreLiveView({
                 </Button>
                 {event.slug && (
                     <Tooltip title="Copiar link de compartilhamento">
-                        <IconButton onClick={() => copyShareLink(event.slug)} sx={{ border: 1, borderColor: 'divider' }}>
+                        <IconButton onClick={() => shareOrCopyLink(event.slug, event.title)} sx={{ border: 1, borderColor: 'divider' }}>
                             <ShareIcon />
                         </IconButton>
                     </Tooltip>
@@ -418,11 +425,42 @@ function RoomContent({
     const [handRaised, setHandRaised] = useState(false);
     const [handRequests, setHandRequests] = useState<{ id: string; name: string }[]>([]);
     const [showParticipants, setShowParticipants] = useState(false);
+    const [promotedSpeakers, setPromotedSpeakers] = useState<string[]>(event.promoted_speakers || []);
     const [ending, setEnding] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const videoGridRef = useRef<HTMLDivElement>(null);
 
     const canPublish = isHost || isSpeaker;
+
+    const toggleFullscreen = () => {
+        const el = videoGridRef.current;
+        if (!el) return;
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+        } else {
+            el.requestFullscreen().catch(() => {});
+        }
+    };
+
+    // Wake Lock: manter tela ligada durante a live
+    useEffect(() => {
+        let wakeLock: WakeLockSentinel | null = null;
+        const request = async () => {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch {}
+        };
+        request();
+        const onVisibility = () => { if (document.visibilityState === 'visible') request(); };
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibility);
+            wakeLock?.release().catch(() => {});
+        };
+    }, []);
 
     useEffect(() => {
         if (!event.started_at) return;
@@ -546,6 +584,18 @@ function RoomContent({
                 body: JSON.stringify({ accountId: participantId }),
             });
             setHandRequests((prev) => prev.filter((r) => r.id !== participantId));
+            setPromotedSpeakers((prev) => [...prev, participantId]);
+        } catch {}
+    };
+
+    const demoteParticipant = async (participantId: string) => {
+        try {
+            await fetch(`/api/lives/${liveId}/demote`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accountId: participantId }),
+            });
+            setPromotedSpeakers((prev) => prev.filter((id) => id !== participantId));
         } catch {}
     };
 
@@ -565,11 +615,11 @@ function RoomContent({
     );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: { xs: 'auto', md: 'calc(100vh - 64px)' }, minHeight: { xs: '100vh', md: 'auto' } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: { xs: '100dvh', md: 'calc(100vh - 64px)' }, overflow: 'hidden' }}>
             {/* Video area */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <Box sx={{ flex: { xs: '0 0 auto', md: 1 }, display: 'flex', flexDirection: 'column', minWidth: 0, maxHeight: { xs: '60dvh', md: 'none' }, overflow: 'hidden' }}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1.5, pt: { xs: 'max(12px, env(safe-area-inset-top))', md: 1.5 }, borderBottom: 1, borderColor: 'divider' }}>
                     <IconButton size="small" onClick={() => { room.disconnect(); onEnd(); }}>
                         <ArrowBackIcon />
                     </IconButton>
@@ -599,7 +649,7 @@ function RoomContent({
                     />
                     {event.slug && (
                         <Tooltip title="Compartilhar">
-                            <IconButton size="small" onClick={() => copyShareLink(event.slug)}>
+                            <IconButton size="small" onClick={() => shareOrCopyLink(event.slug, event.title)}>
                                 <ShareIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -618,14 +668,19 @@ function RoomContent({
                 </Box>
 
                 {/* Video grid */}
-                <Box sx={{
+                <Box
+                    ref={videoGridRef}
+                    onDoubleClick={toggleFullscreen}
+                    sx={{
                     flex: 1,
                     display: 'grid',
                     gridTemplateColumns: videoTracks.length > 1 ? { xs: '1fr', md: '1fr 1fr' } : '1fr',
                     gap: 1,
                     p: 1,
                     bgcolor: 'black',
-                    minHeight: { xs: 300, md: 0 },
+                    minHeight: { xs: 200, md: 0 },
+                    position: 'relative',
+                    cursor: 'pointer',
                 }}>
                     {videoTracks.length > 0 ? (
                         videoTracks.map((trackRef) => (
@@ -645,23 +700,32 @@ function RoomContent({
                             <Typography color="grey.500">Aguardando vídeo...</Typography>
                         </Box>
                     )}
+                    <Tooltip title="Tela cheia (duplo toque)">
+                        <IconButton
+                            onClick={toggleFullscreen}
+                            size="small"
+                            sx={{ position: 'absolute', bottom: 8, right: 8, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}
+                        >
+                            <FullscreenIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                 </Box>
 
                 {/* Controls */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, p: 1.5, borderTop: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: { xs: 0.5, md: 1 }, p: { xs: 1, md: 1.5 }, borderTop: 1, borderColor: 'divider' }}>
                     {canPublish && (
                         <>
-                            <IconButton onClick={toggleMic} sx={{ bgcolor: micOn ? 'action.selected' : 'error.main', color: micOn ? 'text.primary' : 'white', '&:hover': { bgcolor: micOn ? 'action.hover' : 'error.dark' } }}>
-                                {micOn ? <MicIcon /> : <MicOffIcon />}
+                            <IconButton size="small" onClick={toggleMic} sx={{ bgcolor: micOn ? 'action.selected' : 'error.main', color: micOn ? 'text.primary' : 'white', '&:hover': { bgcolor: micOn ? 'action.hover' : 'error.dark' } }}>
+                                {micOn ? <MicIcon fontSize="small" /> : <MicOffIcon fontSize="small" />}
                             </IconButton>
-                            <IconButton onClick={toggleCamera} sx={{ bgcolor: cameraOn ? 'action.selected' : 'error.main', color: cameraOn ? 'text.primary' : 'white', '&:hover': { bgcolor: cameraOn ? 'action.hover' : 'error.dark' } }}>
-                                {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
+                            <IconButton size="small" onClick={toggleCamera} sx={{ bgcolor: cameraOn ? 'action.selected' : 'error.main', color: cameraOn ? 'text.primary' : 'white', '&:hover': { bgcolor: cameraOn ? 'action.hover' : 'error.dark' } }}>
+                                {cameraOn ? <VideocamIcon fontSize="small" /> : <VideocamOffIcon fontSize="small" />}
                             </IconButton>
                         </>
                     )}
                     {isHost && (
-                        <IconButton onClick={toggleScreen} sx={{ bgcolor: screenOn ? 'primary.main' : 'action.selected', color: screenOn ? 'white' : 'text.primary' }}>
-                            {screenOn ? <StopScreenShareIcon /> : <ScreenShareIcon />}
+                        <IconButton size="small" onClick={toggleScreen} sx={{ bgcolor: screenOn ? 'primary.main' : 'action.selected', color: screenOn ? 'white' : 'text.primary', display: { xs: 'none', sm: 'inline-flex' } }}>
+                            {screenOn ? <StopScreenShareIcon fontSize="small" /> : <ScreenShareIcon fontSize="small" />}
                         </IconButton>
                     )}
                     {!canPublish && !handRaised && (
@@ -685,15 +749,17 @@ function RoomContent({
                             onClick={handleEnd}
                             disabled={ending}
                             size="small"
+                            sx={{ fontSize: { xs: '0.75rem', md: '0.8125rem' }, px: { xs: 1.5, md: 2 } }}
                         >
                             Encerrar
                         </Button>
                     ) : (
                         <IconButton
+                            size="small"
                             onClick={() => { room.disconnect(); onEnd(); }}
                             sx={{ bgcolor: 'error.main', color: 'white', '&:hover': { bgcolor: 'error.dark' } }}
                         >
-                            <CallEndIcon />
+                            <CallEndIcon fontSize="small" />
                         </IconButton>
                     )}
                 </Box>
@@ -704,7 +770,9 @@ function RoomContent({
                 elevation={0}
                 sx={{
                     width: { xs: '100%', md: 320 },
-                    height: { xs: 300, md: '100%' },
+                    flex: { xs: '1 1 0', md: 'none' },
+                    height: { xs: 'auto', md: '100%' },
+                    minHeight: { xs: 0, md: 'auto' },
                     display: 'flex',
                     flexDirection: 'column',
                     borderLeft: { md: 1 },
@@ -742,7 +810,13 @@ function RoomContent({
                                 sendChat();
                             }
                         }}
+                        onFocus={(e) => {
+                            setTimeout(() => {
+                                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+                        }}
                         fullWidth
+                        inputProps={{ enterKeyHint: 'send' }}
                         sx={{ '& .MuiInputBase-root': { fontSize: '0.875rem' } }}
                     />
                     <IconButton onClick={sendChat} color="primary" size="small" disabled={!chatInput.trim()}>
@@ -794,14 +868,30 @@ function RoomContent({
                         Na sala
                     </Typography>
                     <List dense>
-                        {participants.map((p) => (
-                            <ListItem key={p.identity}>
-                                <ListItemAvatar>
-                                    <Avatar sx={{ width: 32, height: 32 }}>{(p.name || p.identity).charAt(0)}</Avatar>
-                                </ListItemAvatar>
-                                <ListItemText primary={p.name || p.identity} />
-                            </ListItem>
-                        ))}
+                        {participants.map((p) => {
+                            const isSpeakerP = promotedSpeakers.includes(p.identity);
+                            const isHostP = event.creator?._id === p.identity;
+                            return (
+                                <ListItem key={p.identity}>
+                                    <ListItemAvatar>
+                                        <Avatar sx={{ width: 32, height: 32 }}>{(p.name || p.identity).charAt(0)}</Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                        primary={p.name || p.identity}
+                                        secondary={isHostP ? 'Host' : isSpeakerP ? 'Falando' : undefined}
+                                    />
+                                    {isHost && isSpeakerP && !isHostP && (
+                                        <ListItemSecondaryAction>
+                                            <Tooltip title="Silenciar">
+                                                <IconButton edge="end" color="warning" onClick={() => demoteParticipant(p.identity)} size="small">
+                                                    <MicOffIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </ListItemSecondaryAction>
+                                    )}
+                                </ListItem>
+                            );
+                        })}
                     </List>
                 </DialogContent>
                 <DialogActions>

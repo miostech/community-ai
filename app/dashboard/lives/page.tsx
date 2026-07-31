@@ -343,7 +343,8 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                             onClick={(e) => {
                                 e.stopPropagation();
                                 const url = `${window.location.origin}/live/${event.slug}`;
-                                navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url));
+                                if (navigator.share) { navigator.share({ title: event.title, url }).catch(() => {}); }
+                                else { navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url)); }
                             }}
                         >
                             <ShareIcon fontSize="small" />

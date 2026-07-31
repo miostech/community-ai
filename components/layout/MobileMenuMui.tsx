@@ -117,7 +117,9 @@ export function MobileMenuMui() {
         return index >= 0 ? index : 0;
     };
 
-    if (isModalOpen) {
+    const isLiveRoom = pathname?.startsWith('/dashboard/lives/') && pathname !== '/dashboard/lives/criar';
+
+    if (isModalOpen || isLiveRoom) {
         return null;
     }
 
