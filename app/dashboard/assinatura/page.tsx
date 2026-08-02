@@ -2,24 +2,27 @@
 
 import React, { useEffect } from 'react';
 import { Container, CircularProgress, Box } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { PricingPlans } from '@/components/pricing/PricingPlans';
 import { useAccount } from '@/contexts/AccountContext';
 
 export default function AssinaturaPage() {
     const router = useRouter();
-    const { isLoading, isSubscriptionEffective } = useAccount();
+    const searchParams = useSearchParams();
+    const { isLoading, isSubscriptionEffective, subscription } = useAccount();
 
-    // Se já tem assinatura ativa ou período de graça (cadastro recente), redireciona para o dashboard
+    const fromCadastro = searchParams.get('origem') === 'cadastro';
+    const hasActiveSubscription = subscription?.status === 'active';
+
     useEffect(() => {
-        if (!isLoading && isSubscriptionEffective) {
-            console.log('✅ Assinatura ativa ou graça - redirecionando para dashboard');
+        if (isLoading) return;
+        if (fromCadastro && !hasActiveSubscription) return;
+        if (isSubscriptionEffective) {
             router.push('/dashboard/comunidade');
         }
-    }, [isLoading, isSubscriptionEffective, router]);
+    }, [isLoading, isSubscriptionEffective, hasActiveSubscription, fromCadastro, router]);
 
-    // Mostra loading enquanto carrega ou se vai redirecionar
-    if (isLoading || isSubscriptionEffective) {
+    if (isLoading || (isSubscriptionEffective && !fromCadastro) || (isSubscriptionEffective && hasActiveSubscription)) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
                 <CircularProgress />

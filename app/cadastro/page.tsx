@@ -29,7 +29,7 @@ export default function CadastroPage() {
     setIsLoading(true);
     try {
       await signIn('google', {
-        redirectTo: '/dashboard',
+        redirectTo: '/dashboard/assinatura?origem=cadastro',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Google', err);
@@ -41,7 +41,7 @@ export default function CadastroPage() {
     setIsLoading(true);
     try {
       await signIn('apple', {
-        redirectTo: '/dashboard',
+        redirectTo: '/dashboard/assinatura?origem=cadastro',
       });
     } catch (err) {
       console.error('Falha ao iniciar login Apple', err);

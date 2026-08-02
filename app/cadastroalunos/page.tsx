@@ -10,8 +10,8 @@ import { DomeLogo } from '@/components/ui/DomeLogo';
 
 const steps = [
   { number: 1, title: 'Cadastre-se', description: 'Crie sua conta em segundos com Google ou Apple.' },
-  { number: 2, title: 'Escolha um plano', description: 'Acesse a cúpula com IA, comunidade e recursos para criadores.' },
-  { number: 3, title: 'Comece a criar conteúdo viral', description: 'Use a IA, participe de campanhas de marcas e faça parte da comunidade.' },
+  { number: 2, title: 'Acesse a comunidade', description: 'Como aluno do MIM, Roteiro Viral ou HPA, você já tem acesso à cúpula.' },
+  { number: 3, title: 'Evolua seus conteúdos', description: 'Use a comunidade pra trocar experiências, tirar dúvidas e crescer junto com outros criadores.' },
 ];
 
 export default function CadastroAlunosPage() {
