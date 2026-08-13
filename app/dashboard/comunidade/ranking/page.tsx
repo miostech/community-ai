@@ -23,7 +23,6 @@ import {
   Close as CloseIcon,
   CalendarMonth as CalendarIcon,
   WorkspacePremium as MedalIcon,
-  Share as ShareIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useStories } from '@/contexts/StoriesContext';
@@ -285,15 +284,6 @@ function RankingShareModal({
     }
   }, [open, drawCard]);
 
-  const getCanvasBlob = () =>
-    new Promise<Blob | null>((resolve) => {
-      try {
-        canvasRef.current?.toBlob((b) => resolve(b), 'image/png') ?? resolve(null);
-      } catch {
-        resolve(null);
-      }
-    });
-
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -304,57 +294,6 @@ function RankingShareModal({
       link.click();
     } catch {
       alert('Não foi possível salvar a imagem. Tente novamente.');
-    }
-  };
-
-  const handleShareInstagram = async () => {
-    const blob = await getCanvasBlob();
-    if (blob && navigator.share) {
-      const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file] });
-          return;
-        } catch (err: unknown) {
-          if (err instanceof Error && err.name === 'AbortError') return;
-        }
-      }
-    }
-
-    // Fallback: salva a imagem e tenta abrir o Instagram
-    handleDownload();
-    setTimeout(() => {
-      window.location.href = 'instagram://';
-    }, 500);
-  };
-
-  const handleShareGeneral = async () => {
-    const text = `${emoji} Estou em ${positionLabel} no ranking da comunidade Dome! ${score} pontos na semana ${weekLabel}. 🔥\n\ndome.app.br`;
-
-    try {
-      const blob = await getCanvasBlob();
-      if (blob && navigator.share) {
-        const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ text, files: [file] });
-          return;
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-    }
-
-    if (navigator.share) {
-      try { await navigator.share({ text }); return; } catch (err: unknown) {
-        if (err instanceof Error && err.name === 'AbortError') return;
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(text);
-      alert('Texto copiado! Cole nas suas redes sociais.');
-    } catch {
-      prompt('Copie o texto:', text);
     }
   };
 
@@ -387,45 +326,17 @@ function RankingShareModal({
             {emoji} Parabéns! Você está em {positionLabel}!
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Compartilhe sua conquista nas redes sociais
+            Salve e compartilhe sua conquista!
           </Typography>
-          <Stack spacing={1.5}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={handleShareInstagram}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                background: 'linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)',
-                fontSize: '0.95rem',
-                py: 1.2,
-              }}
-            >
-              Compartilhar no Instagram
-            </Button>
-            <Stack direction="row" spacing={1.5}>
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<ShareIcon />}
-                onClick={handleShareGeneral}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-              >
-                Outros apps
-              </Button>
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<DownloadIcon />}
-                onClick={handleDownload}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-              >
-                Salvar imagem
-              </Button>
-            </Stack>
-          </Stack>
+          <Button
+            variant="contained"
+            fullWidth
+            startIcon={<DownloadIcon />}
+            onClick={handleDownload}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 1.2 }}
+          >
+            Salvar imagem
+          </Button>
         </Box>
       </DialogContent>
     </Dialog>
@@ -690,7 +601,7 @@ export default function RankingPage() {
           {userIsTopThree && (
             <Button
               size="small"
-              startIcon={<ShareIcon />}
+              startIcon={<DownloadIcon />}
               onClick={() => setShowShareModal(true)}
               sx={{ ml: 1, textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}
             >
