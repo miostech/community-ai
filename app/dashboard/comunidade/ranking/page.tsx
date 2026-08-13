@@ -182,6 +182,15 @@ function RankingShareModal({
           img.onerror = () => reject();
           img.src = userAvatar;
         });
+        // Test CORS taint on a throwaway canvas before touching the main one
+        const testCanvas = document.createElement('canvas');
+        testCanvas.width = 10;
+        testCanvas.height = 10;
+        const testCtx = testCanvas.getContext('2d');
+        if (!testCtx) throw new Error('no ctx');
+        testCtx.drawImage(img, 0, 0, 10, 10);
+        testCanvas.toDataURL();
+        // Safe — draw on the real canvas
         ctx.save();
         ctx.beginPath();
         ctx.arc(w / 2, avatarY, avatarR, 0, Math.PI * 2);
@@ -276,33 +285,39 @@ function RankingShareModal({
     }
   }, [open, drawCard]);
 
-  const getCanvasBlob = () => new Promise<Blob | null>((resolve) => canvasRef.current?.toBlob(resolve, 'image/png') ?? resolve(null));
+  const getCanvasBlob = () =>
+    new Promise<Blob | null>((resolve) => {
+      try {
+        canvasRef.current?.toBlob((b) => resolve(b), 'image/png') ?? resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = `ranking-dome-${positionLabel.replace(/\s/g, '-').toLowerCase()}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    try {
+      const link = document.createElement('a');
+      link.download = `ranking-dome-${positionLabel.replace(/\s/g, '-').toLowerCase()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch {
+      alert('Não foi possível salvar a imagem. Tente novamente.');
+    }
   };
 
   const handleShareInstagram = async () => {
     const blob = await getCanvasBlob();
-    if (!blob) {
-      handleDownload();
-      return;
-    }
-
-    const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
-    const canShareFiles = navigator.share && navigator.canShare?.({ files: [file] });
-
-    if (canShareFiles) {
-      try {
-        await navigator.share({ files: [file] });
-        return;
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === 'AbortError') return;
+    if (blob && navigator.share) {
+      const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return;
+        } catch (err: unknown) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+        }
       }
     }
 
@@ -318,17 +333,21 @@ function RankingShareModal({
 
     try {
       const blob = await getCanvasBlob();
-      if (blob) {
+      if (blob && navigator.share) {
         const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        if (navigator.canShare?.({ files: [file] })) {
           await navigator.share({ text, files: [file] });
           return;
         }
       }
-    } catch {}
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+    }
 
     if (navigator.share) {
-      try { await navigator.share({ text }); return; } catch {}
+      try { await navigator.share({ text }); return; } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+      }
     }
 
     try {
