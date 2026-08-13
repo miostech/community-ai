@@ -289,20 +289,28 @@ function RankingShareModal({
 
   const handleShareInstagram = async () => {
     const blob = await getCanvasBlob();
-    if (!blob) return;
+    if (!blob) {
+      handleDownload();
+      return;
+    }
 
-    try {
-      const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-        });
+    const file = new File([blob], 'ranking-dome.png', { type: 'image/png' });
+    const canShareFiles = navigator.share && navigator.canShare?.({ files: [file] });
+
+    if (canShareFiles) {
+      try {
+        await navigator.share({ files: [file] });
         return;
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return;
       }
-    } catch {}
+    }
 
+    // Fallback: salva a imagem e tenta abrir o Instagram
     handleDownload();
-    alert('Imagem salva! Abra o Instagram e use-a nos Stories ou no Feed.');
+    setTimeout(() => {
+      window.location.href = 'instagram://';
+    }, 500);
   };
 
   const handleShareGeneral = async () => {
