@@ -270,6 +270,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         })()
         : null;
     const canAccessChat =
+        isSubscriptionActive ||
         isCampaign14Days ||
         convertedDuringCampaignTrial ||
         chatUnlockAt === null ||

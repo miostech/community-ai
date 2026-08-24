@@ -36,6 +36,296 @@ interface PastWinner {
   weeks: { weekStart: string; weekEnd: string; score: number }[];
 }
 
+function TenKAwardModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const drawCard = useCallback(async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = 1080;
+    const h = 1350;
+    canvas.width = w;
+    canvas.height = h;
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#0a081e');
+    bg.addColorStop(0.3, '#12102e');
+    bg.addColorStop(0.55, '#1a1540');
+    bg.addColorStop(0.75, '#0f0d28');
+    bg.addColorStop(1, '#080620');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Gold particles
+    const particles = [
+      [237, 162, 4], [778, 297, 4], [432, 135, 3], [130, 540, 4],
+      [885, 702, 4], [302, 918, 3], [842, 378, 3], [993, 432, 3],
+      [432, 1160, 4], [670, 1053, 3], [194, 810, 3], [756, 540, 3],
+    ];
+    particles.forEach(([x, y, r]) => {
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      const sg = ctx.createRadialGradient(x, y, 0, x, y, r * 5);
+      sg.addColorStop(0, 'rgba(255, 215, 0, 0.15)');
+      sg.addColorStop(1, 'transparent');
+      ctx.fillStyle = sg;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Floating emojis
+    ctx.globalAlpha = 0.08;
+    ctx.font = '54px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const emojis: [string, number, number][] = [
+      ['💰', 194, 202], ['📸', 864, 337], ['🎵', 86, 607],
+      ['🛒', 950, 742], ['💎', 162, 972], ['🎯', 810, 1012],
+      ['✨', 918, 472], ['🔥', 540, 1215],
+    ];
+    emojis.forEach(([e, x, y]) => ctx.fillText(e, x, y));
+
+    // Small Instagram icons
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    const drawInstaIcon = (cx: number, cy: number, s: number) => {
+      ctx.lineWidth = s * 0.12;
+      ctx.beginPath();
+      ctx.roundRect(cx - s, cy - s, s * 2, s * 2, s * 0.4);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, s * 0.45, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + s * 0.6, cy - s * 0.6, s * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    };
+    drawInstaIcon(480, 170, 30);
+    drawInstaIcon(140, 780, 28);
+    drawInstaIcon(930, 160, 26);
+    drawInstaIcon(820, 880, 28);
+    drawInstaIcon(260, 1120, 26);
+
+    // Small TikTok icons
+    const drawTikTokIcon = (cx: number, cy: number, s: number) => {
+      ctx.lineWidth = s * 0.13;
+      ctx.beginPath();
+      ctx.moveTo(cx + s * 0.15, cy - s);
+      ctx.lineTo(cx + s * 0.15, cy + s * 0.3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(cx - s * 0.15, cy + s * 0.45, s * 0.32, s * 0.22, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx + s * 0.15, cy - s);
+      ctx.quadraticCurveTo(cx + s * 0.7, cy - s * 0.7, cx + s * 0.7, cy - s * 0.3);
+      ctx.stroke();
+    };
+    drawTikTokIcon(750, 180, 28);
+    drawTikTokIcon(100, 420, 26);
+    drawTikTokIcon(900, 620, 27);
+    drawTikTokIcon(200, 1180, 26);
+    drawTikTokIcon(680, 950, 25);
+
+    ctx.globalAlpha = 1.0;
+
+    // Corner gold accent lines
+    const cornerLen = 54;
+    const cornerOff = 30;
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
+    ctx.lineWidth = 2;
+    // top-left
+    ctx.beginPath();
+    ctx.moveTo(cornerOff, cornerOff + cornerLen);
+    ctx.lineTo(cornerOff, cornerOff);
+    ctx.lineTo(cornerOff + cornerLen, cornerOff);
+    ctx.stroke();
+    // top-right
+    ctx.beginPath();
+    ctx.moveTo(w - cornerOff - cornerLen, cornerOff);
+    ctx.lineTo(w - cornerOff, cornerOff);
+    ctx.lineTo(w - cornerOff, cornerOff + cornerLen);
+    ctx.stroke();
+    // bottom-left
+    ctx.beginPath();
+    ctx.moveTo(cornerOff, h - cornerOff - cornerLen);
+    ctx.lineTo(cornerOff, h - cornerOff);
+    ctx.lineTo(cornerOff + cornerLen, h - cornerOff);
+    ctx.stroke();
+    // bottom-right
+    ctx.beginPath();
+    ctx.moveTo(w - cornerOff - cornerLen, h - cornerOff);
+    ctx.lineTo(w - cornerOff, h - cornerOff);
+    ctx.lineTo(w - cornerOff, h - cornerOff - cornerLen);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+
+    // "10K" — centered in the middle
+    const tenKY = h * 0.46;
+    const goldGrad = ctx.createLinearGradient(0, tenKY - 250, 0, tenKY + 40);
+    goldGrad.addColorStop(0, '#f5d576');
+    goldGrad.addColorStop(0.4, '#d4af37');
+    goldGrad.addColorStop(1, '#b8941f');
+
+    ctx.fillStyle = goldGrad;
+    ctx.font = '900 520px sans-serif';
+    ctx.shadowColor = 'rgba(212, 175, 55, 0.4)';
+    ctx.shadowBlur = 60;
+    const m10 = ctx.measureText('10');
+    ctx.font = '900 312px sans-serif';
+    const mK = ctx.measureText('K');
+    const totalW = m10.width + mK.width + 10;
+    const startX = (w - totalW) / 2;
+    ctx.font = '900 520px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('10', startX, tenKY);
+    ctx.font = '900 312px sans-serif';
+    ctx.fillText('K', startX + m10.width + 10, tenKY);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+    ctx.textAlign = 'center';
+
+    // Gold separator line
+    const lineY = tenKY + 100;
+    const lineGrad = ctx.createLinearGradient(w / 2 - 150, 0, w / 2 + 150, 0);
+    lineGrad.addColorStop(0, 'transparent');
+    lineGrad.addColorStop(0.5, 'rgba(212, 175, 55, 0.5)');
+    lineGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = lineGrad;
+    ctx.fillRect(w / 2 - 150, lineY, 300, 2);
+
+    // "Parabéns!" in gold italic — pushed down near logos
+    const parabensY = h - 340;
+    const parabensGrad = ctx.createLinearGradient(0, parabensY - 30, 0, parabensY + 10);
+    parabensGrad.addColorStop(0, '#f5d576');
+    parabensGrad.addColorStop(1, '#d4af37');
+    ctx.fillStyle = parabensGrad;
+    ctx.font = 'italic 700 66px sans-serif';
+    ctx.fillText('Parabéns!', w / 2, parabensY);
+
+    // Description text
+    const descY = parabensY + 60;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.font = '39px sans-serif';
+    ctx.fillText('Você alcançou a marca de', w / 2, descY);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 39px sans-serif';
+    ctx.fillText('10 mil seguidores orgânicos.', w / 2, descY + 55);
+
+    // MIM and RTV logos at bottom (low opacity)
+    const logosY = h - 120;
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#ffffff';
+
+    // M.I.M
+    ctx.font = '700 42px Georgia, serif';
+    ctx.fillText('M.I.M', w / 2 - 100, logosY);
+    ctx.font = 'italic 10px sans-serif';
+    ctx.letterSpacing = '3px';
+    ctx.fillText('MÉTODO INFLUÊNCIA MILIONÁRIA', w / 2 - 100, logosY + 18);
+    ctx.letterSpacing = '0px';
+
+    // Divider
+    ctx.fillRect(w / 2, logosY - 30, 2, 60);
+
+    // RTV
+    ctx.font = '900 42px sans-serif';
+    ctx.fillText('RTV', w / 2 + 100, logosY);
+    ctx.font = '700 10px sans-serif';
+    ctx.letterSpacing = '3px';
+    ctx.fillText('ROTEIRO VIRAL', w / 2 + 100, logosY + 18);
+    ctx.letterSpacing = '0px';
+
+    ctx.globalAlpha = 1.0;
+
+    // Border
+    ctx.strokeStyle = 'rgba(180, 160, 120, 0.3)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.roundRect(3, 3, w - 6, h - 6, 42);
+    ctx.stroke();
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(drawCard, 100);
+    }
+  }, [open, drawCard]);
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      const link = document.createElement('a');
+      link.download = 'premiacao-10k-dome.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch {
+      alert('Não foi possível salvar a imagem. Tente novamente.');
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper' } }}
+    >
+      <DialogContent sx={{ p: 0 }}>
+        <Box sx={{ position: 'relative' }}>
+          <IconButton
+            onClick={onClose}
+            sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, bgcolor: 'rgba(0,0,0,0.3)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' } }}
+            size="small"
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+          <Box sx={{ display: 'flex', justifyContent: 'center', bgcolor: '#111', p: 2 }}>
+            <canvas
+              ref={canvasRef}
+              style={{ width: '100%', maxWidth: 360, height: 'auto', aspectRatio: '1080/1350', borderRadius: 12 }}
+            />
+          </Box>
+        </Box>
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
+            Parabéns pela conquista!
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Salve e compartilhe sua conquista!
+          </Typography>
+          <Button
+            variant="contained"
+            fullWidth
+            startIcon={<DownloadIcon />}
+            onClick={handleDownload}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 1.2 }}
+          >
+            Salvar imagem
+          </Button>
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function RankingShareModal({
   open,
   onClose,
@@ -351,8 +641,10 @@ export default function RankingPage() {
   const theme = useTheme();
   const [pastWinners, setPastWinners] = useState<PastWinner[]>([]);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [show10kModal, setShow10kModal] = useState(false);
 
   const testShare = searchParams.get('test') === 'share';
+  const test10k = searchParams.get('test') === '10k';
 
   useEffect(() => {
     fetch('/api/accounts/ranking-wins')
@@ -368,6 +660,12 @@ export default function RankingPage() {
   const userPosition = account?.id ? rankedUsers.findIndex((u) => u.id === account.id) + 1 : 0;
   const userInRanking = account?.id && userPosition > 0;
   const userIsTopThree = (userPosition >= 1 && userPosition <= 3) || testShare;
+
+  useEffect(() => {
+    if (!isLoading && test10k) {
+      setShow10kModal(true);
+    }
+  }, [isLoading, test10k]);
 
   useEffect(() => {
     if (!isLoading && userIsTopThree) {
@@ -622,6 +920,8 @@ export default function RankingPage() {
           weekLabel={week?.label || ''}
         />
       )}
+
+      <TenKAwardModal open={show10kModal} onClose={() => setShow10kModal(false)} />
 
       {pastWinners.length > 0 && (
         <Box sx={{ mt: 4 }}>
