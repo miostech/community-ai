@@ -79,6 +79,16 @@ export default function CursosPage() {
       kiwifyProductIds: ['c6547980-bb2e-11f0-8751-cd4e443e2330', '97204820-d3e9-11ee-b35b-a7756e800fa3', 'b1d89730-3533-11ee-84fd-bdb8d3fd9bc7', 'yjHjvnY', 'cGQaf5s', '0c193809-a695-4f39-bc7b-b4e2794274a9'],
       isAvailable: false,
     },
+    {
+      id: '4',
+      title: 'Figurinhas Sweet Stories',
+      description: 'Pack de figurinhas exclusivas para deixar seus stories ainda mais criativos',
+      thumbnail: '/images/cursos/stickers.jpeg',
+      modules: 1,
+      kiwifyUrl: 'https://pay.kiwify.com.br/Gbxt1jd?afid=yOQK3Idl',
+      kiwifyProductIds: [],
+      isAvailable: false,
+    },
   ];
 
   // Atualiza isAvailable sempre que o contexto de cursos mudar
