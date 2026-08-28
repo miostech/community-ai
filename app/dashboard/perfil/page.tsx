@@ -1015,7 +1015,7 @@ export default function PerfilPage() {
             <Button
               variant="outlined"
               href={`https://wa.me/551153042686?text=${encodeURIComponent(
-                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro na Dome é ${formData.email || account?.email || ''}, e preciso de ajuda com a plataforma.`
+                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro é ${formData.email || account?.email || ''}, e preciso de ajuda com a plataforma.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -1048,7 +1048,7 @@ export default function PerfilPage() {
             <Button
               variant="outlined"
               href={`https://wa.me/5543996570568?text=${encodeURIComponent(
-                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro é ${formData.email || account?.email || ''}, e preciso de ajuda com as aulas.`
+                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, vim pela Dome e tenho dúvidas sobre as aulas do curso.`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -1252,7 +1252,7 @@ export default function PerfilPage() {
               variant="contained"
               component="a"
               href={`https://wa.me/551153042686?text=${encodeURIComponent(
-                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro na Dome é ${formData.email || account?.email || ''}, e preciso de ajuda com a plataforma (email privado Apple).`
+                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro é ${formData.email || account?.email || ''}, e preciso de ajuda com a plataforma (email privado Apple).`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
