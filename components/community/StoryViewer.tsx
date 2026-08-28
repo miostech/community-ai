@@ -150,6 +150,15 @@ export function StoryViewer({
   /** Overrides de like por story (atualização otimista após toggle) */
   const [storyLikeOverrides, setStoryLikeOverrides] = useState<Record<string, { liked: boolean; likes_count: number }>>({});
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('story-viewer-toggle', { detail: { open } }));
+    return () => {
+      if (open) {
+        window.dispatchEvent(new CustomEvent('story-viewer-toggle', { detail: { open: false } }));
+      }
+    };
+  }, [open]);
+
   /** Índice seguro para não renderizar com current indefinido (ex.: lista trocou e currentIndex ficou fora do range). */
   const safeIndex =
     stories.length === 0 ? 0 : Math.min(currentIndex, Math.max(0, stories.length - 1));

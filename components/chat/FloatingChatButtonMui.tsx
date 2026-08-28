@@ -17,6 +17,7 @@ export function FloatingChatButtonMui() {
     const pathname = usePathname();
     const { requestNavigation } = useDashboardPaywall();
     const [showPulse, setShowPulse] = useState(true);
+    const [storyViewerOpen, setStoryViewerOpen] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -25,12 +26,20 @@ export function FloatingChatButtonMui() {
         return () => clearTimeout(timer);
     }, []);
 
+    useEffect(() => {
+        const handler = (e: Event) => {
+            setStoryViewerOpen((e as CustomEvent).detail.open);
+        };
+        window.addEventListener('story-viewer-toggle', handler);
+        return () => window.removeEventListener('story-viewer-toggle', handler);
+    }, []);
+
     const isChatPage = pathname === '/dashboard/chat';
     const isPrivateMessagesPage = pathname === '/dashboard/mensagens';
     const isAssinaturaPage = pathname === '/dashboard/assinatura';
     const isLivePage = pathname?.startsWith('/dashboard/lives');
 
-    if (isChatPage || isPrivateMessagesPage || isAssinaturaPage || isLivePage) {
+    if (isChatPage || isPrivateMessagesPage || isAssinaturaPage || isLivePage || storyViewerOpen) {
         return null;
     }
 

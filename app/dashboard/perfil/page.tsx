@@ -1006,10 +1006,10 @@ export default function PerfilPage() {
           >
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" fontWeight={600}>
-                Suporte
+                Suporte da plataforma
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Precisa de ajuda com a Dome? Fale com a gente pelo WhatsApp.
+                Problemas na plataforma, dúvidas sobre planos ou assinatura da Dome.
               </Typography>
             </Box>
             <Button
@@ -1021,6 +1021,38 @@ export default function PerfilPage() {
               rel="noopener noreferrer"
               component="a"
               // startIcon={<SupportIcon />}
+              fullWidth
+              sx={{ width: { sm: 'auto' } }}
+            >
+              Acessar suporte
+            </Button>
+          </Stack>
+        </Paper>
+
+        {/* Suporte às aulas */}
+        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Suporte às aulas
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Dúvidas sobre as aulas? Fale com a gente pelo WhatsApp.
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              href={`https://wa.me/5543996570568?text=${encodeURIComponent(
+                `Olá, meu nome é ${formData.first_name || account?.first_name || 'usuário'}, meu email de cadastro é ${formData.email || account?.email || ''}, e preciso de ajuda com as aulas.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              component="a"
               fullWidth
               sx={{ width: { sm: 'auto' } }}
             >
