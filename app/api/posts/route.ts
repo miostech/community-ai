@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
             .filter((o) => o.length > 0);
 
         // Categoria é obrigatória — normalizar para aceitar com acento ou maiúsculas (ex: "Atualização", "Suporte")
-        const validCategories = ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'];
+        const validCategories = ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte', 'engajamento'];
         const normalizeCategory = (s: string) =>
             s.trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
         const rawCategory = typeof category === 'string' ? category : '';
@@ -76,6 +76,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: 'Apenas administradores, moderadores e criadores podem publicar atualizações' },
                 { status: 403 }
+            );
+        }
+
+        if (categoryValue === 'engajamento' && !link_instagram_post?.trim()) {
+            return NextResponse.json(
+                { error: 'Posts de engajamento precisam do link da publicação na rede social' },
+                { status: 400 }
             );
         }
 

@@ -41,7 +41,7 @@ import {
 } from '@mui/icons-material';
 import { MultiImageUpload } from '@/components/community/MultiImageUpload';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte' | 'engajamento';
 
 interface UploadedImage {
   url: string;
@@ -67,6 +67,7 @@ const categoryLabels: Record<PostCategory, string> = {
   geral: 'Geral',
   atualizacao: 'Atualização',
   suporte: 'Suporte',
+  engajamento: 'Engajamento',
 };
 
 export default function CriarPostPageMui() {
@@ -318,6 +319,11 @@ export default function CriarPostPageMui() {
       return;
     }
 
+    if (newPost.category === 'engajamento' && !newPost.link_instagram_post.trim()) {
+      setError('Posts de engajamento precisam do link da publicação na rede social');
+      return;
+    }
+
     const hasPoll = pollEnabled && pollQuestion.trim() && pollOptions.filter((o) => o.trim()).length >= 2;
     if (
       !newPost.content.trim() &&
@@ -507,7 +513,7 @@ export default function CriarPostPageMui() {
             <Stack direction="row" flexWrap="wrap" gap={1}>
               {((['ideia', 'resultado', 'duvida', 'roteiro', 'geral'] as PostCategory[]).concat(
                 (account?.role === 'admin' || account?.role === 'moderator' || account?.role === 'criador') ? ['atualizacao'] : [],
-                ['suporte']
+                ['suporte', 'engajamento']
               )).map((cat) => (
                 <Chip
                   key={cat}
@@ -951,9 +957,16 @@ export default function CriarPostPageMui() {
           <Box>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
               Link da publicação na rede social{' '}
-              <Typography component="span" variant="caption" color="text.secondary">
-                (opcional)
-              </Typography>
+              {newPost.category !== 'engajamento' && (
+                <Typography component="span" variant="caption" color="text.secondary">
+                  (opcional)
+                </Typography>
+              )}
+              {newPost.category === 'engajamento' && (
+                <Typography component="span" variant="caption" color="error">
+                  (obrigatório)
+                </Typography>
+              )}
             </Typography>
             <TextField
               fullWidth

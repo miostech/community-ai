@@ -45,7 +45,7 @@ import {
     SUBSCRIBER_BADGE_ICON,
 } from '@/lib/subscriber-badge';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte' | 'engajamento';
 
 const categoryLabels: Record<PostCategory, string> = {
     ideia: 'Ideia',
@@ -55,6 +55,7 @@ const categoryLabels: Record<PostCategory, string> = {
     geral: 'Geral',
     atualizacao: 'Atualização',
     suporte: 'Suporte',
+    engajamento: 'Engajamento',
 };
 
 function formatTimeAgo(dateString: string): string {
@@ -188,6 +189,8 @@ export function PostCardMui({
     };
 
     const isAtualizacao = post.category === 'atualizacao';
+    const isEngajamento = post.category === 'engajamento';
+    const engajamentoActive = isEngajamento && (Date.now() - new Date(post.created_at).getTime()) < 2 * 60 * 60 * 1000;
 
     return (
         <Card
@@ -209,8 +212,25 @@ export function PostCardMui({
                             ? 'inset 0 0 0 1px rgba(147, 51, 234, 0.35)'
                             : 'inset 0 0 0 1px rgba(147, 51, 234, 0.12)',
                 }),
+                ...(engajamentoActive && {
+                    border: '2px solid',
+                    borderColor: '#f59e0b',
+                    borderRadius: 3,
+                    my: 1,
+                    boxShadow:
+                        theme.palette.mode === 'dark'
+                            ? '0 0 12px rgba(245, 158, 11, 0.3)'
+                            : '0 0 12px rgba(245, 158, 11, 0.15)',
+                }),
             })}
         >
+            {engajamentoActive && (
+                <Box sx={{ px: 2, pt: 1.5, pb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" fontWeight={600} sx={{ color: '#f59e0b' }}>
+                        Ajude a engajar no post de {post.author.name.split(' ')[0]}!
+                    </Typography>
+                </Box>
+            )}
             {/* Header */}
             <CardHeader
                 avatar={

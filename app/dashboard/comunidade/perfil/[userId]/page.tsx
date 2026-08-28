@@ -67,7 +67,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 
-type PostType = 'idea' | 'script' | 'question' | 'result' | 'general' | 'update' | 'support';
+type PostType = 'idea' | 'script' | 'question' | 'result' | 'general' | 'update' | 'support' | 'engagement';
 
 /** Perfil exibido: pode ser usuário conhecido (stories) ou qualquer autor do feed */
 type ProfileDisplay = CommunityUser | {
@@ -99,6 +99,7 @@ const postTypeLabels: Record<PostType, string> = {
   general: 'Geral',
   update: 'Atualização',
   support: 'Suporte',
+  engagement: 'Engajamento',
 };
 
 const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'error'> = {
@@ -109,6 +110,7 @@ const postTypeColors: Record<PostType, 'default' | 'primary' | 'secondary' | 'su
   general: 'default',
   update: 'info',
   support: 'primary',
+  engagement: 'warning',
 };
 
 /** Mapeia categoria da API para tipo do perfil */
@@ -120,6 +122,7 @@ const categoryToType: Record<string, PostType> = {
   geral: 'general',
   atualizacao: 'update',
   suporte: 'support',
+  engajamento: 'engagement',
 };
 
 /** Tipo unificado para posts exibidos no perfil */

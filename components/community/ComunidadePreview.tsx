@@ -34,7 +34,7 @@ import { useStories } from '@/contexts/StoriesContext';
 import { StoriesMui } from '@/components/community/StoriesMui';
 import { DomeLogo } from '@/components/ui/DomeLogo';
 
-type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
+type PostCategory = 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte' | 'engajamento';
 
 const categoryLabels: Record<PostCategory, string> = {
     ideia: 'Ideia',
@@ -44,6 +44,7 @@ const categoryLabels: Record<PostCategory, string> = {
     geral: 'Geral',
     atualizacao: 'Atualização',
     suporte: 'Suporte',
+    engajamento: 'Engajamento',
 };
 
 function formatTimeAgo(dateString: string): string {

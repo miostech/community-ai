@@ -20,7 +20,7 @@ export interface IPost extends Document {
     link_youtube_post?: string;
 
     // Organização
-    category: 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte';
+    category: 'ideia' | 'resultado' | 'duvida' | 'roteiro' | 'geral' | 'atualizacao' | 'suporte' | 'engajamento';
     media_type: 'text' | 'image' | 'video';
     tags: string[];
     is_pinned: boolean;
@@ -129,7 +129,7 @@ const PostSchema = new Schema<IPost>(
         // Organização
         category: {
             type: String,
-            enum: ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte'],
+            enum: ['ideia', 'resultado', 'duvida', 'roteiro', 'geral', 'atualizacao', 'suporte', 'engajamento'],
             default: 'geral',
             index: true,
         },
@@ -244,7 +244,7 @@ if (process.env.NODE_ENV === 'development' && mongoose.models.Post) {
     const hasPoll = schema.paths['poll_question'] != null;
     const hasLiveEvent = schema.paths['live_event_id'] != null;
     const needsReload =
-        !categoryPath?.enumValues?.includes('atualizacao') || !hasPoll || !hasLiveEvent;
+        !categoryPath?.enumValues?.includes('atualizacao') || !categoryPath?.enumValues?.includes('engajamento') || !hasPoll || !hasLiveEvent;
     if (needsReload) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).Post;
     }
