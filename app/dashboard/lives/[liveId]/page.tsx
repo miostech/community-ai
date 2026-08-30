@@ -1065,9 +1065,11 @@ function RoomContent({
                             {micOn ? <MicIcon fontSize="small" /> : <MicOffIcon fontSize="small" />}
                         </IconButton>
                     )}
-                    <IconButton size="small" onClick={toggleCamera} sx={{ bgcolor: cameraOn ? 'action.selected' : 'error.main', color: cameraOn ? 'text.primary' : 'white', '&:hover': { bgcolor: cameraOn ? 'action.hover' : 'error.dark' } }}>
-                        {cameraOn ? <VideocamIcon fontSize="small" /> : <VideocamOffIcon fontSize="small" />}
-                    </IconButton>
+                    <Tooltip title={cameraOn ? 'Desligar câmera' : 'Ligar câmera'}>
+                        <IconButton size="small" onClick={toggleCamera} sx={{ bgcolor: cameraOn ? 'action.selected' : 'error.main', color: cameraOn ? 'text.primary' : 'white', '&:hover': { bgcolor: cameraOn ? 'action.hover' : 'error.dark' } }}>
+                            {cameraOn ? <VideocamIcon fontSize="small" /> : <VideocamOffIcon fontSize="small" />}
+                        </IconButton>
+                    </Tooltip>
                     {isHost && (
                         <IconButton size="small" onClick={toggleScreen} sx={{ bgcolor: screenOn ? 'primary.main' : 'action.selected', color: screenOn ? 'white' : 'text.primary', display: { xs: 'none', sm: 'inline-flex' } }}>
                             {screenOn ? <StopScreenShareIcon fontSize="small" /> : <ScreenShareIcon fontSize="small" />}
