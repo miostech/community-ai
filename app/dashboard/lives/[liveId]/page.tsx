@@ -123,6 +123,8 @@ export default function LiveRoomPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showJoinChoice, setShowJoinChoice] = useState(false);
+    const [waitingReconnect, setWaitingReconnect] = useState(false);
+    const intentionalLeaveRef = useRef(false);
 
     const isStaff = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
 
@@ -363,6 +365,54 @@ export default function LiveRoomPage() {
         );
     }
 
+    const handleReconnect = async () => {
+        setWaitingReconnect(false);
+        setToken(null);
+        setLoading(true);
+        await fetchEvent();
+        await fetchToken();
+    };
+
+    const handleLeaveForReconnect = () => {
+        intentionalLeaveRef.current = true;
+        setToken(null);
+        setWaitingReconnect(true);
+    };
+
+    if (waitingReconnect && event) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3, px: 2 }}>
+                <VideocamOffIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                <Typography variant="h6" fontWeight={700} textAlign="center">
+                    Você saiu da live
+                </Typography>
+                <Typography color="text.secondary" textAlign="center">
+                    A live continua ativa. Reconecte quando estiver pronta.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={loading ? <CircularProgress size={20} /> : <VideocamIcon />}
+                        onClick={handleReconnect}
+                        disabled={loading}
+                        sx={{ borderRadius: 3, px: 4 }}
+                    >
+                        Reconectar
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={() => router.push('/dashboard/lives')}
+                        sx={{ borderRadius: 3, px: 4 }}
+                    >
+                        Voltar para Lives
+                    </Button>
+                </Box>
+            </Box>
+        );
+    }
+
     return (
         <LiveKitRoom
             serverUrl={livekitUrl}
@@ -372,7 +422,13 @@ export default function LiveRoomPage() {
                 console.error('[LiveKit]', err);
                 setError('Não foi possível entrar na live. A sala pode estar lotada ou indisponível no momento.');
             }}
-            onDisconnected={() => router.push('/dashboard/lives')}
+            onDisconnected={() => {
+                if (intentionalLeaveRef.current) {
+                    intentionalLeaveRef.current = false;
+                    return;
+                }
+                router.push('/dashboard/lives');
+            }}
             style={{ height: '100%' }}
         >
             <RoomContent
@@ -383,6 +439,7 @@ export default function LiveRoomPage() {
                 liveId={liveId}
                 accountId={account?.id || ''}
                 onEnd={() => router.push('/dashboard/lives')}
+                onLeaveReconnect={handleLeaveForReconnect}
             />
             <RoomAudioRenderer />
         </LiveKitRoom>
@@ -468,6 +525,7 @@ function RoomContent({
     liveId,
     accountId,
     onEnd,
+    onLeaveReconnect,
 }: {
     event: LiveEventData;
     isHost: boolean;
@@ -476,6 +534,7 @@ function RoomContent({
     liveId: string;
     accountId: string;
     onEnd: () => void;
+    onLeaveReconnect: () => void;
 }) {
     const room = useRoomContext();
     const participants = useParticipants();
@@ -682,6 +741,8 @@ function RoomContent({
             },
         ]);
         setChatInput('');
+        isAtBottomRef.current = true;
+        setHasNewMessages(false);
     };
 
     const raiseHand = () => {
@@ -901,8 +962,20 @@ function RoomContent({
                             </Box>
                         ))
                     ) : (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <Typography color="grey.500">Aguardando vídeo...</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                            {isHost ? (
+                                <Typography color="grey.500">Aguardando vídeo...</Typography>
+                            ) : (
+                                <>
+                                    <VideocamOffIcon sx={{ fontSize: 40, color: 'grey.600' }} />
+                                    <Typography color="grey.400" fontWeight={600}>
+                                        Live em pausa
+                                    </Typography>
+                                    <Typography variant="caption" color="grey.600">
+                                        O host saiu temporariamente. Aguarde a reconexão.
+                                    </Typography>
+                                </>
+                            )}
                         </Box>
                     )}
                     {highlightedComment && (
@@ -994,16 +1067,29 @@ function RoomContent({
                             Encerrar
                         </Button>
                     )}
-                    <Button
-                        variant={isCreator ? 'outlined' : 'contained'}
-                        color="error"
-                        startIcon={<CallEndIcon />}
-                        onClick={() => { room.disconnect(); onEnd(); }}
-                        size="small"
-                        sx={{ fontSize: { xs: '0.75rem', md: '0.8125rem' }, px: { xs: 1.5, md: 2 } }}
-                    >
-                        Sair
-                    </Button>
+                    {isHost ? (
+                        <Button
+                            variant="outlined"
+                            color="warning"
+                            startIcon={<VideocamOffIcon />}
+                            onClick={() => { room.disconnect(); onLeaveReconnect(); }}
+                            size="small"
+                            sx={{ fontSize: { xs: '0.75rem', md: '0.8125rem' }, px: { xs: 1.5, md: 2 } }}
+                        >
+                            Sair e reconectar
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<CallEndIcon />}
+                            onClick={() => { room.disconnect(); onEnd(); }}
+                            size="small"
+                            sx={{ fontSize: { xs: '0.75rem', md: '0.8125rem' }, px: { xs: 1.5, md: 2 } }}
+                        >
+                            Sair
+                        </Button>
+                    )}
                 </Box>
             </Box>
 
@@ -1027,30 +1113,59 @@ function RoomContent({
                         Chat
                     </Typography>
                 </Box>
-                <Box sx={{ flex: 1, overflow: 'auto', p: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {chatMessages.map((msg) => (
-                        <Box
-                            key={msg.id}
-                            onClick={() => isHost && highlightComment(msg)}
+                <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                    <Box
+                        ref={chatContainerRef}
+                        onScroll={() => {
+                            const atBottom = checkIsAtBottom();
+                            isAtBottomRef.current = atBottom;
+                            if (atBottom) setHasNewMessages(false);
+                        }}
+                        sx={{ height: '100%', overflow: 'auto', p: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}
+                    >
+                        {chatMessages.map((msg) => (
+                            <Box
+                                key={msg.id}
+                                onClick={() => isHost && highlightComment(msg)}
+                                sx={{
+                                    cursor: isHost ? 'pointer' : 'default',
+                                    px: 0.5,
+                                    py: 0.25,
+                                    borderRadius: 1,
+                                    bgcolor: highlightedComment?.id === msg.id ? 'rgba(245,158,11,0.15)' : 'transparent',
+                                    '&:hover': isHost ? { bgcolor: 'action.hover' } : {},
+                                    transition: 'background-color 0.2s',
+                                }}
+                            >
+                                <Typography variant="caption" component="span" sx={{ fontWeight: 600, mr: 0.5 }}>
+                                    {msg.senderName}:
+                                </Typography>
+                                <Typography variant="caption" component="span">
+                                    {msg.message}
+                                </Typography>
+                            </Box>
+                        ))}
+                        <div ref={chatEndRef} />
+                    </Box>
+                    {hasNewMessages && (
+                        <Chip
+                            label="Novos comentários"
+                            size="small"
+                            color="primary"
+                            onClick={scrollToBottom}
                             sx={{
-                                cursor: isHost ? 'pointer' : 'default',
-                                px: 0.5,
-                                py: 0.25,
-                                borderRadius: 1,
-                                bgcolor: highlightedComment?.id === msg.id ? 'rgba(245,158,11,0.15)' : 'transparent',
-                                '&:hover': isHost ? { bgcolor: 'action.hover' } : {},
-                                transition: 'background-color 0.2s',
+                                position: 'absolute',
+                                bottom: 8,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                cursor: 'pointer',
+                                zIndex: 1,
+                                boxShadow: 2,
+                                fontWeight: 600,
+                                fontSize: '0.7rem',
                             }}
-                        >
-                            <Typography variant="caption" component="span" sx={{ fontWeight: 600, mr: 0.5 }}>
-                                {msg.senderName}:
-                            </Typography>
-                            <Typography variant="caption" component="span">
-                                {msg.message}
-                            </Typography>
-                        </Box>
-                    ))}
-                    <div ref={chatEndRef} />
+                        />
+                    )}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, p: 1, borderTop: 1, borderColor: 'divider' }}>
                     <TextField
