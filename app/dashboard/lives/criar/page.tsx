@@ -32,6 +32,7 @@ export default function CriarLivePage() {
     const [scheduledAt, setScheduledAt] = useState('');
     const [coverUrl, setCoverUrl] = useState('');
     const [membersOnly, setMembersOnly] = useState(false);
+    const [staffOnly, setStaffOnly] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -93,6 +94,7 @@ export default function CriarLivePage() {
             if (scheduledAt) body.scheduled_at = new Date(scheduledAt).toISOString();
             if (coverUrl) body.cover_image_url = coverUrl;
             if (membersOnly) body.members_only = true;
+            if (staffOnly) body.staff_only = true;
 
             const res = await fetch('/api/lives', {
                 method: 'POST',
@@ -193,11 +195,25 @@ export default function CriarLivePage() {
                     control={
                         <Switch
                             checked={membersOnly}
-                            onChange={(e) => setMembersOnly(e.target.checked)}
+                            onChange={(e) => { setMembersOnly(e.target.checked); if (e.target.checked) setStaffOnly(false); }}
                             color="warning"
+                            disabled={staffOnly}
                         />
                     }
                     label="Exclusiva para membros Premium"
+                    sx={{ mb: 2 }}
+                />
+
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={staffOnly}
+                            onChange={(e) => { setStaffOnly(e.target.checked); if (e.target.checked) setMembersOnly(false); }}
+                            color="secondary"
+                            disabled={membersOnly}
+                        />
+                    }
+                    label="Apenas para moderadores e criadores"
                     sx={{ mb: 3 }}
                 />
 

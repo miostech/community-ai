@@ -19,7 +19,15 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
 
+        const authUserId = (session.user as any).auth_user_id || session.user.id;
         await connectMongo();
+
+        const reqAccount = await Account.findOne({ auth_user_id: authUserId })
+            .select('_id role')
+            .lean() as { _id: mongoose.Types.ObjectId; role?: string } | null;
+
+        const staffRoles = ['moderator', 'admin', 'criador'];
+        const isStaff = reqAccount && staffRoles.includes(reqAccount.role || '');
 
         const { searchParams } = new URL(request.url);
         const status = searchParams.get('status');
@@ -29,6 +37,9 @@ export async function GET(request: NextRequest) {
 
         const filter: Record<string, unknown> = {};
         if (status) filter.status = status;
+        if (!isStaff) {
+            filter.staff_only = { $ne: true };
+        }
 
         const [events, total] = await Promise.all([
             LiveEvent.find(filter)
@@ -139,6 +150,7 @@ export async function POST(request: NextRequest) {
         const cover_image_url = typeof body.cover_image_url === 'string' ? body.cover_image_url.trim() : undefined;
         const scheduled_at = typeof body.scheduled_at === 'string' ? new Date(body.scheduled_at) : undefined;
         const members_only = body.members_only === true;
+        const staff_only = body.staff_only === true;
 
         const roomId = new mongoose.Types.ObjectId();
 
@@ -164,6 +176,7 @@ export async function POST(request: NextRequest) {
             status: 'scheduled',
             scheduled_at,
             members_only,
+            staff_only,
         });
 
         await liveEvent.save();

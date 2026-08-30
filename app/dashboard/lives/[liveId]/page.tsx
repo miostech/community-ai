@@ -161,6 +161,10 @@ export default function LiveRoomPage() {
                     setMembersOnly(true);
                     return;
                 }
+                if (data.error === 'staff_only') {
+                    setError('Esta live é exclusiva para moderadores e criadores.');
+                    return;
+                }
                 setError(data.error || 'Erro ao entrar na live');
                 return;
             }

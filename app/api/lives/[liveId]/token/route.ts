@@ -62,6 +62,13 @@ export async function POST(
             }
         }
 
+        if ((event as any).staff_only && !isCreator) {
+            const staffRoles = ['moderator', 'admin', 'criador'];
+            if (!staffRoles.includes(account.role || '')) {
+                return NextResponse.json({ error: 'staff_only' }, { status: 403 });
+            }
+        }
+
         if (event.status === 'live' && event.started_at) {
             const elapsed = Date.now() - new Date(event.started_at).getTime();
             if (elapsed >= MAX_DURATION_MS) {

@@ -344,10 +344,10 @@ export async function GET(request: NextRequest) {
 
         // Buscar dados de lives vinculadas (reservas)
         const livePostIds = posts.filter((p: any) => p.live_event_id).map((p: any) => p.live_event_id);
-        const liveEventsMap = new Map<string, { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string; members_only?: boolean }>();
+        const liveEventsMap = new Map<string, { status: string; reservations_count: number; user_reserved: boolean; scheduled_at?: string; members_only?: boolean; staff_only?: boolean }>();
         if (livePostIds.length > 0) {
             const liveEvents = await LiveEvent.find({ _id: { $in: livePostIds } })
-                .select('_id status reservations scheduled_at members_only')
+                .select('_id status reservations scheduled_at members_only staff_only')
                 .lean();
             for (const le of liveEvents) {
                 const leAny = le as any;
@@ -358,9 +358,13 @@ export async function GET(request: NextRequest) {
                     user_reserved: currentAccount ? reservations.some((r: any) => r.toString() === (currentAccount as any)._id.toString()) : false,
                     scheduled_at: leAny.scheduled_at?.toISOString?.() || undefined,
                     members_only: leAny.members_only === true,
+                    staff_only: leAny.staff_only === true,
                 });
             }
         }
+
+        const currentRole = currentAccount ? (currentAccount as any).role : '';
+        const isCurrentStaff = ['moderator', 'admin', 'criador'].includes(currentRole || '');
 
         // Formatar posts para resposta (author_doc vem da agregação)
         const authorDoc = (post: any) => post.author_doc || post.author_id;
@@ -401,9 +405,13 @@ export async function GET(request: NextRequest) {
             live_event: post.live_event_id ? (liveEventsMap.get(post.live_event_id.toString()) || null) : null,
         }));
 
+        const visiblePosts = isCurrentStaff
+            ? formattedPosts
+            : formattedPosts.filter((p: any) => !p.live_event?.staff_only);
+
         return NextResponse.json({
             success: true,
-            posts: formattedPosts,
+            posts: visiblePosts,
             pagination: {
                 page,
                 limit,

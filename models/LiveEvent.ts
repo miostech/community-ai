@@ -21,6 +21,7 @@ export interface ILiveEvent extends Document {
     reservations: Types.ObjectId[];
     chat_messages: { sender: string; senderName: string; message: string; timestamp: number }[];
     members_only: boolean;
+    staff_only: boolean;
     egress_id?: string;
     recording_url?: string;
     created_at: Date;
@@ -102,6 +103,7 @@ const LiveEventSchema = new Schema<ILiveEvent>(
             default: [],
         },
         members_only: { type: Boolean, default: false },
+        staff_only: { type: Boolean, default: false },
         egress_id: { type: String },
         recording_url: { type: String },
     },
@@ -116,7 +118,7 @@ LiveEventSchema.index({ creator_id: 1, created_at: -1 });
 
 if (process.env.NODE_ENV === 'development' && mongoose.models.LiveEvent) {
     const schema = mongoose.models.LiveEvent.schema;
-    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['slug'] || !schema.paths['unique_viewers'] || !schema.paths['chat_messages']) {
+    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['staff_only'] || !schema.paths['slug'] || !schema.paths['unique_viewers'] || !schema.paths['chat_messages']) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).LiveEvent;
     }
 }

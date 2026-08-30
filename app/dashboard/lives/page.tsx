@@ -54,6 +54,7 @@ interface LiveEvent {
     creator: LiveEventCreator | null;
     recording_url?: string;
     members_only?: boolean;
+    staff_only?: boolean;
     slug?: string;
     created_at: string;
 }
@@ -256,6 +257,9 @@ function LiveEventCard({ event, onClick, canDelete, canNotify, onRefresh }: { ev
                                             Premium
                                         </Typography>
                                     </Stack>
+                                )}
+                                {event.staff_only && (
+                                    <Chip label="Staff" size="small" color="secondary" sx={{ fontSize: '0.65rem', height: 20, fontWeight: 700 }} />
                                 )}
                                 {isLive && (
                                     <Chip
