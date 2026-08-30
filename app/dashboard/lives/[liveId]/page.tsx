@@ -76,6 +76,7 @@ interface LiveEventData {
     room_name: string;
     promoted_speakers?: string[];
     recording_url?: string;
+    staff_only?: boolean;
 }
 
 interface ChatMessage {
@@ -190,7 +191,7 @@ export default function LiveRoomPage() {
                 return;
             }
             const isCreator = account?.id === ev.creator?._id;
-            if (isStaff && !isCreator) {
+            if (isStaff && !isCreator && !ev.staff_only) {
                 setShowJoinChoice(true);
                 setLoading(false);
             } else {
