@@ -455,6 +455,11 @@ export default function LiveRoomPage() {
             serverUrl={livekitUrl}
             token={token}
             connect={true}
+            options={{
+                adaptiveStream: true,
+                dynacast: true,
+                disconnectOnPageLeave: false,
+            }}
             onError={(err) => {
                 console.error('[LiveKit]', err);
                 const msg = err?.message || '';
@@ -665,6 +670,27 @@ function RoomContent({
     }, []);
 
     useEffect(() => {
+        const onVisible = () => {
+            if (document.visibilityState !== 'visible') return;
+            room.remoteParticipants.forEach((p) => {
+                p.trackPublications.forEach((pub) => {
+                    if (pub.track && pub.isSubscribed) {
+                        const el = pub.track.attachedElements?.[0];
+                        if (el && 'play' in el) {
+                            (el as HTMLMediaElement).play().catch(() => {});
+                        }
+                    }
+                });
+            });
+            if (room.state === 'disconnected') {
+                window.location.reload();
+            }
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => { document.removeEventListener('visibilitychange', onVisible); };
+    }, [room]);
+
+    useEffect(() => {
         const handleJoin = (participant: RemoteParticipant) => {
             const name = participant.name || participant.identity;
             const id = `${participant.identity}-${Date.now()}`;
@@ -793,22 +819,36 @@ function RoomContent({
 
     const toggleCamera = async () => {
         const next = !cameraOn;
-        await room.localParticipant.setCameraEnabled(next);
-        setCameraOn(next);
+        try {
+            await room.localParticipant.setCameraEnabled(next);
+            setCameraOn(next);
+        } catch (err) {
+            console.error('[toggleCamera]', err);
+            alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+        }
     };
 
     const toggleMic = async () => {
         if (!liveCanPublishAudio) return;
         const next = !micOn;
-        await room.localParticipant.setMicrophoneEnabled(next);
-        setMicOn(next);
+        try {
+            await room.localParticipant.setMicrophoneEnabled(next);
+            setMicOn(next);
+        } catch (err) {
+            console.error('[toggleMic]', err);
+            alert('Não foi possível acessar o microfone. Verifique as permissões do navegador.');
+        }
     };
 
     const toggleScreen = async () => {
-        if (!isHost) return;
+        if (!isHost && !isStaff) return;
         const next = !screenOn;
-        await room.localParticipant.setScreenShareEnabled(next);
-        setScreenOn(next);
+        try {
+            await room.localParticipant.setScreenShareEnabled(next);
+            setScreenOn(next);
+        } catch (err) {
+            console.error('[toggleScreen]', err);
+        }
     };
 
     const sendChat = () => {
