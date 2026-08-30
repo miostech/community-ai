@@ -1067,6 +1067,8 @@ function RoomContent({
                         label={participants.length}
                         size="small"
                         variant="outlined"
+                        onClick={() => setShowParticipants(true)}
+                        sx={{ cursor: 'pointer' }}
                     />
                     {event.slug && (
                         <Tooltip title="Compartilhar">
@@ -1467,16 +1469,16 @@ function RoomContent({
                 </Box>
             </Paper>
 
-            {/* Participants dialog (host only) */}
+            {/* Participants dialog */}
             <Dialog open={showParticipants} onClose={() => setShowParticipants(false)} maxWidth="xs" fullWidth>
                 <DialogTitle>
                     Participantes ({participants.length})
-                    {handRequests.length > 0 && (
+                    {(isHost || isStaff) && handRequests.length > 0 && (
                         <Chip label={`${handRequests.length} pedindo para falar`} color="warning" size="small" sx={{ ml: 1 }} />
                     )}
                 </DialogTitle>
                 <DialogContent>
-                    {handRequests.length > 0 && (
+                    {(isHost || isStaff) && handRequests.length > 0 && (
                         <>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
                                 Pedidos para falar
