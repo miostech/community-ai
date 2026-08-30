@@ -122,6 +122,9 @@ export default function LiveRoomPage() {
     const [isSpeaker, setIsSpeaker] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showJoinChoice, setShowJoinChoice] = useState(false);
+
+    const isStaff = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
 
     const fetchEvent = useCallback(async () => {
         try {
@@ -132,16 +135,22 @@ export default function LiveRoomPage() {
             }
             const data = await res.json();
             setEvent(data.event);
+            return data.event as LiveEventData;
         } catch {
             setError('Erro ao carregar live');
+            return null;
         }
     }, [liveId]);
 
     const [membersOnly, setMembersOnly] = useState(false);
 
-    const fetchToken = useCallback(async () => {
+    const fetchToken = useCallback(async (joinAsViewer = false) => {
         try {
-            const res = await fetch(`/api/lives/${liveId}/token`, { method: 'POST' });
+            const res = await fetch(`/api/lives/${liveId}/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ joinAsViewer }),
+            });
             if (!res.ok) {
                 const data = await res.json();
                 if (data.error === 'members_only') {
@@ -164,8 +173,17 @@ export default function LiveRoomPage() {
     }, [liveId]);
 
     useEffect(() => {
-        fetchEvent().then(() => fetchToken());
-    }, [fetchEvent, fetchToken]);
+        fetchEvent().then((ev) => {
+            if (!ev) return;
+            const isCreator = account?.id === ev.creator?._id;
+            if (isStaff && !isCreator) {
+                setShowJoinChoice(true);
+                setLoading(false);
+            } else {
+                fetchToken();
+            }
+        });
+    }, [fetchEvent, fetchToken, account?.id, isStaff]);
 
     if (loading) {
         return (
@@ -180,6 +198,49 @@ export default function LiveRoomPage() {
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 2 }}>
                 <Typography color="error">{error}</Typography>
                 <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
+                    Voltar
+                </Button>
+            </Box>
+        );
+    }
+
+    if (showJoinChoice && event) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3, px: 2 }}>
+                <Typography variant="h5" fontWeight={700} textAlign="center">
+                    {event.title}
+                </Typography>
+                <Typography color="text.secondary" textAlign="center">
+                    Como você quer entrar na live?
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={<VideocamIcon />}
+                        onClick={() => {
+                            setShowJoinChoice(false);
+                            setLoading(true);
+                            fetchToken(false);
+                        }}
+                        sx={{ borderRadius: 3, px: 4 }}
+                    >
+                        Entrar ao vivo
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={() => {
+                            setShowJoinChoice(false);
+                            setLoading(true);
+                            fetchToken(true);
+                        }}
+                        sx={{ borderRadius: 3, px: 4 }}
+                    >
+                        Apenas assistir
+                    </Button>
+                </Box>
+                <Button variant="text" onClick={() => router.push('/dashboard/lives')}>
                     Voltar
                 </Button>
             </Box>
@@ -317,6 +378,7 @@ export default function LiveRoomPage() {
             <RoomContent
                 event={event}
                 isHost={isHost}
+                isCreator={account?.id === event.creator?._id}
                 isSpeaker={isSpeaker}
                 liveId={liveId}
                 accountId={account?.id || ''}
@@ -401,6 +463,7 @@ function PreLiveView({
 function RoomContent({
     event,
     isHost,
+    isCreator,
     isSpeaker,
     liveId,
     accountId,
@@ -408,6 +471,7 @@ function RoomContent({
 }: {
     event: LiveEventData;
     isHost: boolean;
+    isCreator: boolean;
     isSpeaker: boolean;
     liveId: string;
     accountId: string;
@@ -741,7 +805,7 @@ function RoomContent({
                     {!canPublish && handRaised && (
                         <Chip label="Mão levantada" icon={<HandIcon />} color="warning" size="small" />
                     )}
-                    {isHost ? (
+                    {isHost && (
                         <Button
                             variant="contained"
                             color="error"
@@ -753,15 +817,17 @@ function RoomContent({
                         >
                             Encerrar
                         </Button>
-                    ) : (
-                        <IconButton
-                            size="small"
-                            onClick={() => { room.disconnect(); onEnd(); }}
-                            sx={{ bgcolor: 'error.main', color: 'white', '&:hover': { bgcolor: 'error.dark' } }}
-                        >
-                            <CallEndIcon fontSize="small" />
-                        </IconButton>
                     )}
+                    <Button
+                        variant={isCreator ? 'outlined' : 'contained'}
+                        color="error"
+                        startIcon={<CallEndIcon />}
+                        onClick={() => { room.disconnect(); onEnd(); }}
+                        size="small"
+                        sx={{ fontSize: { xs: '0.75rem', md: '0.8125rem' }, px: { xs: 1.5, md: 2 } }}
+                    >
+                        Sair
+                    </Button>
                 </Box>
             </Box>
 

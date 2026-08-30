@@ -78,7 +78,14 @@ export async function POST(
             }
         }
 
-        const isHost = event.creator_id.toString() === account._id.toString();
+        const staffRoles = ['moderator', 'admin', 'criador'];
+        const isStaff = staffRoles.includes(account.role || '');
+
+        let body: Record<string, unknown> = {};
+        try { body = await _request.json(); } catch {}
+        const joinAsViewer = body.joinAsViewer === true;
+
+        const isHost = isCreator || (isStaff && !joinAsViewer);
         const isPromotedSpeaker = event.promoted_speakers?.some(
             (id) => id.toString() === account._id.toString()
         );

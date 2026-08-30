@@ -40,7 +40,8 @@ export async function POST(
             return NextResponse.json({ error: 'Live não encontrada' }, { status: 404 });
         }
 
-        if (event.creator_id.toString() !== account._id.toString() && account.role !== 'admin') {
+        const endRoles = ['admin', 'moderator', 'criador'];
+        if (event.creator_id.toString() !== account._id.toString() && !endRoles.includes(account.role || '')) {
             return NextResponse.json({ error: 'Sem permissão para encerrar esta live' }, { status: 403 });
         }
 
