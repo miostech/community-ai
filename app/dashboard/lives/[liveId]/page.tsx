@@ -601,6 +601,7 @@ function RoomContent({
     const [highlightedComment, setHighlightedComment] = useState<ChatMessage | null>(null);
     const [pinnedComment, setPinnedComment] = useState<ChatMessage | null>(null);
     const [hasNewMessages, setHasNewMessages] = useState(false);
+    const [joinToasts, setJoinToasts] = useState<{ id: string; name: string }[]>([]);
     const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -659,6 +660,19 @@ function RoomContent({
             wakeLock?.release().catch(() => {});
         };
     }, []);
+
+    useEffect(() => {
+        const handleJoin = (participant: RemoteParticipant) => {
+            const name = participant.name || participant.identity;
+            const id = `${participant.identity}-${Date.now()}`;
+            setJoinToasts((prev) => [...prev.slice(-4), { id, name }]);
+            setTimeout(() => {
+                setJoinToasts((prev) => prev.filter((t) => t.id !== id));
+            }, 3000);
+        };
+        room.on(RoomEvent.ParticipantConnected, handleJoin);
+        return () => { room.off(RoomEvent.ParticipantConnected, handleJoin); };
+    }, [room]);
 
     useEffect(() => {
         if (!event.started_at) return;
@@ -938,7 +952,16 @@ function RoomContent({
     });
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: { xs: '100dvh', md: 'calc(100vh - 64px)' }, overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: { xs: '100dvh', md: 'calc(100vh - 64px)' }, overflow: 'hidden', position: 'relative' }}>
+            {joinToasts.length > 0 && (
+                <Box sx={{ position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center', pointerEvents: 'none' }}>
+                    {joinToasts.map((t) => (
+                        <Paper key={t.id} elevation={3} sx={{ px: 2, py: 0.5, borderRadius: 10, bgcolor: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '0.8rem', animation: 'fadeInOut 3s ease', '@keyframes fadeInOut': { '0%': { opacity: 0, transform: 'translateY(-8px)' }, '10%': { opacity: 1, transform: 'translateY(0)' }, '80%': { opacity: 1 }, '100%': { opacity: 0 } } }}>
+                            {t.name} entrou
+                        </Paper>
+                    ))}
+                </Box>
+            )}
             {/* Video area */}
             <Box sx={{ flex: { xs: '0 0 auto', md: 1 }, display: 'flex', flexDirection: 'column', minWidth: 0, maxHeight: { xs: '60dvh', md: 'none' }, overflow: 'hidden' }}>
                 {/* Header */}
