@@ -67,6 +67,16 @@ export async function POST(
         const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
         const azureConnStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
+        const missingVars: string[] = [];
+        if (!apiKey) missingVars.push('LIVEKIT_API_KEY');
+        if (!apiSecret) missingVars.push('LIVEKIT_API_SECRET');
+        if (!livekitUrl) missingVars.push('NEXT_PUBLIC_LIVEKIT_URL');
+        if (!azureConnStr) missingVars.push('AZURE_STORAGE_CONNECTION_STRING');
+
+        if (missingVars.length > 0) {
+            console.error('[start] Variáveis de ambiente faltando para gravação:', missingVars.join(', '));
+        }
+
         if (apiKey && apiSecret && livekitUrl && azureConnStr) {
             try {
                 const match = azureConnStr.match(/AccountName=([^;]+)/);
