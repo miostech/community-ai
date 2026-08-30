@@ -200,6 +200,20 @@ export default function LiveRoomPage() {
         });
     }, [fetchEvent, fetchToken, account?.id, isStaff, accountLoading]);
 
+    const handleReconnect = async () => {
+        setWaitingReconnect(false);
+        setToken(null);
+        setLoading(true);
+        await fetchEvent();
+        await fetchToken();
+    };
+
+    const handleLeaveForReconnect = () => {
+        intentionalLeaveRef.current = true;
+        setToken(null);
+        setWaitingReconnect(true);
+    };
+
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -361,6 +375,40 @@ export default function LiveRoomPage() {
         );
     }
 
+    if (waitingReconnect && event) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3, px: 2 }}>
+                <VideocamOffIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
+                <Typography variant="h6" fontWeight={700} textAlign="center">
+                    Você saiu da live
+                </Typography>
+                <Typography color="text.secondary" textAlign="center">
+                    A live continua ativa. Reconecte quando estiver pronta.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={loading ? <CircularProgress size={20} /> : <VideocamIcon />}
+                        onClick={handleReconnect}
+                        disabled={loading}
+                        sx={{ borderRadius: 3, px: 4 }}
+                    >
+                        Reconectar
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="large"
+                        onClick={() => router.push('/dashboard/lives')}
+                        sx={{ borderRadius: 3, px: 4 }}
+                    >
+                        Voltar para Lives
+                    </Button>
+                </Box>
+            </Box>
+        );
+    }
+
     if (!token || !livekitUrl || !event) return null;
 
     if (event.status === 'scheduled' && isHost) {
@@ -402,54 +450,6 @@ export default function LiveRoomPage() {
                             </IconButton>
                         </Tooltip>
                     )}
-                </Box>
-            </Box>
-        );
-    }
-
-    const handleReconnect = async () => {
-        setWaitingReconnect(false);
-        setToken(null);
-        setLoading(true);
-        await fetchEvent();
-        await fetchToken();
-    };
-
-    const handleLeaveForReconnect = () => {
-        intentionalLeaveRef.current = true;
-        setToken(null);
-        setWaitingReconnect(true);
-    };
-
-    if (waitingReconnect && event) {
-        return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 3, px: 2 }}>
-                <VideocamOffIcon sx={{ fontSize: 64, color: 'text.disabled' }} />
-                <Typography variant="h6" fontWeight={700} textAlign="center">
-                    Você saiu da live
-                </Typography>
-                <Typography color="text.secondary" textAlign="center">
-                    A live continua ativa. Reconecte quando estiver pronta.
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <Button
-                        variant="contained"
-                        size="large"
-                        startIcon={loading ? <CircularProgress size={20} /> : <VideocamIcon />}
-                        onClick={handleReconnect}
-                        disabled={loading}
-                        sx={{ borderRadius: 3, px: 4 }}
-                    >
-                        Reconectar
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        size="large"
-                        onClick={() => router.push('/dashboard/lives')}
-                        sx={{ borderRadius: 3, px: 4 }}
-                    >
-                        Voltar para Lives
-                    </Button>
                 </Box>
             </Box>
         );
