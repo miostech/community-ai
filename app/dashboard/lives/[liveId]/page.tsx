@@ -114,7 +114,7 @@ async function shareOrCopyLink(slug?: string, title?: string) {
 export default function LiveRoomPage() {
     const { liveId } = useParams<{ liveId: string }>();
     const router = useRouter();
-    const { account } = useAccount();
+    const { account, isLoading: accountLoading } = useAccount();
 
     const [event, setEvent] = useState<LiveEventData | null>(null);
     const [token, setToken] = useState<string | null>(null);
@@ -126,6 +126,7 @@ export default function LiveRoomPage() {
     const [showJoinChoice, setShowJoinChoice] = useState(false);
     const [waitingReconnect, setWaitingReconnect] = useState(false);
     const intentionalLeaveRef = useRef(false);
+    const initRef = useRef(false);
 
     const isStaff = account?.role === 'moderator' || account?.role === 'admin' || account?.role === 'criador';
 
@@ -176,6 +177,8 @@ export default function LiveRoomPage() {
     }, [liveId]);
 
     useEffect(() => {
+        if (accountLoading || initRef.current) return;
+        initRef.current = true;
         fetchEvent().then((ev) => {
             if (!ev) return;
             if (ev.status === 'ended' || ev.status === 'cancelled') {
@@ -190,7 +193,7 @@ export default function LiveRoomPage() {
                 fetchToken();
             }
         });
-    }, [fetchEvent, fetchToken, account?.id, isStaff]);
+    }, [fetchEvent, fetchToken, account?.id, isStaff, accountLoading]);
 
     if (loading) {
         return (
