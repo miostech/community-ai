@@ -610,6 +610,7 @@ function RoomContent({
     const [pinnedComment, setPinnedComment] = useState<ChatMessage | null>(null);
     const [hasNewMessages, setHasNewMessages] = useState(false);
     const [joinToasts, setJoinToasts] = useState<{ id: string; name: string }[]>([]);
+    const [mediaBlocked, setMediaBlocked] = useState(false);
     const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -639,6 +640,33 @@ function RoomContent({
             })
             .catch(() => {});
     }, [liveId, accountId]);
+
+    const playAllMedia = useCallback(() => {
+        const container = videoGridRef.current?.parentElement;
+        if (!container) return;
+        container.querySelectorAll('video, audio').forEach((el) => {
+            const media = el as HTMLMediaElement;
+            if (media.paused) {
+                media.play().catch(() => {});
+            }
+        });
+        setMediaBlocked(false);
+    }, []);
+
+    useEffect(() => {
+        const checkMedia = () => {
+            const container = videoGridRef.current?.parentElement;
+            if (!container) return;
+            const videos = container.querySelectorAll('video');
+            let blocked = false;
+            videos.forEach((v) => {
+                if (v.paused && v.srcObject) blocked = true;
+            });
+            setMediaBlocked(blocked);
+        };
+        const timer = setTimeout(checkMedia, 2000);
+        return () => clearTimeout(timer);
+    }, [tracks]);
 
     const toggleFullscreen = () => {
         const el = videoGridRef.current;
@@ -672,19 +700,17 @@ function RoomContent({
     useEffect(() => {
         const onVisible = () => {
             if (document.visibilityState !== 'visible') return;
-            room.remoteParticipants.forEach((p) => {
-                p.trackPublications.forEach((pub) => {
-                    if (pub.track && pub.isSubscribed) {
-                        const el = pub.track.attachedElements?.[0];
-                        if (el && 'play' in el) {
-                            (el as HTMLMediaElement).play().catch(() => {});
-                        }
-                    }
-                });
-            });
             if (room.state === 'disconnected') {
                 window.location.reload();
+                return;
             }
+            document.querySelectorAll('video, audio').forEach((el) => {
+                const media = el as HTMLMediaElement;
+                if (media.paused && media.srcObject) {
+                    media.play().catch(() => {});
+                }
+            });
+            setMediaBlocked(false);
         };
         document.addEventListener('visibilitychange', onVisible);
         return () => { document.removeEventListener('visibilitychange', onVisible); };
@@ -1115,6 +1141,7 @@ function RoomContent({
                 {/* Video grid - hosts & speakers */}
                 <Box
                     ref={videoGridRef}
+                    onClick={playAllMedia}
                     onDoubleClick={toggleFullscreen}
                     sx={{
                     flex: 1,
@@ -1155,6 +1182,11 @@ function RoomContent({
                                     </Typography>
                                 </>
                             )}
+                        </Box>
+                    )}
+                    {mediaBlocked && hostTracks.length > 0 && (
+                        <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: 'rgba(0,0,0,0.5)', zIndex: 10, cursor: 'pointer' }}>
+                            <Chip label="Toque para ativar o vídeo" color="primary" sx={{ fontSize: '0.9rem', px: 2, py: 2.5, fontWeight: 600 }} />
                         </Box>
                     )}
                     {highlightedComment && (
