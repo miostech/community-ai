@@ -1015,10 +1015,13 @@ function RoomContent({
         return false;
     };
 
-    const hostTracks = allVideoTracks.filter((t) => {
-        if (t.source === Track.Source.ScreenShare) return true;
+    const screenShareTracks = allVideoTracks.filter((t) => t.source === Track.Source.ScreenShare);
+    const hostCameraTracks = allVideoTracks.filter((t) => {
+        if (t.source === Track.Source.ScreenShare) return false;
         return isHostOrSpeaker(t.participant.identity);
     });
+    const hasScreenShare = screenShareTracks.length > 0;
+    const hostTracks = hasScreenShare ? screenShareTracks : hostCameraTracks;
 
     const viewerTracks = allVideoTracks.filter((t) => {
         if (t.source === Track.Source.ScreenShare) return false;
@@ -1107,6 +1110,44 @@ function RoomContent({
                     </Box>
                 )}
 
+                {/* Host cameras strip (shown when screen share is active) */}
+                {hasScreenShare && hostCameraTracks.length > 0 && (
+                    <Box sx={{
+                        display: 'flex',
+                        gap: 0.5,
+                        px: 1,
+                        py: 0.5,
+                        bgcolor: '#111',
+                        overflowX: 'auto',
+                        flexShrink: 0,
+                        '&::-webkit-scrollbar': { height: 4 },
+                        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.3)', borderRadius: 2 },
+                    }}>
+                        {hostCameraTracks.map((trackRef) => (
+                            <Box
+                                key={trackRef.publication?.trackSid || trackRef.participant.identity}
+                                sx={{
+                                    position: 'relative',
+                                    width: 100,
+                                    height: 75,
+                                    flexShrink: 0,
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    bgcolor: '#1a1a1a',
+                                    border: '2px solid rgba(255,255,255,0.2)',
+                                }}
+                            >
+                                <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, bgcolor: 'rgba(0,0,0,0.6)', px: 0.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'white', fontSize: '0.6rem', lineHeight: 1.4 }} noWrap>
+                                        {trackRef.participant.name || trackRef.participant.identity}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        ))}
+                    </Box>
+                )}
+
                 {/* Viewer cameras strip */}
                 {viewerTracks.length > 0 && (
                     <Box sx={{
@@ -1153,7 +1194,7 @@ function RoomContent({
                     sx={{
                     flex: 1,
                     display: 'grid',
-                    gridTemplateColumns: hostTracks.length > 1 ? { xs: '1fr', md: '1fr 1fr' } : '1fr',
+                    gridTemplateColumns: !hasScreenShare && hostTracks.length > 1 ? { xs: '1fr', md: '1fr 1fr' } : '1fr',
                     gap: 1,
                     p: 1,
                     bgcolor: 'black',
@@ -1162,18 +1203,32 @@ function RoomContent({
                     cursor: 'pointer',
                 }}>
                     {hostTracks.length > 0 ? (
-                        hostTracks.map((trackRef) => (
-                            <Box key={trackRef.publication?.trackSid || trackRef.participant.identity} sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#1a1a1a' }}>
-                                <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                <Box sx={{ position: 'absolute', bottom: 8, left: 8 }}>
-                                    <Chip
-                                        label={trackRef.participant.name || trackRef.participant.identity}
-                                        size="small"
-                                        sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem' }}
-                                    />
+                        hostTracks.map((trackRef) => {
+                            const isScreenShare = trackRef.source === Track.Source.ScreenShare;
+                            const participantName = trackRef.participant.name || trackRef.participant.identity;
+                            return (
+                                <Box key={trackRef.publication?.trackSid || trackRef.participant.identity} sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#1a1a1a' }}>
+                                    <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                    <Box sx={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                        {isScreenShare && (
+                                            <Chip
+                                                icon={<ScreenShareIcon sx={{ fontSize: 14 }} />}
+                                                label={`Tela de ${participantName}`}
+                                                size="small"
+                                                sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem' }}
+                                            />
+                                        )}
+                                        {!isScreenShare && (
+                                            <Chip
+                                                label={participantName}
+                                                size="small"
+                                                sx={{ bgcolor: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem' }}
+                                            />
+                                        )}
+                                    </Box>
                                 </Box>
-                            </Box>
-                        ))
+                            );
+                        })
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
                             {isHost ? (

@@ -113,19 +113,21 @@ export async function POST(
             }
         }
 
-        const contentPreview = event.title.slice(0, 150);
-        const reservations: mongoose.Types.ObjectId[] = event.reservations || [];
+        if (!event.staff_only) {
+            const contentPreview = event.title.slice(0, 150);
+            const reservations: mongoose.Types.ObjectId[] = event.reservations || [];
 
-        if (reservations.length > 0) {
-            for (const recipientId of reservations) {
-                if (recipientId.toString() === account._id.toString()) continue;
-                createNotification({
-                    recipientId,
-                    actorId: account._id,
-                    type: 'live_started',
-                    liveEventId: event._id,
-                    contentPreview,
-                }).catch((err) => console.error('[live notification]', err));
+            if (reservations.length > 0) {
+                for (const recipientId of reservations) {
+                    if (recipientId.toString() === account._id.toString()) continue;
+                    createNotification({
+                        recipientId,
+                        actorId: account._id,
+                        type: 'live_started',
+                        liveEventId: event._id,
+                        contentPreview,
+                    }).catch((err) => console.error('[live notification]', err));
+                }
             }
         }
 

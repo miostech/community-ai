@@ -358,7 +358,7 @@ function LiveEventCard({ event, onClick, canDelete, canNotify, onRefresh }: { ev
                             </IconButton>
                         </Tooltip>
                     )}
-                    {canNotify && !isEnded && (
+                    {canNotify && !isEnded && !event.staff_only && (
                         <Tooltip title="Notificar todos e postar no feed">
                             <IconButton
                                 size="small"

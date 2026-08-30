@@ -46,9 +46,14 @@ export async function POST(
             title?: string;
             status?: string;
             slug?: string;
+            staff_only?: boolean;
         } | null;
         if (!event) {
             return NextResponse.json({ error: 'Live não encontrada' }, { status: 404 });
+        }
+
+        if (event.staff_only) {
+            return NextResponse.json({ error: 'Lives de staff não podem ser notificadas' }, { status: 400 });
         }
 
         const recipients = await Account.find({ _id: { $ne: account._id } })

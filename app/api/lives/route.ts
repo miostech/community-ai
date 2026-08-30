@@ -181,24 +181,26 @@ export async function POST(request: NextRequest) {
 
         await liveEvent.save();
 
-        // O horário NÃO é embutido no texto do post: seria formatado no fuso do
-        // servidor (UTC) e ficaria errado para todo mundo. O card de live exibe
-        // scheduled_at no fuso de cada leitor.
-        const postContent = `‼️ **${title}**\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
+        if (!staff_only) {
+            // O horário NÃO é embutido no texto do post: seria formatado no fuso do
+            // servidor (UTC) e ficaria errado para todo mundo. O card de live exibe
+            // scheduled_at no fuso de cada leitor.
+            const postContent = `‼️ **${title}**\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
 
-        const post = new Post({
-            author_id: (account as any)._id,
-            content: postContent,
-            category: 'atualizacao',
-            media_type: cover_image_url ? 'image' : 'text',
-            images: cover_image_url ? [cover_image_url] : [],
-            status: 'published',
-            visibility: 'public',
-            is_approved: true,
-            live_event_id: roomId,
-            published_at: new Date(),
-        });
-        await post.save();
+            const post = new Post({
+                author_id: (account as any)._id,
+                content: postContent,
+                category: 'atualizacao',
+                media_type: cover_image_url ? 'image' : 'text',
+                images: cover_image_url ? [cover_image_url] : [],
+                status: 'published',
+                visibility: 'public',
+                is_approved: true,
+                live_event_id: roomId,
+                published_at: new Date(),
+            });
+            await post.save();
+        }
 
         return NextResponse.json({ success: true, event: liveEvent.toObject() }, { status: 201 });
     } catch (error) {
