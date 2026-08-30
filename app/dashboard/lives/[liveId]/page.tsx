@@ -55,7 +55,7 @@ import {
 import { Track, RoomEvent, DataPacket_Kind } from 'livekit-client';
 import type { RemoteParticipant } from 'livekit-client';
 
-const MAX_DURATION_MS = 60 * 60 * 1000; // 1 hora
+const MAX_DURATION_MS = 2 * 60 * 60 * 1000; // 2 horas
 
 interface LiveEventData {
     _id: string;
@@ -438,6 +438,7 @@ export default function LiveRoomPage() {
                 isSpeaker={isSpeaker}
                 liveId={liveId}
                 accountId={account?.id || ''}
+                isStaff={isStaff}
                 onEnd={() => router.push('/dashboard/lives')}
                 onLeaveReconnect={handleLeaveForReconnect}
             />
@@ -524,6 +525,7 @@ function RoomContent({
     isSpeaker,
     liveId,
     accountId,
+    isStaff,
     onEnd,
     onLeaveReconnect,
 }: {
@@ -533,6 +535,7 @@ function RoomContent({
     isSpeaker: boolean;
     liveId: string;
     accountId: string;
+    isStaff: boolean;
     onEnd: () => void;
     onLeaveReconnect: () => void;
 }) {
@@ -559,7 +562,29 @@ function RoomContent({
     const videoGridRef = useRef<HTMLDivElement>(null);
     const isAtBottomRef = useRef(true);
 
-    const canPublishAudio = isHost || isSpeaker;
+    const canPublishAudio = isHost || isSpeaker || isStaff;
+    const canHighlight = isHost || isCreator || isStaff;
+
+    useEffect(() => {
+        fetch(`/api/lives/${liveId}/chat`)
+            .then((res) => res.ok ? res.json() : null)
+            .then((data) => {
+                if (data?.messages?.length) {
+                    const history: ChatMessage[] = data.messages.map((m: { sender: string; senderName: string; message: string; timestamp: number }) => ({
+                        id: `${m.timestamp}-${m.sender}`,
+                        sender: m.sender,
+                        senderName: m.sender === accountId ? 'Eu' : m.senderName,
+                        message: m.message,
+                        timestamp: m.timestamp,
+                    }));
+                    setChatMessages(history);
+                    setTimeout(() => {
+                        chatEndRef.current?.scrollIntoView();
+                    }, 100);
+                }
+            })
+            .catch(() => {});
+    }, [liveId, accountId]);
 
     const toggleFullscreen = () => {
         const el = videoGridRef.current;
@@ -722,21 +747,28 @@ function RoomContent({
 
     const sendChat = () => {
         if (!chatInput.trim()) return;
+        const msg = chatInput.trim();
+        const name = room.localParticipant.name || 'Eu';
         const payload = {
             type: 'chat',
             sender: accountId,
-            senderName: room.localParticipant.name || 'Eu',
-            message: chatInput.trim(),
+            senderName: name,
+            message: msg,
         };
         const data = TEXT_ENCODER.encode(JSON.stringify(payload));
         room.localParticipant.publishData(data, { reliable: true });
+        fetch(`/api/lives/${liveId}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg, senderName: name }),
+        }).catch(() => {});
         setChatMessages((prev) => [
             ...prev.slice(-200),
             {
                 id: `${Date.now()}-${accountId}`,
                 sender: accountId,
                 senderName: 'Eu',
-                message: chatInput.trim(),
+                message: msg,
                 timestamp: Date.now(),
             },
         ]);
@@ -1008,7 +1040,7 @@ function RoomContent({
                                     {highlightedComment.message}
                                 </Typography>
                             </Box>
-                            {isHost && (
+                            {canHighlight && (
                                 <IconButton size="small" onClick={dismissHighlight} sx={{ color: 'grey.400' }}>
                                     <CloseIcon fontSize="small" />
                                 </IconButton>
@@ -1126,14 +1158,14 @@ function RoomContent({
                         {chatMessages.map((msg) => (
                             <Box
                                 key={msg.id}
-                                onClick={() => isHost && highlightComment(msg)}
+                                onClick={() => canHighlight && highlightComment(msg)}
                                 sx={{
-                                    cursor: isHost ? 'pointer' : 'default',
+                                    cursor: canHighlight ? 'pointer' : 'default',
                                     px: 0.5,
                                     py: 0.25,
                                     borderRadius: 1,
                                     bgcolor: highlightedComment?.id === msg.id ? 'rgba(245,158,11,0.15)' : 'transparent',
-                                    '&:hover': isHost ? { bgcolor: 'action.hover' } : {},
+                                    '&:hover': canHighlight ? { bgcolor: 'action.hover' } : {},
                                     transition: 'background-color 0.2s',
                                 }}
                             >

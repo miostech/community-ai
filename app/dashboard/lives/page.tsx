@@ -50,6 +50,7 @@ interface LiveEvent {
     ended_at?: string;
     viewer_count: number;
     max_viewer_count: number;
+    total_viewers: number;
     creator: LiveEventCreator | null;
     recording_url?: string;
     members_only?: boolean;
@@ -301,7 +302,7 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                                 )}
                                 {isEnded && event.ended_at && (
                                     <Typography variant="caption" color="text.secondary">
-                                        Encerrada em {formatDate(event.ended_at)} · {event.max_viewer_count} visualizações
+                                        Encerrada em {formatDate(event.ended_at)} · {event.total_viewers || event.max_viewer_count} pessoas assistiram
                                     </Typography>
                                 )}
                             </Box>

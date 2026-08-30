@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MAX_PARTICIPANTS = 100;
-const MAX_DURATION_MS = 60 * 60 * 1000; // 1 hora
+const MAX_DURATION_MS = 2 * 60 * 60 * 1000; // 2 horas
 
 export async function POST(
     _request: NextRequest,
@@ -74,7 +74,7 @@ export async function POST(
                 if (ak && as_ && url) {
                     try { await new RoomServiceClient(url, ak, as_).deleteRoom(event.room_name); } catch {}
                 }
-                return NextResponse.json({ error: 'Esta live atingiu o limite de 1 hora e foi encerrada automaticamente' }, { status: 400 });
+                return NextResponse.json({ error: 'Esta live atingiu o limite de 2 horas e foi encerrada automaticamente' }, { status: 400 });
             }
         }
 
@@ -126,7 +126,7 @@ export async function POST(
             }),
         });
 
-        const isFullPublisher = isHost || isPromotedSpeaker;
+        const isFullPublisher = isHost || isPromotedSpeaker || isStaff;
 
         token.addGrant({
             room: event.room_name,
@@ -142,13 +142,22 @@ export async function POST(
         const jwt = await token.toJwt();
 
         if (!isHost) {
-            await LiveEvent.findByIdAndUpdate(liveId, {
-                $inc: { viewer_count: 1 },
-            });
-            await LiveEvent.updateOne(
-                { _id: liveId, max_viewer_count: { $lt: event.viewer_count + 1 } },
-                { $set: { max_viewer_count: event.viewer_count + 1 } }
-            );
+            try {
+                const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
+                const currentParticipants = await roomService.listParticipants(event.room_name);
+                const realCount = currentParticipants.length + 1;
+                await LiveEvent.updateOne(
+                    { _id: liveId },
+                    {
+                        $set: { viewer_count: realCount },
+                        $addToSet: { unique_viewers: account._id },
+                    }
+                );
+                await LiveEvent.updateOne(
+                    { _id: liveId, max_viewer_count: { $lt: realCount } },
+                    { $set: { max_viewer_count: realCount } }
+                );
+            } catch {}
         }
 
         return NextResponse.json({

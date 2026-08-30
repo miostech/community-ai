@@ -17,7 +17,9 @@ export interface ILiveEvent extends Document {
     viewer_count: number;
     max_viewer_count: number;
     promoted_speakers: Types.ObjectId[];
+    unique_viewers: Types.ObjectId[];
     reservations: Types.ObjectId[];
+    chat_messages: { sender: string; senderName: string; message: string; timestamp: number }[];
     members_only: boolean;
     egress_id?: string;
     recording_url?: string;
@@ -77,12 +79,28 @@ const LiveEventSchema = new Schema<ILiveEvent>(
                 ref: 'Account',
             },
         ],
+        unique_viewers: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Account',
+            },
+        ],
         reservations: [
             {
                 type: Schema.Types.ObjectId,
                 ref: 'Account',
             },
         ],
+        chat_messages: {
+            type: [{
+                sender: String,
+                senderName: String,
+                message: String,
+                timestamp: Number,
+                _id: false,
+            }],
+            default: [],
+        },
         members_only: { type: Boolean, default: false },
         egress_id: { type: String },
         recording_url: { type: String },
@@ -98,7 +116,7 @@ LiveEventSchema.index({ creator_id: 1, created_at: -1 });
 
 if (process.env.NODE_ENV === 'development' && mongoose.models.LiveEvent) {
     const schema = mongoose.models.LiveEvent.schema;
-    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['slug']) {
+    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['slug'] || !schema.paths['unique_viewers'] || !schema.paths['chat_messages']) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).LiveEvent;
     }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
+import { RoomServiceClient } from 'livekit-server-sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
@@ -44,11 +45,33 @@ export async function GET(request: NextRequest) {
             .lean();
         const creatorsMap = new Map(creators.map((c) => [c._id.toString(), c]));
 
+        const apiKey = process.env.LIVEKIT_API_KEY;
+        const apiSecret = process.env.LIVEKIT_API_SECRET;
+        const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+
+        const liveEvents = events.filter((e) => e.status === 'live' && (e as any).room_name);
+        const realCounts = new Map<string, number>();
+
+        if (apiKey && apiSecret && livekitUrl && liveEvents.length > 0) {
+            const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
+            await Promise.all(
+                liveEvents.map(async (e) => {
+                    try {
+                        const participants = await roomService.listParticipants((e as any).room_name);
+                        realCounts.set(e._id.toString(), participants.length);
+                    } catch {}
+                })
+            );
+        }
+
         const formatted = events.map((e) => {
             const creator = creatorsMap.get(e.creator_id.toString());
-            const { reservations, ...rest } = e as any;
+            const { reservations, unique_viewers, ...rest } = e as any;
+            const realCount = realCounts.get(e._id.toString());
             return {
                 ...rest,
+                viewer_count: realCount ?? (e as any).viewer_count ?? 0,
+                total_viewers: Array.isArray(unique_viewers) ? unique_viewers.length : 0,
                 reservations_count: Array.isArray(reservations) ? reservations.length : 0,
                 creator: creator
                     ? {
