@@ -70,6 +70,20 @@ function formatTimeAgo(dateString: string): string {
     return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 }
 
+/** Formata o horário da live no fuso local de quem está lendo. */
+function formatScheduledAt(dateString: string): string {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('pt-BR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short',
+    });
+}
+
 interface PostCardMuiProps {
     post: Post;
     isMyPost: boolean;
@@ -497,6 +511,14 @@ export function PostCardMui({
                                     </Stack>
                                 )}
                             </Stack>
+                            {post.live_event.status === 'scheduled' && post.live_event.scheduled_at && (
+                                <Stack direction="row" alignItems="center" spacing={0.5}>
+                                    <EventAvailableIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                    <Typography variant="caption" color="text.secondary">
+                                        {formatScheduledAt(post.live_event.scheduled_at)}
+                                    </Typography>
+                                </Stack>
+                            )}
                             {liveReservationsCount > 0 && (
                                 <Stack direction="row" alignItems="center" spacing={0.5}>
                                     <PeopleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />

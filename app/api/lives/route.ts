@@ -145,10 +145,10 @@ export async function POST(request: NextRequest) {
 
         await liveEvent.save();
 
-        const scheduledLabel = scheduled_at
-            ? ` em ${new Date(scheduled_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
-            : '';
-        const postContent = `‼️ **${title}**${scheduledLabel}\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
+        // O horário NÃO é embutido no texto do post: seria formatado no fuso do
+        // servidor (UTC) e ficaria errado para todo mundo. O card de live exibe
+        // scheduled_at no fuso de cada leitor.
+        const postContent = `‼️ **${title}**\n\n${description || 'Não perca! Reserve seu lugar e seja notificado quando a live começar.'}`;
 
         const post = new Post({
             author_id: (account as any)._id,
