@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { RoomServiceClient, EgressClient } from 'livekit-server-sdk';
+import { RoomServiceClient, EgressClient, EgressStatus } from 'livekit-server-sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
@@ -8,6 +8,28 @@ import Account from '@/models/Account';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+async function waitForEgressComplete(egressClient: EgressClient, egressId: string, maxWaitMs = 30000): Promise<boolean> {
+    const start = Date.now();
+    const interval = 2000;
+    while (Date.now() - start < maxWaitMs) {
+        await new Promise((r) => setTimeout(r, interval));
+        try {
+            const list = await egressClient.listEgress({ egressId });
+            const egress = list[0];
+            if (!egress) return false;
+            if (egress.status === EgressStatus.EGRESS_COMPLETE) return true;
+            if (egress.status === EgressStatus.EGRESS_FAILED || egress.status === EgressStatus.EGRESS_ABORTED) {
+                console.error('[end] Egress falhou:', egress.status);
+                return false;
+            }
+        } catch (err) {
+            console.error('[end] Erro ao verificar egress:', err);
+        }
+    }
+    console.warn('[end] Timeout esperando egress completar, salvando URL mesmo assim');
+    return true;
+}
 
 export async function POST(
     _request: NextRequest,
@@ -57,28 +79,36 @@ export async function POST(
         const apiSecret = process.env.LIVEKIT_API_SECRET;
         const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
         if (apiKey && apiSecret && livekitUrl) {
-            try {
-                if (event.egress_id) {
-                    const egressClient = new EgressClient(livekitUrl, apiKey, apiSecret);
+            let egressOk = false;
+            if (event.egress_id) {
+                const egressClient = new EgressClient(livekitUrl, apiKey, apiSecret);
+                try {
                     await egressClient.stopEgress(event.egress_id);
+                    egressOk = await waitForEgressComplete(egressClient, event.egress_id);
+                } catch (err) {
+                    console.error('[end] Erro ao parar gravação:', err);
                 }
-            } catch (err) {
-                console.error('[end] Erro ao parar gravação:', err);
+
+                if (egressOk) {
+                    const azureConnStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
+                    const match = azureConnStr?.match(/AccountName=([^;]+)/);
+                    if (match) {
+                        event.recording_url = `https://${match[1]}.blob.core.windows.net/ai-community-live-recordings/lives/${liveId}.mp4`;
+                        await event.save();
+                        console.log('[end] Recording URL salva:', event.recording_url);
+                    } else {
+                        console.error('[end] AZURE_STORAGE_CONNECTION_STRING sem AccountName');
+                    }
+                }
+            } else {
+                console.warn('[end] Live sem egress_id — gravação não disponível');
             }
+
             try {
                 const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
                 await roomService.deleteRoom(event.room_name);
             } catch (err) {
                 console.error('[end] Erro ao deletar sala no LiveKit:', err);
-            }
-
-            if (event.egress_id) {
-                const azureConnStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
-                const match = azureConnStr?.match(/AccountName=([^;]+)/);
-                if (match) {
-                    event.recording_url = `https://${match[1]}.blob.core.windows.net/ai-community-live-recordings/lives/${liveId}.mp4`;
-                    await event.save();
-                }
             }
         }
 

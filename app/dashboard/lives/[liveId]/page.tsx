@@ -41,6 +41,7 @@ import {
     Close as CloseIcon,
     Share as ShareIcon,
     Fullscreen as FullscreenIcon,
+    PushPin as PushPinIcon,
 } from '@mui/icons-material';
 import {
     LiveKitRoom,
@@ -201,11 +202,16 @@ export default function LiveRoomPage() {
 
     if (error) {
         return (
-            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 2 }}>
-                <Typography color="error">{error}</Typography>
-                <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
-                    Voltar
-                </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh', gap: 2, px: 2 }}>
+                <Typography color="error" textAlign="center">{error}</Typography>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
+                        Voltar
+                    </Button>
+                    <Button variant="contained" onClick={() => window.location.reload()}>
+                        Tentar novamente
+                    </Button>
+                </Box>
             </Box>
         );
     }
@@ -448,7 +454,16 @@ export default function LiveRoomPage() {
             connect={true}
             onError={(err) => {
                 console.error('[LiveKit]', err);
-                setError('Não foi possível entrar na live. A sala pode estar lotada ou indisponível no momento.');
+                const msg = err?.message || '';
+                if (msg.includes('room not found') || msg.includes('404')) {
+                    setError('A sala da live ainda não foi criada. O host precisa iniciar a live primeiro.');
+                } else if (msg.includes('participant') || msg.includes('max')) {
+                    setError('A live atingiu o limite de participantes simultâneos.');
+                } else if (msg.includes('token') || msg.includes('expired') || msg.includes('401')) {
+                    setError('Seu acesso expirou. Recarregue a página para tentar novamente.');
+                } else {
+                    setError(`Não foi possível conectar na live. Tente recarregar a página. (${msg || 'erro desconhecido'})`);
+                }
             }}
             onDisconnected={() => {
                 if (intentionalLeaveRef.current) {
@@ -582,7 +597,9 @@ function RoomContent({
     const [promotedSpeakers, setPromotedSpeakers] = useState<string[]>(event.promoted_speakers || []);
     const [ending, setEnding] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
+    const [timeWarning, setTimeWarning] = useState(false);
     const [highlightedComment, setHighlightedComment] = useState<ChatMessage | null>(null);
+    const [pinnedComment, setPinnedComment] = useState<ChatMessage | null>(null);
     const [hasNewMessages, setHasNewMessages] = useState(false);
     const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -646,6 +663,7 @@ function RoomContent({
     useEffect(() => {
         if (!event.started_at) return;
         const startTime = new Date(event.started_at).getTime();
+        const WARNING_MS = 10 * 60 * 1000;
         const tick = () => {
             const remaining = MAX_DURATION_MS - (Date.now() - startTime);
             if (remaining <= 0) {
@@ -657,6 +675,7 @@ function RoomContent({
                 }
                 return;
             }
+            setTimeWarning(remaining <= WARNING_MS);
             const mins = Math.floor(remaining / 60000);
             const secs = Math.floor((remaining % 60000) / 1000);
             setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
@@ -726,6 +745,8 @@ function RoomContent({
                         setHighlightedComment(null);
                         if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
                     }
+                } else if (parsed.type === 'pin_comment') {
+                    setPinnedComment(parsed.comment ? (parsed.comment as ChatMessage) : null);
                 }
             } catch {}
         };
@@ -836,6 +857,20 @@ function RoomContent({
         room.localParticipant.publishData(data, { reliable: true });
     };
 
+    const pinComment = (msg: ChatMessage) => {
+        setPinnedComment(msg);
+        const payload = { type: 'pin_comment', comment: msg };
+        const data = TEXT_ENCODER.encode(JSON.stringify(payload));
+        room.localParticipant.publishData(data, { reliable: true });
+    };
+
+    const unpinComment = () => {
+        setPinnedComment(null);
+        const payload = { type: 'pin_comment', comment: null };
+        const data = TEXT_ENCODER.encode(JSON.stringify(payload));
+        room.localParticipant.publishData(data, { reliable: true });
+    };
+
     const promoteParticipant = async (participantId: string) => {
         try {
             await fetch(`/api/lives/${liveId}/promote`, {
@@ -922,8 +957,9 @@ function RoomContent({
                         <Chip
                             label={timeLeft}
                             size="small"
-                            variant="outlined"
-                            sx={{ fontWeight: 600, fontSize: '0.75rem', fontFamily: 'monospace' }}
+                            variant={timeWarning ? 'filled' : 'outlined'}
+                            color={timeWarning ? 'error' : 'default'}
+                            sx={{ fontWeight: 600, fontSize: '0.75rem', fontFamily: 'monospace', ...(timeWarning && { animation: 'pulse 1.5s infinite', '@keyframes pulse': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.7 } } }) }}
                         />
                     )}
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, flex: 1 }} noWrap>
@@ -954,6 +990,23 @@ function RoomContent({
                         </Tooltip>
                     )}
                 </Box>
+
+                {timeWarning && (isHost || isStaff) && (
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 1,
+                        px: 2,
+                        py: 0.75,
+                        bgcolor: 'error.main',
+                        color: 'error.contrastText',
+                    }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                            A live será encerrada automaticamente em {timeLeft}. Finalize suas considerações!
+                        </Typography>
+                    </Box>
+                )}
 
                 {/* Viewer cameras strip */}
                 {viewerTracks.length > 0 && (
@@ -1175,6 +1228,33 @@ function RoomContent({
                         Chat
                     </Typography>
                 </Box>
+                {pinnedComment && (
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        px: 1.5,
+                        py: 1,
+                        bgcolor: 'action.selected',
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                    }}>
+                        <PushPinIcon sx={{ fontSize: 14, color: 'primary.main', transform: 'rotate(45deg)' }} />
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="caption" component="span" sx={{ fontWeight: 700, mr: 0.5 }}>
+                                {pinnedComment.senderName}:
+                            </Typography>
+                            <Typography variant="caption" component="span" sx={{ wordBreak: 'break-word' }}>
+                                {pinnedComment.message}
+                            </Typography>
+                        </Box>
+                        {canHighlight && (
+                            <IconButton size="small" onClick={unpinComment} sx={{ p: 0.25 }}>
+                                <CloseIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        )}
+                    </Box>
+                )}
                 <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                     <Box
                         ref={chatContainerRef}
@@ -1194,17 +1274,45 @@ function RoomContent({
                                     px: 0.5,
                                     py: 0.25,
                                     borderRadius: 1,
-                                    bgcolor: highlightedComment?.id === msg.id ? 'rgba(245,158,11,0.15)' : 'transparent',
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 0.5,
+                                    bgcolor: highlightedComment?.id === msg.id
+                                        ? 'rgba(245,158,11,0.15)'
+                                        : pinnedComment?.id === msg.id
+                                            ? 'action.selected'
+                                            : 'transparent',
                                     '&:hover': canHighlight ? { bgcolor: 'action.hover' } : {},
+                                    '&:hover .pin-btn': { opacity: 1 },
                                     transition: 'background-color 0.2s',
                                 }}
                             >
-                                <Typography variant="caption" component="span" sx={{ fontWeight: 600, mr: 0.5 }}>
-                                    {msg.senderName}:
-                                </Typography>
-                                <Typography variant="caption" component="span">
-                                    {msg.message}
-                                </Typography>
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="caption" component="span" sx={{ fontWeight: 600, mr: 0.5 }}>
+                                        {msg.senderName}:
+                                    </Typography>
+                                    <Typography variant="caption" component="span">
+                                        {msg.message}
+                                    </Typography>
+                                </Box>
+                                {canHighlight && (
+                                    <IconButton
+                                        className="pin-btn"
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            pinnedComment?.id === msg.id ? unpinComment() : pinComment(msg);
+                                        }}
+                                        sx={{
+                                            p: 0.25,
+                                            opacity: pinnedComment?.id === msg.id ? 1 : 0,
+                                            transition: 'opacity 0.2s',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <PushPinIcon sx={{ fontSize: 12, transform: 'rotate(45deg)', color: pinnedComment?.id === msg.id ? 'primary.main' : 'text.secondary' }} />
+                                    </IconButton>
+                                )}
                             </Box>
                         ))}
                         <div ref={chatEndRef} />

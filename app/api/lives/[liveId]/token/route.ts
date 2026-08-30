@@ -9,7 +9,7 @@ import Account from '@/models/Account';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_PARTICIPANTS = 100;
+const MAX_PARTICIPANTS = 500;
 const MAX_DURATION_MS = 2 * 60 * 60 * 1000; // 2 horas
 
 export async function POST(
