@@ -177,6 +177,10 @@ export default function LiveRoomPage() {
     useEffect(() => {
         fetchEvent().then((ev) => {
             if (!ev) return;
+            if (ev.status === 'ended' || ev.status === 'cancelled') {
+                setLoading(false);
+                return;
+            }
             const isCreator = account?.id === ev.creator?._id;
             if (isStaff && !isCreator) {
                 setShowJoinChoice(true);
@@ -293,22 +297,8 @@ export default function LiveRoomPage() {
         );
     }
 
-    if (!token || !livekitUrl || !event) return null;
-
-    if (event.status === 'scheduled' && isHost) {
-        return (
-            <PreLiveView
-                event={event}
-                liveId={liveId}
-                onStarted={() => {
-                    setEvent((prev) => prev ? { ...prev, status: 'live' } : prev);
-                }}
-                onBack={() => router.push('/dashboard/lives')}
-            />
-        );
-    }
-
-    if (event.status === 'ended' || event.status === 'cancelled') {
+    if (event && (event.status === 'ended' || event.status === 'cancelled')) {
+        const canReopen = account?.id === event.creator?._id || isStaff;
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: { xs: 2, md: 8 }, pb: 4, px: 2, gap: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>{event.title}</Typography>
@@ -327,10 +317,48 @@ export default function LiveRoomPage() {
                 ) : (
                     <Typography color="text.secondary">Esta live já foi encerrada</Typography>
                 )}
-                <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
-                    Voltar para Lives
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button variant="outlined" onClick={() => router.push('/dashboard/lives')}>
+                        Voltar para Lives
+                    </Button>
+                    {canReopen && (
+                        <Button
+                            variant="contained"
+                            startIcon={<VideocamIcon />}
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch(`/api/lives/${liveId}/reopen`, { method: 'POST' });
+                                    if (!res.ok) {
+                                        const data = await res.json();
+                                        alert(data.error || 'Erro ao reabrir');
+                                        return;
+                                    }
+                                    window.location.reload();
+                                } catch {
+                                    alert('Erro ao reabrir a live');
+                                }
+                            }}
+                        >
+                            Reabrir live
+                        </Button>
+                    )}
+                </Box>
             </Box>
+        );
+    }
+
+    if (!token || !livekitUrl || !event) return null;
+
+    if (event.status === 'scheduled' && isHost) {
+        return (
+            <PreLiveView
+                event={event}
+                liveId={liveId}
+                onStarted={() => {
+                    setEvent((prev) => prev ? { ...prev, status: 'live' } : prev);
+                }}
+                onBack={() => router.push('/dashboard/lives')}
+            />
         );
     }
 

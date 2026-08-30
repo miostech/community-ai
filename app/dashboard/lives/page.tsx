@@ -220,6 +220,7 @@ function Section({
                         event={event}
                         onClick={() => router.push(`/dashboard/lives/${event._id}`)}
                         canDelete={accountRole === 'admin' || event.creator?._id === accountId}
+                        canNotify={['moderator', 'admin', 'criador'].includes(accountRole || '')}
                         onRefresh={onRefresh}
                     />
                 ))}
@@ -228,7 +229,7 @@ function Section({
     );
 }
 
-function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEvent; onClick: () => void; canDelete?: boolean; onRefresh: () => void }) {
+function LiveEventCard({ event, onClick, canDelete, canNotify, onRefresh }: { event: LiveEvent; onClick: () => void; canDelete?: boolean; canNotify?: boolean; onRefresh: () => void }) {
     const isLive = event.status === 'live';
     const isEnded = event.status === 'ended';
 
@@ -336,24 +337,7 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                     </Box>
                 </CardContent>
             </CardActionArea>
-            {event.slug && !canDelete && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pb: 1 }}>
-                    <Tooltip title="Compartilhar">
-                        <IconButton
-                            size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                const url = `${window.location.origin}/live/${event.slug}`;
-                                if (navigator.share) { navigator.share({ title: event.title, url }).catch(() => {}); }
-                                else { navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url)); }
-                            }}
-                        >
-                            <ShareIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                </Box>
-            )}
-            {canDelete && (
+            {(event.slug || canNotify || canDelete) && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, px: 1, pb: 1 }}>
                     {event.slug && (
                         <Tooltip title="Compartilhar">
@@ -362,26 +346,27 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     const url = `${window.location.origin}/live/${event.slug}`;
-                                    navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url));
+                                    if (navigator.share) { navigator.share({ title: event.title, url }).catch(() => {}); }
+                                    else { navigator.clipboard.writeText(url).then(() => alert('Link copiado!')).catch(() => prompt('Copie o link:', url)); }
                                 }}
                             >
                                 <ShareIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
                     )}
-                    {!isEnded && (
-                        <Tooltip title="Notificar todos os usuários sobre esta live">
+                    {canNotify && !isEnded && (
+                        <Tooltip title="Notificar todos e postar no feed">
                             <IconButton
                                 size="small"
                                 color="primary"
                                 onClick={async (e) => {
                                     e.stopPropagation();
-                                    if (!confirm('Enviar notificação sobre esta live para todos os usuários?')) return;
+                                    if (!confirm('Notificar todos os usuários e postar no feed sobre esta live?')) return;
                                     try {
                                         const res = await fetch(`/api/lives/${event._id}/notify`, { method: 'POST' });
                                         if (res.ok) {
                                             const data = await res.json();
-                                            alert(`Notificação enviada para ${data.notified} usuários!`);
+                                            alert(`Notificação enviada para ${data.notified} usuários e postado no feed!`);
                                         } else {
                                             alert('Erro ao enviar notificação.');
                                         }
@@ -394,22 +379,24 @@ function LiveEventCard({ event, onClick, canDelete, onRefresh }: { event: LiveEv
                             </IconButton>
                         </Tooltip>
                     )}
-                    <Tooltip title="Excluir live">
-                        <IconButton
-                            size="small"
-                            color="error"
-                            onClick={async (e) => {
-                                e.stopPropagation();
-                                if (!confirm('Tem certeza que deseja excluir esta live?')) return;
-                                try {
-                                    await fetch(`/api/lives/${event._id}`, { method: 'DELETE' });
-                                    onRefresh();
-                                } catch {}
-                            }}
-                        >
-                            <DeleteIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
+                    {canDelete && (
+                        <Tooltip title="Excluir live">
+                            <IconButton
+                                size="small"
+                                color="error"
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!confirm('Tem certeza que deseja excluir esta live?')) return;
+                                    try {
+                                        await fetch(`/api/lives/${event._id}`, { method: 'DELETE' });
+                                        onRefresh();
+                                    } catch {}
+                                }}
+                            >
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </Box>
             )}
         </Card>

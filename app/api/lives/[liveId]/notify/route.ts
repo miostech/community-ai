@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
 import Account from '@/models/Account';
+import Post from '@/models/Post';
 import { createNotification } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
@@ -40,7 +41,12 @@ export async function POST(
             return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
         }
 
-        const event = await LiveEvent.findById(liveId).lean();
+        const event = await LiveEvent.findById(liveId).lean() as {
+            _id: mongoose.Types.ObjectId;
+            title?: string;
+            status?: string;
+            slug?: string;
+        } | null;
         if (!event) {
             return NextResponse.json({ error: 'Live não encontrada' }, { status: 404 });
         }
@@ -49,15 +55,35 @@ export async function POST(
             .select('_id')
             .lean() as { _id: mongoose.Types.ObjectId }[];
 
-        const contentPreview = (event as any).title?.slice(0, 150) || 'Nova live';
+        const contentPreview = event.title?.slice(0, 150) || 'Nova live';
+        const notificationType = event.status === 'live' ? 'live_started' : 'live_scheduled';
         for (const rec of recipients) {
             createNotification({
                 recipientId: rec._id,
                 actorId: account._id,
-                type: 'live_scheduled',
+                type: notificationType,
                 liveEventId: new mongoose.Types.ObjectId(liveId),
                 contentPreview,
             }).catch((err) => console.error('[live notify]', err));
+        }
+
+        const isLive = event.status === 'live';
+        const postContent = isLive
+            ? `🔴 Estamos ao vivo! "${event.title}" — entre agora e participe!`
+            : `📅 "${event.title}" — nova live agendada! Não perca!`;
+
+        const existingPost = await Post.findOne({ live_event_id: new mongoose.Types.ObjectId(liveId) }).select('_id').lean();
+        if (!existingPost) {
+            await Post.create({
+                author_id: account._id,
+                content: postContent,
+                category: 'atualizacao',
+                media_type: 'text',
+                visibility: 'members',
+                status: 'published',
+                published_at: new Date(),
+                live_event_id: new mongoose.Types.ObjectId(liveId),
+            });
         }
 
         return NextResponse.json({ success: true, notified: recipients.length });
