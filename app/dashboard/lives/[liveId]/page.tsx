@@ -492,6 +492,8 @@ function RoomContent({
     const [promotedSpeakers, setPromotedSpeakers] = useState<string[]>(event.promoted_speakers || []);
     const [ending, setEnding] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
+    const [highlightedComment, setHighlightedComment] = useState<ChatMessage | null>(null);
+    const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
     const videoGridRef = useRef<HTMLDivElement>(null);
 
@@ -549,11 +551,34 @@ function RoomContent({
         return () => clearInterval(interval);
     }, [event.started_at, isHost, liveId, room, onEnd]);
 
+    const [liveCanPublish, setLiveCanPublish] = useState(canPublish);
+
     useEffect(() => {
         if (!canPublish) return;
         room.localParticipant.setCameraEnabled(isHost).catch(() => {});
         room.localParticipant.setMicrophoneEnabled(isHost || isSpeaker).catch(() => {});
     }, [room, canPublish, isHost, isSpeaker]);
+
+    useEffect(() => {
+        const handlePermissions = () => {
+            const perms = room.localParticipant.permissions;
+            if (perms?.canPublish && !liveCanPublish) {
+                setLiveCanPublish(true);
+                room.localParticipant.setCameraEnabled(true).catch(() => {});
+                room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
+                setCameraOn(true);
+                setMicOn(true);
+            } else if (!perms?.canPublish && liveCanPublish) {
+                setLiveCanPublish(false);
+                room.localParticipant.setCameraEnabled(false).catch(() => {});
+                room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
+                setCameraOn(false);
+                setMicOn(false);
+            }
+        };
+        room.on(RoomEvent.ParticipantPermissionsChanged, handlePermissions);
+        return () => { room.off(RoomEvent.ParticipantPermissionsChanged, handlePermissions); };
+    }, [room, liveCanPublish]);
 
     useEffect(() => {
         const handleData = (payload: Uint8Array, participant: RemoteParticipant | undefined) => {
@@ -573,6 +598,15 @@ function RoomContent({
                         if (prev.some((r) => r.id === parsed.sender)) return prev;
                         return [...prev, { id: parsed.sender, name: parsed.senderName || 'Participante' }];
                     });
+                } else if (parsed.type === 'highlight_comment') {
+                    if (parsed.comment) {
+                        setHighlightedComment(parsed.comment as ChatMessage);
+                        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+                        highlightTimerRef.current = setTimeout(() => setHighlightedComment(null), 30000);
+                    } else {
+                        setHighlightedComment(null);
+                        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+                    }
                 }
             } catch {}
         };
@@ -586,14 +620,14 @@ function RoomContent({
     }, [chatMessages]);
 
     const toggleCamera = async () => {
-        if (!canPublish) return;
+        if (!liveCanPublish) return;
         const next = !cameraOn;
         await room.localParticipant.setCameraEnabled(next);
         setCameraOn(next);
     };
 
     const toggleMic = async () => {
-        if (!canPublish) return;
+        if (!liveCanPublish) return;
         const next = !micOn;
         await room.localParticipant.setMicrophoneEnabled(next);
         setMicOn(next);
@@ -638,6 +672,26 @@ function RoomContent({
         const data = TEXT_ENCODER.encode(JSON.stringify(payload));
         room.localParticipant.publishData(data, { reliable: true });
         setHandRaised(true);
+    };
+
+    const highlightComment = (msg: ChatMessage) => {
+        setHighlightedComment(msg);
+        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        highlightTimerRef.current = setTimeout(() => setHighlightedComment(null), 30000);
+        const payload = {
+            type: 'highlight_comment',
+            comment: msg,
+        };
+        const data = TEXT_ENCODER.encode(JSON.stringify(payload));
+        room.localParticipant.publishData(data, { reliable: true });
+    };
+
+    const dismissHighlight = () => {
+        setHighlightedComment(null);
+        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        const payload = { type: 'highlight_comment', comment: null };
+        const data = TEXT_ENCODER.encode(JSON.stringify(payload));
+        room.localParticipant.publishData(data, { reliable: true });
     };
 
     const promoteParticipant = async (participantId: string) => {
@@ -764,6 +818,43 @@ function RoomContent({
                             <Typography color="grey.500">Aguardando vídeo...</Typography>
                         </Box>
                     )}
+                    {highlightedComment && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                bottom: 48,
+                                left: 16,
+                                right: 16,
+                                bgcolor: 'rgba(0,0,0,0.8)',
+                                borderLeft: '3px solid #f59e0b',
+                                borderRadius: 1,
+                                px: 2,
+                                py: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                animation: 'fadeInUp 0.3s ease-out',
+                                '@keyframes fadeInUp': {
+                                    from: { opacity: 0, transform: 'translateY(10px)' },
+                                    to: { opacity: 1, transform: 'translateY(0)' },
+                                },
+                            }}
+                        >
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="caption" sx={{ color: '#f59e0b', fontWeight: 700 }}>
+                                    {highlightedComment.senderName}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'white', wordBreak: 'break-word' }}>
+                                    {highlightedComment.message}
+                                </Typography>
+                            </Box>
+                            {isHost && (
+                                <IconButton size="small" onClick={dismissHighlight} sx={{ color: 'grey.400' }}>
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                            )}
+                        </Box>
+                    )}
                     <Tooltip title="Tela cheia (duplo toque)">
                         <IconButton
                             onClick={toggleFullscreen}
@@ -777,7 +868,7 @@ function RoomContent({
 
                 {/* Controls */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: { xs: 0.5, md: 1 }, p: { xs: 1, md: 1.5 }, borderTop: 1, borderColor: 'divider' }}>
-                    {canPublish && (
+                    {liveCanPublish && (
                         <>
                             <IconButton size="small" onClick={toggleMic} sx={{ bgcolor: micOn ? 'action.selected' : 'error.main', color: micOn ? 'text.primary' : 'white', '&:hover': { bgcolor: micOn ? 'action.hover' : 'error.dark' } }}>
                                 {micOn ? <MicIcon fontSize="small" /> : <MicOffIcon fontSize="small" />}
@@ -792,7 +883,7 @@ function RoomContent({
                             {screenOn ? <StopScreenShareIcon fontSize="small" /> : <ScreenShareIcon fontSize="small" />}
                         </IconButton>
                     )}
-                    {!canPublish && !handRaised && (
+                    {!liveCanPublish && !handRaised && (
                         <Button
                             variant="outlined"
                             startIcon={<HandIcon />}
@@ -802,7 +893,7 @@ function RoomContent({
                             Pedir para falar
                         </Button>
                     )}
-                    {!canPublish && handRaised && (
+                    {!liveCanPublish && handRaised && (
                         <Chip label="Mão levantada" icon={<HandIcon />} color="warning" size="small" />
                     )}
                     {isHost && (
@@ -853,7 +944,19 @@ function RoomContent({
                 </Box>
                 <Box sx={{ flex: 1, overflow: 'auto', p: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {chatMessages.map((msg) => (
-                        <Box key={msg.id}>
+                        <Box
+                            key={msg.id}
+                            onClick={() => isHost && highlightComment(msg)}
+                            sx={{
+                                cursor: isHost ? 'pointer' : 'default',
+                                px: 0.5,
+                                py: 0.25,
+                                borderRadius: 1,
+                                bgcolor: highlightedComment?.id === msg.id ? 'rgba(245,158,11,0.15)' : 'transparent',
+                                '&:hover': isHost ? { bgcolor: 'action.hover' } : {},
+                                transition: 'background-color 0.2s',
+                            }}
+                        >
                             <Typography variant="caption" component="span" sx={{ fontWeight: 600, mr: 0.5 }}>
                                 {msg.senderName}:
                             </Typography>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
+import { RoomServiceClient } from 'livekit-server-sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
@@ -64,6 +65,22 @@ export async function POST(
                 { _id: liveId },
                 { $addToSet: { promoted_speakers: new mongoose.Types.ObjectId(accountId) } }
             );
+        }
+
+        const apiKey = process.env.LIVEKIT_API_KEY;
+        const apiSecret = process.env.LIVEKIT_API_SECRET;
+        const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+        if (apiKey && apiSecret && livekitUrl && event.room_name) {
+            try {
+                const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
+                await roomService.updateParticipant(event.room_name, accountId, undefined, {
+                    canPublish: true,
+                    canSubscribe: true,
+                    canPublishData: true,
+                });
+            } catch (err) {
+                console.error('[promote] Erro ao atualizar permissões no LiveKit:', err);
+            }
         }
 
         return NextResponse.json({ success: true });
