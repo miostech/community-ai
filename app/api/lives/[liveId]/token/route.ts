@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
+import { AccessToken, RoomServiceClient, TrackSource } from 'livekit-server-sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
@@ -126,14 +126,15 @@ export async function POST(
             }),
         });
 
-        const canPublish = isHost || isPromotedSpeaker;
+        const isFullPublisher = isHost || isPromotedSpeaker;
 
         token.addGrant({
             room: event.room_name,
             roomJoin: true,
-            canPublish,
+            canPublish: true,
             canSubscribe: true,
             canPublishData: true,
+            ...(isFullPublisher ? {} : { canPublishSources: [TrackSource.CAMERA] }),
         });
 
         token.ttl = '4h';
@@ -155,6 +156,7 @@ export async function POST(
             room_name: event.room_name,
             is_host: isHost,
             is_speaker: isPromotedSpeaker,
+            can_publish_audio: isFullPublisher,
             livekit_url: livekitUrl,
         });
     } catch (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { RoomServiceClient } from 'livekit-server-sdk';
+import { RoomServiceClient, TrackSource } from 'livekit-server-sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { RoomServiceClient } from 'livekit-server-sdk';
+import { RoomServiceClient, TrackSource } from 'livekit-server-sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
@@ -68,9 +68,10 @@ export async function POST(
             try {
                 const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
                 await roomService.updateParticipant(event.room_name, accountId, undefined, {
-                    canPublish: false,
+                    canPublish: true,
                     canSubscribe: true,
                     canPublishData: true,
+                    canPublishSources: [TrackSource.CAMERA],
                 });
             } catch (err) {
                 console.error('[demote] Erro ao atualizar permissões no LiveKit:', err);

@@ -481,8 +481,8 @@ function RoomContent({
     const participants = useParticipants();
     const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare, Track.Source.Microphone]);
 
-    const [cameraOn, setCameraOn] = useState(isHost);
-    const [micOn, setMicOn] = useState(isHost || isSpeaker);
+    const [cameraOn, setCameraOn] = useState(false);
+    const [micOn, setMicOn] = useState(false);
     const [screenOn, setScreenOn] = useState(false);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
@@ -493,11 +493,14 @@ function RoomContent({
     const [ending, setEnding] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
     const [highlightedComment, setHighlightedComment] = useState<ChatMessage | null>(null);
+    const [hasNewMessages, setHasNewMessages] = useState(false);
     const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
     const videoGridRef = useRef<HTMLDivElement>(null);
+    const isAtBottomRef = useRef(true);
 
-    const canPublish = isHost || isSpeaker;
+    const canPublishAudio = isHost || isSpeaker;
 
     const toggleFullscreen = () => {
         const el = videoGridRef.current;
@@ -551,34 +554,38 @@ function RoomContent({
         return () => clearInterval(interval);
     }, [event.started_at, isHost, liveId, room, onEnd]);
 
-    const [liveCanPublish, setLiveCanPublish] = useState(canPublish);
+    const [liveCanPublishAudio, setLiveCanPublishAudio] = useState(canPublishAudio);
 
     useEffect(() => {
-        if (!canPublish) return;
-        room.localParticipant.setCameraEnabled(isHost).catch(() => {});
-        room.localParticipant.setMicrophoneEnabled(isHost || isSpeaker).catch(() => {});
-    }, [room, canPublish, isHost, isSpeaker]);
+        if (isHost) {
+            room.localParticipant.setCameraEnabled(true).catch(() => {});
+            room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
+            setCameraOn(true);
+            setMicOn(true);
+        } else if (isSpeaker) {
+            room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
+            setMicOn(true);
+        }
+    }, [room, isHost, isSpeaker]);
 
     useEffect(() => {
         const handlePermissions = () => {
             const perms = room.localParticipant.permissions;
-            if (perms?.canPublish && !liveCanPublish) {
-                setLiveCanPublish(true);
-                room.localParticipant.setCameraEnabled(true).catch(() => {});
+            const sources = perms?.canPublishSources;
+            const hasAudio = !sources || sources.length === 0 || sources.includes(2);
+            if (hasAudio && !liveCanPublishAudio) {
+                setLiveCanPublishAudio(true);
                 room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
-                setCameraOn(true);
                 setMicOn(true);
-            } else if (!perms?.canPublish && liveCanPublish) {
-                setLiveCanPublish(false);
-                room.localParticipant.setCameraEnabled(false).catch(() => {});
+            } else if (!hasAudio && liveCanPublishAudio) {
+                setLiveCanPublishAudio(false);
                 room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
-                setCameraOn(false);
                 setMicOn(false);
             }
         };
         room.on(RoomEvent.ParticipantPermissionsChanged, handlePermissions);
         return () => { room.off(RoomEvent.ParticipantPermissionsChanged, handlePermissions); };
-    }, [room, liveCanPublish]);
+    }, [room, liveCanPublishAudio]);
 
     useEffect(() => {
         const handleData = (payload: Uint8Array, participant: RemoteParticipant | undefined) => {
@@ -615,19 +622,33 @@ function RoomContent({
         return () => { room.off(RoomEvent.DataReceived, handleData); };
     }, [room, isHost]);
 
-    useEffect(() => {
+    const checkIsAtBottom = () => {
+        const el = chatContainerRef.current;
+        if (!el) return true;
+        return el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    };
+
+    const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setHasNewMessages(false);
+    };
+
+    useEffect(() => {
+        if (isAtBottomRef.current) {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            setHasNewMessages(true);
+        }
     }, [chatMessages]);
 
     const toggleCamera = async () => {
-        if (!liveCanPublish) return;
         const next = !cameraOn;
         await room.localParticipant.setCameraEnabled(next);
         setCameraOn(next);
     };
 
     const toggleMic = async () => {
-        if (!liveCanPublish) return;
+        if (!liveCanPublishAudio) return;
         const next = !micOn;
         await room.localParticipant.setMicrophoneEnabled(next);
         setMicOn(next);
@@ -728,9 +749,37 @@ function RoomContent({
         }
     };
 
-    const videoTracks = tracks.filter(
+    const allVideoTracks = tracks.filter(
         (t) => t.source === Track.Source.Camera || t.source === Track.Source.ScreenShare
     );
+
+    const isHostOrSpeaker = (identity: string) => {
+        if (identity === event.creator?._id) return true;
+        if (promotedSpeakers.includes(identity)) return true;
+        if (identity === room.localParticipant.identity) return isHost || liveCanPublishAudio;
+        const p = participants.find((pp) => pp.identity === identity);
+        if (p?.metadata) {
+            try {
+                const meta = JSON.parse(p.metadata);
+                const staffRoles = ['moderator', 'admin', 'criador'];
+                if (staffRoles.includes(meta.role) && p.permissions?.canPublish) {
+                    const sources = p.permissions?.canPublishSources;
+                    if (!sources || sources.length === 0) return true;
+                }
+            } catch {}
+        }
+        return false;
+    };
+
+    const hostTracks = allVideoTracks.filter((t) => {
+        if (t.source === Track.Source.ScreenShare) return true;
+        return isHostOrSpeaker(t.participant.identity);
+    });
+
+    const viewerTracks = allVideoTracks.filter((t) => {
+        if (t.source === Track.Source.ScreenShare) return false;
+        return !isHostOrSpeaker(t.participant.identity);
+    });
 
     return (
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: { xs: '100dvh', md: 'calc(100vh - 64px)' }, overflow: 'hidden' }}>
@@ -785,14 +834,52 @@ function RoomContent({
                     )}
                 </Box>
 
-                {/* Video grid */}
+                {/* Viewer cameras strip */}
+                {viewerTracks.length > 0 && (
+                    <Box sx={{
+                        display: 'flex',
+                        gap: 0.5,
+                        px: 1,
+                        py: 0.5,
+                        bgcolor: '#111',
+                        overflowX: 'auto',
+                        flexShrink: 0,
+                        '&::-webkit-scrollbar': { height: 4 },
+                        '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.3)', borderRadius: 2 },
+                    }}>
+                        {viewerTracks.map((trackRef) => (
+                            <Box
+                                key={trackRef.publication?.trackSid || trackRef.participant.identity}
+                                sx={{
+                                    position: 'relative',
+                                    width: 80,
+                                    height: 60,
+                                    flexShrink: 0,
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    bgcolor: '#1a1a1a',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                }}
+                            >
+                                <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, bgcolor: 'rgba(0,0,0,0.6)', px: 0.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'white', fontSize: '0.6rem', lineHeight: 1.4 }} noWrap>
+                                        {trackRef.participant.name || trackRef.participant.identity}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        ))}
+                    </Box>
+                )}
+
+                {/* Video grid - hosts & speakers */}
                 <Box
                     ref={videoGridRef}
                     onDoubleClick={toggleFullscreen}
                     sx={{
                     flex: 1,
                     display: 'grid',
-                    gridTemplateColumns: videoTracks.length > 1 ? { xs: '1fr', md: '1fr 1fr' } : '1fr',
+                    gridTemplateColumns: hostTracks.length > 1 ? { xs: '1fr', md: '1fr 1fr' } : '1fr',
                     gap: 1,
                     p: 1,
                     bgcolor: 'black',
@@ -800,8 +887,8 @@ function RoomContent({
                     position: 'relative',
                     cursor: 'pointer',
                 }}>
-                    {videoTracks.length > 0 ? (
-                        videoTracks.map((trackRef) => (
+                    {hostTracks.length > 0 ? (
+                        hostTracks.map((trackRef) => (
                             <Box key={trackRef.publication?.trackSid || trackRef.participant.identity} sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#1a1a1a' }}>
                                 <VideoTrack trackRef={trackRef} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                 <Box sx={{ position: 'absolute', bottom: 8, left: 8 }}>
@@ -868,22 +955,20 @@ function RoomContent({
 
                 {/* Controls */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: { xs: 0.5, md: 1 }, p: { xs: 1, md: 1.5 }, borderTop: 1, borderColor: 'divider' }}>
-                    {liveCanPublish && (
-                        <>
-                            <IconButton size="small" onClick={toggleMic} sx={{ bgcolor: micOn ? 'action.selected' : 'error.main', color: micOn ? 'text.primary' : 'white', '&:hover': { bgcolor: micOn ? 'action.hover' : 'error.dark' } }}>
-                                {micOn ? <MicIcon fontSize="small" /> : <MicOffIcon fontSize="small" />}
-                            </IconButton>
-                            <IconButton size="small" onClick={toggleCamera} sx={{ bgcolor: cameraOn ? 'action.selected' : 'error.main', color: cameraOn ? 'text.primary' : 'white', '&:hover': { bgcolor: cameraOn ? 'action.hover' : 'error.dark' } }}>
-                                {cameraOn ? <VideocamIcon fontSize="small" /> : <VideocamOffIcon fontSize="small" />}
-                            </IconButton>
-                        </>
+                    {liveCanPublishAudio && (
+                        <IconButton size="small" onClick={toggleMic} sx={{ bgcolor: micOn ? 'action.selected' : 'error.main', color: micOn ? 'text.primary' : 'white', '&:hover': { bgcolor: micOn ? 'action.hover' : 'error.dark' } }}>
+                            {micOn ? <MicIcon fontSize="small" /> : <MicOffIcon fontSize="small" />}
+                        </IconButton>
                     )}
+                    <IconButton size="small" onClick={toggleCamera} sx={{ bgcolor: cameraOn ? 'action.selected' : 'error.main', color: cameraOn ? 'text.primary' : 'white', '&:hover': { bgcolor: cameraOn ? 'action.hover' : 'error.dark' } }}>
+                        {cameraOn ? <VideocamIcon fontSize="small" /> : <VideocamOffIcon fontSize="small" />}
+                    </IconButton>
                     {isHost && (
                         <IconButton size="small" onClick={toggleScreen} sx={{ bgcolor: screenOn ? 'primary.main' : 'action.selected', color: screenOn ? 'white' : 'text.primary', display: { xs: 'none', sm: 'inline-flex' } }}>
                             {screenOn ? <StopScreenShareIcon fontSize="small" /> : <ScreenShareIcon fontSize="small" />}
                         </IconButton>
                     )}
-                    {!liveCanPublish && !handRaised && (
+                    {!liveCanPublishAudio && !handRaised && (
                         <Button
                             variant="outlined"
                             startIcon={<HandIcon />}
@@ -893,7 +978,7 @@ function RoomContent({
                             Pedir para falar
                         </Button>
                     )}
-                    {!liveCanPublish && handRaised && (
+                    {!liveCanPublishAudio && handRaised && (
                         <Chip label="Mão levantada" icon={<HandIcon />} color="warning" size="small" />
                     )}
                     {isHost && (
