@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { EgressClient, EncodedFileOutput, EncodedFileType, AzureBlobUpload } from 'livekit-server-sdk';
+import { EgressClient, EncodedFileOutput, EncodedFileType, AzureBlobUpload, RoomServiceClient } from 'livekit-server-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
@@ -86,6 +86,10 @@ export async function POST(
                     const containerClient = blobService.getContainerClient(RECORDING_CONTAINER);
                     await containerClient.createIfNotExists({ access: 'blob' });
 
+                    const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
+                    await roomService.createRoom({ name: event.room_name, emptyTimeout: 60 * 60 * 3 });
+                    console.log('[start] Sala criada no LiveKit:', event.room_name);
+
                     const egressClient = new EgressClient(livekitUrl, apiKey, apiSecret);
                     const output = new EncodedFileOutput({
                         fileType: EncodedFileType.MP4,
@@ -102,6 +106,7 @@ export async function POST(
                     const egressInfo = await egressClient.startRoomCompositeEgress(event.room_name, output);
                     event.egress_id = egressInfo.egressId;
                     await event.save();
+                    console.log('[start] Gravação iniciada, egress_id:', egressInfo.egressId);
                 }
             } catch (err) {
                 console.error('[start] Erro ao iniciar gravação:', err);
