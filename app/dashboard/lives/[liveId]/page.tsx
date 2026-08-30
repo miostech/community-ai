@@ -731,7 +731,7 @@ function RoomContent({
                         timestamp: Date.now(),
                     };
                     setChatMessages((prev) => [...prev.slice(-200), msg]);
-                } else if (parsed.type === 'hand_raise' && isHost) {
+                } else if (parsed.type === 'hand_raise' && (isHost || isStaff)) {
                     setHandRequests((prev) => {
                         if (prev.some((r) => r.id === parsed.sender)) return prev;
                         return [...prev, { id: parsed.sender, name: parsed.senderName || 'Participante' }];
@@ -978,7 +978,7 @@ function RoomContent({
                             </IconButton>
                         </Tooltip>
                     )}
-                    {isHost && (
+                    {(isHost || isStaff) && (
                         <Tooltip title="Participantes">
                             <IconButton size="small" onClick={() => setShowParticipants(true)}>
                                 {handRequests.length > 0 ? (
@@ -1151,7 +1151,7 @@ function RoomContent({
                             {cameraOn ? <VideocamIcon fontSize="small" /> : <VideocamOffIcon fontSize="small" />}
                         </IconButton>
                     </Tooltip>
-                    {isHost && (
+                    {(isHost || isStaff) && (
                         <IconButton size="small" onClick={toggleScreen} sx={{ bgcolor: screenOn ? 'primary.main' : 'action.selected', color: screenOn ? 'white' : 'text.primary', display: { xs: 'none', sm: 'inline-flex' } }}>
                             {screenOn ? <StopScreenShareIcon fontSize="small" /> : <ScreenShareIcon fontSize="small" />}
                         </IconButton>
@@ -1169,7 +1169,7 @@ function RoomContent({
                     {!liveCanPublishAudio && handRaised && (
                         <Chip label="Mão levantada" icon={<HandIcon />} color="warning" size="small" />
                     )}
-                    {isHost && (
+                    {(isHost || isStaff) && (
                         <Button
                             variant="contained"
                             color="error"
@@ -1182,7 +1182,7 @@ function RoomContent({
                             Encerrar
                         </Button>
                     )}
-                    {isHost ? (
+                    {(isHost || isStaff) ? (
                         <Button
                             variant="outlined"
                             color="warning"
@@ -1419,7 +1419,7 @@ function RoomContent({
                                         primary={p.name || p.identity}
                                         secondary={isHostP ? 'Host' : isSpeakerP ? 'Falando' : undefined}
                                     />
-                                    {isHost && isSpeakerP && !isHostP && (
+                                    {(isHost || isStaff) && isSpeakerP && !isHostP && (
                                         <ListItemSecondaryAction>
                                             <Tooltip title="Silenciar">
                                                 <IconButton edge="end" color="warning" onClick={() => demoteParticipant(p.identity)} size="small">

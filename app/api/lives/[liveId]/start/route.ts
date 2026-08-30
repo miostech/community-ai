@@ -32,8 +32,8 @@ export async function POST(
         await connectMongo();
 
         const account = await Account.findOne({ auth_user_id: authUserId })
-            .select('_id')
-            .lean() as { _id: mongoose.Types.ObjectId } | null;
+            .select('_id role')
+            .lean() as { _id: mongoose.Types.ObjectId; role?: string } | null;
 
         if (!account) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
@@ -44,8 +44,10 @@ export async function POST(
             return NextResponse.json({ error: 'Live não encontrada' }, { status: 404 });
         }
 
-        if (event.creator_id.toString() !== account._id.toString()) {
-            return NextResponse.json({ error: 'Apenas o criador pode iniciar a live' }, { status: 403 });
+        const staffRoles = ['moderator', 'admin', 'criador'];
+        const isCreator = event.creator_id.toString() === account._id.toString();
+        if (!isCreator && !staffRoles.includes(account.role || '')) {
+            return NextResponse.json({ error: 'Sem permissão para iniciar esta live' }, { status: 403 });
         }
 
         if (event.status === 'live') {
