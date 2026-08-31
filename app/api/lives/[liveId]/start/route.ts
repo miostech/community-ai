@@ -86,6 +86,20 @@ export async function POST(
                     const containerClient = blobService.getContainerClient(RECORDING_CONTAINER);
                     await containerClient.createIfNotExists({ access: 'blob' });
 
+                    try {
+                        await blobService.setProperties({
+                            cors: [{
+                                allowedOrigins: '*',
+                                allowedMethods: 'GET,HEAD,OPTIONS',
+                                allowedHeaders: 'Range,Content-Type',
+                                exposedHeaders: 'Content-Length,Content-Range,Accept-Ranges',
+                                maxAgeInSeconds: 86400,
+                            }],
+                        });
+                    } catch (corsErr) {
+                        console.error('[start] Erro ao configurar CORS do Azure:', corsErr);
+                    }
+
                     const roomService = new RoomServiceClient(livekitUrl, apiKey, apiSecret);
                     await roomService.createRoom({ name: event.room_name, emptyTimeout: 60 * 60 * 3 });
                     console.log('[start] Sala criada no LiveKit:', event.room_name);

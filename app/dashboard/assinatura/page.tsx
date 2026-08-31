@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Container, CircularProgress, Box } from '@mui/material';
+import Link from 'next/link';
+import { Container, CircularProgress, Box, Typography, Button } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PricingPlans } from '@/components/pricing/PricingPlans';
 import { useAccount } from '@/contexts/AccountContext';
@@ -38,6 +39,19 @@ export default function AssinaturaPage() {
                 subtitle="Escolha o plano ideal para você"
                 showFAQ={false}
             />
+            <Box sx={{ textAlign: 'center', mt: 4, py: 3, borderTop: 1, borderColor: 'divider' }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Comprou na Kiwify com um email diferente?
+                </Typography>
+                <Button
+                    component={Link}
+                    href="/dashboard/vincular-compra"
+                    variant="text"
+                    size="small"
+                >
+                    Vincular compra ao meu cadastro
+                </Button>
+            </Box>
         </Container>
     );
 }

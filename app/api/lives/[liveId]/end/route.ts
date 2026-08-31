@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import { RoomServiceClient, EgressClient, EgressStatus } from 'livekit-server-sdk';
+import { BlobServiceClient } from '@azure/storage-blob';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import LiveEvent from '@/models/LiveEvent';
 import Account from '@/models/Account';
+
+const RECORDING_CONTAINER = 'ai-community-live-recordings';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -93,9 +96,19 @@ export async function POST(
                     const azureConnStr = process.env.AZURE_STORAGE_CONNECTION_STRING;
                     const match = azureConnStr?.match(/AccountName=([^;]+)/);
                     if (match) {
-                        event.recording_url = `https://${match[1]}.blob.core.windows.net/ai-community-live-recordings/lives/${liveId}.mp4`;
+                        event.recording_url = `https://${match[1]}.blob.core.windows.net/${RECORDING_CONTAINER}/lives/${liveId}.mp4`;
                         await event.save();
                         console.log('[end] Recording URL salva:', event.recording_url);
+
+                        try {
+                            const blobService = BlobServiceClient.fromConnectionString(azureConnStr!);
+                            const containerClient = blobService.getContainerClient(RECORDING_CONTAINER);
+                            const blobClient = containerClient.getBlobClient(`lives/${liveId}.mp4`);
+                            await blobClient.setHTTPHeaders({ blobContentType: 'video/mp4' });
+                            console.log('[end] Content-Type do blob atualizado para video/mp4');
+                        } catch (err) {
+                            console.error('[end] Erro ao atualizar Content-Type do blob:', err);
+                        }
                     } else {
                         console.error('[end] AZURE_STORAGE_CONNECTION_STRING sem AccountName');
                     }

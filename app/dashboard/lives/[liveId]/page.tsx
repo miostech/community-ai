@@ -335,12 +335,40 @@ export default function LiveRoomPage() {
                         <Box
                             component="video"
                             controls
-                            sx={{ width: '100%', borderRadius: 2, bgcolor: 'black' }}
+                            playsInline
+                            preload="auto"
+                            sx={{ width: '100%', borderRadius: 2, bgcolor: 'black', aspectRatio: '16/9' }}
                             src={event.recording_url}
+                            onError={() => {
+                                const el = document.getElementById('recording-error');
+                                if (el) el.style.display = 'block';
+                            }}
                         />
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
                             Gravação da live
                         </Typography>
+                        <Typography
+                            id="recording-error"
+                            variant="body2"
+                            color="error"
+                            sx={{ mt: 1, display: 'none', textAlign: 'center' }}
+                        >
+                            Erro ao carregar a gravação. O arquivo pode ainda estar sendo processado — tente novamente em alguns minutos.
+                        </Typography>
+                        <Button
+                            variant="text"
+                            size="small"
+                            sx={{ display: 'block', mx: 'auto', mt: 0.5 }}
+                            onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = event.recording_url!;
+                                link.target = '_blank';
+                                link.rel = 'noopener';
+                                link.click();
+                            }}
+                        >
+                            Abrir gravação em nova aba
+                        </Button>
                     </Box>
                 ) : (
                     <Typography color="text.secondary">Esta live já foi encerrada</Typography>
