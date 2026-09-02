@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
                     },
                 },
             },
-            // Criadores (role 'criador') nunca aparecem no Hall da Fama.
+            // Criadores e moderadores nunca aparecem no Hall da Fama.
             { $lookup: { from: 'accounts', localField: '_id', foreignField: '_id', as: 'acc' } },
-            { $match: { 'acc.role': { $ne: 'criador' } } },
+            { $match: { 'acc.role': { $nin: ['criador', 'moderator'] } } },
             { $sort: { totalWins: -1, lastWinAt: -1 } },
         ]);
 

@@ -21,6 +21,7 @@ interface StoryUser {
     name: string;
     avatar: string | null;
     initials: string;
+    role?: string;
     interactionCount: number;
     rankingWins: number;
     latestStoryAt?: number;
@@ -60,8 +61,10 @@ export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps
         }
     };
 
-    const first = users[0];
-    const rest = users.slice(1);
+    const isStaffRole = (u: StoryUser) => u.role === 'criador' || u.role === 'moderator';
+    const rankableUsers = users.filter((u) => !isStaffRole(u));
+    const first = rankableUsers[0];
+    const rest = users.filter((u) => u !== first);
     const storyPosters = rest.filter((u) => u.latestStoryAt != null);
     const sortedStoryPosters = [...storyPosters].sort((a, b) => {
         const aUnseen = hasUnseenStories(a);
@@ -70,8 +73,7 @@ export function StoriesMui({ users, onStoryOpen, onAddStoryClick }: StoriesProps
         if (!aUnseen && bUnseen) return 1;
         return (b.latestStoryAt ?? 0) - (a.latestStoryAt ?? 0);
     });
-    /** Perfis sem story ativo, na ordem do ranking (mesma ordem de `users`). */
-    const rankingOnly = rest.filter((u) => u.latestStoryAt == null);
+    const rankingOnly = rest.filter((u) => u.latestStoryAt == null && !isStaffRole(u));
 
     const hasStories = sortedStoryPosters.length > 0;
 

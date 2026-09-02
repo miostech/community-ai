@@ -656,7 +656,7 @@ export default function RankingPage() {
   }, []);
 
   // Criadores nunca aparecem no ranking (mas continuam na barra de stories do feed).
-  const rankedUsers = users.filter((u) => u.role !== 'criador');
+  const rankedUsers = users.filter((u) => u.role !== 'criador' && u.role !== 'moderator');
   const userPosition = account?.id ? rankedUsers.findIndex((u) => u.id === account.id) + 1 : 0;
   const userInRanking = account?.id && userPosition > 0;
   const userIsTopThree = (userPosition >= 1 && userPosition <= 3) || testShare;
