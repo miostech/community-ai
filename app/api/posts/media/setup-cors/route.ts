@@ -20,8 +20,8 @@ export async function GET() {
                 {
                     allowedOrigins: '*', // Em produção, especifique os domínios
                     allowedMethods: 'GET,PUT,POST,DELETE,HEAD,OPTIONS',
-                    allowedHeaders: '*',
-                    exposedHeaders: '*',
+                    allowedHeaders: 'Content-Type,x-ms-blob-type,x-ms-blob-cache-control,x-ms-blob-content-type',
+                    exposedHeaders: 'Content-Length,Content-Range,ETag',
                     maxAgeInSeconds: 3600,
                 },
             ],

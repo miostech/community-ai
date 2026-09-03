@@ -82,6 +82,21 @@ export async function POST(request: NextRequest) {
         // Garantir que o container existe
         await containerClient.createIfNotExists({ access: 'blob' });
 
+        // Configurar CORS para upload direto do navegador
+        try {
+            await blobServiceClient.setProperties({
+                cors: [{
+                    allowedOrigins: '*',
+                    allowedMethods: 'GET,PUT,POST,DELETE,HEAD,OPTIONS',
+                    allowedHeaders: 'Content-Type,x-ms-blob-type,x-ms-blob-cache-control,x-ms-blob-content-type',
+                    exposedHeaders: 'Content-Length,Content-Range,ETag',
+                    maxAgeInSeconds: 3600,
+                }],
+            });
+        } catch (corsErr) {
+            console.error('[sas] Erro ao configurar CORS:', corsErr);
+        }
+
         // Gerar nome único do blob
         const extension = fileName.split('.').pop() || (type === 'video' ? 'mp4' : 'jpg');
         const timestamp = Date.now();
