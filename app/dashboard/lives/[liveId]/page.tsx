@@ -56,7 +56,7 @@ import {
 import { Track, RoomEvent, DataPacket_Kind } from 'livekit-client';
 import type { RemoteParticipant } from 'livekit-client';
 
-const MAX_DURATION_MS = 2 * 60 * 60 * 1000; // 2 horas
+const MAX_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hora
 
 interface LiveEventData {
     _id: string;

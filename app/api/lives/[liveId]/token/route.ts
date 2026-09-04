@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MAX_PARTICIPANTS = 500;
-const MAX_DURATION_MS = 2 * 60 * 60 * 1000; // 2 horas
+const MAX_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hora
 
 export async function POST(
     _request: NextRequest,
@@ -81,7 +81,7 @@ export async function POST(
                 if (ak && as_ && url) {
                     try { await new RoomServiceClient(url, ak, as_).deleteRoom(event.room_name); } catch {}
                 }
-                return NextResponse.json({ error: 'Esta live atingiu o limite de 2 horas e foi encerrada automaticamente' }, { status: 400 });
+                return NextResponse.json({ error: 'Esta live atingiu o limite de 1 hora e foi encerrada automaticamente' }, { status: 400 });
             }
         }
 
