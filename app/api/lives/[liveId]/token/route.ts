@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MAX_PARTICIPANTS = 500;
-const MAX_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hora
+// const MAX_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hora — sem limite por enquanto
 
 export async function POST(
     _request: NextRequest,
@@ -69,21 +69,22 @@ export async function POST(
             }
         }
 
-        if (event.status === 'live' && event.started_at) {
-            const elapsed = Date.now() - new Date(event.started_at).getTime();
-            if (elapsed >= MAX_DURATION_MS) {
-                event.status = 'ended';
-                event.ended_at = new Date();
-                await event.save();
-                const ak = process.env.LIVEKIT_API_KEY;
-                const as_ = process.env.LIVEKIT_API_SECRET;
-                const url = process.env.NEXT_PUBLIC_LIVEKIT_URL;
-                if (ak && as_ && url) {
-                    try { await new RoomServiceClient(url, ak, as_).deleteRoom(event.room_name); } catch {}
-                }
-                return NextResponse.json({ error: 'Esta live atingiu o limite de 1 hora e foi encerrada automaticamente' }, { status: 400 });
-            }
-        }
+        // Limite de tempo desabilitado — sem limite por enquanto
+        // if (event.status === 'live' && event.started_at) {
+        //     const elapsed = Date.now() - new Date(event.started_at).getTime();
+        //     if (elapsed >= MAX_DURATION_MS) {
+        //         event.status = 'ended';
+        //         event.ended_at = new Date();
+        //         await event.save();
+        //         const ak = process.env.LIVEKIT_API_KEY;
+        //         const as_ = process.env.LIVEKIT_API_SECRET;
+        //         const url = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+        //         if (ak && as_ && url) {
+        //             try { await new RoomServiceClient(url, ak, as_).deleteRoom(event.room_name); } catch {}
+        //         }
+        //         return NextResponse.json({ error: 'Esta live atingiu o limite de 1 hora e foi encerrada automaticamente' }, { status: 400 });
+        //     }
+        // }
 
         const staffRoles = ['moderator', 'admin', 'criador'];
         const isStaff = staffRoles.includes(account.role || '');

@@ -56,7 +56,7 @@ import {
 import { Track, RoomEvent, DataPacket_Kind } from 'livekit-client';
 import type { RemoteParticipant } from 'livekit-client';
 
-const MAX_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hora
+// const MAX_DURATION_MS = 1 * 60 * 60 * 1000; // 1 hora — sem limite por enquanto
 
 interface LiveEventData {
     _id: string;
@@ -336,7 +336,7 @@ export default function LiveRoomPage() {
                             component="video"
                             controls
                             playsInline
-                            preload="auto"
+                            preload="metadata"
                             sx={{ width: '100%', borderRadius: 2, bgcolor: 'black', aspectRatio: '16/9' }}
                             src={event.recording_url}
                             onError={() => {
@@ -762,30 +762,31 @@ function RoomContent({
         return () => { room.off(RoomEvent.ParticipantConnected, handleJoin); };
     }, [room]);
 
-    useEffect(() => {
-        if (!event.started_at) return;
-        const startTime = new Date(event.started_at).getTime();
-        const WARNING_MS = 10 * 60 * 1000;
-        const tick = () => {
-            const remaining = MAX_DURATION_MS - (Date.now() - startTime);
-            if (remaining <= 0) {
-                if (isHost) {
-                    fetch(`/api/lives/${liveId}/end`, { method: 'POST' }).finally(() => {
-                        room.disconnect();
-                        onEnd();
-                    });
-                }
-                return;
-            }
-            setTimeWarning(remaining <= WARNING_MS);
-            const mins = Math.floor(remaining / 60000);
-            const secs = Math.floor((remaining % 60000) / 1000);
-            setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
-        };
-        tick();
-        const interval = setInterval(tick, 1000);
-        return () => clearInterval(interval);
-    }, [event.started_at, isHost, liveId, room, onEnd]);
+    // Limite de tempo desabilitado — sem limite por enquanto
+    // useEffect(() => {
+    //     if (!event.started_at) return;
+    //     const startTime = new Date(event.started_at).getTime();
+    //     const WARNING_MS = 10 * 60 * 1000;
+    //     const tick = () => {
+    //         const remaining = MAX_DURATION_MS - (Date.now() - startTime);
+    //         if (remaining <= 0) {
+    //             if (isHost) {
+    //                 fetch(`/api/lives/${liveId}/end`, { method: 'POST' }).finally(() => {
+    //                     room.disconnect();
+    //                     onEnd();
+    //                 });
+    //             }
+    //             return;
+    //         }
+    //         setTimeWarning(remaining <= WARNING_MS);
+    //         const mins = Math.floor(remaining / 60000);
+    //         const secs = Math.floor((remaining % 60000) / 1000);
+    //         setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
+    //     };
+    //     tick();
+    //     const interval = setInterval(tick, 1000);
+    //     return () => clearInterval(interval);
+    // }, [event.started_at, isHost, liveId, room, onEnd]);
 
     const [liveCanPublishAudio, setLiveCanPublishAudio] = useState(canPublishAudio);
 
