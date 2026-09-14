@@ -1259,7 +1259,7 @@ export default function PerfilComunidadePage() {
                         )}
                       </Stack>
                       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider', display: 'block' }}>
-                        Dados atualizados a cada 24 horas
+                        Dados atualizados a cada 7 dias
                       </Typography>
                     </Box>
                   }
