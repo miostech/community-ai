@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import { getTotalFollowers } from '@/lib/social-stats';
+import { getSocialStatsForAccount } from '@/lib/fetch-social-stats';
 import { normalizeInstagramHandle, normalizeTikTokHandle, normalizeYouTubeStoredInput } from '@/lib/normalize-social-handles';
 import mongoose from 'mongoose';
 import Account from '@/models/Account';
@@ -475,6 +476,25 @@ export async function PATCH(request: NextRequest) {
             } catch (e) {
                 console.error('Erro ao registrar followers_at_signup:', e);
             }
+        }
+
+        // Atualizar cache de seguidores quando redes sociais são alteradas
+        const socialChanged = body.link_instagram !== undefined || body.link_tiktok !== undefined || body.link_youtube !== undefined;
+        if (socialChanged && hasLinks) {
+            getSocialStatsForAccount({
+                instagram: acc.link_instagram as string | undefined,
+                tiktok: acc.link_tiktok as string | undefined,
+                youtube: acc.link_youtube as string | undefined,
+            }).then(({ totalFollowers, engagementScore, totalViews }) => {
+                Account.updateOne({ _id: acc!._id }, {
+                    $set: {
+                        cached_followers_total: totalFollowers,
+                        cached_followers_updated_at: new Date(),
+                        cached_engagement_score: engagementScore ?? null,
+                        cached_total_views: totalViews ?? null,
+                    },
+                }).catch((e) => console.error('Erro ao atualizar cache de seguidores:', e));
+            }).catch((e) => console.error('Erro ao buscar social stats no save:', e));
         }
 
         const responseAccount = {

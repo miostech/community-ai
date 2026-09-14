@@ -7,8 +7,8 @@ import mongoose from 'mongoose';
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 min
 
-const BATCH_SIZE = 4;
-const DELAY_MS = 2000;
+const BATCH_SIZE = 10;
+const DELAY_MS = 500;
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
