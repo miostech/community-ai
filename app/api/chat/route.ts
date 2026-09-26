@@ -5,6 +5,7 @@ import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
 import ChatConversationModel from '@/models/ChatConversation';
 import ChatMessageModel from '@/models/ChatMessage';
+import { KNOWLEDGE_BASE } from '@/lib/knowledge-base';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -324,9 +325,10 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        let systemPrompt = conversation.system_prompt || SYSTEM_PROMPT;
+        const basePrompt = conversation.system_prompt || SYSTEM_PROMPT;
+        let summaryBlock = '';
         if (conversation.summary) {
-            systemPrompt += `\n\nResumo da conversa até agora: ${conversation.summary}`;
+            summaryBlock = `\n\nResumo da conversa até agora: ${conversation.summary}`;
         }
 
         const claudeMessages: Anthropic.MessageParam[] = [];
@@ -342,13 +344,20 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // ----- Chamar Claude Messages API com web_search -----
+        // ----- Chamar Claude Messages API com web_search + base de conhecimento -----
         const anthropic = getAnthropic();
 
         const response = await anthropic.messages.create({
             model: 'claude-sonnet-5',
             max_tokens: 1500,
-            system: systemPrompt,
+            system: [
+                {
+                    type: 'text',
+                    text: basePrompt + '\n\n--- BASE DE CONHECIMENTO (aulas da Natália Trombelli) ---\n\n' + KNOWLEDGE_BASE,
+                    cache_control: { type: 'ephemeral' },
+                },
+                ...(summaryBlock ? [{ type: 'text' as const, text: summaryBlock }] : []),
+            ],
             messages: claudeMessages,
             tools: [
                 { type: 'web_search_20260209', name: 'web_search' },
