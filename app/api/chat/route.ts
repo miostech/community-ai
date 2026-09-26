@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
 import Account from '@/models/Account';
@@ -9,12 +9,12 @@ import ChatMessageModel from '@/models/ChatMessage';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function getOpenAI(): OpenAI {
-    const apiKey = process.env.OPENAI_API_KEY;
+function getAnthropic(): Anthropic {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-        throw new Error('Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.');
+        throw new Error('ANTHROPIC_API_KEY não configurada. Adicione em .env.local ou nas variáveis de ambiente da Vercel.');
     }
-    return new OpenAI({ apiKey });
+    return new Anthropic({ apiKey });
 }
 
 const SYSTEM_PROMPT = `Você é Natália Trombelli, mentora de criação de conteúdo e monetização na internet.
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
             content: message,
         });
 
-        // ----- Montar contexto para a OpenAI -----
+        // ----- Montar contexto para o Claude -----
         const recentMessages = await ChatMessageModel.find({
             conversation_id: conversation._id,
         })
@@ -324,49 +324,49 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        let instructions = conversation.system_prompt || SYSTEM_PROMPT;
+        let systemPrompt = conversation.system_prompt || SYSTEM_PROMPT;
         if (conversation.summary) {
-            instructions += `\n\nResumo da conversa até agora: ${conversation.summary}`;
+            systemPrompt += `\n\nResumo da conversa até agora: ${conversation.summary}`;
         }
 
-        const inputMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+        const claudeMessages: Anthropic.MessageParam[] = [];
         for (let i = 0; i < recentMessages.length; i++) {
             const msg = recentMessages[i];
             let content = msg.content;
-            // Na última mensagem (usuário atual), acrescentar contexto do link se tivermos
             if (linkContext && i === recentMessages.length - 1 && msg.role === 'user') {
                 content = `${content}\n\n${linkContext}`;
             }
-            inputMessages.push({
+            claudeMessages.push({
                 role: msg.role as 'user' | 'assistant',
                 content,
             });
         }
 
-        // ----- Chamar OpenAI Responses API com file_search + web_search -----
-        const openai = getOpenAI();
-        const vectorStoreId = process.env.OPENAI_VECTOR_STORE_ID;
+        // ----- Chamar Claude Messages API com web_search -----
+        const anthropic = getAnthropic();
 
-        const tools = [
-            { type: 'web_search' as const },
-            ...(vectorStoreId
-                ? [{ type: 'file_search' as const, vector_store_ids: [vectorStoreId] }]
-                : []),
-        ];
-
-        const response = await openai.responses.create({
-            model: conversation.model || 'gpt-4.1-mini',
-            instructions,
-            input: inputMessages,
-            tools,
-            temperature: 0.7,
-            max_output_tokens: 1500,
+        const response = await anthropic.messages.create({
+            model: 'claude-sonnet-5',
+            max_tokens: 1500,
+            system: systemPrompt,
+            messages: claudeMessages,
+            tools: [
+                { type: 'web_search_20260209', name: 'web_search' },
+            ],
         });
 
-        const assistantContent =
-            response.output_text ?? 'Desculpe, não consegui gerar uma resposta.';
-        const tokensIn = response.usage?.input_tokens ?? 0;
-        const tokensOut = response.usage?.output_tokens ?? 0;
+        let assistantContent = '';
+        for (const block of response.content) {
+            if (block.type === 'text') {
+                assistantContent += block.text;
+            }
+        }
+        if (!assistantContent) {
+            assistantContent = 'Desculpe, não consegui gerar uma resposta.';
+        }
+
+        const tokensIn = response.usage.input_tokens;
+        const tokensOut = response.usage.output_tokens;
 
         // ----- Salvar mensagem da IA -----
         const assistantMsg = await ChatMessageModel.create({
@@ -384,39 +384,28 @@ export async function POST(request: NextRequest) {
 
         // ----- Atualizar resumo a cada troca de mensagem -----
         try {
-            const summaryMessages: OpenAI.ChatCompletionMessageParam[] = [
-                { role: 'system', content: SUMMARY_PROMPT },
-            ];
+            const summaryContent = conversation.summary
+                ? `Resumo anterior:\n${conversation.summary}\n\nNova troca:\nuser: ${message}\nassistant: ${assistantContent}`
+                : `Nova troca:\nuser: ${message}\nassistant: ${assistantContent}`;
 
-            // Incluir resumo anterior se existir
-            if (conversation.summary) {
-                summaryMessages.push({
-                    role: 'user',
-                    content: `Resumo anterior:\n${conversation.summary}\n\nNova troca:\nuser: ${message}\nassistant: ${assistantContent}`,
-                });
-            } else {
-                summaryMessages.push({
-                    role: 'user',
-                    content: `Nova troca:\nuser: ${message}\nassistant: ${assistantContent}`,
-                });
-            }
-
-            const summaryCompletion = await openai.chat.completions.create({
-                model: 'gpt-4.1-mini',
-                messages: summaryMessages,
-                temperature: 0.3,
+            const summaryResponse = await anthropic.messages.create({
+                model: 'claude-haiku-4-5',
                 max_tokens: 200,
+                system: SUMMARY_PROMPT || 'Resuma de forma concisa a conversa a seguir, mantendo os pontos principais.',
+                temperature: 0.3,
+                messages: [{ role: 'user', content: summaryContent }],
             });
 
-            conversation.summary =
-                summaryCompletion.choices[0]?.message?.content ?? conversation.summary;
+            const summaryText = summaryResponse.content.find(
+                (b): b is Anthropic.TextBlock => b.type === 'text',
+            )?.text;
+            conversation.summary = summaryText ?? conversation.summary;
 
-            const sumIn = summaryCompletion.usage?.prompt_tokens ?? 0;
-            const sumOut = summaryCompletion.usage?.completion_tokens ?? 0;
+            const sumIn = summaryResponse.usage.input_tokens;
+            const sumOut = summaryResponse.usage.output_tokens;
             conversation.total_tokens_in += sumIn;
             conversation.total_tokens_out += sumOut;
 
-            // Contabilizar tokens do resumo na conta
             await Account.updateOne(
                 { _id: account._id },
                 {
