@@ -76,6 +76,8 @@ interface LiveEventData {
     room_name: string;
     promoted_speakers?: string[];
     recording_url?: string;
+    youtube_url?: string;
+    youtube_upload_status?: string;
     staff_only?: boolean;
 }
 
@@ -330,8 +332,34 @@ export default function LiveRoomPage() {
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: { xs: 2, md: 8 }, pb: 4, px: 2, gap: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>{event.title}</Typography>
-                {event.recording_url ? (
+                {event.youtube_url ? (
                     <Box sx={{ width: '100%', maxWidth: 800 }}>
+                        <Box
+                            component="iframe"
+                            src={event.youtube_url.replace('watch?v=', 'embed/')}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            sx={{ width: '100%', border: 0, borderRadius: 2, aspectRatio: '16/9' }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
+                            Gravação da live
+                        </Typography>
+                        <Button
+                            variant="text"
+                            size="small"
+                            sx={{ display: 'block', mx: 'auto', mt: 0.5 }}
+                            onClick={() => window.open(event.youtube_url!, '_blank', 'noopener')}
+                        >
+                            Assistir no YouTube
+                        </Button>
+                    </Box>
+                ) : event.recording_url ? (
+                    <Box sx={{ width: '100%', maxWidth: 800 }}>
+                        {event.youtube_upload_status === 'pending' || event.youtube_upload_status === 'uploading' ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 1 }}>
+                                Enviando gravação para o YouTube...
+                            </Typography>
+                        ) : null}
                         <Box
                             component="video"
                             controls
@@ -1015,6 +1043,7 @@ function RoomContent({
         setEnding(true);
         try {
             await fetch(`/api/lives/${liveId}/end`, { method: 'POST' });
+            fetch(`/api/lives/${liveId}/upload-youtube`, { method: 'POST' }).catch(() => {});
             room.disconnect();
             onEnd();
         } finally {

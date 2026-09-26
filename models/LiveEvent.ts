@@ -24,6 +24,8 @@ export interface ILiveEvent extends Document {
     staff_only: boolean;
     egress_id?: string;
     recording_url?: string;
+    youtube_url?: string;
+    youtube_upload_status?: 'pending' | 'uploading' | 'done' | 'failed';
     created_at: Date;
     updated_at: Date;
 }
@@ -106,6 +108,11 @@ const LiveEventSchema = new Schema<ILiveEvent>(
         staff_only: { type: Boolean, default: false },
         egress_id: { type: String },
         recording_url: { type: String },
+        youtube_url: { type: String },
+        youtube_upload_status: {
+            type: String,
+            enum: ['pending', 'uploading', 'done', 'failed'],
+        },
     },
     {
         timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
@@ -118,7 +125,7 @@ LiveEventSchema.index({ creator_id: 1, created_at: -1 });
 
 if (process.env.NODE_ENV === 'development' && mongoose.models.LiveEvent) {
     const schema = mongoose.models.LiveEvent.schema;
-    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['staff_only'] || !schema.paths['slug'] || !schema.paths['unique_viewers'] || !schema.paths['chat_messages']) {
+    if (!schema.paths['reservations'] || !schema.paths['members_only'] || !schema.paths['staff_only'] || !schema.paths['slug'] || !schema.paths['unique_viewers'] || !schema.paths['chat_messages'] || !schema.paths['youtube_url']) {
         delete (mongoose.models as Record<string, mongoose.Model<unknown>>).LiveEvent;
     }
 }

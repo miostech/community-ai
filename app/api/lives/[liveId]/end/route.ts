@@ -109,6 +109,7 @@ export async function POST(
                         } catch (err) {
                             console.error('[end] Erro ao atualizar Content-Type do blob:', err);
                         }
+
                     } else {
                         console.error('[end] AZURE_STORAGE_CONNECTION_STRING sem AccountName');
                     }
