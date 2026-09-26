@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import { EgressClient, EncodedFileOutput, EncodedFileType, AzureBlobUpload } from 'livekit-server-sdk';
+import { EgressClient, EncodedFileOutput, EncodedFileType, AzureBlobUpload, EncodingOptionsPreset } from 'livekit-server-sdk';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { auth } from '@/lib/auth';
 import { connectMongo } from '@/lib/mongoose';
@@ -98,7 +98,12 @@ export async function POST(
             },
         });
 
-        const egressInfo = await egressClient.startRoomCompositeEgress(event.room_name, output);
+        const egressInfo = await egressClient.startRoomCompositeEgress(
+            event.room_name,
+            output,
+            undefined,
+            EncodingOptionsPreset.H264_720P_30,
+        );
         event.egress_id = egressInfo.egressId;
         await event.save();
 
