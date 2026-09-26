@@ -1,93 +1,296 @@
-export const KNOWLEDGE_BASE = `=== aula1 ===
-AULA: BOAS-VINDAS AO MÉTODO INFLUÊNCIA MILIONÁRIA MENTORA: Natália
-Trombelli
+export const KNOWLEDGE_BASE = `=== ganchos_virais ===
+REFERÊNCIA: GANCHOS VIRAIS — EXEMPLOS PRONTOS PARA USAR
 
-INTRODUÇÃO Bem-vindos ao Método Influência Milionária (MM). Ao entrar
-neste treinamento, você tomou uma das decisões mais importantes para
-transformar sua vida profissional através da internet. Neste método,
-Natália Trombelli compartilha todas as estratégias que utilizou para
-crescer nas redes sociais, alcançar alto engajamento e construir
-múltiplas fontes de renda online.
+Use estes ganchos como ponto de partida. Adapte ao nicho e ao estilo de cada pessoa.
 
-OBJETIVO DO TREINAMENTO O Método Influência Milionária foi criado para
-ensinar estratégias práticas de crescimento nas redes sociais,
-monetização e construção de autoridade digital. O foco do treinamento é
-mostrar que qualquer pessoa pode crescer e ganhar dinheiro na internet,
-desde que tenha conhecimento, foco e disciplina.
 
-QUEBRANDO UM MITO SOBRE TRABALHAR NA INTERNET Existe um mito comum de
-que apenas pessoas com talento natural conseguem crescer nas redes
-sociais. No entanto, a realidade é diferente. Para trabalhar na internet
-e conquistar uma vida melhor, o principal fator necessário é
-conhecimento.
+GANCHOS DE CURIOSIDADE (os mais versáteis)
 
-Segundo Natália Trombelli, o conhecimento correto aplicado com
-consistência é suficiente para que qualquer pessoa possa crescer,
-viralizar conteúdo e monetizar sua presença digital.
+- "Ninguém te conta isso sobre [tema]..."
+- "Coisas que você não pode fazer em [lugar] ou pode [consequência exagerada]"
+- "Eu descobri uma coisa que mudou completamente [resultado]..."
+- "Se você faz [ação comum], para agora."
+- "Existe um erro que 90% das pessoas cometem quando [ação]..."
+- "Isso aqui é proibido mas todo mundo faz..."
+- "O que acontece quando você [ação incomum]..."
+- "Eu testei [coisa] por 30 dias e o resultado foi..."
+- "Você sabia que [fato surpreendente]?"
+- "A maioria das pessoas não sabe, mas [revelação]..."
 
-A HISTÓRIA DE NATALIA TROMBELLI Natália começou sua trajetória na
-internet do absoluto zero. No início, ela não possuía experiência em
-marketing digital ou criação de conteúdo.
 
-Antes de trabalhar com a internet, ela trabalhava em uma cafeteria na
-Itália. Durante esse período, começou a estudar e aplicar estratégias
-nas redes sociais enquanto ainda conciliava com o trabalho.
+GANCHOS DE POLÊMICA (geram comentários e compartilhamentos)
 
-Com o tempo, começou a crescer nas redes sociais e decidiu se dedicar
-completamente ao trabalho online.
+- "Eu vou falar uma coisa que muita gente não vai concordar..."
+- "Isso vai doer, mas alguém precisa falar..."
+- "Por que [opinião popular] está completamente errado..."
+- "Unpopular opinion: [opinião contrária]"
+- "Vou ser sincera: [verdade incômoda sobre o nicho]"
+- "Todo mundo fala que [crença comum], mas na verdade..."
+- "Se você acredita em [mito], sinto muito..."
+- "Eu parei de [ação comum] e minha vida mudou..."
+- "O conselho mais perigoso que dão na internet é..."
+- "Ninguém quer admitir, mas [verdade]..."
 
-Hoje, já faz mais de dois anos que sua renda vem 100% da internet.
 
-RESULTADOS ALCANÇADOS Atualmente, Natália fatura mais de 100 mil reais
-por mês com suas atividades online.
+GANCHOS DE STORYTELLING (prendem pela narrativa)
 
-Grande parte desse faturamento vem da venda de seus treinamentos
-digitais, incluindo: - Método Influência Milionária - HPA (outro
-treinamento criado por ela)
+- "Quando eu tinha [idade/momento], aconteceu uma coisa que..."
+- "Eu estava no [lugar] quando recebi uma mensagem que mudou tudo..."
+- "Vou te contar o maior erro que eu já cometi com [tema]..."
+- "Essa história vai te chocar..."
+- "Ontem aconteceu uma coisa que eu preciso compartilhar..."
+- "Eu quase desisti de [coisa] até que..."
+- "Lembra quando eu postei [coisa]? Pois é, o que aconteceu depois..."
+- "Eu nunca contei isso pra ninguém, mas..."
+- "Tudo mudou quando eu entendi que [insight]..."
+- "Se eu pudesse voltar no tempo, a primeira coisa que eu faria seria..."
 
-Além disso, ela possui outras cinco fontes de renda online recorrentes.
 
-INÍCIO DA MONETIZAÇÃO Mesmo quando possuía apenas cerca de 2.000
-seguidores no Instagram, Natália já conseguia gerar renda com a
-internet.
+GANCHOS DE LISTA/NÚMERO (fáceis de consumir)
 
-Isso demonstra que não é necessário ter milhões de seguidores para
-começar a ganhar dinheiro online.
+- "3 coisas que fazem seu vídeo bombar (a última é a mais importante)"
+- "5 erros que estão matando seu engajamento"
+- "Os 3 passos que eu uso pra [resultado]"
+- "7 ideias de conteúdo pra essa semana"
+- "4 apps que todo criador de conteúdo precisa"
+- "2 estratégias que me deram [resultado] em [tempo]"
+- "Os 3 tipos de vídeo que mais viralizam em [mês/ano]"
+- "5 frases que vendem qualquer produto nos stories"
 
-O mais importante é entender as estratégias corretas de monetização.
 
-MONETIZAÇÃO NO TIKTOK O treinamento também inclui um módulo específico
-sobre TikTok.
+GANCHOS DE IDENTIFICAÇÃO (geram saves e compartilhamentos)
 
-Nesse módulo, os alunos aprendem: - Como crescer na plataforma - Como
-viralizar conteúdos - Como monetizar o TikTok - Como transformar
-audiência em renda
+- "POV: você [situação que o público vive]"
+- "Me conta que você [situação] sem me contar que você [situação]"
+- "Se você [situação], esse vídeo é pra você"
+- "Só quem [situação] vai entender..."
+- "Esse vídeo é pra quem já tentou [coisa] e não conseguiu"
+- "Levanta a mão quem já [situação comum]"
+- "Eu sei que você [comportamento comum do público]..."
+- "Você também [pergunta que gera identificação]?"
 
-CRESCIMENTO CORRETO NAS REDES SOCIAIS Muitos influenciadores conseguem
-viralizar, mas não sabem transformar audiência em dinheiro.
 
-Existem casos de criadores com 100 mil ou até 200 mil seguidores que não
-conseguem viver da internet.
+GANCHOS VISUAIS (sem falar — prendem pela ação)
 
-Isso acontece porque faltam estratégias de: - fidelização da audiência -
-posicionamento - monetização - construção de autoridade
+- Começar maquiando, passando gloss, arrumando o cabelo
+- Preparar café, chá ou drink enquanto fala
+- Organizar algo (mesa, gaveta, bolsa) em time-lapse
+- Mostrar o resultado final de algo antes de mostrar o processo
+- Comer algo bonito/interessante com som ASMR
+- Andar em um lugar bonito enquanto a narração roda
+- Montar look/outfit com cortes rápidos
 
-No Método Influência Milionária, o objetivo é ensinar o caminho correto
-desde o início.
 
-FOCO EM RESULTADOS O treinamento foi desenvolvido para que os alunos
-aprendam a: - crescer nas redes sociais - criar audiência engajada -
-monetizar conteúdo - construir múltiplas fontes de renda online
+GANCHOS PARA VENDAS (afiliados, infoprodutos, serviços)
 
-A proposta do método é que os alunos comecem a gerar resultados o mais
-cedo possível.
+- "Eu achei o produto que resolve [dor do público]..."
+- "Isso aqui deveria ser mais caro..."
+- "Se eu soubesse disso antes, teria economizado [valor/tempo]..."
+- "Review honesta de [produto] — vale a pena?"
+- "Comprei e testei: [produto]. Será que presta?"
+- "3 motivos pra você [comprar/usar/testar] isso agora"
+- "Antes e depois de usar [produto] por [tempo]"
+- "O melhor [categoria] que eu já testei até hoje"
 
-MENSAGEM FINAL Se Natália conseguiu começar do zero e construir uma
-carreira sólida na internet em poucos anos, qualquer pessoa também pode
-alcançar resultados semelhantes.
 
-O segredo está em aplicar as estratégias corretas com foco, disciplina e
-consistência.
+COMO ESCOLHER O GANCHO CERTO
+
+1. Pense no objetivo do vídeo: viralizar? vender? conectar? educar?
+2. Vídeo pra viralizar → ganchos de curiosidade ou polêmica
+3. Vídeo pra vender → ganchos de resultado ou dor
+4. Vídeo pra conectar → ganchos de storytelling ou identificação
+5. Vídeo educativo → ganchos de lista ou curiosidade
+6. Sempre comece pelo gancho, nunca com "oi gente, tudo bem?"
+7. Os primeiros 3-5 segundos decidem se a pessoa fica ou pula
+
+
+=== roteiros_prontos ===
+REFERÊNCIA: MODELOS DE ROTEIRO — ESTRUTURAS PRONTAS PARA ADAPTAR
+
+Cada modelo abaixo é uma estrutura. O aluno deve preencher com o tema dele.
+
+
+ROTEIRO 1: EDUCATIVO / DICA RÁPIDA (30-60 segundos)
+Melhor pra: conteúdo de valor, crescer autoridade, gerar saves
+
+[GANCHO — 3 segundos]
+"Erro que 90% das pessoas cometem no [tema]..."
+
+[DESENVOLVIMENTO — 20-40 segundos]
+"O que acontece é que a maioria faz [erro comum].
+Mas o certo é [solução].
+Olha a diferença: [exemplo prático].
+Isso funciona porque [explicação curta]."
+
+[CTA — 5 segundos]
+"Salva esse vídeo pra não esquecer e me segue pra mais dicas assim."
+
+
+ROTEIRO 2: POLÊMICO / OPINIÃO FORTE (30-60 segundos)
+Melhor pra: viralizar, atrair gente nova, gerar comentários
+
+[GANCHO — 3 segundos]
+"Eu vou falar uma coisa que muita gente não vai concordar..."
+
+[POSICIONAMENTO — 15-20 segundos]
+"Muita gente acredita que [crença popular].
+Mas na prática não é assim que funciona.
+Eu já testei/vi/vivi [experiência] e posso te garantir que [opinião]."
+
+[ARGUMENTO — 15-20 segundos]
+"O que realmente faz diferença é [ponto principal].
+Se você continuar [fazendo errado], vai continuar [consequência]."
+
+[CTA — 5 segundos]
+"Concorda ou discorda? Comenta aqui embaixo."
+
+
+ROTEIRO 3: STORYTELLING / HISTÓRIA PESSOAL (45-90 segundos)
+Melhor pra: conexão, humanizar o perfil, gerar compartilhamentos
+
+[GANCHO — 3 segundos]
+"Vou te contar o maior erro que eu já cometi com [tema]..."
+
+[CONTEXTO — 10-15 segundos]
+"Isso aconteceu quando eu [momento/situação].
+Eu achava que [crença antiga].
+Então eu fiz [ação]."
+
+[VIRADA — 15-20 segundos]
+"Só que deu tudo errado / aconteceu algo inesperado.
+[Detalhe da história].
+Naquele momento eu percebi que [aprendizado]."
+
+[LIÇÃO — 10-15 segundos]
+"Hoje eu sei que [insight principal].
+Se eu tivesse sabido disso antes, teria [resultado]."
+
+[CTA — 5 segundos]
+"Já passou por algo parecido? Me conta nos comentários."
+
+
+ROTEIRO 4: REVIEW / INDICAÇÃO DE PRODUTO (30-60 segundos)
+Melhor pra: afiliados, monetização, conteúdo de utilidade
+
+[GANCHO — 3 segundos]
+"Achei o [produto/app] que resolve [dor do público]..."
+
+[APRESENTAÇÃO — 10-15 segundos]
+"Esse aqui é o [nome do produto].
+Ele serve pra [função principal].
+Eu descobri ele quando [contexto pessoal]."
+
+[DEMONSTRAÇÃO — 15-25 segundos]
+"Olha como funciona: [mostrar na prática].
+O que eu mais gostei: [ponto forte 1] e [ponto forte 2].
+O que poderia melhorar: [ponto negativo honesto]."
+
+[VEREDICTO — 5-10 segundos]
+"Nota: [X/10]. Vale muito a pena pra quem [perfil do público].
+Link na bio / tá aqui embaixo."
+
+
+ROTEIRO 5: ANTES E DEPOIS / TRANSFORMAÇÃO (30-60 segundos)
+Melhor pra: prova social, vender método/produto, inspirar
+
+[GANCHO — 3 segundos]
+"De [situação antes] pra [situação depois] em [tempo]..."
+
+[ANTES — 10-15 segundos]
+"[Tempo] atrás eu estava [situação ruim].
+Eu tentava [coisa que não funcionava].
+Me sentia [emoção negativa]."
+
+[O QUE MUDOU — 10-15 segundos]
+"Até que eu descobri/aprendi/comecei [mudança].
+A primeira coisa que fiz foi [ação 1].
+Depois [ação 2]."
+
+[DEPOIS — 10-15 segundos]
+"Hoje [resultado atual].
+A diferença é [prova concreta — número, foto, fato]."
+
+[CTA — 5 segundos]
+"Se eu consegui, você também consegue. Me segue que eu te mostro como."
+
+
+ROTEIRO 6: ARRUME-SE COMIGO + CONSELHO (30-90 segundos)
+Melhor pra: conexão, lifestyle, trends, engajamento
+
+[GANCHO — 3 segundos]
+"Arrume-se comigo enquanto eu te conto [assunto]..."
+
+[AÇÃO VISUAL + CONVERSA — 30-60 segundos]
+(Enquanto se maquia, arruma cabelo, monta look)
+"Uma coisa que eu aprendi recentemente é [insight].
+Sabe quando você [situação comum]?
+Então, o que funciona de verdade é [conselho].
+Eu mesma passei por isso quando [experiência pessoal curta]."
+
+[FECHAMENTO — 5-10 segundos]
+"Esse é o look final. O que acharam?
+E sobre [tema]: começa a aplicar isso hoje."
+
+
+ROTEIRO 7: TREND / ÁUDIO VIRAL ADAPTADO (15-30 segundos)
+Melhor pra: alcance, viralizar, mostrar personalidade
+
+[ESCOLHA DO ÁUDIO]
+Usar áudio que está em alta no TikTok/Reels.
+
+[ADAPTAÇÃO AO NICHO]
+Encaixar o áudio no contexto do seu conteúdo.
+
+Exemplo:
+Áudio: "Eu não tô acreditando nisso..."
+Adaptação: mostrar resultado/before-after do seu nicho
+
+[TEXTO NA TELA]
+Adicionar texto curto que contextualiza o vídeo pro seu público.
+
+[DICA]
+Trends com adaptação inteligente viralizam mais do que cópias exatas.
+Adicione seu toque pessoal.
+
+
+ROTEIRO 8: STORIES — SEQUÊNCIA DE VENDAS (5-7 stories)
+Melhor pra: vender infoproduto, close friends, lançamentos
+
+Story 1 — DOR
+"Você já se sentiu [dor do público]?"
+(Enquete: sim / já passei por isso)
+
+Story 2 — AGITAÇÃO
+"Eu também já me senti assim. E sabe o que mais me frustrava? [detalhe da dor]."
+
+Story 3 — VIRADA
+"Até que eu descobri que [solução/método].
+Isso mudou completamente [resultado]."
+
+Story 4 — PROVA
+"Olha esse resultado: [print, depoimento, número, antes/depois]."
+
+Story 5 — OFERTA
+"Eu coloquei tudo isso dentro do [produto].
+[Benefício 1], [benefício 2], [benefício 3]."
+
+Story 6 — URGÊNCIA
+"Mas só tá disponível até [prazo] / só restam [X] vagas."
+
+Story 7 — CTA
+"Clica no link da bio / manda 'EU QUERO' que eu te mando o link."
+
+
+DICAS GERAIS PARA ROTEIROS
+
+1. Nunca comece com "Oi gente, tudo bem?" — vá direto ao gancho
+2. Escreva como fala, não como escreve — tom conversacional
+3. Mantenha frases curtas — uma ideia por frase
+4. Leia em voz alta antes de gravar — se soar artificial, reescreva
+5. Cada vídeo = 1 ideia principal. Não tente falar de tudo
+6. O CTA deve ser simples: seguir, salvar, comentar, ou clicar no link
+7. Roteiros são ponto de partida — adapte ao seu estilo e personalidade
+8. Teste variações: mesmo roteiro com ganchos diferentes pode ter resultados diferentes
 
 
 === aula10_shadowban_como_descobrir ===
@@ -2428,117 +2631,6 @@ Com uma audiência engajada, o e-book pode se tornar uma fonte constante
 de renda.
 
 
-=== aula2_historia ===
-AULA: HISTÓRIA DE NATALIA TROMBELLI E COMO TUDO COMEÇOU MENTORA: Natália
-Trombelli
-
-INTRODUÇÃO Para quem ainda não conhece sua trajetória, Natália Trombelli
-trabalha com a internet há cerca de dois anos. Sua história começou
-quando ela morava na Itália e passava por um momento extremamente
-difícil financeiramente.
-
-DIFICULDADES NO INÍCIO Durante esse período, Natália enfrentava muitas
-dificuldades. Ela chegou a depender de cestas básicas fornecidas por uma
-ONG chamada Caritas, que ajuda imigrantes na Itália.
-
-Naquele momento, ela não tinha dinheiro sequer para pequenas coisas do
-dia a dia, como comprar um brioche em uma cafeteria, algo que sempre
-gostou muito.
-
-Com o tempo, conseguiu um emprego em uma cafeteria. Foi nesse momento
-que sua história com a internet começou.
-
-O PRIMEIRO VÍDEO NO TIKTOK Antes mesmo de receber seu primeiro salário
-na cafeteria, Natália decidiu gravar um vídeo para o TikTok.
-
-O vídeo era extremamente simples: - ela estava de pijama - não havia
-planejamento - não existia estratégia - ela ainda não entendia nada
-sobre criação de conteúdo
-
-Mesmo assim, de forma intuitiva, acabou aplicando elementos que hoje
-fazem parte de estratégias de viralização.
-
-RESULTADO DO PRIMEIRO VÍDEO Esse primeiro vídeo alcançou aproximadamente
-1,5 milhão de visualizações no TikTok.
-
-Quando percebeu o resultado, Natália entendeu que existia uma
-oportunidade ali.
-
-A partir daquele momento ela decidiu estudar, entender como funcionavam
-as redes sociais e transformar aquilo em seu trabalho.
-
-MENTALIDADE Desde o início, Natália manteve uma mentalidade extremamente
-positiva.
-
-Ela nunca alimentou pensamentos como: - “isso não vai dar certo” - “é
-muito difícil” - “não sou capaz”
-
-Segundo ela, quando existe um desejo forte no coração, é porque também
-existe a capacidade de realizá‑lo.
-
-INÍCIO DA CONSISTÊNCIA No primeiro mês, Natália conciliava o trabalho na
-cafeteria com a criação de conteúdo.
-
-A rotina era cansativa, mas ela manteve consistência. Mesmo com o
-trabalho puxado, gravava e postava vídeos todos os dias.
-
-Com o tempo, os vídeos começaram a viralizar cada vez mais.
-
-DECISÃO DE TRABALHAR 100% NA INTERNET Após aproximadamente um mês de
-crescimento nas redes sociais, ela tomou uma decisão importante: pediu
-demissão da cafeteria para focar totalmente na internet.
-
-Nesse momento, ela já havia conseguido monetizar sua conta no TikTok e
-também estava começando a crescer no Instagram.
-
-Segundo Natália, essa foi uma das melhores decisões da vida dela.
-
-TRANSFORMAÇÃO DE VIDA Desde que decidiu trabalhar com a internet, sua
-vida mudou completamente.
-
-Ela começou a realizar sonhos que antes pareciam impossíveis.
-
-Alguns desses sonhos incluem:
-
--   fazer sua primeira viagem sozinha para Paris
--   realizar sua primeira cirurgia plástica (mastopexia com prótese)
--   pagar procedimentos à vista
--   viajar pelo mundo
-
-Hoje ela já conheceu mais de 13 países e esteve em 5 continentes.
-
-Muitas dessas viagens foram possíveis graças ao trabalho na internet.
-
-CONQUISTAS MATERIAIS Além das viagens, Natália também conquistou
-diversos objetivos materiais.
-
-Um exemplo foi a compra de um carro de alto valor, uma Land Rover,
-adquirida à vista.
-
-Segundo ela, quando tinha 24 anos jamais imaginaria que conseguiria
-comprar um carro desse nível com dinheiro vindo da internet.
-
-COMUNIDADE NAS REDES SOCIAIS Outro grande resultado foi a construção de
-uma comunidade extremamente forte nas redes sociais.
-
-Somando TikTok e Instagram, Natália possui aproximadamente 1 milhão de
-seguidores.
-
-No Instagram, sua audiência já ultrapassa 600 mil pessoas.
-
-Essa comunidade é formada por pessoas reais que acompanham seu trabalho
-diariamente.
-
-AMOR PELA PROFISSÃO Natália afirma que ama trabalhar com a internet.
-
-Para ela, esse não é apenas um trabalho, mas algo que realmente traz
-realização pessoal.
-
-Segundo sua visão, quem deseja seguir esse caminho também precisa
-desenvolver paixão pelo que faz e construir uma relação verdadeira com
-sua audiência.
-
-
 === aula30_chatgpt_ebooks_conteudo ===
 AULA: COMO USAR O CHATGPT PARA CRIAR EBOOKS E IDEIAS DE CONTEÚDO
 MENTORA: Natália Trombelli
@@ -4054,91 +4146,6 @@ principais:
 
 Com esses elementos combinados, é possível vender infoprodutos sem
 investir em anúncios pagos.
-
-
-=== aula3_duvidas ===
-AULA: DÚVIDAS FREQUENTES SOBRE O MÉTODO INFLUÊNCIA MILIONÁRIA MENTORA:
-Natália Trombelli
-
-INTRODUÇÃO Nesta aula, Natália Trombelli esclarece algumas dúvidas
-comuns que podem surgir ao longo do treinamento Método Influência
-Milionária.
-
-DURAÇÃO DO TREINAMENTO O acesso ao Método Influência Milionária tem
-duração de 1 ano.
-
-Durante esse período, os alunos podem: - assistir às aulas quando
-quiserem - rever o conteúdo quantas vezes quiserem - acessar o
-treinamento de qualquer lugar
-
-Além disso, todas as atualizações feitas no treinamento durante esse
-período também ficam disponíveis para os alunos.
-
-QUANTIDADE DE AULAS No momento do lançamento do treinamento, o curso
-possui aproximadamente 40 aulas.
-
-Porém, novas aulas podem ser adicionadas ao longo do tempo.
-
-Sempre que Natália validar novas estratégias ou identificar conteúdos
-relevantes, novas aulas serão incluídas no treinamento.
-
-METODOLOGIA DO TREINAMENTO O Método Influência Milionária possui uma
-metodologia focada em objetividade.
-
-As aulas são diretas ao ponto, evitando conteúdos desnecessários ou
-excessivamente longos.
-
-O objetivo é entregar conhecimento de forma prática e eficiente.
-
-CONTROLE DE VELOCIDADE DO VÍDEO Caso o aluno considere que o vídeo está
-sendo explicado muito devagar, é possível acelerar a velocidade da
-reprodução.
-
-Para isso, basta acessar as configurações do player de vídeo e aumentar
-a velocidade, da mesma forma que muitas pessoas fazem ao acelerar áudios
-no WhatsApp.
-
-MÓDULOS BLOQUEADOS TEMPORARIAMENTE Alguns módulos do treinamento ficam
-bloqueados inicialmente.
-
-Esses módulos são liberados após 7 dias da compra.
-
-O objetivo dessa estratégia é evitar que os alunos pulem etapas
-importantes do aprendizado.
-
-Nos primeiros dias, os alunos devem focar nos módulos iniciais, que
-apresentam conceitos fundamentais e a base teórica necessária para
-aplicar as estratégias ensinadas.
-
-Depois desse período, os módulos avançados são liberados.
-
-SUPORTE PARA ALUNOS Os alunos do treinamento possuem acesso a um suporte
-para tirar dúvidas.
-
-O contato de suporte está disponível na descrição da aula.
-
-O suporte funciona através de WhatsApp.
-
-Caso o aluno tenha qualquer dúvida durante o treinamento, pode entrar em
-contato com a equipe.
-
-Devido à demanda, pode haver um pequeno tempo de espera, mas todas as
-dúvidas são respondidas.
-
-ACESSO AO TREINAMENTO Após a compra do treinamento, o aluno recebe um
-e-mail contendo o acesso à plataforma do curso.
-
-Caso o aluno perca esse e-mail ou tenha dificuldade para acessar, basta
-entrar em contato com o suporte para solicitar um novo acesso.
-
-APROVEITAMENTO DO TREINAMENTO Natália incentiva todos os alunos a
-aproveitarem ao máximo o conteúdo do treinamento.
-
-Todo o material compartilhado no curso reúne suas principais estratégias
-e conhecimentos adquiridos ao longo da sua trajetória na internet.
-
-Para obter bons resultados, é fundamental: - estudar o conteúdo -
-aplicar as estratégias ensinadas - seguir o método corretamente
 
 
 === aula40_feedbacks_prova_social ===
