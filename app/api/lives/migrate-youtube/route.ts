@@ -24,8 +24,10 @@ export async function POST(_request: NextRequest) {
             .select('_id role')
             .lean() as { _id: mongoose.Types.ObjectId; role?: string } | null;
 
-        if (!account || !['admin', 'criador'].includes(account.role || '')) {
-            return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
+        const staffRoles = ['moderator', 'admin', 'criador'];
+        if (!account || !staffRoles.includes(account.role || '')) {
+            console.log('[migrate-youtube] Role rejeitada:', account?.role, 'authUserId:', authUserId);
+            return NextResponse.json({ error: 'Sem permissão', role: account?.role || 'none' }, { status: 403 });
         }
 
         if (!process.env.YOUTUBE_REFRESH_TOKEN) {
