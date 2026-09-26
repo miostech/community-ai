@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
         const session = await auth();
         if (!session?.user?.id) {
@@ -26,12 +26,44 @@ export async function POST(_request: NextRequest) {
 
         const staffRoles = ['moderator', 'admin', 'criador'];
         if (!account || !staffRoles.includes(account.role || '')) {
-            console.log('[migrate-youtube] Role rejeitada:', account?.role, 'authUserId:', authUserId);
             return NextResponse.json({ error: 'Sem permissão', role: account?.role || 'none' }, { status: 403 });
         }
 
         if (!process.env.YOUTUBE_REFRESH_TOKEN) {
             return NextResponse.json({ error: 'YouTube não configurado' }, { status: 500 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const liveId = searchParams.get('id');
+
+        if (liveId) {
+            const live = await LiveEvent.findById(liveId);
+            if (!live || !live.recording_url) {
+                return NextResponse.json({ error: 'Live não encontrada ou sem gravação' }, { status: 404 });
+            }
+            if (live.youtube_url) {
+                return NextResponse.json({ message: 'Já migrada', youtube_url: live.youtube_url });
+            }
+
+            live.youtube_upload_status = 'uploading';
+            await live.save();
+
+            try {
+                const youtubeUrl = await uploadToYouTube(
+                    live.recording_url,
+                    live.title,
+                    `Gravação da live "${live.title}" na comunidade.`
+                );
+                live.youtube_url = youtubeUrl;
+                live.youtube_upload_status = 'done';
+                await live.save();
+                return NextResponse.json({ status: 'done', title: live.title, youtube_url: youtubeUrl });
+            } catch (err) {
+                console.error(`[migrate-youtube] Erro:`, err);
+                live.youtube_upload_status = 'failed';
+                await live.save();
+                return NextResponse.json({ error: 'Falha no upload', detail: String(err) }, { status: 500 });
+            }
         }
 
         const lives = await LiveEvent.find({
@@ -40,37 +72,10 @@ export async function POST(_request: NextRequest) {
             youtube_upload_status: { $nin: ['uploading', 'done'] },
         }).select('_id title recording_url').lean();
 
-        if (lives.length === 0) {
-            return NextResponse.json({ message: 'Nenhuma live pendente para migrar', count: 0 });
-        }
-
-        const results: { id: string; title: string; status: string; youtube_url?: string }[] = [];
-
-        for (const live of lives) {
-            try {
-                await LiveEvent.findByIdAndUpdate(live._id, { youtube_upload_status: 'uploading' });
-
-                const youtubeUrl = await uploadToYouTube(
-                    live.recording_url!,
-                    live.title,
-                    `Gravação da live "${live.title}" na comunidade.`
-                );
-
-                await LiveEvent.findByIdAndUpdate(live._id, {
-                    youtube_url: youtubeUrl,
-                    youtube_upload_status: 'done',
-                });
-
-                results.push({ id: live._id.toString(), title: live.title, status: 'done', youtube_url: youtubeUrl });
-                console.log(`[migrate-youtube] Upload concluído: ${live.title} → ${youtubeUrl}`);
-            } catch (err) {
-                console.error(`[migrate-youtube] Erro ao migrar ${live.title}:`, err);
-                await LiveEvent.findByIdAndUpdate(live._id, { youtube_upload_status: 'failed' });
-                results.push({ id: live._id.toString(), title: live.title, status: 'failed' });
-            }
-        }
-
-        return NextResponse.json({ message: 'Migração concluída', results });
+        return NextResponse.json({
+            message: `${lives.length} live(s) pendente(s) para migrar`,
+            lives: lives.map(l => ({ id: l._id.toString(), title: l.title })),
+        });
     } catch (error) {
         console.error('[api/lives/migrate-youtube POST]', error);
         return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
