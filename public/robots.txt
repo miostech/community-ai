@@ -1,0 +1,31 @@
+# Crawlers gerais (Google, Bing, etc.)
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+
+# OpenAI - ChatGPT Search
+User-agent: OAI-SearchBot
+Allow: /
+
+# OpenAI - Treinamento de modelos
+User-agent: GPTBot
+Allow: /
+
+# OpenAI - Validação de anúncios
+User-agent: OAI-AdsBot
+Allow: /
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Allow: /
+
+Sitemap: https://dome.app.br/sitemap.xml
