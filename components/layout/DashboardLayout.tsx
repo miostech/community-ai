@@ -20,7 +20,7 @@ import { MuiProvider } from '@/components/providers/MuiProvider';
 import { Box, Button, Dialog, DialogContent, Typography, Avatar } from '@mui/material';
 import { Phone as PhoneIcon, Share as ShareIcon } from '@mui/icons-material';
 // import { UpgradeBanner } from '@/components/dashboard/UpgradeBanner';
-import { CampaignPromoModal } from '@/components/dashboard/CampaignPromoModal';
+// import { CampaignPromoModal } from '@/components/dashboard/CampaignPromoModal';
 import { PushServiceWorkerRegistration } from '@/components/push/PushServiceWorkerRegistration';
 import { PushPromptBanner } from '@/components/push/PushPromptBanner';
 
@@ -129,7 +129,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                   )}
                 </Box>
 
-                <CampaignPromoModal />
+                {/* <CampaignPromoModal /> */}
 
                 {/* Modal de cadastro de telefone */}
                 <Dialog
