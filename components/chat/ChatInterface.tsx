@@ -141,7 +141,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: '❌ Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
+        content: err?.message || '❌ Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);

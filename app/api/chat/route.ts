@@ -123,12 +123,8 @@ async function fetchUrlMetadata(url: string): Promise<{ title?: string; descript
 /** Limite de mensagens recentes enviadas como contexto completo */
 const RECENT_MESSAGES_LIMIT = 6;
 
-/** Limites de tokens por plano (por mês) */
-const TOKEN_LIMITS: Record<string, number> = {
-    free: 5_000_000,
-    pro: 5_000_000,
-    enterprise: 5_000_000,
-};
+/** Limite de mensagens por dia para assinantes */
+const DAILY_MESSAGES_LIMIT = 10;
 
 // ---------------------------------------------------------------------------
 // POST — Enviar mensagem e receber resposta da IA
@@ -148,12 +144,25 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        // Verificar limite de tokens do plano
-        const plan = account.plan || 'free';
-        const limit = TOKEN_LIMITS[plan] ?? TOKEN_LIMITS.free;
-        if ((account.total_tokens_used_in_current_month ?? 0) >= limit) {
+        // Apenas assinantes podem usar a IA
+        if (!account.subscription_active) {
             return NextResponse.json(
-                { error: 'Limite de tokens do seu plano atingido neste mês' },
+                { error: 'A assistente de IA é exclusiva para assinantes. Assine para ter acesso!' },
+                { status: 403 }
+            );
+        }
+
+        // Verificar limite de mensagens por dia
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const messagesToday = await ChatMessageModel.countDocuments({
+            account_id: account._id,
+            role: 'user',
+            created_at: { $gte: todayStart },
+        });
+        if (messagesToday >= DAILY_MESSAGES_LIMIT) {
+            return NextResponse.json(
+                { error: `Você atingiu o limite de ${DAILY_MESSAGES_LIMIT} mensagens por dia. Tente novamente amanhã!` },
                 { status: 429 }
             );
         }
