@@ -41,7 +41,7 @@ function getTimeLeft() {
 }
 
 function ChatPageContent() {
-  const { isLoading, canAccessChat, chatUnlockAt } = useAccount();
+  const { isLoading, canAccessChat, chatUnlockAt, isSubscriptionActive } = useAccount();
   const searchParams = useSearchParams();
   const router = useRouter();
   const conversationId = searchParams.get('conversation');
@@ -400,8 +400,8 @@ function ChatPageContent() {
             >
               O que vamos criar hoje?
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, maxWidth: 480, mx: 'auto', lineHeight: 1.5 }}>
-              Essa IA é o cérebro da Nat e do Luigi. Foi treinada com todo o conhecimento dos cursos e experiências de ambos para te ajudar a criar conteúdo, monetizar nas redes sociais e crescer no digital.
+            <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, maxWidth: 520, mx: 'auto', lineHeight: 1.6 }}>
+              {`Essa IA é o cérebro da Nat e do Luigi. Você tem ${isSubscriptionActive ? 20 : 10} mensagens por dia, então mande todo o contexto de uma vez na primeira mensagem. Quanto mais detalhes, melhor a resposta. Evite mandar "oi" separado ou conversas picadas pra não gastar suas mensagens à toa 😉`}
             </Typography>
           </Box>
 

@@ -20,9 +20,13 @@ import {
   InputAdornment,
   CircularProgress,
   Chip,
+  Button,
+  Slide,
 } from '@mui/material';
 import {
   ArrowForward as SendIcon,
+  Close as CloseIcon,
+  Bolt as BoltIcon,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 
@@ -41,7 +45,8 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
   const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
   const [dailyLimit, setDailyLimit] = useState<number | null>(null);
   const [extraCredits, setExtraCredits] = useState<number>(0);
-  const [buyingCredits, setBuyingCredits] = useState(false);
+  const [buyingCredits, setBuyingCredits] = useState<string | null>(null);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   const hasInitializedRef = useRef(false);
   const apiConversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -195,7 +200,27 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
     await sendToApi(currentInput);
   };
 
+  const buyPackage = async (packageId: string) => {
+    setBuyingCredits(packageId);
+    try {
+      const res = await fetch('/api/chat/buy-credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packageId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+    } finally {
+      setBuyingCredits(null);
+    }
+  };
 
+  const PACKAGES = [
+    { id: 'credits-10', msgs: 10, price: 'R$ 9,90', perMsg: 'R$ 0,99/msg' },
+    { id: 'credits-25', msgs: 25, price: 'R$ 19,90', perMsg: 'R$ 0,80/msg' },
+    { id: 'credits-50', msgs: 50, price: 'R$ 34,90', perMsg: 'R$ 0,70/msg', best: true },
+  ];
 
   return (
     <Box
@@ -436,10 +461,10 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
                 sx={{ color: 'text.secondary', fontSize: '0.7rem', lineHeight: 1.3 }}
               >
                 {remainingMessages === 0 && extraCredits <= 0
-                  ? 'Limite diário atingido. Compre créditos extras!'
+                  ? 'Limite diário atingido'
                   : remainingMessages === 0
                     ? `Usando créditos extras (${extraCredits} restantes)`
-                    : 'Dica: envie tudo em uma mensagem só pra aproveitar melhor'}
+                    : `Envie tudo de uma vez pra economizar — você ainda tem ${remainingMessages} ${remainingMessages === 1 ? 'mensagem' : 'mensagens'} hoje`}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0, ml: 1 }}>
                 {extraCredits > 0 && (
@@ -458,56 +483,109 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
                 <Chip
                   label={`${remainingMessages}/${dailyLimit}`}
                   size="small"
+                  onClick={() => setShowCreditsModal(true)}
                   sx={{
                     height: 22,
                     fontSize: '0.7rem',
                     fontWeight: 600,
+                    cursor: 'pointer',
                     bgcolor: remainingMessages <= 3 ? 'error.light' : remainingMessages <= 7 ? 'warning.light' : 'action.hover',
                     color: remainingMessages <= 3 ? 'error.dark' : remainingMessages <= 7 ? 'warning.dark' : 'text.secondary',
                   }}
                 />
               </Box>
             </Box>
-            {remainingMessages <= 3 && (
-              <Typography
-                component="button"
-                type="button"
-                onClick={async () => {
-                  setBuyingCredits(true);
-                  try {
-                    const res = await fetch('/api/chat/buy-credits', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ packageId: 'credits-10' }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                  } catch {
-                  } finally {
-                    setBuyingCredits(false);
-                  }
-                }}
-                disabled={buyingCredits}
-                variant="caption"
-                sx={{
-                  mt: 0.5,
-                  display: 'inline-block',
-                  color: 'primary.main',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  background: 'none',
-                  border: 'none',
-                  p: 0,
-                  textDecoration: 'underline',
-                  '&:hover': { color: 'primary.dark' },
-                }}
-              >
-                {buyingCredits ? 'Redirecionando...' : 'Comprar 10 mensagens extras por R$ 9,90'}
+          </Box>
+        )}
+
+        {/* Mini modal de créditos extras */}
+        <Slide direction="up" in={showCreditsModal || (remainingMessages === 0 && extraCredits <= 0)} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              mb: 1.5,
+              mx: 0.5,
+              p: 2,
+              borderRadius: 3,
+              bgcolor: 'background.default',
+              border: 1,
+              borderColor: 'divider',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <BoltIcon sx={{ fontSize: 18, color: 'warning.main' }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                  {remainingMessages === 0 && extraCredits <= 0
+                    ? 'Suas mensagens de hoje acabaram!'
+                    : 'Comprar mensagens extras'}
+                </Typography>
+              </Box>
+              {!(remainingMessages === 0 && extraCredits <= 0) && (
+                <IconButton size="small" onClick={() => setShowCreditsModal(false)} sx={{ p: 0.25 }}>
+                  <CloseIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              )}
+            </Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5, fontSize: '0.7rem' }}>
+              {'Créditos extras não expiram e são usados quando o limite diário acabar.'}
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              {PACKAGES.map((pkg) => (
+                <Button
+                  key={pkg.id}
+                  variant={pkg.best ? 'contained' : 'outlined'}
+                  size="small"
+                  disabled={buyingCredits !== null}
+                  onClick={() => buyPackage(pkg.id)}
+                  sx={{
+                    flex: 1,
+                    flexDirection: 'column',
+                    py: 1,
+                    px: 0.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    lineHeight: 1.3,
+                    position: 'relative',
+                    ...(pkg.best ? {
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',
+                      '&:hover': { background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)' },
+                    } : {}),
+                  }}
+                >
+                  {pkg.best && (
+                    <Box sx={{
+                      position: 'absolute',
+                      top: -8,
+                      bgcolor: 'warning.main',
+                      color: 'warning.contrastText',
+                      px: 0.75,
+                      py: 0.1,
+                      borderRadius: 1,
+                      fontSize: '0.55rem',
+                      fontWeight: 700,
+                    }}>
+                      MELHOR
+                    </Box>
+                  )}
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.8rem', lineHeight: 1.2 }}>
+                    {pkg.msgs} msgs
+                  </Typography>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.75rem', lineHeight: 1.2 }}>
+                    {pkg.price}
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.6rem', opacity: 0.7, lineHeight: 1.2 }}>
+                    {pkg.perMsg}
+                  </Typography>
+                </Button>
+              ))}
+            </Stack>
+            {buyingCredits && (
+              <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1, color: 'text.secondary' }}>
+                Redirecionando para pagamento...
               </Typography>
             )}
           </Box>
-        )}
+        </Slide>
         <TextField
           inputRef={textareaRef}
           value={input}
