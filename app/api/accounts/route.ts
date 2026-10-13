@@ -93,6 +93,10 @@ export async function POST(request: NextRequest) {
             total_tokens_used_current_week: toNumber(totalTokensWeekInput),
             utm_ref: body.utm_ref,
             last_access_at: toDate(body.last_access_at) ?? new Date(),
+            ...(body.cached_followers_total !== undefined && {
+                cached_followers_total: body.cached_followers_total === null ? null : toNumber(body.cached_followers_total),
+                cached_followers_updated_at: new Date(),
+            }),
         };
 
         if (typeof body.email === 'string' && body.email.trim()) {
@@ -110,7 +114,7 @@ export async function POST(request: NextRequest) {
             { auth_user_id },
             { $set: payload },
             {
-                new: true,
+                returnDocument: 'after',
                 upsert: true,
                 runValidators: true,
                 setDefaultsOnInsert: true,

@@ -60,6 +60,8 @@ export interface Account {
     payment_revolut_account?: string | null;
     /** Total de seguidores (soma das redes) no cadastro */
     followers_at_signup?: number | null;
+    /** Cache de seguidores atuais (soma das redes); preenchido manualmente pelo usuário */
+    cached_followers_total?: number | null;
     /** Fechou o modal de promo da campanha sem comprar; não vê mais a oferta. */
     campaign_promo_dismissed_at?: string | null;
     /** ISO da criação da conta (Mongo `created_at`). */

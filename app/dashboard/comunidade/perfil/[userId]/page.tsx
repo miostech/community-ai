@@ -1238,28 +1238,8 @@ export default function PerfilComunidadePage() {
                   onOpen={() => setSeguidoresTooltipOpen(true)}
                   title={
                     <Box sx={{ p: 0.5 }}>
-                      <Typography variant="caption" fontWeight={500} display="block" sx={{ mb: 1 }}>
-                        Soma das redes cadastradas
-                      </Typography>
-                      <Stack spacing={0.5}>
-                        {socialStats.instagram != null && (
-                          <Typography variant="caption">
-                            Instagram: {socialStats.instagram.followers != null ? formatCount(socialStats.instagram.followers) + ' seguidores' : '—'}
-                          </Typography>
-                        )}
-                        {socialStats.tiktok != null && (
-                          <Typography variant="caption">
-                            TikTok: {socialStats.tiktok.followers != null ? formatCount(socialStats.tiktok.followers) + ' seguidores' : '—'}
-                          </Typography>
-                        )}
-                        {socialStats.youtube != null && (
-                          <Typography variant="caption">
-                            YouTube: {socialStats.youtube.subscribers != null ? formatCount(socialStats.youtube.subscribers) + ' inscritos' : '—'}
-                          </Typography>
-                        )}
-                      </Stack>
-                      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider', display: 'block' }}>
-                        Dados atualizados a cada 7 dias
+                      <Typography variant="caption" fontWeight={500} display="block">
+                        Total de seguidores somando todas as redes sociais
                       </Typography>
                     </Box>
                   }

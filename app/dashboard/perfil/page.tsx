@@ -57,6 +57,7 @@ interface FormData {
   link_instagram: string;
   link_tiktok: string;
   link_youtube: string;
+  followers_total: string;
 }
 
 export default function PerfilPage() {
@@ -75,6 +76,7 @@ export default function PerfilPage() {
     link_instagram: '',
     link_tiktok: '',
     link_youtube: '',
+    followers_total: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -129,6 +131,7 @@ export default function PerfilPage() {
           link_instagram: account.link_instagram || '',
           link_tiktok: account.link_tiktok || '',
           link_youtube: account.link_youtube || '',
+          followers_total: account.cached_followers_total != null ? String(account.cached_followers_total) : '',
         };
       });
       setIsLoading(false);
@@ -328,6 +331,7 @@ export default function PerfilPage() {
         link_instagram: account.link_instagram || '',
         link_tiktok: account.link_tiktok || '',
         link_youtube: account.link_youtube || '',
+        followers_total: account.cached_followers_total != null ? String(account.cached_followers_total) : '',
       });
     }
     setError(null);
@@ -363,6 +367,7 @@ export default function PerfilPage() {
     setError(null);
 
     try {
+      const followersNum = formData.followers_total.trim() ? parseInt(formData.followers_total.replace(/\D/g, ''), 10) : null;
       const payload = {
         ...formData,
         link_instagram: normalizedInstagram ?? '',
@@ -370,6 +375,7 @@ export default function PerfilPage() {
         link_youtube: normalizedYouTube ?? '',
         phone: formData.phone.trim(),
         phone_country_code: formData.phone_country_code?.trim() || '+55',
+        cached_followers_total: Number.isFinite(followersNum) ? followersNum : null,
       };
       const response = await fetch('/api/accounts', {
         method: 'PATCH',
@@ -616,7 +622,7 @@ export default function PerfilPage() {
                     >
                       {isUploadingAvatar ? 'Enviando...' : formData.avatar_url ? 'Alterar foto' : 'Adicionar foto'}
                     </Button>
-                    {canUseInstagramAvatar && (
+                    {/* {canUseInstagramAvatar && (
                       <Button
                         variant="outlined"
                         onClick={handleSyncInstagramAvatar}
@@ -626,7 +632,7 @@ export default function PerfilPage() {
                       >
                         {isSyncingInstagramAvatar ? 'Buscando...' : 'Usar foto do Instagram'}
                       </Button>
-                    )}
+                    )} */}
                     <Button
                       component={Link}
                       href={`/dashboard/comunidade/perfil/${nameToSlug(displayName)}`}
@@ -844,6 +850,23 @@ export default function PerfilPage() {
                         : `youtube.com/@${formData.link_youtube}`}
                     </Typography>
                   )}
+                </Box>
+
+                {/* Total de seguidores */}
+                <Box>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    Total de seguidores (somando todas as redes)
+                  </Typography>
+                  <TextField
+                    value={formData.followers_total}
+                    onChange={(e) => updateField('followers_total', e.target.value.replace(/\D/g, ''))}
+                    placeholder="Ex: 15000"
+                    fullWidth
+                    size="small"
+                    type="text"
+                    inputMode="numeric"
+                    helperText="Informe o total aproximado de seguidores somando todas as suas redes sociais."
+                  />
                 </Box>
               </Stack>
             </Box>
