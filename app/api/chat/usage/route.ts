@@ -30,7 +30,7 @@ export async function GET() {
         const isPaid = account.subscription_active;
 
         if (!isPaid && !isTrialActive) {
-            return NextResponse.json({ daily_limit: 0, used_today: 0, remaining: 0 });
+            return NextResponse.json({ daily_limit: 0, used_today: 0, remaining: 0, extra_credits: 0 });
         }
 
         const dailyLimit = isPaid ? DAILY_MESSAGES_PAID : DAILY_MESSAGES_TRIAL;
@@ -47,6 +47,7 @@ export async function GET() {
             daily_limit: dailyLimit,
             used_today: usedToday,
             remaining: Math.max(0, dailyLimit - usedToday),
+            extra_credits: account.chat_extra_credits || 0,
         });
     } catch (error: any) {
         console.error('Erro ao buscar uso do chat:', error);

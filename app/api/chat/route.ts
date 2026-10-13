@@ -166,9 +166,12 @@ export async function POST(request: NextRequest) {
             role: 'user',
             created_at: { $gte: todayStart },
         });
-        if (messagesToday >= dailyLimit) {
+        const extraCredits = account.chat_extra_credits || 0;
+        const usingExtraCredit = messagesToday >= dailyLimit;
+
+        if (usingExtraCredit && extraCredits <= 0) {
             return NextResponse.json(
-                { error: `Você atingiu o limite de ${dailyLimit} mensagens por dia. Tente novamente amanhã!` },
+                { error: `Você atingiu o limite de ${dailyLimit} mensagens por dia. Compre créditos extras ou tente novamente amanhã!` },
                 { status: 429 }
             );
         }
@@ -350,7 +353,16 @@ export async function POST(request: NextRequest) {
             }
         );
 
-        const remainingMessages = Math.max(0, dailyLimit - (messagesToday + 1));
+        if (usingExtraCredit) {
+            await Account.updateOne(
+                { _id: account._id, chat_extra_credits: { $gt: 0 } },
+                { $inc: { chat_extra_credits: -1 } }
+            );
+        }
+
+        const updatedExtraCredits = usingExtraCredit ? Math.max(0, extraCredits - 1) : extraCredits;
+        const remainingDaily = Math.max(0, dailyLimit - (messagesToday + 1));
+        const remainingMessages = usingExtraCredit ? 0 : remainingDaily;
 
         return NextResponse.json({
             conversation_id: conversation._id,
@@ -364,6 +376,7 @@ export async function POST(request: NextRequest) {
             },
             daily_limit: dailyLimit,
             remaining_messages: remainingMessages,
+            extra_credits: updatedExtraCredits,
         });
     } catch (error: any) {
         console.error('Erro no chat:', error);

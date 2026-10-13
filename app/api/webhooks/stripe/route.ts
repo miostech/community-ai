@@ -5,6 +5,7 @@ import { connectMongo } from '@/lib/mongoose';
 import { getStripe } from '@/lib/stripe';
 import BusinessAccount from '@/models/BusinessAccount';
 import WalletStripeTopUp from '@/models/WalletStripeTopUp';
+import Account from '@/models/Account';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -84,6 +85,35 @@ async function processCheckoutSession(session: Stripe.Checkout.Session, eventTyp
     }
 }
 
+async function processChatCredits(session: Stripe.Checkout.Session, eventType: string) {
+    if (!shouldCreditWallet(session, eventType)) {
+        return;
+    }
+
+    const accountId = session.metadata?.account_id;
+    const credits = parseInt(session.metadata?.credits ?? '', 10);
+
+    if (!accountId || !mongoose.Types.ObjectId.isValid(accountId)) {
+        console.error('Stripe chat_credits: account_id inválido', session.id);
+        return;
+    }
+    if (!Number.isFinite(credits) || credits <= 0) {
+        console.error('Stripe chat_credits: credits inválido', session.id);
+        return;
+    }
+
+    await connectMongo();
+
+    const result = await Account.updateOne(
+        { _id: accountId },
+        { $inc: { chat_extra_credits: credits } }
+    );
+
+    if (result.modifiedCount > 0) {
+        console.log(`Stripe chat_credits: +${credits} créditos para account ${accountId} (session ${session.id})`);
+    }
+}
+
 export async function POST(req: NextRequest) {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     const sig = req.headers.get('stripe-signature');
@@ -105,7 +135,12 @@ export async function POST(req: NextRequest) {
     try {
         if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
             const session = event.data.object as Stripe.Checkout.Session;
-            await processCheckoutSession(session, event.type);
+
+            if (session.metadata?.type === 'chat_credits') {
+                await processChatCredits(session, event.type);
+            } else {
+                await processCheckoutSession(session, event.type);
+            }
         }
     } catch (e) {
         console.error('Stripe webhook processamento:', e);

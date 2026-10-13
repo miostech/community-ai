@@ -40,6 +40,8 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
   const [dailyLimit, setDailyLimit] = useState<number | null>(null);
+  const [extraCredits, setExtraCredits] = useState<number>(0);
+  const [buyingCredits, setBuyingCredits] = useState(false);
   const hasInitializedRef = useRef(false);
   const apiConversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -111,6 +113,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
         if (data.daily_limit != null) {
           setDailyLimit(data.daily_limit);
           setRemainingMessages(data.remaining);
+          setExtraCredits(data.extra_credits || 0);
         }
       })
       .catch(() => {});
@@ -147,6 +150,9 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
         setRemainingMessages(data.remaining_messages);
         setDailyLimit(data.daily_limit);
       }
+      if (data.extra_credits != null) {
+        setExtraCredits(data.extra_credits);
+      }
 
       const assistantMessage: Message = {
         id: data.message.id,
@@ -172,7 +178,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading || remainingMessages === 0) return;
+    if (!input.trim() || isLoading || (remainingMessages === 0 && extraCredits <= 0)) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -423,26 +429,83 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
         }}
       >
         {remainingMessages != null && dailyLimit != null && (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, px: 0.5 }}>
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', fontSize: '0.7rem', lineHeight: 1.3 }}
-            >
-              {'Dica: envie tudo em uma mensagem só pra aproveitar melhor'}
-            </Typography>
-            <Chip
-              label={`${remainingMessages}/${dailyLimit}`}
-              size="small"
-              sx={{
-                ml: 1,
-                height: 22,
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                flexShrink: 0,
-                bgcolor: remainingMessages <= 3 ? 'error.light' : remainingMessages <= 7 ? 'warning.light' : 'action.hover',
-                color: remainingMessages <= 3 ? 'error.dark' : remainingMessages <= 7 ? 'warning.dark' : 'text.secondary',
-              }}
-            />
+          <Box sx={{ mb: 1, px: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography
+                variant="caption"
+                sx={{ color: 'text.secondary', fontSize: '0.7rem', lineHeight: 1.3 }}
+              >
+                {remainingMessages === 0 && extraCredits <= 0
+                  ? 'Limite diário atingido. Compre créditos extras!'
+                  : remainingMessages === 0
+                    ? `Usando créditos extras (${extraCredits} restantes)`
+                    : 'Dica: envie tudo em uma mensagem só pra aproveitar melhor'}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0, ml: 1 }}>
+                {extraCredits > 0 && (
+                  <Chip
+                    label={`+${extraCredits}`}
+                    size="small"
+                    sx={{
+                      height: 22,
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      bgcolor: 'info.light',
+                      color: 'info.dark',
+                    }}
+                  />
+                )}
+                <Chip
+                  label={`${remainingMessages}/${dailyLimit}`}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    bgcolor: remainingMessages <= 3 ? 'error.light' : remainingMessages <= 7 ? 'warning.light' : 'action.hover',
+                    color: remainingMessages <= 3 ? 'error.dark' : remainingMessages <= 7 ? 'warning.dark' : 'text.secondary',
+                  }}
+                />
+              </Box>
+            </Box>
+            {remainingMessages <= 3 && (
+              <Typography
+                component="button"
+                type="button"
+                onClick={async () => {
+                  setBuyingCredits(true);
+                  try {
+                    const res = await fetch('/api/chat/buy-credits', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ packageId: 'credits-10' }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  } catch {
+                  } finally {
+                    setBuyingCredits(false);
+                  }
+                }}
+                disabled={buyingCredits}
+                variant="caption"
+                sx={{
+                  mt: 0.5,
+                  display: 'inline-block',
+                  color: 'primary.main',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: 'none',
+                  border: 'none',
+                  p: 0,
+                  textDecoration: 'underline',
+                  '&:hover': { color: 'primary.dark' },
+                }}
+              >
+                {buyingCredits ? 'Redirecionando...' : 'Comprar 10 mensagens extras por R$ 9,90'}
+              </Typography>
+            )}
           </Box>
         )}
         <TextField
@@ -455,7 +518,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
               handleSend();
             }
           }}
-          placeholder={remainingMessages === 0 ? 'Limite diário atingido. Volte amanhã!' : 'Digite aqui...'}
+          placeholder={remainingMessages === 0 && extraCredits <= 0 ? 'Limite diário atingido. Compre créditos extras!' : 'Digite aqui...'}
           multiline
           maxRows={4}
           fullWidth
@@ -465,11 +528,11 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
               <InputAdornment position="end">
                 <IconButton
                   type="submit"
-                  disabled={!input.trim() || isLoading || remainingMessages === 0}
+                  disabled={!input.trim() || isLoading || (remainingMessages === 0 && extraCredits <= 0)}
                   sx={{
                     width: 36,
                     height: 36,
-                    ...(!input.trim() || isLoading || remainingMessages === 0
+                    ...(!input.trim() || isLoading || (remainingMessages === 0 && extraCredits <= 0)
                       ? { bgcolor: 'action.disabledBackground' }
                       : {
                         background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',

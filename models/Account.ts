@@ -93,6 +93,8 @@ export interface Account {
     wallet_balance_cents?: number;
     /** Fim do trial da campanha 14 dias grátis (preenchido ao ativar). Usado para saber se o usuário assinou um plano pago dentro dos 14 dias (não bloqueia por 7 dias). */
     campaign_14_days_trial_ends_at?: Date | null;
+    /** Créditos extras de mensagens de IA (comprados via Stripe). Não expiram. */
+    chat_extra_credits?: number;
     portfolio_terms_accepted_ip?: string | null;
     portfolio_terms_accepted_country?: string | null;
     portfolio_terms_accepted_region?: string | null;
@@ -169,6 +171,7 @@ const AccountSchema = new Schema(
         portfolio_terms_accepted_at: { type: Date },
         campaign_promo_dismissed_at: { type: Date },
         campaign_14_days_trial_ends_at: { type: Date },
+        chat_extra_credits: { type: Number, default: 0, min: 0 },
         brand_logo_url: { type: String, trim: true },
         brand_description: { type: String, trim: true, maxlength: 1000 },
         wallet_balance_cents: { type: Number, default: 0, min: 0 },
