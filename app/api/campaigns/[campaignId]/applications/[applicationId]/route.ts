@@ -63,7 +63,7 @@ export async function PATCH(
         const updated = await CampaignApplication.findByIdAndUpdate(
             applicationId,
             { $set: updateFields },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
 
         if (status === 'approved') {

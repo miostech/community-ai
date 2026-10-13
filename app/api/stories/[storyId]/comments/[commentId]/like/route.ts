@@ -46,7 +46,7 @@ export async function POST(
     const comment = await StoryCommentModel.findByIdAndUpdate(
       commentId,
       { $addToSet: { likes: accountId } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!comment) {
@@ -107,7 +107,7 @@ export async function DELETE(
     const comment = await StoryCommentModel.findByIdAndUpdate(
       commentId,
       { $pull: { likes: accountId } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!comment) {

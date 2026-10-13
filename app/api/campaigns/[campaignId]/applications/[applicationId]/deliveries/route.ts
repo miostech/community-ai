@@ -71,7 +71,7 @@ export async function POST(
         const updated = await CampaignApplication.findByIdAndUpdate(
             applicationId,
             { $push: { deliveries: newDelivery } },
-            { new: true }
+            { returnDocument: 'after' }
         ).lean();
 
         return NextResponse.json({ success: true, application: updated });

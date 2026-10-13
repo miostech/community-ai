@@ -65,7 +65,7 @@ export async function POST(
             const updatedComment = await Comment.findByIdAndUpdate(
                 commentObjectId,
                 { $inc: { likes_count: -1 } },
-                { new: true }
+                { returnDocument: 'after' }
             );
 
             liked = false;
@@ -96,7 +96,7 @@ export async function POST(
             const updatedComment = await Comment.findByIdAndUpdate(
                 commentObjectId,
                 { $inc: { likes_count: 1 } },
-                { new: true }
+                { returnDocument: 'after' }
             );
 
             liked = true;

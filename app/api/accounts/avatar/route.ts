@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         const account = await Account.findOneAndUpdate(
             { auth_user_id: authUserId },
             { $set: { avatar_url: avatarUrl } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!account) {

@@ -24,7 +24,7 @@ export async function POST() {
         const account = await Account.findOneAndUpdate(
             { auth_user_id: authUserId },
             { $set: { request_cancel_at: new Date() } },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!account) {

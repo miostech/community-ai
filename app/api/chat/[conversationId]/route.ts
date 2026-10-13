@@ -113,7 +113,7 @@ export async function DELETE(
         const result = await ChatConversationModel.findOneAndUpdate(
             { _id: conversationId, account_id: account._id },
             { status: 'archived' },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!result) {

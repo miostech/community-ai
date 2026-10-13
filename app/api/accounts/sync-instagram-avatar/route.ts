@@ -113,7 +113,7 @@ export async function POST() {
     const updated = await Account.findOneAndUpdate(
       { auth_user_id: authUserId },
       { $set: { avatar_url: finalAvatarUrl, used_instagram_avatar: true, instagram_avatar_used_at: now } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updated) {
