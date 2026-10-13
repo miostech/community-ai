@@ -19,6 +19,7 @@ import {
   TextField,
   InputAdornment,
   CircularProgress,
+  Chip,
 } from '@mui/material';
 import {
   ArrowForward as SendIcon,
@@ -37,6 +38,8 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
+  const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
+  const [dailyLimit, setDailyLimit] = useState<number | null>(null);
   const hasInitializedRef = useRef(false);
   const apiConversationIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -102,6 +105,18 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
   }, []);
 
   useEffect(() => {
+    fetch('/api/chat/usage')
+      .then(res => res.json())
+      .then(data => {
+        if (data.daily_limit != null) {
+          setDailyLimit(data.daily_limit);
+          setRemainingMessages(data.remaining);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -128,6 +143,11 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
         apiConversationIdRef.current = data.conversation_id;
       }
 
+      if (data.remaining_messages != null) {
+        setRemainingMessages(data.remaining_messages);
+        setDailyLimit(data.daily_limit);
+      }
+
       const assistantMessage: Message = {
         id: data.message.id,
         role: 'assistant',
@@ -152,7 +172,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || remainingMessages === 0) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -391,7 +411,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
           borderTop: 1,
           borderColor: 'divider',
           px: { xs: 1.5, sm: 2 },
-          pt: { xs: 1.5, sm: 2 },
+          pt: { xs: 1, sm: 1.5 },
           pb: { xs: 1, sm: 0 },
           flexShrink: 0,
           bgcolor: 'background.paper',
@@ -402,6 +422,29 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
           zIndex: { xs: 40 },
         }}
       >
+        {remainingMessages != null && dailyLimit != null && (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, px: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', fontSize: '0.7rem', lineHeight: 1.3 }}
+            >
+              {'Dica: envie tudo em uma mensagem só pra aproveitar melhor'}
+            </Typography>
+            <Chip
+              label={`${remainingMessages}/${dailyLimit}`}
+              size="small"
+              sx={{
+                ml: 1,
+                height: 22,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                flexShrink: 0,
+                bgcolor: remainingMessages <= 3 ? 'error.light' : remainingMessages <= 7 ? 'warning.light' : 'action.hover',
+                color: remainingMessages <= 3 ? 'error.dark' : remainingMessages <= 7 ? 'warning.dark' : 'text.secondary',
+              }}
+            />
+          </Box>
+        )}
         <TextField
           inputRef={textareaRef}
           value={input}
@@ -412,7 +455,7 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
               handleSend();
             }
           }}
-          placeholder="Digite aqui..."
+          placeholder={remainingMessages === 0 ? 'Limite diário atingido. Volte amanhã!' : 'Digite aqui...'}
           multiline
           maxRows={4}
           fullWidth
@@ -422,11 +465,11 @@ export function ChatInterface({ initialPrompt, conversationId, onNewConversation
               <InputAdornment position="end">
                 <IconButton
                   type="submit"
-                  disabled={!input.trim() || isLoading}
+                  disabled={!input.trim() || isLoading || remainingMessages === 0}
                   sx={{
                     width: 36,
                     height: 36,
-                    ...(!input.trim() || isLoading
+                    ...(!input.trim() || isLoading || remainingMessages === 0
                       ? { bgcolor: 'action.disabledBackground' }
                       : {
                         background: 'linear-gradient(135deg, #3b82f6 0%, #9333ea 100%)',

@@ -77,7 +77,7 @@ const recursos = [
     color: 'secondary' as const,
     bgColor: '#ec4899',
     title: 'Chat com IA',
-    description: 'Converse com a IA treinada pela Natália e pelo Luigi, ela será sua assistente de criação de conteúdo.',
+    description: 'Converse com a IA treinada pela Natália e pelo Luigi. São 20 mensagens por dia para tirar dúvidas, criar roteiros e melhorar seu conteúdo.',
   },
   {
     icon: <GroupIcon />,

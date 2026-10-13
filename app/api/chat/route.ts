@@ -123,8 +123,9 @@ async function fetchUrlMetadata(url: string): Promise<{ title?: string; descript
 /** Limite de mensagens recentes enviadas como contexto completo */
 const RECENT_MESSAGES_LIMIT = 6;
 
-/** Limite de mensagens por dia para assinantes */
-const DAILY_MESSAGES_LIMIT = 10;
+/** Limites de mensagens por dia */
+const DAILY_MESSAGES_TRIAL = 10;
+const DAILY_MESSAGES_PAID = 20;
 
 // ---------------------------------------------------------------------------
 // POST — Enviar mensagem e receber resposta da IA
@@ -144,8 +145,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
         }
 
-        // Apenas assinantes podem usar a IA
-        if (!account.subscription_active) {
+        // Verificar acesso: assinante pago ou trial ativo
+        const isTrialActive = account.campaign_14_days_trial_ends_at
+            && new Date(account.campaign_14_days_trial_ends_at) > new Date();
+        const isPaid = account.subscription_active;
+
+        if (!isPaid && !isTrialActive) {
             return NextResponse.json(
                 { error: 'A assistente de IA é exclusiva para assinantes. Assine para ter acesso!' },
                 { status: 403 }
@@ -153,6 +158,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Verificar limite de mensagens por dia
+        const dailyLimit = isPaid ? DAILY_MESSAGES_PAID : DAILY_MESSAGES_TRIAL;
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const messagesToday = await ChatMessageModel.countDocuments({
@@ -160,9 +166,9 @@ export async function POST(request: NextRequest) {
             role: 'user',
             created_at: { $gte: todayStart },
         });
-        if (messagesToday >= DAILY_MESSAGES_LIMIT) {
+        if (messagesToday >= dailyLimit) {
             return NextResponse.json(
-                { error: `Você atingiu o limite de ${DAILY_MESSAGES_LIMIT} mensagens por dia. Tente novamente amanhã!` },
+                { error: `Você atingiu o limite de ${dailyLimit} mensagens por dia. Tente novamente amanhã!` },
                 { status: 429 }
             );
         }
@@ -344,6 +350,8 @@ export async function POST(request: NextRequest) {
             }
         );
 
+        const remainingMessages = Math.max(0, dailyLimit - (messagesToday + 1));
+
         return NextResponse.json({
             conversation_id: conversation._id,
             message: {
@@ -354,6 +362,8 @@ export async function POST(request: NextRequest) {
                 tokens_out: tokensOut,
                 created_at: assistantMsg.created_at,
             },
+            daily_limit: dailyLimit,
+            remaining_messages: remainingMessages,
         });
     } catch (error: any) {
         console.error('Erro no chat:', error);

@@ -15,7 +15,7 @@ const promoPlans: Plan[] = [
             'Acesso mensal à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
             'Ideias estruturadas de conteúdo (engajamento e conversão)',
-            'Chat com IA — assistente de criação treinada pelos criadores',
+            'Chat com IA — 20 mensagens/dia com a assistente treinada pelos criadores',
             'Acesso à comunidade de criadores (troca de estratégias e inspiração)',
             'Temas em alta (assuntos que estão gerando engajamento)',
             'Suporte prioritário',
@@ -33,7 +33,7 @@ const promoPlans: Plan[] = [
             '6 meses de acesso à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
             'Ideias estruturadas de conteúdo (engajamento e conversão)',
-            'Chat com IA — assistente de criação treinada pelos criadores',
+            'Chat com IA — 20 mensagens/dia com a assistente treinada pelos criadores',
             'Acesso à comunidade de criadores (troca de estratégias e inspiração)',
             'Temas em alta (assuntos que estão gerando engajamento)',
             'Suporte prioritário',
@@ -52,7 +52,7 @@ const promoPlans: Plan[] = [
             '1 ano de acesso à cúpula do Dome com a IA treinada pela Natália e pelo Luigi, ideias de conteúdo e rede de criadores.',
         features: [
             'Ideias estruturadas de conteúdo (engajamento e conversão)',
-            'Chat com IA — assistente de criação treinada pelos criadores',
+            'Chat com IA — 20 mensagens/dia com a assistente treinada pelos criadores',
             'Acesso à comunidade de criadores (troca de estratégias e inspiração)',
             'Temas em alta (assuntos que estão gerando engajamento)',
             'Suporte prioritário',
