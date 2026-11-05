@@ -29,11 +29,14 @@ export async function GET() {
             && new Date(account.campaign_14_days_trial_ends_at) > new Date();
         const isPaid = account.subscription_active;
 
-        if (!isPaid && !isTrialActive) {
+        const extraCredits = account.chat_extra_credits || 0;
+
+        if (!isPaid && !isTrialActive && extraCredits <= 0) {
             return NextResponse.json({ daily_limit: 0, used_today: 0, remaining: 0, extra_credits: 0 });
         }
 
-        const dailyLimit = isPaid ? DAILY_MESSAGES_PAID : DAILY_MESSAGES_TRIAL;
+        const hasSubscription = isPaid || isTrialActive;
+        const dailyLimit = hasSubscription ? (isPaid ? DAILY_MESSAGES_PAID : DAILY_MESSAGES_TRIAL) : 0;
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
 
@@ -47,7 +50,7 @@ export async function GET() {
             daily_limit: dailyLimit,
             used_today: usedToday,
             remaining: Math.max(0, dailyLimit - usedToday),
-            extra_credits: account.chat_extra_credits || 0,
+            extra_credits: extraCredits,
         });
     } catch (error: any) {
         console.error('Erro ao buscar uso do chat:', error);

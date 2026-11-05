@@ -150,7 +150,9 @@ export async function POST(request: NextRequest) {
             && new Date(account.campaign_14_days_trial_ends_at) > new Date();
         const isPaid = account.subscription_active;
 
-        if (!isPaid && !isTrialActive) {
+        const extraCredits = account.chat_extra_credits || 0;
+
+        if (!isPaid && !isTrialActive && extraCredits <= 0) {
             return NextResponse.json(
                 { error: 'A assistente de IA é exclusiva para assinantes. Assine para ter acesso!' },
                 { status: 403 }
@@ -158,7 +160,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Verificar limite de mensagens por dia
-        const dailyLimit = isPaid ? DAILY_MESSAGES_PAID : DAILY_MESSAGES_TRIAL;
+        const hasSubscription = isPaid || isTrialActive;
+        const dailyLimit = hasSubscription ? (isPaid ? DAILY_MESSAGES_PAID : DAILY_MESSAGES_TRIAL) : 0;
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const messagesToday = await ChatMessageModel.countDocuments({
@@ -166,12 +169,13 @@ export async function POST(request: NextRequest) {
             role: 'user',
             created_at: { $gte: todayStart },
         });
-        const extraCredits = account.chat_extra_credits || 0;
         const usingExtraCredit = messagesToday >= dailyLimit;
 
         if (usingExtraCredit && extraCredits <= 0) {
             return NextResponse.json(
-                { error: `Você atingiu o limite de ${dailyLimit} mensagens por dia. Compre créditos extras ou tente novamente amanhã!` },
+                { error: dailyLimit > 0
+                    ? `Você atingiu o limite de ${dailyLimit} mensagens por dia. Compre créditos extras ou tente novamente amanhã!`
+                    : 'Seus créditos extras acabaram. Compre mais para continuar usando!' },
                 { status: 429 }
             );
         }
