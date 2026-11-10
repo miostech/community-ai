@@ -154,10 +154,8 @@ function getBlockingFields(data: FormData): string[] {
     }
   }
   if (data.interest_product_campaigns) {
-    if (!data.address_zip?.trim()) missing.push('CEP (entrega de produtos)');
-    if (!data.address_street?.trim()) missing.push('Rua (entrega de produtos)');
-    if (!data.address_number?.trim()) missing.push('Número (entrega de produtos)');
-    if (!data.address_neighborhood?.trim()) missing.push('Bairro (entrega de produtos)');
+    if (!data.address_zip?.trim()) missing.push('Código postal (entrega de produtos)');
+    if (!data.address_street?.trim()) missing.push('Endereço (entrega de produtos)');
   }
   return missing;
 }
@@ -643,47 +641,39 @@ export default function PortfolioPage() {
                   Endereço completo para entrega de produtos *
                 </Typography>
                 <TextField
-                  label="CEP *"
-                  value={formData.address_zip}
-                  onChange={(e) => handleChange('address_zip', e.target.value)}
-                  fullWidth
-                  size="small"
-                  placeholder="00000-000"
-                />
-                <TextField
-                  label="Rua / Logradouro *"
+                  label="Endereço (rua, número) *"
                   value={formData.address_street}
                   onChange={(e) => handleChange('address_street', e.target.value)}
                   fullWidth
                   size="small"
-                  placeholder="Nome da rua"
+                  placeholder="Ex: Rua das Flores, 123 / 742 Evergreen Terrace"
+                />
+                <TextField
+                  label="Complemento"
+                  value={formData.address_complement}
+                  onChange={(e) => handleChange('address_complement', e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="Apto, bloco, andar..."
                 />
                 <Stack direction="row" spacing={1.5}>
                   <TextField
-                    label="Número *"
-                    value={formData.address_number}
-                    onChange={(e) => handleChange('address_number', e.target.value)}
+                    label="Código postal / ZIP *"
+                    value={formData.address_zip}
+                    onChange={(e) => handleChange('address_zip', e.target.value)}
                     fullWidth
                     size="small"
-                    placeholder="Nº"
+                    placeholder="Ex: 01310-100 / 90210"
                   />
                   <TextField
-                    label="Complemento"
-                    value={formData.address_complement}
-                    onChange={(e) => handleChange('address_complement', e.target.value)}
+                    label="Bairro / Distrito"
+                    value={formData.address_neighborhood}
+                    onChange={(e) => handleChange('address_neighborhood', e.target.value)}
                     fullWidth
                     size="small"
-                    placeholder="Apto, bloco..."
+                    placeholder="Opcional"
                   />
                 </Stack>
-                <TextField
-                  label="Bairro *"
-                  value={formData.address_neighborhood}
-                  onChange={(e) => handleChange('address_neighborhood', e.target.value)}
-                  fullWidth
-                  size="small"
-                  placeholder="Bairro"
-                />
               </Stack>
             )}
           </Stack>
