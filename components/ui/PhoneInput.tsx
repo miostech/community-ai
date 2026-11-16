@@ -47,6 +47,7 @@ const countryCodes: Array<{
   { code: '+1767', country: 'DM', flag: '🇩🇲', name: 'Dominica', placeholder: '767 123 4567', minDigits: 10, maxDigits: 10 },
   { code: '+593', country: 'EC', flag: '🇪🇨', name: 'Equador', placeholder: '99 123 4567', minDigits: 9, maxDigits: 9 },
   { code: '+503', country: 'SV', flag: '🇸🇻', name: 'El Salvador', placeholder: '7123 4567', minDigits: 8, maxDigits: 8 },
+  { code: '+971', country: 'AE', flag: '🇦🇪', name: 'Emirados Árabes Unidos', placeholder: '50 123 4567', minDigits: 9, maxDigits: 9 },
   { code: '+421', country: 'SK', flag: '🇸🇰', name: 'Eslováquia', placeholder: '912 123 456', minDigits: 9, maxDigits: 9 },
   { code: '+386', country: 'SI', flag: '🇸🇮', name: 'Eslovênia', placeholder: '31 234 567', minDigits: 8, maxDigits: 8 },
   { code: '+34', country: 'ES', flag: '🇪🇸', name: 'Espanha', placeholder: '612 34 56 78', minDigits: 9, maxDigits: 9 },
